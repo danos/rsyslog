@@ -1,3 +1,11 @@
+rsyslog (5.8.11-3+deb7u1) UNRELEASED; urgency=medium
+
+  * debian/patches/05-pri-vulnerability-fix.patch:
+    - CVE-2014-3634: Fix remote syslog vulnerability due to improper handling
+      of invalid PRI values.
+
+ -- Michael Biebl <biebl@debian.org>  Sat, 27 Sep 2014 00:18:55 +0200
+
 rsyslog (5.8.11-3) unstable; urgency=low
 
   * debian/patches/04-systemd_journal.patch: The journal has replaced
