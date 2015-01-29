@@ -2,6 +2,7 @@ rsyslog (8.6.0-1) UNRELEASED; urgency=medium
 
   * New upstream release.
   * Update Vcs-Browser URL to use cgit and https.
+  * Bump Standards-Version to 3.9.6. No further changes.
 
  -- Michael Biebl <biebl@debian.org>  Thu, 29 Jan 2015 01:00:35 +0100
 
