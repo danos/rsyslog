@@ -1,19 +1,19 @@
-/* A Bison parser, made by GNU Bison 2.5.  */
+/* A Bison parser, made by GNU Bison 3.0.2.  */
 
 /* Bison interface for Yacc-like parsers in C
-   
-      Copyright (C) 1984, 1989-1990, 2000-2011 Free Software Foundation, Inc.
-   
+
+   Copyright (C) 1984, 1989-1990, 2000-2013 Free Software Foundation, Inc.
+
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
@@ -26,58 +26,66 @@
    special exception, which will cause the skeleton and the resulting
    Bison output files to be licensed under the GNU General Public
    License without this special exception.
-   
+
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
+#ifndef YY_YY_GRAMMAR_H_INCLUDED
+# define YY_YY_GRAMMAR_H_INCLUDED
+/* Debug traces.  */
+#ifndef YYDEBUG
+# define YYDEBUG 0
+#endif
+#if YYDEBUG
+extern int yydebug;
+#endif
 
-/* Tokens.  */
+/* Token type.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
-   /* Put the tokens into the symbol table, so that GDB and other debuggers
-      know about them.  */
-   enum yytokentype {
-     NAME = 258,
-     FUNC = 259,
-     BEGINOBJ = 260,
-     ENDOBJ = 261,
-     BEGIN_ACTION = 262,
-     BEGIN_PROPERTY = 263,
-     BEGIN_CONSTANT = 264,
-     BEGIN_TPL = 265,
-     BEGIN_RULESET = 266,
-     STOP = 267,
-     SET = 268,
-     UNSET = 269,
-     CONTINUE = 270,
-     CALL = 271,
-     LEGACY_ACTION = 272,
-     LEGACY_RULESET = 273,
-     PRIFILT = 274,
-     PROPFILT = 275,
-     BSD_TAG_SELECTOR = 276,
-     BSD_HOST_SELECTOR = 277,
-     IF = 278,
-     THEN = 279,
-     ELSE = 280,
-     OR = 281,
-     AND = 282,
-     NOT = 283,
-     VAR = 284,
-     STRING = 285,
-     NUMBER = 286,
-     CMP_EQ = 287,
-     CMP_NE = 288,
-     CMP_LE = 289,
-     CMP_GE = 290,
-     CMP_LT = 291,
-     CMP_GT = 292,
-     CMP_CONTAINS = 293,
-     CMP_CONTAINSI = 294,
-     CMP_STARTSWITH = 295,
-     CMP_STARTSWITHI = 296,
-     UMINUS = 297
-   };
+  enum yytokentype
+  {
+    NAME = 258,
+    FUNC = 259,
+    BEGINOBJ = 260,
+    ENDOBJ = 261,
+    BEGIN_ACTION = 262,
+    BEGIN_PROPERTY = 263,
+    BEGIN_CONSTANT = 264,
+    BEGIN_TPL = 265,
+    BEGIN_RULESET = 266,
+    STOP = 267,
+    SET = 268,
+    UNSET = 269,
+    CONTINUE = 270,
+    CALL = 271,
+    LEGACY_ACTION = 272,
+    LEGACY_RULESET = 273,
+    PRIFILT = 274,
+    PROPFILT = 275,
+    BSD_TAG_SELECTOR = 276,
+    BSD_HOST_SELECTOR = 277,
+    IF = 278,
+    THEN = 279,
+    ELSE = 280,
+    OR = 281,
+    AND = 282,
+    NOT = 283,
+    VAR = 284,
+    STRING = 285,
+    NUMBER = 286,
+    CMP_EQ = 287,
+    CMP_NE = 288,
+    CMP_LE = 289,
+    CMP_GE = 290,
+    CMP_LT = 291,
+    CMP_GT = 292,
+    CMP_CONTAINS = 293,
+    CMP_CONTAINSI = 294,
+    CMP_STARTSWITH = 295,
+    CMP_STARTSWITHI = 296,
+    UMINUS = 297
+  };
 #endif
 /* Tokens.  */
 #define NAME 258
@@ -121,15 +129,12 @@
 #define CMP_STARTSWITHI 296
 #define UMINUS 297
 
-
-
-
+/* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef union YYSTYPE
+typedef union YYSTYPE YYSTYPE;
+union YYSTYPE
 {
-
-/* Line 2068 of yacc.c  */
-#line 43 "grammar.y"
+#line 43 "grammar.y" /* yacc.c:1909  */
 
 	char *s;
 	long long n;
@@ -144,16 +149,15 @@ typedef union YYSTYPE
 	struct cnffunc *func;
 	struct cnffparamlst *fparams;
 
-
-
-/* Line 2068 of yacc.c  */
-#line 151 "grammar.h"
-} YYSTYPE;
+#line 153 "grammar.h" /* yacc.c:1909  */
+};
 # define YYSTYPE_IS_TRIVIAL 1
-# define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
 #endif
 
+
 extern YYSTYPE yylval;
 
+int yyparse (void);
 
+#endif /* !YY_YY_GRAMMAR_H_INCLUDED  */

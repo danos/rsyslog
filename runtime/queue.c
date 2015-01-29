@@ -284,7 +284,7 @@ qqueueDbgPrint(qqueue_t *pThis)
 	dbgoprint((obj_t*) pThis, "queue.saveonshutdown: %d\n", pThis->bSaveOnShutdown);
 	dbgoprint((obj_t*) pThis, "queue.dequeueslowdown: %d\n", pThis->iDeqSlowdown);
 	dbgoprint((obj_t*) pThis, "queue.dequeuetimebegin: %d\n", pThis->iDeqtWinFromHr);
-	dbgoprint((obj_t*) pThis, "queuedequeuetimend.: %d\n", pThis->iDeqtWinToHr);
+	dbgoprint((obj_t*) pThis, "queue.dequeuetimeend: %d\n", pThis->iDeqtWinToHr);
 }
 
 
@@ -2315,6 +2315,7 @@ qqueueStart(qqueue_t *pThis) /* this is the ConstructionFinalizer */
 	qName = obj.GetName((obj_t*)pThis);
 	CHKiRet(statsobj.Construct(&pThis->statsobj));
 	CHKiRet(statsobj.SetName(pThis->statsobj, qName));
+	CHKiRet(statsobj.SetOrigin(pThis->statsobj, (uchar*)"core.queue"));
 	/* we need to save the queue size, as the stats module initializes it to 0! */
 	/* iQueueSize is a dual-use counter: no init, no mutex! */
 	CHKiRet(statsobj.AddCounter(pThis->statsobj, UCHAR_CONSTANT("size"),
@@ -3012,7 +3013,7 @@ qqueueApplyCnfParam(qqueue_t *pThis, struct nvlst *lst)
 			pThis->iDeqSlowdown = pvals[i].val.d.n;
 		} else if(!strcmp(pblk.descr[i].name, "queue.dequeuetimebegin")) {
 			pThis->iDeqtWinFromHr = pvals[i].val.d.n;
-		} else if(!strcmp(pblk.descr[i].name, "queuedequeuetimend.")) {
+		} else if(!strcmp(pblk.descr[i].name, "queue.dequeuetimeend")) {
 			pThis->iDeqtWinToHr = pvals[i].val.d.n;
 		} else {
 			DBGPRINTF("queue: program error, non-handled "
