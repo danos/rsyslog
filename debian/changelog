@@ -1,10 +1,10 @@
-rsyslog (8.6.0-1) UNRELEASED; urgency=medium
+rsyslog (8.6.0-1) experimental; urgency=medium
 
   * New upstream release.
   * Update Vcs-Browser URL to use cgit and https.
   * Bump Standards-Version to 3.9.6. No further changes.
 
- -- Michael Biebl <biebl@debian.org>  Thu, 29 Jan 2015 01:00:35 +0100
+ -- Michael Biebl <biebl@debian.org>  Thu, 29 Jan 2015 02:02:29 +0100
 
 rsyslog (8.4.2-1) unstable; urgency=high
 
