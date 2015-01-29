@@ -28,10 +28,12 @@
   * limitations under the License.
   */
 
-%{
+%top{
 #include "config.h"
+}
+
+%{
 #include "parserif.h"
-extern char *strdup(__const char*); /* somehow we may not get this from string.h... */
 %}
 
 %option noyywrap nodefault case-insensitive yylineno
@@ -67,6 +69,7 @@ extern char *strdup(__const char*); /* somehow we may not get this from string.h
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <strings.h>
 #include <libestr.h>
 #include "rainerscript.h"
@@ -154,7 +157,7 @@ int fileno(FILE *stream);
 <INCALL>.			{ parser_errmsg("invalid character '%s' in 'call' statement"
 					        "- is there an invalid escape sequence somewhere?",
 						yytext); }
-<INCALL>[a-zA-Z][a-zA-Z0-9_\.]*	{ yylval.estr = es_newStrFromCStr(yytext, yyleng);
+<INCALL>[a-zA-Z][a-zA-Z0-9\-_\.]*	{ yylval.estr = es_newStrFromCStr(yytext, yyleng);
 				  BEGIN INITIAL;
 				  return NAME; }
 "&"				{ return '&'; }

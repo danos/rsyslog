@@ -120,12 +120,12 @@
 /* we need to use a function to avoid side-effects. This MUST guard
  * against invalid facility values. rgerhards, 2014-09-16
  */
-static inline int pri2fac(const int pri)
+static inline syslog_pri_t pri2fac(const syslog_pri_t pri)
 {
 	unsigned fac = pri >> 3;
 	return (fac > 23) ? LOG_FAC_INVLD : fac;
 }
-static inline int pri2sev(const int pri)
+static inline syslog_pri_t pri2sev(const syslog_pri_t pri)
 {
 	return pri & 0x07;
 }
@@ -315,7 +315,7 @@ enum rsRetVal_				/** return value. All methods return this if not specified oth
 	RS_RET_VAR_NOT_FOUND = -2142, /**< variable not found */
 	RS_RET_EMPTY_MSG = -2143, /**< provided (raw) MSG is empty */
 	RS_RET_PEER_CLOSED_CONN = -2144, /**< remote peer closed connection (information, no error) */
-	RS_RET_ERR_OPEN_KLOG = -2145, /**< error opening the kernel log socket (primarily solaris) */
+	RS_RET_ERR_OPEN_KLOG = -2145, /**< error opening or reading the kernel log socket */
 	RS_RET_ERR_AQ_CONLOG = -2146, /**< error aquiring console log (on solaris) */
 	RS_RET_ERR_DOOR = -2147, /**< some problems with handling the Solaris door functionality */
 	RS_RET_NO_SRCNAME_TPL = -2150, /**< sourcename template was not specified where one was needed (omudpspoof spoof addr) */
@@ -426,12 +426,17 @@ enum rsRetVal_				/** return value. All methods return this if not specified oth
 	RS_RET_RESUMED = -2359,/**< status: action was resumed (used for reporting) */
 	RS_RET_RELP_NO_TLS = -2360,/**< librel does not support TLS (but TLS requested) */
 	RS_RET_STATEFILE_WRONG_FNAME  = -2361,/**< state file is for wrong file */
+	RS_RET_NAME_INVALID = -2362, /**< invalid name (in RainerScript) */
 
 	/* up to 2400 reserved for 7.5 & 7.6 */
 	RS_RET_INVLD_OMOD = -2400, /**< invalid output module, does not provide proper interfaces */
 	RS_RET_INVLD_INTERFACE_INPUT = -2401, /**< invalid value for "interface.input" parameter (ext progs) */
 	RS_RET_PARSER_NAME_EXISTS = -2402, /**< parser name already exists */
 	RS_RET_MOD_NO_PARSER_STMT = -2403, /**< (parser) module does not support parser() statement */
+
+	/* up to 2419 reserved for 8.4.x */
+	RS_RET_IMFILE_WILDCARD = -2420, /**< imfile file name contains wildcard, which may be problematic */
+	RS_RET_RELP_NO_TLS_AUTH = -2421,/**< librel does not support TLS authentication (but was requested) */
 
 	/* RainerScript error messages (range 1000.. 1999) */
 	RS_RET_SYSVAR_NOT_FOUND = 1001, /**< system variable could not be found (maybe misspelled) */
@@ -594,6 +599,16 @@ rsRetVal rsrtExit(void);
 int rsrtIsInit(void);
 void rsrtSetErrLogger(void (*errLogger)(const int, const int, const uchar*));
 
+
+/* our own support for breaking changes in json-c */
+#ifdef HAVE_JSON_OBJECT_OBJECT_GET_EX
+#	define RS_json_object_object_get_ex(obj, key, retobj) \
+		json_object_object_get_ex((obj), (key), (retobj))
+#else
+#	define RS_json_object_object_get_ex(obj, key, retobj) \
+		((*(retobj) = json_object_object_get((obj), (key))) == NULL) ? FALSE : TRUE
+#endif
+
 /* this define below is (later) intended to be used to implement empty
  * structs. TODO: check if compilers supports this and, if not, define
  * a dummy variable. This requires review of where in code empty structs
@@ -607,5 +622,3 @@ extern rsconf_t *ourConf; /* defined by syslogd.c, a hack for functions that do 
 			     compile and change... -- rgerhars, 2011-04-19 */
 
 #endif /* multi-include protection */
-/* vim:set ai:
- */
