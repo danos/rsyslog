@@ -5,6 +5,11 @@ rsyslog (8.8.0-1) UNRELEASED; urgency=medium
   * Explicitly enable liblogging-stdlog feature, which is now optional.
   * Remove obsolete --enable-pmrfc3164sd configure switch. This module has
     been removed by upstream.
+  * Enable support for reading from and writing to the systemd journal
+    directly via the imjournal and omjournal module.
+    The default rsyslog configuration still uses the imuxsock module though,
+    which receives the syslog messages via a socket that is passed from
+    systemd to rsyslog.
 
  -- Michael Biebl <biebl@debian.org>  Mon, 09 Mar 2015 21:35:57 +0100
 

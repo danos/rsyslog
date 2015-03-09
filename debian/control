@@ -19,6 +19,7 @@ Build-Depends: debhelper (>= 8),
                liblogging-stdlog-dev (>= 1.0.3),
                libjson-c-dev,
                uuid-dev,
+               libsystemd-dev (>= 209) [linux-any],
                pkg-config,
                bison
 Standards-Version: 3.9.6

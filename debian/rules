@@ -10,6 +10,8 @@ DEB_HOST_ARCH_OS ?= $(shell dpkg-architecture -qDEB_HOST_ARCH_OS)
 
 ifeq ($(DEB_HOST_ARCH_OS), linux)
 confflags += 	--enable-imptcp \
+		--enable-imjournal \
+		--enable-omjournal \
 		--enable-kmsg
 endif
 
@@ -55,9 +57,11 @@ override_dh_auto_install:
 override_dh_install:
 	dh_install -X .la --list-missing
 ifeq ($(DEB_HOST_ARCH_OS), linux)
-	install --mode=644 debian/tmp/usr/lib/rsyslog/imkmsg.so \
-		debian/rsyslog/usr/lib/rsyslog/
-	install --mode=644 debian/tmp/usr/lib/rsyslog/imptcp.so \
+	install --mode=644 \
+		debian/tmp/usr/lib/rsyslog/imkmsg.so \
+		debian/tmp/usr/lib/rsyslog/imptcp.so \
+		debian/tmp/usr/lib/rsyslog/imjournal.so \
+		debian/tmp/usr/lib/rsyslog/omjournal.so \
 		debian/rsyslog/usr/lib/rsyslog/
 endif
 
