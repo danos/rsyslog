@@ -1,4 +1,4 @@
-rsyslog (8.8.0-1) UNRELEASED; urgency=medium
+rsyslog (8.8.0-1) experimental; urgency=medium
 
   * New upstream release.
   * Bump Build-Depends on liblognorm-dev to (>= 1.0.2).
@@ -11,7 +11,7 @@ rsyslog (8.8.0-1) UNRELEASED; urgency=medium
     which receives the syslog messages via a socket that is passed from
     systemd to rsyslog.
 
- -- Michael Biebl <biebl@debian.org>  Mon, 09 Mar 2015 21:35:57 +0100
+ -- Michael Biebl <biebl@debian.org>  Mon, 09 Mar 2015 22:18:14 +0100
 
 rsyslog (8.6.0-1) experimental; urgency=medium
 
