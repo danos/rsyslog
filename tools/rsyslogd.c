@@ -3,7 +3,7 @@
  * because it was either written from scratch by me (rgerhards) or
  * contributors who agreed to ASL 2.0.
  *
- * Copyright 2004-2014 Rainer Gerhards and Adiscon
+ * Copyright 2004-2015 Rainer Gerhards and Adiscon
  *
  * This file is part of rsyslog.
  *
@@ -26,12 +26,15 @@
 
 #include <signal.h>
 #include <sys/wait.h>
-#include <liblogging/stdlog.h>
+#ifdef HAVE_LIBLOGGING_STDLOG
+#  include <liblogging/stdlog.h>
+#endif
 #ifdef OS_SOLARIS
 #	include <errno.h>
 #else
 #	include <sys/errno.h>
 #endif
+#include <unistd.h>
 #include "sd-daemon.h"
 
 #include "wti.h"
@@ -47,7 +50,6 @@
 #include "prop.h"
 #include "unicode-helper.h"
 #include "net.h"
-#include "errmsg.h"
 #include "glbl.h"
 #include "debug.h"
 #include "srUtils.h"
@@ -176,7 +178,9 @@ rsRetVal writePidFile(void)
 		fprintf(stderr, "rsyslogd: error writing pid file\n");
 		ABORT_FINALIZE(RS_RET_ERR);
 	}
-	fprintf(fp, "%d", (int) glblGetOurPid());
+	if(fprintf(fp, "%d", (int) glblGetOurPid()) < 0) {
+		errmsg.LogError(errno, iRet, "rsyslog: error writing pid file");
+	}
 	fclose(fp);
 finalize_it:
 	RETiRet;
@@ -369,6 +373,8 @@ printVersion(void)
 {
 	printf("rsyslogd %s, ", VERSION);
 	printf("compiled with:\n");
+	printf("\tPLATFORM:\t\t\t\t%s\n", PLATFORM_ID);
+	printf("\tPLATFORM (lsb_release -d):\t\t%s\n", PLATFORM_ID_LSB);
 #ifdef FEATURE_REGEXP
 	printf("\tFEATURE_REGEXP:\t\t\t\tYes\n");
 #else
@@ -765,9 +771,11 @@ logmsgInternal(int iErr, const syslog_pri_t pri, const uchar *const msg, int fla
 		CHKiRet(logmsgInternalSelf(iErr, pri, lenMsg,
 					   (bufModMsg == NULL) ? (char*)msg : bufModMsg,
 					   flags));
+#ifdef HAVE_LIBLOGGING_STDLOG
 	} else {
 		stdlog_log(stdlog_hdl, pri2sev(pri), "%s",
 			   (bufModMsg == NULL) ? (char*)msg : bufModMsg);
+#endif
 	}
 
 	/* we now check if we should print internal messages out to stderr. This was
@@ -1019,7 +1027,7 @@ initAll(int argc, char **argv)
 	int bChDirRoot = 1; /* change the current working directory to "/"? */
 	char *arg;	/* for command line option processing */
 	char cwdbuf[128]; /* buffer to obtain/display current working directory */
-	int parentPipeFD; /* fd of pipe to parent, if auto-backgrounding */
+	int parentPipeFD = 0; /* fd of pipe to parent, if auto-backgrounding */
 	DEFiRet;
 
 	/* first, parse the command line options. We do not carry out any actual work, just
@@ -1229,9 +1237,11 @@ initAll(int argc, char **argv)
 			VERSION, iConfigVerify, ConfFile);
 	}
 
+	resetErrMsgsFlag();
 	localRet = rsconf.Load(&ourConf, ConfFile);
+	glbl.GenerateLocalHostNameProperty();
 
-	if(localRet == RS_RET_NONFATAL_CONFIG_ERR) {
+	if(hadErrMsgs()) {
 		if(loadConf->globals.bAbortOnUncleanConfig) {
 			fprintf(stderr, "rsyslogd: $AbortOnUncleanConfig is set, and config is not clean.\n"
 					"Check error log for details, fix errors and restart. As a last\n"

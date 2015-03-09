@@ -123,18 +123,19 @@ sbin_PROGRAMS =
 @ENABLE_IMPTCP_TRUE@am__append_36 = plugins/imptcp
 @ENABLE_IMDIAG_TRUE@am__append_37 = plugins/imdiag
 @ENABLE_MAIL_TRUE@am__append_38 = plugins/ommail
-@ENABLE_OMPROG_TRUE@am__append_39 = plugins/omprog
-@ENABLE_RFC3195_TRUE@am__append_40 = plugins/im3195
-@ENABLE_MMNORMALIZE_TRUE@am__append_41 = plugins/mmnormalize
-@ENABLE_MMJSONPARSE_TRUE@am__append_42 = plugins/mmjsonparse
-@ENABLE_MMAUDIT_TRUE@am__append_43 = plugins/mmaudit
-@ENABLE_MMANON_TRUE@am__append_44 = plugins/mmanon
-@ENABLE_MMUTF8FIX_TRUE@am__append_45 = plugins/mmutf8fix
-@ENABLE_MMCOUNT_TRUE@am__append_46 = contrib/mmcount
-@ENABLE_MMSEQUENCE_TRUE@am__append_47 = contrib/mmsequence
-@ENABLE_MMFIELDS_TRUE@am__append_48 = plugins/mmfields
-@ENABLE_MMPSTRUCDATA_TRUE@am__append_49 = plugins/mmpstrucdata
-@ENABLE_MMRFC5424ADDHMAC_TRUE@am__append_50 = contrib/mmrfc5424addhmac
+@ENABLE_OMKAFKA_TRUE@am__append_39 = plugins/omkafka
+@ENABLE_OMPROG_TRUE@am__append_40 = plugins/omprog
+@ENABLE_RFC3195_TRUE@am__append_41 = plugins/im3195
+@ENABLE_MMNORMALIZE_TRUE@am__append_42 = plugins/mmnormalize
+@ENABLE_MMJSONPARSE_TRUE@am__append_43 = plugins/mmjsonparse
+@ENABLE_MMAUDIT_TRUE@am__append_44 = plugins/mmaudit
+@ENABLE_MMANON_TRUE@am__append_45 = plugins/mmanon
+@ENABLE_MMUTF8FIX_TRUE@am__append_46 = plugins/mmutf8fix
+@ENABLE_MMCOUNT_TRUE@am__append_47 = contrib/mmcount
+@ENABLE_MMSEQUENCE_TRUE@am__append_48 = contrib/mmsequence
+@ENABLE_MMFIELDS_TRUE@am__append_49 = plugins/mmfields
+@ENABLE_MMPSTRUCDATA_TRUE@am__append_50 = plugins/mmpstrucdata
+@ENABLE_MMRFC5424ADDHMAC_TRUE@am__append_51 = contrib/mmrfc5424addhmac
 subdir = .
 DIST_COMMON = INSTALL NEWS README AUTHORS ChangeLog \
 	$(srcdir)/Makefile.in $(srcdir)/Makefile.am \
@@ -142,7 +143,8 @@ DIST_COMMON = INSTALL NEWS README AUTHORS ChangeLog \
 	$(srcdir)/config.h.in depcomp COPYING COPYING.LESSER compile \
 	config.guess config.sub install-sh missing ylwrap ltmain.sh
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/atomic_operations.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ac_check_define.m4 \
+	$(top_srcdir)/m4/atomic_operations.m4 \
 	$(top_srcdir)/m4/atomic_operations_64bit.m4 \
 	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
 	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
@@ -314,11 +316,11 @@ DIST_SUBDIRS = compat runtime grammar . plugins/immark \
 	plugins/omuxsock plugins/omhdfs plugins/omjournal \
 	plugins/imjournal plugins/omelasticsearch plugins/mmsnmptrapd \
 	plugins/imfile plugins/imptcp plugins/imdiag plugins/ommail \
-	plugins/omprog plugins/im3195 plugins/mmnormalize \
-	plugins/mmjsonparse plugins/mmaudit plugins/mmanon \
-	plugins/mmutf8fix contrib/mmcount contrib/mmsequence \
-	plugins/mmfields plugins/mmpstrucdata contrib/mmrfc5424addhmac \
-	tests
+	plugins/omkafka plugins/omprog plugins/im3195 \
+	plugins/mmnormalize plugins/mmjsonparse plugins/mmaudit \
+	plugins/mmanon plugins/mmutf8fix contrib/mmcount \
+	contrib/mmsequence plugins/mmfields plugins/mmpstrucdata \
+	contrib/mmrfc5424addhmac tests
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -397,8 +399,6 @@ GREP = @GREP@
 GSS_LIBS = @GSS_LIBS@
 GUARDTIME_CFLAGS = @GUARDTIME_CFLAGS@
 GUARDTIME_LIBS = @GUARDTIME_LIBS@
-HAVE_MYSQL_CONFIG = @HAVE_MYSQL_CONFIG@
-HAVE_PGSQL_CONFIG = @HAVE_PGSQL_CONFIG@
 HIREDIS_CFLAGS = @HIREDIS_CFLAGS@
 HIREDIS_LIBS = @HIREDIS_LIBS@
 IMUDP_LIBS = @IMUDP_LIBS@
@@ -444,6 +444,7 @@ MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 MYSQL_CFLAGS = @MYSQL_CFLAGS@
+MYSQL_CONFIG = @MYSQL_CONFIG@
 MYSQL_LIBS = @MYSQL_LIBS@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -463,6 +464,7 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PGSQL_CFLAGS = @PGSQL_CFLAGS@
 PGSQL_LIBS = @PGSQL_LIBS@
+PG_CONFIG = @PG_CONFIG@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
@@ -491,6 +493,7 @@ UDPSPOOF_LIBS = @UDPSPOOF_LIBS@
 VERSION = @VERSION@
 YACC = @YACC@
 YFLAGS = @YFLAGS@
+ZLIB_CFLAGS = @ZLIB_CFLAGS@
 ZLIB_LIBS = @ZLIB_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -624,7 +627,7 @@ SUBDIRS = compat runtime grammar . plugins/immark plugins/imuxsock \
 	$(am__append_41) $(am__append_42) $(am__append_43) \
 	$(am__append_44) $(am__append_45) $(am__append_46) \
 	$(am__append_47) $(am__append_48) $(am__append_49) \
-	$(am__append_50) tests
+	$(am__append_50) $(am__append_51) tests
 
 # make sure "make distcheck" tries to build all modules. This means that
 # a developer must always have an environment where every supporting library

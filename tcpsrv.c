@@ -21,7 +21,7 @@
  * File begun on 2007-12-21 by RGerhards (extracted from syslogd.c[which was
  * licensed under BSD at the time of the rsyslog fork])
  *
- * Copyright 2007-2012 Adiscon GmbH.
+ * Copyright 2007-2015 Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
@@ -135,6 +135,7 @@ addNewLstnPort(tcpsrv_t *pThis, uchar *pszPort, int bSuppOctetFram)
 	CHKmalloc(pEntry = MALLOC(sizeof(tcpLstnPortList_t)));
 	CHKmalloc(pEntry->pszPort = ustrdup(pszPort));
 	strcpy((char*)pEntry->dfltTZ, (char*)pThis->dfltTZ);
+	pEntry->bSPFramingFix = pThis->bSPFramingFix;
 	pEntry->pSrv = pThis;
 	pEntry->pRuleset = pThis->pRuleset;
 	pEntry->bSuppOctetFram = bSuppOctetFram;
@@ -442,6 +443,9 @@ SessAccept(tcpsrv_t *pThis, tcpLstnPortList_t *pLstnInfo, tcps_sess_t **ppSess, 
 	}
 
 	if(pThis->bUseKeepAlive) {
+	        CHKiRet(netstrm.SetKeepAliveProbes(pNewStrm, pThis->iKeepAliveProbes));
+	        CHKiRet(netstrm.SetKeepAliveTime(pNewStrm, pThis->iKeepAliveTime));
+	        CHKiRet(netstrm.SetKeepAliveIntvl(pNewStrm, pThis->iKeepAliveIntvl));
 		CHKiRet(netstrm.EnableKeepAlive(pNewStrm));
 	}
 
@@ -923,6 +927,7 @@ BEGINobjConstruct(tcpsrv) /* be sure to specify the object type also in END macr
 	pThis->bDisableLFDelim = 0;
 	pThis->OnMsgReceive = NULL;
 	pThis->dfltTZ[0] = '\0';
+	pThis->bSPFramingFix = 0;
 	pThis->ratelimitInterval = 0;
 	pThis->ratelimitBurst = 10000;
 	pThis->bUseFlowControl = 1;
@@ -1087,6 +1092,33 @@ SetKeepAlive(tcpsrv_t *pThis, int iVal)
 }
 
 static rsRetVal
+SetKeepAliveIntvl(tcpsrv_t *pThis, int iVal)
+{
+       DEFiRet;
+       DBGPRINTF("tcpsrv: keep-alive interval set to %d\n", iVal);
+       pThis->iKeepAliveIntvl = iVal;
+       RETiRet;
+}
+
+static rsRetVal
+SetKeepAliveProbes(tcpsrv_t *pThis, int iVal)
+{
+       DEFiRet;
+       DBGPRINTF("tcpsrv: keep-alive probes set to %d\n", iVal);
+       pThis->iKeepAliveProbes = iVal;
+       RETiRet;
+}
+
+static rsRetVal
+SetKeepAliveTime(tcpsrv_t *pThis, int iVal)
+{
+       DEFiRet;
+       DBGPRINTF("tcpsrv: keep-alive timeout set to %d\n", iVal);
+       pThis->iKeepAliveTime = iVal;
+       RETiRet;
+}
+
+static rsRetVal
 SetOnMsgReceive(tcpsrv_t *pThis, rsRetVal (*OnMsgReceive)(tcps_sess_t*, uchar*, int))
 {
 	DEFiRet;
@@ -1126,6 +1158,16 @@ SetDfltTZ(tcpsrv_t *pThis, uchar *tz)
 	DEFiRet;
 	ISOBJ_TYPE_assert(pThis, tcpsrv);
 	strcpy((char*)pThis->dfltTZ, (char*)tz);
+	RETiRet;
+}
+
+
+static rsRetVal
+SetbSPFramingFix(tcpsrv_t *pThis, const sbool val)
+{
+	DEFiRet;
+	ISOBJ_TYPE_assert(pThis, tcpsrv);
+	pThis->bSPFramingFix = val;
 	RETiRet;
 }
 
@@ -1305,10 +1347,14 @@ CODESTARTobjQueryInterface(tcpsrv)
 	pIf->Run = Run;
 
 	pIf->SetKeepAlive = SetKeepAlive;
+	pIf->SetKeepAliveIntvl = SetKeepAliveIntvl;
+	pIf->SetKeepAliveProbes = SetKeepAliveProbes;
+	pIf->SetKeepAliveTime = SetKeepAliveTime;
 	pIf->SetUsrP = SetUsrP;
 	pIf->SetInputName = SetInputName;
 	pIf->SetOrigin = SetOrigin;
 	pIf->SetDfltTZ = SetDfltTZ;
+	pIf->SetbSPFramingFix = SetbSPFramingFix;
 	pIf->SetAddtlFrameDelim = SetAddtlFrameDelim;
 	pIf->SetbDisableLFDelim = SetbDisableLFDelim;
 	pIf->SetSessMax = SetSessMax;

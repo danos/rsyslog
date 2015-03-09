@@ -115,6 +115,9 @@
 /* jemalloc support is integrated. */
 #undef HAVE_JEMALLOC
 
+/* Define to 1 if the system has the type `json_bool'. */
+#undef HAVE_JSON_BOOL
+
 /* Define to 1 if you have the `json_object_new_int64' function. */
 #undef HAVE_JSON_OBJECT_NEW_INT64
 
@@ -130,8 +133,14 @@
 /* Define to 1 if you have the `json-c' library (-ljson-c). */
 #undef HAVE_LIBJSON_C
 
+/* Define to 1 if liblogging-stdlog is available. */
+#undef HAVE_LIBLOGGING_STDLOG
+
 /* Define to 1 if you have the <libnet.h> header file. */
 #undef HAVE_LIBNET_H
+
+/* Define to 1 if you have the <librdkafka/rdkafka.h> header file. */
+#undef HAVE_LIBRDKAFKA_RDKAFKA_H
 
 /* Define to 1 if you have the <locale.h> header file. */
 #undef HAVE_LOCALE_H
@@ -409,6 +418,12 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* platform id for display purposes */
+#undef PLATFORM_ID
+
+/* platform id for display purposes */
+#undef PLATFORM_ID_LSB
+
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE
 
@@ -444,9 +459,6 @@
 
 /* Define if you want to enable libuuid support */
 #undef USE_LIBUUID
-
-/* Define if you want to enable zlib support */
-#undef USE_NETZIP
 
 /* Multithreading support enabled. */
 #undef USE_PTHREADS
@@ -516,6 +528,9 @@
    <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
    #define below would cause a syntax error. */
 #undef _UINT8_T
+
+/* Use X/Open CAE Specification */
+#undef _XOPEN_SOURCE
 
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const

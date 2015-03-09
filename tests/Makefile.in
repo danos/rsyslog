@@ -83,13 +83,13 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	randomgen$(EXEEXT) diagtalker$(EXEEXT) \
 @ENABLE_TESTBENCH_TRUE@	uxsockrcvr$(EXEEXT) \
 @ENABLE_TESTBENCH_TRUE@	syslog_caller$(EXEEXT) \
-@ENABLE_TESTBENCH_TRUE@	syslog_inject$(EXEEXT) \
 @ENABLE_TESTBENCH_TRUE@	inputfilegen$(EXEEXT) \
 @ENABLE_TESTBENCH_TRUE@	minitcpsrv$(EXEEXT)
 @ENABLE_TESTBENCH_TRUE@TESTS = stop-localvar.sh stop-msgvar.sh \
 @ENABLE_TESTBENCH_TRUE@	fac_authpriv.sh fac_local0.sh \
 @ENABLE_TESTBENCH_TRUE@	fac_local7.sh fac_mail.sh fac_news.sh \
-@ENABLE_TESTBENCH_TRUE@	fac_uucp.sh fac_invld1.sh fac_invld2.sh \
+@ENABLE_TESTBENCH_TRUE@	fac_ftp.sh fac_ntp.sh fac_uucp.sh \
+@ENABLE_TESTBENCH_TRUE@	fac_invld1.sh fac_invld2.sh \
 @ENABLE_TESTBENCH_TRUE@	fac_invld3.sh fac_invld4_rfc5424.sh \
 @ENABLE_TESTBENCH_TRUE@	rfc5424parser.sh arrayqueue.sh \
 @ENABLE_TESTBENCH_TRUE@	global_vars.sh da-mainmsg-q.sh \
@@ -100,14 +100,21 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	rulesetmultiqueue-v6.sh manytcp.sh \
 @ENABLE_TESTBENCH_TRUE@	rsf_getenv.sh imtcp_conndrop_tls.sh \
 @ENABLE_TESTBENCH_TRUE@	imtcp_conndrop.sh \
-@ENABLE_TESTBENCH_TRUE@	imtcp_addtlframedelim.sh sndrcv.sh \
+@ENABLE_TESTBENCH_TRUE@	imtcp_addtlframedelim.sh \
+@ENABLE_TESTBENCH_TRUE@	imtcp_no_octet_counted.sh \
+@ENABLE_TESTBENCH_TRUE@	imtcp_spframingfix.sh \
+@ENABLE_TESTBENCH_TRUE@	imptcp_spframingfix.sh sndrcv.sh \
 @ENABLE_TESTBENCH_TRUE@	sndrcv_failover.sh sndrcv_gzip.sh \
 @ENABLE_TESTBENCH_TRUE@	sndrcv_udp.sh sndrcv_udp_nonstdpt.sh \
-@ENABLE_TESTBENCH_TRUE@	imudp_thread_hang.sh asynwr_simple.sh \
-@ENABLE_TESTBENCH_TRUE@	asynwr_timeout.sh asynwr_small.sh \
-@ENABLE_TESTBENCH_TRUE@	asynwr_tinybuf.sh wr_large_async.sh \
-@ENABLE_TESTBENCH_TRUE@	wr_large_sync.sh asynwr_deadlock.sh \
+@ENABLE_TESTBENCH_TRUE@	imudp_thread_hang.sh \
+@ENABLE_TESTBENCH_TRUE@	sndrcv_udp_nonstdpt_v6.sh \
+@ENABLE_TESTBENCH_TRUE@	asynwr_simple.sh asynwr_simple_2.sh \
+@ENABLE_TESTBENCH_TRUE@	asynwr_timeout.sh asynwr_timeout_2.sh \
+@ENABLE_TESTBENCH_TRUE@	asynwr_small.sh asynwr_tinybuf.sh \
+@ENABLE_TESTBENCH_TRUE@	wr_large_async.sh wr_large_sync.sh \
+@ENABLE_TESTBENCH_TRUE@	asynwr_deadlock.sh asynwr_deadlock_2.sh \
 @ENABLE_TESTBENCH_TRUE@	asynwr_deadlock2.sh asynwr_deadlock4.sh \
+@ENABLE_TESTBENCH_TRUE@	abort-uncleancfg-goodcfg.sh \
 @ENABLE_TESTBENCH_TRUE@	gzipwr_large.sh gzipwr_large_dynfile.sh \
 @ENABLE_TESTBENCH_TRUE@	dynfile_invld_async.sh \
 @ENABLE_TESTBENCH_TRUE@	dynfile_invld_sync.sh \
@@ -120,7 +127,10 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	execonlywhenprevsuspended4.sh \
 @ENABLE_TESTBENCH_TRUE@	execonlywhenprevsuspended_multiwrkr.sh \
 @ENABLE_TESTBENCH_TRUE@	pipe_noreader.sh dircreate_dflt.sh \
-@ENABLE_TESTBENCH_TRUE@	dircreate_off.sh \
+@ENABLE_TESTBENCH_TRUE@	dircreate_off.sh imuxsock_logger.sh \
+@ENABLE_TESTBENCH_TRUE@	imuxsock_logger_err.sh \
+@ENABLE_TESTBENCH_TRUE@	imuxsock_traillf.sh \
+@ENABLE_TESTBENCH_TRUE@	imuxsock_ccmiddle.sh \
 @ENABLE_TESTBENCH_TRUE@	imuxsock_logger_root.sh \
 @ENABLE_TESTBENCH_TRUE@	imuxsock_traillf_root.sh \
 @ENABLE_TESTBENCH_TRUE@	imuxsock_ccmiddle_root.sh \
@@ -153,7 +163,7 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	$(am__append_14) $(am__append_15) \
 @ENABLE_TESTBENCH_TRUE@	$(am__append_16) $(am__append_17) \
 @ENABLE_TESTBENCH_TRUE@	$(am__append_18) $(am__append_19) \
-@ENABLE_TESTBENCH_TRUE@	$(am__append_20)
+@ENABLE_TESTBENCH_TRUE@	$(am__append_20) $(am__append_21)
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_1 = \
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	discard-rptdmsg-vg.sh \
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	discard-allmark-vg.sh \
@@ -192,6 +202,7 @@ host_triplet = @host@
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	imptcp_large.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	imptcp_addtlframedelim.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	imptcp_conndrop.sh \
+@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	imptcp_no_octet_counted.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@        rscript_replace.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@        rscript_replace_complex.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_wrap2.sh \
@@ -212,33 +223,41 @@ host_triplet = @host@
 @ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@	mmpstrucdata.sh
 
 @ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_10 = \
-@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_variable.sh
+@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_variable.sh \
+@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_tokenized.sh \
+@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_regex_defaulted.sh \
+@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_regex_disabled.sh
 
-@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_11 = \
+@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@LOGNORM_REGEX_SUPPORTED_TRUE@am__append_11 = \
+@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@LOGNORM_REGEX_SUPPORTED_TRUE@	mmnormalize_regex.sh
+
+@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_12 = \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmjsonparse_simple.sh \
-@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmjsonparse_cim.sh
+@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmjsonparse_cim.sh \
+@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_array_subscripting.sh \
+@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_array_looping.sh
 
 
 # TODO: re-enable in newer version
 #TESTS +=  \
-#	#sndrcv_tls_anon.sh \
-#	#sndrcv_tls_anon_rebind.sh \
-#	#imtcp-tls-basic.sh
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_12 = imtcp-tls-basic-vg.sh \
+#sndrcv_tls_anon.sh \
+#sndrcv_tls_anon_rebind.sh \
+#imtcp-tls-basic.sh
+@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_13 = imtcp-tls-basic-vg.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	 imtcp_conndrop_tls-vg.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	 manytcp-too-few-tls-vg.sh 
 
-@ENABLE_OMUXSOCK_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_13 = uxsock_simple.sh
-@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_14 = sndrcv_relp.sh
-@ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_15 = sndrcv_omudpspoof.sh \
+@ENABLE_OMUXSOCK_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_14 = uxsock_simple.sh
+@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_15 = sndrcv_relp.sh
+@ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_16 = sndrcv_omudpspoof.sh \
 @ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@	 sndrcv_omudpspoof_nonstdpt.sh
 
-@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_16 = omod-if-array.sh \
+@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_17 = omod-if-array.sh \
 @ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	 threadingmq.sh \
 @ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	 threadingmqaq.sh \
 @ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	 badqi.sh
 
-@ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_17 = \
+@ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_18 = \
 @ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	 tabescape_dflt.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	 tabescape_off.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	 timestamp.sh \
@@ -247,21 +266,22 @@ host_triplet = @host@
 @ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	 parsertest.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	 fieldtest.sh
 
-@ENABLE_OMRULESET_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_18 = omruleset.sh \
+@ENABLE_OMRULESET_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_19 = omruleset.sh \
 @ENABLE_OMRULESET_TRUE@@ENABLE_TESTBENCH_TRUE@	 omruleset-queue.sh
 
 
 # random.sh is temporarily disabled as it needs some work
 # to rsyslog core to complete in reasonable time
 #TESTS += random.sh 
-@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_19 = imfile-basic.sh
-@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_20 = imfile-basic-vg.sh
-@ENABLE_GNUTLS_TRUE@am__append_21 = -lgcrypt
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_20 = imfile-basic.sh
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_21 = imfile-basic-vg.sh
+@ENABLE_GNUTLS_TRUE@am__append_22 = -lgcrypt
 subdir = tests
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp $(top_srcdir)/test-driver README
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/atomic_operations.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ac_check_define.m4 \
+	$(top_srcdir)/m4/atomic_operations.m4 \
 	$(top_srcdir)/m4/atomic_operations_64bit.m4 \
 	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
 	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
@@ -301,12 +321,10 @@ ourtail_LDADD = $(LDADD)
 am_randomgen_OBJECTS = randomgen.$(OBJEXT)
 randomgen_OBJECTS = $(am_randomgen_OBJECTS)
 randomgen_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_syslog_caller_OBJECTS = syslog_caller.$(OBJEXT)
+am_syslog_caller_OBJECTS = syslog_caller-syslog_caller.$(OBJEXT)
 syslog_caller_OBJECTS = $(am_syslog_caller_OBJECTS)
-syslog_caller_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_syslog_inject_OBJECTS = syslog_inject.$(OBJEXT)
-syslog_inject_OBJECTS = $(am_syslog_inject_OBJECTS)
-syslog_inject_DEPENDENCIES = $(am__DEPENDENCIES_1)
+syslog_caller_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_tcpflood_OBJECTS = tcpflood-tcpflood.$(OBJEXT)
 tcpflood_OBJECTS = $(am_tcpflood_OBJECTS)
 tcpflood_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
@@ -352,14 +370,12 @@ SOURCES = $(chkseq_SOURCES) $(diagtalker_SOURCES) \
 	$(inputfilegen_SOURCES) $(minitcpsrv_SOURCES) \
 	$(msleep_SOURCES) $(nettester_SOURCES) $(ourtail_SOURCES) \
 	$(randomgen_SOURCES) $(syslog_caller_SOURCES) \
-	$(syslog_inject_SOURCES) $(tcpflood_SOURCES) \
-	$(uxsockrcvr_SOURCES)
+	$(tcpflood_SOURCES) $(uxsockrcvr_SOURCES)
 DIST_SOURCES = $(chkseq_SOURCES) $(diagtalker_SOURCES) \
 	$(inputfilegen_SOURCES) $(minitcpsrv_SOURCES) \
 	$(msleep_SOURCES) $(nettester_SOURCES) $(ourtail_SOURCES) \
 	$(randomgen_SOURCES) $(syslog_caller_SOURCES) \
-	$(syslog_inject_SOURCES) $(tcpflood_SOURCES) \
-	$(uxsockrcvr_SOURCES)
+	$(tcpflood_SOURCES) $(uxsockrcvr_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -625,8 +641,6 @@ GREP = @GREP@
 GSS_LIBS = @GSS_LIBS@
 GUARDTIME_CFLAGS = @GUARDTIME_CFLAGS@
 GUARDTIME_LIBS = @GUARDTIME_LIBS@
-HAVE_MYSQL_CONFIG = @HAVE_MYSQL_CONFIG@
-HAVE_PGSQL_CONFIG = @HAVE_PGSQL_CONFIG@
 HIREDIS_CFLAGS = @HIREDIS_CFLAGS@
 HIREDIS_LIBS = @HIREDIS_LIBS@
 IMUDP_LIBS = @IMUDP_LIBS@
@@ -672,6 +686,7 @@ MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 MYSQL_CFLAGS = @MYSQL_CFLAGS@
+MYSQL_CONFIG = @MYSQL_CONFIG@
 MYSQL_LIBS = @MYSQL_LIBS@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -691,6 +706,7 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PGSQL_CFLAGS = @PGSQL_CFLAGS@
 PGSQL_LIBS = @PGSQL_LIBS@
+PG_CONFIG = @PG_CONFIG@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
@@ -719,6 +735,7 @@ UDPSPOOF_LIBS = @UDPSPOOF_LIBS@
 VERSION = @VERSION@
 YACC = @YACC@
 YFLAGS = @YFLAGS@
+ZLIB_CFLAGS = @ZLIB_CFLAGS@
 ZLIB_LIBS = @ZLIB_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -923,6 +940,10 @@ EXTRA_DIST = 1.rstest 2.rstest 3.rstest err1.rstest \
 	   testsuites/fac_mail.conf \
 	   fac_news.sh \
 	   testsuites/fac_news.conf \
+	   fac_ftp.sh \
+	   testsuites/fac_ftp.conf \
+	   fac_ntp.sh \
+	   testsuites/fac_ntp.conf \
 	   fac_uucp.sh \
 	   testsuites/fac_uucp.conf \
 	   fac_invld1.sh \
@@ -1000,6 +1021,16 @@ EXTRA_DIST = 1.rstest 2.rstest 3.rstest err1.rstest \
 	   imptcp_conndrop-vg.sh \
 	   imptcp_conndrop.sh \
 	   testsuites/imptcp_conndrop.conf \
+	   imptcp_no_octet_counted.sh \
+	   testsuites/imptcp_no_octet_counted.conf \
+	   testsuites/no_octet_counted.testdata \
+	   imtcp_no_octet_counted.sh \
+	   testsuites/imtcp_no_octet_counted.conf \
+	   testsuites/spframingfix.testdata \
+	   imtcp_spframingfix.sh \
+	   testsuites/imtcp_spframingfix.conf \
+	   imptcp_spframingfix.sh \
+	   testsuites/imptcp_spframingfix.conf \
 	   imtcp_conndrop.sh \
 	   testsuites/imtcp_conndrop.conf \
 	   imtcp_conndrop_tls.sh \
@@ -1073,6 +1104,9 @@ EXTRA_DIST = 1.rstest 2.rstest 3.rstest err1.rstest \
 	   sndrcv_udp_nonstdpt.sh \
 	   testsuites/sndrcv_udp_nonstdpt_sender.conf \
 	   testsuites/sndrcv_udp_nonstdpt_rcvr.conf \
+	   sndrcv_udp_nonstdpt_v6.sh \
+	   testsuites/sndrcv_udp_nonstdpt_v6_sender.conf \
+	   testsuites/sndrcv_udp_nonstdpt_v6_rcvr.conf \
 	   sndrcv_omudpspoof.sh \
 	   testsuites/sndrcv_omudpspoof_sender.conf \
 	   testsuites/sndrcv_omudpspoof_rcvr.conf \
@@ -1090,8 +1124,12 @@ EXTRA_DIST = 1.rstest 2.rstest 3.rstest err1.rstest \
 	   testsuites/uxsock_simple.conf \
 	   asynwr_simple.sh \
 	   testsuites/asynwr_simple.conf \
+	   asynwr_simple_2.sh \
+	   testsuites/asynwr_simple_2.conf \
 	   asynwr_timeout.sh \
 	   testsuites/asynwr_timeout.conf \
+	   asynwr_timeout_2.sh \
+	   testsuites/asynwr_timeout_2.conf \
 	   asynwr_small.sh \
 	   testsuites/asynwr_small.conf \
 	   asynwr_tinybuf.sh \
@@ -1102,10 +1140,14 @@ EXTRA_DIST = 1.rstest 2.rstest 3.rstest err1.rstest \
 	   testsuites/wr_large.conf \
 	   asynwr_deadlock.sh \
 	   testsuites/asynwr_deadlock.conf \
+	   asynwr_deadlock_2.sh \
+	   testsuites/asynwr_deadlock_2.conf \
 	   asynwr_deadlock2.sh \
 	   testsuites/asynwr_deadlock2.conf \
 	   asynwr_deadlock4.sh \
 	   testsuites/asynwr_deadlock4.conf \
+	   abort-uncleancfg-goodcfg.sh \
+	   testsuites/abort-uncleancfg-goodcfg.conf \
 	   gzipwr_large.sh \
 	   testsuites/gzipwr_large.conf \
 	   gzipwr_large_dynfile.sh \
@@ -1162,15 +1204,25 @@ EXTRA_DIST = 1.rstest 2.rstest 3.rstest err1.rstest \
 	   testsuites/dircreate_dflt.conf \
 	   dircreate_off.sh \
 	   testsuites/dircreate_off.conf \
+	   imuxsock_logger.sh \
+	   testsuites/imuxsock_logger.conf \
+	   imuxsock_logger_err.sh \
 	   imuxsock_logger_root.sh \
 	   testsuites/imuxsock_logger_root.conf \
 	   resultdata/imuxsock_logger.log \
+	   imuxsock_traillf.sh \
+	   testsuites/imuxsock_traillf.conf \
 	   imuxsock_traillf_root.sh \
 	   testsuites/imuxsock_traillf_root.conf \
 	   resultdata/imuxsock_traillf.log \
+	   imuxsock_ccmiddle.sh \
+	   testsuites/imuxsock_ccmiddle.conf \
 	   imuxsock_ccmiddle_root.sh \
 	   testsuites/imuxsock_ccmiddle_root.conf \
 	   resultdata/imuxsock_ccmiddle.log \
+	   imuxsock_hostname.sh \
+	   testsuites/imuxsock_hostname.conf \
+	   resultdata/imuxsock_hostname.log \
 	   testsuites/mysql-truncate.sql \
 	   testsuites/mysql-select-msg.sql \
 	   libdbi-basic.sh \
@@ -1193,11 +1245,35 @@ EXTRA_DIST = 1.rstest 2.rstest 3.rstest err1.rstest \
 	   testsuites/mmpstrucdata.conf \
 	   libdbi-basic-vg.sh \
 	   mmnormalize_variable.sh \
+	   mmnormalize_tokenized.sh \
+	   testsuites/mmnormalize_variable.conf \
+	   testsuites/date_time_msg \
+	   testsuites/mmnormalize_tokenized.conf \
+	   testsuites/tokenized_input \
 	   rscript_replace.sh \
+	   testsuites/rscript_replace.conf \
 	   rscript_replace_complex.sh \
+	   testsuites/rscript_replace_complex.conf \
+	   testsuites/complex_replace_input \
 	   rscript_unaffected_reset.sh \
 	   rscript_wrap2.sh \
+	   testsuites/rscript_wrap2.conf \
 	   rscript_wrap3.sh \
+	   testsuites/rscript_wrap3.conf \
+	   testsuites/wrap3_input\
+	   testsuites/gethostname.conf \
+	   json_array_subscripting.sh \
+	   testsuites/json_array_subscripting.conf \
+	   testsuites/json_array_input \
+	   json_array_looping.sh \
+	   testsuites/json_array_looping.conf \
+	   mmnormalize_regex.sh \
+	   testsuites/mmnormalize_regex.conf \
+	   testsuites/regex_input \
+	   mmnormalize_regex_disabled.sh \
+	   testsuites/mmnormalize_regex_disabled.conf \
+	   mmnormalize_regex_defaulted.sh \
+	   testsuites/mmnormalize_regex_defaulted.conf \
 	   cfg.sh
 
 
@@ -1217,13 +1293,12 @@ uxsockrcvr_LDADD = $(SOL_LIBS)
 tcpflood_SOURCES = tcpflood.c
 tcpflood_CPPFLAGS = $(PTHREADS_CFLAGS) $(GNUTLS_CFLAGS)
 tcpflood_LDADD = $(SOL_LIBS) $(PTHREADS_LIBS) $(GNUTLS_LIBS) \
-	$(am__append_21)
+	$(am__append_22)
 minitcpsrv_SOURCES = minitcpsrvr.c
 minitcpsrv_LDADD = $(SOL_LIBS)
 syslog_caller_SOURCES = syslog_caller.c
-syslog_caller_LDADD = $(SOL_LIBS)
-syslog_inject_SOURCES = syslog_inject.c
-syslog_inject_LDADD = $(SOL_LIBS)
+syslog_caller_CPPFLAGS = $(LIBLOGGING_STDLOG_CFLAGS)
+syslog_caller_LDADD = $(SOL_LIBS) $(LIBLOGGING_STDLOG_LIBS)
 diagtalker_SOURCES = diagtalker.c
 diagtalker_LDADD = $(SOL_LIBS)
 randomgen_SOURCES = randomgen.c
@@ -1312,10 +1387,6 @@ syslog_caller$(EXEEXT): $(syslog_caller_OBJECTS) $(syslog_caller_DEPENDENCIES) $
 	@rm -f syslog_caller$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(syslog_caller_OBJECTS) $(syslog_caller_LDADD) $(LIBS)
 
-syslog_inject$(EXEEXT): $(syslog_inject_OBJECTS) $(syslog_inject_DEPENDENCIES) $(EXTRA_syslog_inject_DEPENDENCIES) 
-	@rm -f syslog_inject$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(syslog_inject_OBJECTS) $(syslog_inject_LDADD) $(LIBS)
-
 tcpflood$(EXEEXT): $(tcpflood_OBJECTS) $(tcpflood_DEPENDENCIES) $(EXTRA_tcpflood_DEPENDENCIES) 
 	@rm -f tcpflood$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(tcpflood_OBJECTS) $(tcpflood_LDADD) $(LIBS)
@@ -1339,8 +1410,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nettester.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ourtail.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/randomgen.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/syslog_caller.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/syslog_inject.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/syslog_caller-syslog_caller.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tcpflood-tcpflood.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uxsockrcvr.Po@am__quote@
 
@@ -1367,6 +1437,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+
+syslog_caller-syslog_caller.o: syslog_caller.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(syslog_caller_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT syslog_caller-syslog_caller.o -MD -MP -MF $(DEPDIR)/syslog_caller-syslog_caller.Tpo -c -o syslog_caller-syslog_caller.o `test -f 'syslog_caller.c' || echo '$(srcdir)/'`syslog_caller.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/syslog_caller-syslog_caller.Tpo $(DEPDIR)/syslog_caller-syslog_caller.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='syslog_caller.c' object='syslog_caller-syslog_caller.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(syslog_caller_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o syslog_caller-syslog_caller.o `test -f 'syslog_caller.c' || echo '$(srcdir)/'`syslog_caller.c
+
+syslog_caller-syslog_caller.obj: syslog_caller.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(syslog_caller_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT syslog_caller-syslog_caller.obj -MD -MP -MF $(DEPDIR)/syslog_caller-syslog_caller.Tpo -c -o syslog_caller-syslog_caller.obj `if test -f 'syslog_caller.c'; then $(CYGPATH_W) 'syslog_caller.c'; else $(CYGPATH_W) '$(srcdir)/syslog_caller.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/syslog_caller-syslog_caller.Tpo $(DEPDIR)/syslog_caller-syslog_caller.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='syslog_caller.c' object='syslog_caller-syslog_caller.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(syslog_caller_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o syslog_caller-syslog_caller.obj `if test -f 'syslog_caller.c'; then $(CYGPATH_W) 'syslog_caller.c'; else $(CYGPATH_W) '$(srcdir)/syslog_caller.c'; fi`
 
 tcpflood-tcpflood.o: tcpflood.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(tcpflood_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT tcpflood-tcpflood.o -MD -MP -MF $(DEPDIR)/tcpflood-tcpflood.Tpo -c -o tcpflood-tcpflood.o `test -f 'tcpflood.c' || echo '$(srcdir)/'`tcpflood.c
@@ -1630,6 +1714,20 @@ fac_news.sh.log: fac_news.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+fac_ftp.sh.log: fac_ftp.sh
+	@p='fac_ftp.sh'; \
+	b='fac_ftp.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+fac_ntp.sh.log: fac_ntp.sh
+	@p='fac_ntp.sh'; \
+	b='fac_ntp.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 fac_uucp.sh.log: fac_uucp.sh
 	@p='fac_uucp.sh'; \
 	b='fac_uucp.sh'; \
@@ -1784,6 +1882,27 @@ imtcp_addtlframedelim.sh.log: imtcp_addtlframedelim.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imtcp_no_octet_counted.sh.log: imtcp_no_octet_counted.sh
+	@p='imtcp_no_octet_counted.sh'; \
+	b='imtcp_no_octet_counted.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imtcp_spframingfix.sh.log: imtcp_spframingfix.sh
+	@p='imtcp_spframingfix.sh'; \
+	b='imtcp_spframingfix.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imptcp_spframingfix.sh.log: imptcp_spframingfix.sh
+	@p='imptcp_spframingfix.sh'; \
+	b='imptcp_spframingfix.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 sndrcv.sh.log: sndrcv.sh
 	@p='sndrcv.sh'; \
 	b='sndrcv.sh'; \
@@ -1826,6 +1945,13 @@ imudp_thread_hang.sh.log: imudp_thread_hang.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+sndrcv_udp_nonstdpt_v6.sh.log: sndrcv_udp_nonstdpt_v6.sh
+	@p='sndrcv_udp_nonstdpt_v6.sh'; \
+	b='sndrcv_udp_nonstdpt_v6.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 asynwr_simple.sh.log: asynwr_simple.sh
 	@p='asynwr_simple.sh'; \
 	b='asynwr_simple.sh'; \
@@ -1833,9 +1959,23 @@ asynwr_simple.sh.log: asynwr_simple.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+asynwr_simple_2.sh.log: asynwr_simple_2.sh
+	@p='asynwr_simple_2.sh'; \
+	b='asynwr_simple_2.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 asynwr_timeout.sh.log: asynwr_timeout.sh
 	@p='asynwr_timeout.sh'; \
 	b='asynwr_timeout.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+asynwr_timeout_2.sh.log: asynwr_timeout_2.sh
+	@p='asynwr_timeout_2.sh'; \
+	b='asynwr_timeout_2.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -1875,6 +2015,13 @@ asynwr_deadlock.sh.log: asynwr_deadlock.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+asynwr_deadlock_2.sh.log: asynwr_deadlock_2.sh
+	@p='asynwr_deadlock_2.sh'; \
+	b='asynwr_deadlock_2.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 asynwr_deadlock2.sh.log: asynwr_deadlock2.sh
 	@p='asynwr_deadlock2.sh'; \
 	b='asynwr_deadlock2.sh'; \
@@ -1885,6 +2032,13 @@ asynwr_deadlock2.sh.log: asynwr_deadlock2.sh
 asynwr_deadlock4.sh.log: asynwr_deadlock4.sh
 	@p='asynwr_deadlock4.sh'; \
 	b='asynwr_deadlock4.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+abort-uncleancfg-goodcfg.sh.log: abort-uncleancfg-goodcfg.sh
+	@p='abort-uncleancfg-goodcfg.sh'; \
+	b='abort-uncleancfg-goodcfg.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -2004,6 +2158,34 @@ dircreate_dflt.sh.log: dircreate_dflt.sh
 dircreate_off.sh.log: dircreate_off.sh
 	@p='dircreate_off.sh'; \
 	b='dircreate_off.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imuxsock_logger.sh.log: imuxsock_logger.sh
+	@p='imuxsock_logger.sh'; \
+	b='imuxsock_logger.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imuxsock_logger_err.sh.log: imuxsock_logger_err.sh
+	@p='imuxsock_logger_err.sh'; \
+	b='imuxsock_logger_err.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imuxsock_traillf.sh.log: imuxsock_traillf.sh
+	@p='imuxsock_traillf.sh'; \
+	b='imuxsock_traillf.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imuxsock_ccmiddle.sh.log: imuxsock_ccmiddle.sh
+	@p='imuxsock_ccmiddle.sh'; \
+	b='imuxsock_ccmiddle.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -2393,6 +2575,13 @@ imptcp_conndrop.sh.log: imptcp_conndrop.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imptcp_no_octet_counted.sh.log: imptcp_no_octet_counted.sh
+	@p='imptcp_no_octet_counted.sh'; \
+	b='imptcp_no_octet_counted.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 rscript_replace.sh.log: rscript_replace.sh
 	@p='rscript_replace.sh'; \
 	b='rscript_replace.sh'; \
@@ -2484,6 +2673,34 @@ mmnormalize_variable.sh.log: mmnormalize_variable.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmnormalize_tokenized.sh.log: mmnormalize_tokenized.sh
+	@p='mmnormalize_tokenized.sh'; \
+	b='mmnormalize_tokenized.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmnormalize_regex_defaulted.sh.log: mmnormalize_regex_defaulted.sh
+	@p='mmnormalize_regex_defaulted.sh'; \
+	b='mmnormalize_regex_defaulted.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmnormalize_regex_disabled.sh.log: mmnormalize_regex_disabled.sh
+	@p='mmnormalize_regex_disabled.sh'; \
+	b='mmnormalize_regex_disabled.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmnormalize_regex.sh.log: mmnormalize_regex.sh
+	@p='mmnormalize_regex.sh'; \
+	b='mmnormalize_regex.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 mmjsonparse_simple.sh.log: mmjsonparse_simple.sh
 	@p='mmjsonparse_simple.sh'; \
 	b='mmjsonparse_simple.sh'; \
@@ -2494,6 +2711,20 @@ mmjsonparse_simple.sh.log: mmjsonparse_simple.sh
 mmjsonparse_cim.sh.log: mmjsonparse_cim.sh
 	@p='mmjsonparse_cim.sh'; \
 	b='mmjsonparse_cim.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+json_array_subscripting.sh.log: json_array_subscripting.sh
+	@p='json_array_subscripting.sh'; \
+	b='json_array_subscripting.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+json_array_looping.sh.log: json_array_looping.sh
+	@p='json_array_looping.sh'; \
+	b='json_array_looping.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

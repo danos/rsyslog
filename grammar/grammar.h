@@ -56,35 +56,39 @@ extern int yydebug;
     BEGIN_RULESET = 266,
     STOP = 267,
     SET = 268,
-    UNSET = 269,
-    CONTINUE = 270,
-    CALL = 271,
-    LEGACY_ACTION = 272,
-    LEGACY_RULESET = 273,
-    PRIFILT = 274,
-    PROPFILT = 275,
-    BSD_TAG_SELECTOR = 276,
-    BSD_HOST_SELECTOR = 277,
-    IF = 278,
-    THEN = 279,
-    ELSE = 280,
-    OR = 281,
-    AND = 282,
-    NOT = 283,
-    VAR = 284,
-    STRING = 285,
-    NUMBER = 286,
-    CMP_EQ = 287,
-    CMP_NE = 288,
-    CMP_LE = 289,
-    CMP_GE = 290,
-    CMP_LT = 291,
-    CMP_GT = 292,
-    CMP_CONTAINS = 293,
-    CMP_CONTAINSI = 294,
-    CMP_STARTSWITH = 295,
-    CMP_STARTSWITHI = 296,
-    UMINUS = 297
+    RESET = 269,
+    UNSET = 270,
+    CONTINUE = 271,
+    CALL = 272,
+    LEGACY_ACTION = 273,
+    LEGACY_RULESET = 274,
+    PRIFILT = 275,
+    PROPFILT = 276,
+    BSD_TAG_SELECTOR = 277,
+    BSD_HOST_SELECTOR = 278,
+    IF = 279,
+    THEN = 280,
+    ELSE = 281,
+    FOREACH = 282,
+    ITERATOR_ASSIGNMENT = 283,
+    DO = 284,
+    OR = 285,
+    AND = 286,
+    NOT = 287,
+    VAR = 288,
+    STRING = 289,
+    NUMBER = 290,
+    CMP_EQ = 291,
+    CMP_NE = 292,
+    CMP_LE = 293,
+    CMP_GE = 294,
+    CMP_LT = 295,
+    CMP_GT = 296,
+    CMP_CONTAINS = 297,
+    CMP_CONTAINSI = 298,
+    CMP_STARTSWITH = 299,
+    CMP_STARTSWITHI = 300,
+    UMINUS = 301
   };
 #endif
 /* Tokens.  */
@@ -99,35 +103,39 @@ extern int yydebug;
 #define BEGIN_RULESET 266
 #define STOP 267
 #define SET 268
-#define UNSET 269
-#define CONTINUE 270
-#define CALL 271
-#define LEGACY_ACTION 272
-#define LEGACY_RULESET 273
-#define PRIFILT 274
-#define PROPFILT 275
-#define BSD_TAG_SELECTOR 276
-#define BSD_HOST_SELECTOR 277
-#define IF 278
-#define THEN 279
-#define ELSE 280
-#define OR 281
-#define AND 282
-#define NOT 283
-#define VAR 284
-#define STRING 285
-#define NUMBER 286
-#define CMP_EQ 287
-#define CMP_NE 288
-#define CMP_LE 289
-#define CMP_GE 290
-#define CMP_LT 291
-#define CMP_GT 292
-#define CMP_CONTAINS 293
-#define CMP_CONTAINSI 294
-#define CMP_STARTSWITH 295
-#define CMP_STARTSWITHI 296
-#define UMINUS 297
+#define RESET 269
+#define UNSET 270
+#define CONTINUE 271
+#define CALL 272
+#define LEGACY_ACTION 273
+#define LEGACY_RULESET 274
+#define PRIFILT 275
+#define PROPFILT 276
+#define BSD_TAG_SELECTOR 277
+#define BSD_HOST_SELECTOR 278
+#define IF 279
+#define THEN 280
+#define ELSE 281
+#define FOREACH 282
+#define ITERATOR_ASSIGNMENT 283
+#define DO 284
+#define OR 285
+#define AND 286
+#define NOT 287
+#define VAR 288
+#define STRING 289
+#define NUMBER 290
+#define CMP_EQ 291
+#define CMP_NE 292
+#define CMP_LE 293
+#define CMP_GE 294
+#define CMP_LT 295
+#define CMP_GT 296
+#define CMP_CONTAINS 297
+#define CMP_CONTAINSI 298
+#define CMP_STARTSWITH 299
+#define CMP_STARTSWITHI 300
+#define UMINUS 301
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -148,8 +156,9 @@ union YYSTYPE
 	struct cnfarray *arr;
 	struct cnffunc *func;
 	struct cnffparamlst *fparams;
+	struct cnfitr *itr;
 
-#line 153 "grammar.h" /* yacc.c:1909  */
+#line 162 "grammar.h" /* yacc.c:1909  */
 };
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
