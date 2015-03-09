@@ -24,6 +24,7 @@ override_dh_auto_configure:
 		--enable-imfile \
 		--enable-impstats \
 		--enable-klog \
+		--enable-liblogging-stdlog \
 		--enable-gssapi-krb5 \
 		--enable-gnutls \
 		--enable-relp \

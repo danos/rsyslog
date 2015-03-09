@@ -2,6 +2,7 @@ rsyslog (8.8.0-1) UNRELEASED; urgency=medium
 
   * New upstream release.
   * Bump Build-Depends on liblognorm-dev to (>= 1.0.2).
+  * Explicitly enable liblogging-stdlog feature, which is now optional.
 
  -- Michael Biebl <biebl@debian.org>  Mon, 09 Mar 2015 21:35:57 +0100
 
