@@ -80,21 +80,23 @@ build_triplet = @build@
 host_triplet = @host@
 sbin_PROGRAMS = rsyslogd$(EXEEXT) $(am__EXEEXT_4)
 bin_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3)
-@ENABLE_DIAGTOOLS_TRUE@am__append_1 = rsyslog_diag_hostname msggen
-@ENABLE_OMMONGODB_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_2 = logctl
-@ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_3 = rsgtutil
-@ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_4 = rsgtutil.1
+@ENABLE_LIBLOGGING_STDLOG_TRUE@am__append_1 = $(LIBLOGGING_STDLOG_LIBS)
+@ENABLE_DIAGTOOLS_TRUE@am__append_2 = rsyslog_diag_hostname msggen
+@ENABLE_OMMONGODB_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_3 = logctl
+@ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_4 = rsgtutil
 @ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_5 = rsgtutil.1
 @ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_6 = rsgtutil.1
-@ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_7 = rscryutil
-@ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_8 = rscryutil.1
+@ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_7 = rsgtutil.1
+@ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_8 = rscryutil
 @ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_9 = rscryutil.1
 @ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_10 = rscryutil.1
+@ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_11 = rscryutil.1
 subdir = tools
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/atomic_operations.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ac_check_define.m4 \
+	$(top_srcdir)/m4/atomic_operations.m4 \
 	$(top_srcdir)/m4/atomic_operations_64bit.m4 \
 	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
 	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
@@ -150,11 +152,13 @@ am_rsyslogd_OBJECTS = rsyslogd-syslogd.$(OBJEXT) \
 	rsyslogd-smfile.$(OBJEXT) rsyslogd-smfwd.$(OBJEXT) \
 	rsyslogd-smtradfwd.$(OBJEXT) rsyslogd-iminternal.$(OBJEXT)
 rsyslogd_OBJECTS = $(am_rsyslogd_OBJECTS)
+@ENABLE_LIBLOGGING_STDLOG_TRUE@am__DEPENDENCIES_2 =  \
+@ENABLE_LIBLOGGING_STDLOG_TRUE@	$(am__DEPENDENCIES_1)
 rsyslogd_DEPENDENCIES = ../grammar/libgrammar.la \
 	../runtime/librsyslog.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_2)
 rsyslogd_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(rsyslogd_LDFLAGS) $(LDFLAGS) -o $@
@@ -290,8 +294,6 @@ GREP = @GREP@
 GSS_LIBS = @GSS_LIBS@
 GUARDTIME_CFLAGS = @GUARDTIME_CFLAGS@
 GUARDTIME_LIBS = @GUARDTIME_LIBS@
-HAVE_MYSQL_CONFIG = @HAVE_MYSQL_CONFIG@
-HAVE_PGSQL_CONFIG = @HAVE_PGSQL_CONFIG@
 HIREDIS_CFLAGS = @HIREDIS_CFLAGS@
 HIREDIS_LIBS = @HIREDIS_LIBS@
 IMUDP_LIBS = @IMUDP_LIBS@
@@ -337,6 +339,7 @@ MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 MYSQL_CFLAGS = @MYSQL_CFLAGS@
+MYSQL_CONFIG = @MYSQL_CONFIG@
 MYSQL_LIBS = @MYSQL_LIBS@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -356,6 +359,7 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PGSQL_CFLAGS = @PGSQL_CFLAGS@
 PGSQL_LIBS = @PGSQL_LIBS@
+PG_CONFIG = @PG_CONFIG@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
@@ -384,6 +388,7 @@ UDPSPOOF_LIBS = @UDPSPOOF_LIBS@
 VERSION = @VERSION@
 YACC = @YACC@
 YFLAGS = @YFLAGS@
+ZLIB_CFLAGS = @ZLIB_CFLAGS@
 ZLIB_LIBS = @ZLIB_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -440,8 +445,8 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-CLEANFILES = $(am__append_5) $(am__append_9)
-man1_MANS = $(am__append_4) $(am__append_8)
+CLEANFILES = $(am__append_6) $(am__append_10)
+man1_MANS = $(am__append_5) $(am__append_9)
 man_MANS = rsyslogd.8 rsyslog.conf.5
 rsyslogd_SOURCES = \
 	syslogd.c \
@@ -480,12 +485,14 @@ rsyslogd_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_CFLAGS
 # note: it looks like librsyslog.la must be explicitely given on LDDADD,
 # otherwise dependencies are not properly calculated (resulting in a
 # potentially incomplete build, a problem we had several times...)
-rsyslogd_LDADD = ../grammar/libgrammar.la ../runtime/librsyslog.la $(ZLIB_LIBS) $(PTHREADS_LIBS) $(RSRT_LIBS) $(SOL_LIBS) $(LIBUUID_LIBS) $(LIBLOGGING_STDLOG_LIBS)
+rsyslogd_LDADD = ../grammar/libgrammar.la ../runtime/librsyslog.la \
+	$(ZLIB_LIBS) $(PTHREADS_LIBS) $(RSRT_LIBS) $(SOL_LIBS) \
+	$(LIBUUID_LIBS) $(am__append_1)
 rsyslogd_LDFLAGS = -export-dynamic \
 	-Wl,--whole-archive,$(top_builddir)/runtime/.libs/librsyslog.a,--no-whole-archive
 
 EXTRA_DIST = $(man_MANS) rsgtutil.rst rscryutil.rst recover_qi.pl \
-	$(am__append_6) $(am__append_10)
+	$(am__append_7) $(am__append_11)
 @ENABLE_DIAGTOOLS_TRUE@rsyslog_diag_hostname_SOURCES = gethostn.c
 @ENABLE_DIAGTOOLS_TRUE@msggen_SOURCES = msggen.c
 @ENABLE_OMMONGODB_TRUE@@ENABLE_USERTOOLS_TRUE@logctl_SOURCES = logctl.c
