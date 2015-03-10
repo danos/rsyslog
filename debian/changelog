@@ -3,6 +3,8 @@ rsyslog (8.8.0-2) UNRELEASED; urgency=medium
   * Enable and run test suite during build.
   * Add files from upstream Git repository which are missing in the dist
     tarball and are necessary to run the test suite.
+  * Don't link tcpflood test binary against -lgcrypt. It's not necessary with
+    current versions of GnuTLS.
 
  -- Michael Biebl <biebl@debian.org>  Tue, 10 Mar 2015 21:03:16 +0100
 

@@ -1,0 +1,23 @@
+From: Michael Biebl <biebl@debian.org>
+Date: Tue, 10 Mar 2015 22:55:22 +0100
+Subject: Don't explicitly link tcpflood against -lgcrypt
+
+It's not necessary with current versions of GnuTLS.
+---
+ tests/Makefile.am | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/tests/Makefile.am b/tests/Makefile.am
+index 7575b84..12f31c3 100644
+--- a/tests/Makefile.am
++++ b/tests/Makefile.am
+@@ -773,9 +773,6 @@ uxsockrcvr_LDADD = $(SOL_LIBS)
+ tcpflood_SOURCES = tcpflood.c
+ tcpflood_CPPFLAGS = $(PTHREADS_CFLAGS) $(GNUTLS_CFLAGS)
+ tcpflood_LDADD = $(SOL_LIBS) $(PTHREADS_LIBS) $(GNUTLS_LIBS)
+-if ENABLE_GNUTLS
+-tcpflood_LDADD += -lgcrypt
+-endif
+ 
+ minitcpsrv_SOURCES = minitcpsrvr.c
+ minitcpsrv_LDADD = $(SOL_LIBS)
