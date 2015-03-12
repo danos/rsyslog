@@ -11,6 +11,7 @@ Build-Depends: debhelper (>= 8),
                libpq-dev,
                libmongo-client-dev (>= 0.1.4),
                libcurl4-gnutls-dev,
+               librdkafka-dev,
                libkrb5-dev,
                libgnutls28-dev,
                librelp-dev (>= 1.2.5),
@@ -109,6 +110,17 @@ Description: Elasticsearch output plugin for rsyslog
  This plugin allows rsyslog to write syslog messages to Elasticsearch, a
  distributed, multitenant-capable full-text search engine with a RESTful web
  interface and schema-free JSON documents.
+
+Package: rsyslog-kafka
+Architecture: any
+Priority: extra
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         rsyslog (= ${binary:Version}),
+Description: Kafka output plugin for rsyslog
+ This plugin allows rsyslog to write syslog messages to Apache Kafka, a
+ distributed and scalable message broker offering strong durability and
+ fault-tolerance guarantees.
 
 Package: rsyslog-gssapi
 Architecture: any

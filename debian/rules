@@ -22,6 +22,7 @@ override_dh_auto_configure:
 		--enable-pgsql \
 		--enable-ommongodb \
 		--enable-elasticsearch \
+		--enable-omkafka \
 		--enable-mail \
 		--enable-imfile \
 		--enable-impstats \
