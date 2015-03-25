@@ -1,9 +1,9 @@
-rsyslog (8.8.0-4) UNRELEASED; urgency=medium
+rsyslog (8.8.0-4) experimental; urgency=medium
 
   * Cherry-pick upstream patch which is supposed to fix $MaxMessageSize on
     various architectures.
 
- -- Michael Biebl <biebl@debian.org>  Wed, 25 Mar 2015 17:31:41 +0100
+ -- Michael Biebl <biebl@debian.org>  Wed, 25 Mar 2015 17:33:26 +0100
 
 rsyslog (8.8.0-3) experimental; urgency=medium
 
