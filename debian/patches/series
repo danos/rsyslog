@@ -1,3 +1,4 @@
 0001-Don-t-create-a-database.patch
 0002-Add-missing-files-to-run-test-suite.patch
 0003-Don-t-explicitly-link-tcpflood-against-lgcrypt.patch
+0004-bugfix-size-based-legacy-config-statements-did-not-w.patch

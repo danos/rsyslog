@@ -2,7 +2,8 @@ From: Michael Biebl <biebl@debian.org>
 Date: Tue, 10 Mar 2015 22:55:22 +0100
 Subject: Don't explicitly link tcpflood against -lgcrypt
 
-It's not necessary with current versions of GnuTLS.
+While oder GnuTLS versions do use gcrypt, we rely on GnuTLS to pull that
+library dependency in.
 ---
  tests/Makefile.am | 3 ---
  1 file changed, 3 deletions(-)
