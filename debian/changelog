@@ -1,4 +1,4 @@
-rsyslog (8.9.0-1) UNRELEASED; urgency=medium
+rsyslog (8.9.0-1) experimental; urgency=medium
 
   * New upstream release.
   * Update gbp.conf to not use patch numbers to reduce the patch noise created
@@ -9,7 +9,7 @@ rsyslog (8.9.0-1) UNRELEASED; urgency=medium
   * Add virtual-mysql-client and virtual-mysql-server as alternatives to
     mysql-client and mysql-server. (Closes: #781972)
 
- -- Michael Biebl <biebl@debian.org>  Tue, 07 Apr 2015 21:26:55 +0200
+ -- Michael Biebl <biebl@debian.org>  Tue, 07 Apr 2015 22:14:07 +0200
 
 rsyslog (8.8.0-4) experimental; urgency=medium
 
