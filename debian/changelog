@@ -1,3 +1,9 @@
+rsyslog (8.9.0-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 07 Apr 2015 21:26:55 +0200
+
 rsyslog (8.8.0-4) experimental; urgency=medium
 
   * Cherry-pick upstream patch which is supposed to fix $MaxMessageSize on
