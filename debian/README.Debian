@@ -21,33 +21,6 @@ extension are read by rsyslog. This way the rsyslog configuration can be
 extended easily (either by package maintainers or local administrators).
 
 
-Command line arguments, modules and compatibility levels
---------------------------------------------------------
-With version 3, rsyslog became much more modular. A lot of
-functionality has been moved into loadable modules, e.g. udp reception,
-which must be loaded explicitly.
-To keep compatibility with sysklogd, rsyslog introduced the concept of
-compatibility modes, which can be selected with the -c command line
-argument. E.g. with -c0, rsyslog becomes command line compatible with
-sysklogd and loads a default set of modules automatically.
-
-The default in Debian is -c3, i.e. command line arguments like -r or
--m 0 have no effect and instead have to be configured via special
-configuration directives in rsyslog.conf.
-
-The options that are passed to rsyslog can be changed easily by
-modifying the RSYSLOGD_OPTIONS variable in /etc/default/rsyslog.
-
-If you have an existing, customized syslog.conf, it is recommended that
-you migrate your custom logging rules to rsyslog.conf or into a separate
-configuration file in /etc/rsyslog.d (in most cases it should be as
-simple as copy&paste).
-
-To read more about this topic please see
-/usr/share/doc/rsyslog-doc/html/v3compatibility.html or
-http://www.rsyslog.com/doc-v3compatibility.html.
-
-
 Log rotation
 ------------
 Rsyslog uses the logrotate(8) utilitiy to rotate the standard Debian
