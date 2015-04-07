@@ -106,6 +106,7 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	imptcp_spframingfix.sh sndrcv.sh \
 @ENABLE_TESTBENCH_TRUE@	sndrcv_failover.sh sndrcv_gzip.sh \
 @ENABLE_TESTBENCH_TRUE@	sndrcv_udp.sh sndrcv_udp_nonstdpt.sh \
+@ENABLE_TESTBENCH_TRUE@	sndrcv_udp_nonstdpt_v6.sh \
 @ENABLE_TESTBENCH_TRUE@	imudp_thread_hang.sh \
 @ENABLE_TESTBENCH_TRUE@	sndrcv_udp_nonstdpt_v6.sh \
 @ENABLE_TESTBENCH_TRUE@	asynwr_simple.sh asynwr_simple_2.sh \
@@ -129,16 +130,16 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	pipe_noreader.sh dircreate_dflt.sh \
 @ENABLE_TESTBENCH_TRUE@	dircreate_off.sh imuxsock_logger.sh \
 @ENABLE_TESTBENCH_TRUE@	imuxsock_logger_err.sh \
+@ENABLE_TESTBENCH_TRUE@	imuxsock_logger_parserchain.sh \
 @ENABLE_TESTBENCH_TRUE@	imuxsock_traillf.sh \
 @ENABLE_TESTBENCH_TRUE@	imuxsock_ccmiddle.sh \
 @ENABLE_TESTBENCH_TRUE@	imuxsock_logger_root.sh \
 @ENABLE_TESTBENCH_TRUE@	imuxsock_traillf_root.sh \
 @ENABLE_TESTBENCH_TRUE@	imuxsock_ccmiddle_root.sh \
-@ENABLE_TESTBENCH_TRUE@	queue-persist.sh discard-rptdmsg.sh \
-@ENABLE_TESTBENCH_TRUE@	discard-allmark.sh discard.sh stop.sh \
-@ENABLE_TESTBENCH_TRUE@	failover-async.sh failover-double.sh \
-@ENABLE_TESTBENCH_TRUE@	failover-basic.sh failover-rptd.sh \
-@ENABLE_TESTBENCH_TRUE@	failover-no-rptd.sh \
+@ENABLE_TESTBENCH_TRUE@	discard-rptdmsg.sh discard-allmark.sh \
+@ENABLE_TESTBENCH_TRUE@	discard.sh stop.sh failover-async.sh \
+@ENABLE_TESTBENCH_TRUE@	failover-double.sh failover-basic.sh \
+@ENABLE_TESTBENCH_TRUE@	failover-rptd.sh failover-no-rptd.sh \
 @ENABLE_TESTBENCH_TRUE@	failover-no-basic.sh \
 @ENABLE_TESTBENCH_TRUE@	rcvr_fail_restore.sh \
 @ENABLE_TESTBENCH_TRUE@	rscript_contains.sh rscript_field.sh \
@@ -217,7 +218,11 @@ host_triplet = @host@
 @ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	elasticsearch-basic-errorfile-empty.sh \
 @ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	elasticsearch-basic-errorfile-populated.sh \
 @ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	elasticsearch-bulk-errorfile-empty.sh \
-@ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	elasticsearch-bulk-errorfile-populated.sh
+@ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	elasticsearch-bulk-errorfile-populated.sh \
+@ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	elasticsearch-bulk-errorfile-populated-default-format.sh \
+@ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	elasticsearch-bulk-errorfile-populated-erroronly.sh \
+@ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	elasticsearch-bulk-errorfile-populated-erroronly-interleaved.sh \
+@ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	elasticsearch-bulk-errorfile-populated-default-interleaved.sh
 
 @ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_9 = \
 @ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@	mmpstrucdata.sh
@@ -273,7 +278,11 @@ host_triplet = @host@
 # random.sh is temporarily disabled as it needs some work
 # to rsyslog core to complete in reasonable time
 #TESTS += random.sh 
-@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_20 = imfile-basic.sh
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_20 = imfile-basic.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-readmode2.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-readmode2-with-persists-data-during-stop.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-readmode2-with-persists.sh
+
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_21 = imfile-basic-vg.sh
 @ENABLE_GNUTLS_TRUE@am__append_22 = -lgcrypt
 subdir = tests
@@ -732,6 +741,7 @@ SOL_LIBS = @SOL_LIBS@
 STRIP = @STRIP@
 UDPSPOOF_CFLAGS = @UDPSPOOF_CFLAGS@
 UDPSPOOF_LIBS = @UDPSPOOF_LIBS@
+VALGRIND = @VALGRIND@
 VERSION = @VERSION@
 YACC = @YACC@
 YFLAGS = @YFLAGS@
@@ -761,7 +771,6 @@ datarootdir = @datarootdir@
 docdir = @docdir@
 dvidir = @dvidir@
 exec_prefix = @exec_prefix@
-have_valgrind = @have_valgrind@
 host = @host@
 host_alias = @host_alias@
 host_cpu = @host_cpu@
@@ -991,6 +1000,14 @@ EXTRA_DIST = 1.rstest 2.rstest 3.rstest err1.rstest \
 	   testsuites/elasticsearch-bulk-errorfile-empty.conf \
 	   elasticsearch-bulk-errorfile-populated.sh \
 	   testsuites/elasticsearch-bulk-errorfile-populated.conf \
+	   elasticsearch-bulk-errorfile-populated-default-format.sh \
+	   testsuites/elasticsearch-bulk-errorfile-populated-erroronly.conf \
+	   elasticsearch-bulk-errorfile-populated-erroronly.sh \
+	   testsuites/elasticsearch-bulk-errorfile-populated-default-format.conf \
+	   elasticsearch-bulk-errorfile-populated-erroronly-interleaved.sh \
+	   testsuites/elasticsearch-bulk-errorfile-populated-erroronly-interleaved.conf \
+	   elasticsearch-bulk-errorfile-populated-default-interleaved.sh \
+	   testsuites/elasticsearch-bulk-errorfile-populated-default-interleaved.conf \
 	   linkedlistqueue.sh \
 	   testsuites/linkedlistqueue.conf \
 	   da-mainmsg-q.sh \
@@ -1156,6 +1173,12 @@ EXTRA_DIST = 1.rstest 2.rstest 3.rstest err1.rstest \
 	   testsuites/complex1.conf \
 	   random.sh \
 	   testsuites/random.conf \
+           imfile-readmode2.sh \
+           imfile-readmode2-with-persists-data-during-stop.sh \
+           imfile-readmode2-with-persists.sh \
+           testsuites/imfile-readmode2.conf \
+           testsuites/imfile-readmode2-with-persists.conf \
+           testsuites/imfile-readmode2-with-persists-data-during-stop.conf \
 	   imfile-basic.sh \
 	   imfile-basic-vg.sh \
 	   testsuites/imfile-basic.conf \
@@ -1204,6 +1227,8 @@ EXTRA_DIST = 1.rstest 2.rstest 3.rstest err1.rstest \
 	   testsuites/dircreate_dflt.conf \
 	   dircreate_off.sh \
 	   testsuites/dircreate_off.conf \
+	   imuxsock_logger_parserchain.sh \
+	   testsuites/imuxsock_logger_parserchain.conf \
 	   imuxsock_logger.sh \
 	   testsuites/imuxsock_logger.conf \
 	   imuxsock_logger_err.sh \
@@ -1247,8 +1272,10 @@ EXTRA_DIST = 1.rstest 2.rstest 3.rstest err1.rstest \
 	   mmnormalize_variable.sh \
 	   mmnormalize_tokenized.sh \
 	   testsuites/mmnormalize_variable.conf \
+	   testsuites/mmnormalize_variable.rulebase \
 	   testsuites/date_time_msg \
 	   testsuites/mmnormalize_tokenized.conf \
+	   testsuites/mmnormalize_tokenized.rulebase \
 	   testsuites/tokenized_input \
 	   rscript_replace.sh \
 	   testsuites/rscript_replace.conf \
@@ -1269,6 +1296,7 @@ EXTRA_DIST = 1.rstest 2.rstest 3.rstest err1.rstest \
 	   testsuites/json_array_looping.conf \
 	   mmnormalize_regex.sh \
 	   testsuites/mmnormalize_regex.conf \
+	   testsuites/mmnormalize_regex.rulebase \
 	   testsuites/regex_input \
 	   mmnormalize_regex_disabled.sh \
 	   testsuites/mmnormalize_regex_disabled.conf \
@@ -1938,16 +1966,16 @@ sndrcv_udp_nonstdpt.sh.log: sndrcv_udp_nonstdpt.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imudp_thread_hang.sh.log: imudp_thread_hang.sh
-	@p='imudp_thread_hang.sh'; \
-	b='imudp_thread_hang.sh'; \
+sndrcv_udp_nonstdpt_v6.sh.log: sndrcv_udp_nonstdpt_v6.sh
+	@p='sndrcv_udp_nonstdpt_v6.sh'; \
+	b='sndrcv_udp_nonstdpt_v6.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-sndrcv_udp_nonstdpt_v6.sh.log: sndrcv_udp_nonstdpt_v6.sh
-	@p='sndrcv_udp_nonstdpt_v6.sh'; \
-	b='sndrcv_udp_nonstdpt_v6.sh'; \
+imudp_thread_hang.sh.log: imudp_thread_hang.sh
+	@p='imudp_thread_hang.sh'; \
+	b='imudp_thread_hang.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -2172,6 +2200,13 @@ imuxsock_logger.sh.log: imuxsock_logger.sh
 imuxsock_logger_err.sh.log: imuxsock_logger_err.sh
 	@p='imuxsock_logger_err.sh'; \
 	b='imuxsock_logger_err.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imuxsock_logger_parserchain.sh.log: imuxsock_logger_parserchain.sh
+	@p='imuxsock_logger_parserchain.sh'; \
+	b='imuxsock_logger_parserchain.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -2659,6 +2694,34 @@ elasticsearch-bulk-errorfile-populated.sh.log: elasticsearch-bulk-errorfile-popu
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+elasticsearch-bulk-errorfile-populated-default-format.sh.log: elasticsearch-bulk-errorfile-populated-default-format.sh
+	@p='elasticsearch-bulk-errorfile-populated-default-format.sh'; \
+	b='elasticsearch-bulk-errorfile-populated-default-format.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+elasticsearch-bulk-errorfile-populated-erroronly.sh.log: elasticsearch-bulk-errorfile-populated-erroronly.sh
+	@p='elasticsearch-bulk-errorfile-populated-erroronly.sh'; \
+	b='elasticsearch-bulk-errorfile-populated-erroronly.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+elasticsearch-bulk-errorfile-populated-erroronly-interleaved.sh.log: elasticsearch-bulk-errorfile-populated-erroronly-interleaved.sh
+	@p='elasticsearch-bulk-errorfile-populated-erroronly-interleaved.sh'; \
+	b='elasticsearch-bulk-errorfile-populated-erroronly-interleaved.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+elasticsearch-bulk-errorfile-populated-default-interleaved.sh.log: elasticsearch-bulk-errorfile-populated-default-interleaved.sh
+	@p='elasticsearch-bulk-errorfile-populated-default-interleaved.sh'; \
+	b='elasticsearch-bulk-errorfile-populated-default-interleaved.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 mmpstrucdata.sh.log: mmpstrucdata.sh
 	@p='mmpstrucdata.sh'; \
 	b='mmpstrucdata.sh'; \
@@ -2872,6 +2935,27 @@ omruleset-queue.sh.log: omruleset-queue.sh
 imfile-basic.sh.log: imfile-basic.sh
 	@p='imfile-basic.sh'; \
 	b='imfile-basic.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imfile-readmode2.sh.log: imfile-readmode2.sh
+	@p='imfile-readmode2.sh'; \
+	b='imfile-readmode2.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imfile-readmode2-with-persists-data-during-stop.sh.log: imfile-readmode2-with-persists-data-during-stop.sh
+	@p='imfile-readmode2-with-persists-data-during-stop.sh'; \
+	b='imfile-readmode2-with-persists-data-during-stop.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imfile-readmode2-with-persists.sh.log: imfile-readmode2-with-persists.sh
+	@p='imfile-readmode2-with-persists.sh'; \
+	b='imfile-readmode2-with-persists.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
