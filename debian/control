@@ -69,8 +69,8 @@ Depends: ${shlibs:Depends},
          rsyslog (= ${binary:Version}),
          dbconfig-common,
          ucf
-Recommends: mysql-client
-Suggests: mysql-server
+Recommends: mysql-client | virtual-mysql-client
+Suggests: mysql-server | virtual-mysql-server
 Description: MySQL output plugin for rsyslog
  This plugin allows rsyslog to write syslog messages into a MySQL database.
 

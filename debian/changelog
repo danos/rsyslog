@@ -6,6 +6,8 @@ rsyslog (8.9.0-1) UNRELEASED; urgency=medium
   * Rebase patches.
   * Drop obsolete section about compatibility levels from README.Debian.
   * Start modernizing rsyslog.conf and use the new style syntax.
+  * Add virtual-mysql-client and virtual-mysql-server as alternatives to
+    mysql-client and mysql-server. (Closes: #781972)
 
  -- Michael Biebl <biebl@debian.org>  Tue, 07 Apr 2015 21:26:55 +0200
 
