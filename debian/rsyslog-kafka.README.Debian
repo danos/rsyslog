@@ -10,7 +10,7 @@ Kafka service is quite easy. The following instructions should be enough to get
 started: https://kafka.apache.org/documentation.html#quickstart
 
 At this point, you'll have to alter your rsyslog configuration, typically by
-adding the following lines to rsyslog.conf (or to a seperate files such as
+adding the following lines to rsyslog.conf (or to a separate files such as
 /etc/rsyslog.d/kafka.conf, which will be included by the main config file):
 
  module(load="omkafka")
