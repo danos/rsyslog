@@ -1,8 +1,8 @@
-rsyslog (8.9.0-3) UNRELEASED; urgency=medium
+rsyslog (8.9.0-3) unstable; urgency=medium
 
   * Upload to unstable.
 
- -- Michael Biebl <biebl@debian.org>  Mon, 11 May 2015 22:53:19 +0200
+ -- Michael Biebl <biebl@debian.org>  Mon, 11 May 2015 23:13:31 +0200
 
 rsyslog (8.9.0-2) experimental; urgency=medium
 
