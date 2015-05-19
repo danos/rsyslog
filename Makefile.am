@@ -272,9 +272,15 @@ if ENABLE_MMRFC5424ADDHMAC
 SUBDIRS += contrib/mmrfc5424addhmac
 endif
 
+# omhttpfs
+if ENABLE_OMHTTPFS
+SUBDIRS += contrib/omhttpfs
+endif
+
 # tests are added as last element, because tests may need different
 # modules that need to be generated first
 SUBDIRS += tests
+
 
 
 # make sure "make distcheck" tries to build all modules. This means that
@@ -314,4 +320,8 @@ DISTCHECK_CONFIGURE_FLAGS=	--enable-imfile \
 #				--enable-gssapi_krb5 \
 #				--enable-extended-tests \
 #				--enable-pgsql 
+
+dist-hook:
+	$(AM_V_GEN)echo $(VERSION) > $(distdir)/.tarball-version
+
 ACLOCAL_AMFLAGS = -I m4

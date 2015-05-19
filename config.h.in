@@ -45,6 +45,9 @@
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
 
+/* Define to 1 if you have the <curl/curl.h> header file. */
+#undef HAVE_CURL_CURL_H
+
 /* Define to 1 if you have the <dbi/dbi.h> header file. */
 #undef HAVE_DBI_DBI_H
 
@@ -100,6 +103,14 @@
 /* set define */
 #undef HAVE_GLOB_NOMAGIC
 
+/* Define to 1 if you have the `gnutls_certificate_set_retrieve_function'
+   function. */
+#undef HAVE_GNUTLS_CERTIFICATE_SET_RETRIEVE_FUNCTION
+
+/* Define to 1 if you have the `gnutls_certificate_type_set_priority'
+   function. */
+#undef HAVE_GNUTLS_CERTIFICATE_TYPE_SET_PRIORITY
+
 /* Define to 1 if you have the <hadoop/hdfs.h> header file. */
 #undef HAVE_HADOOP_HDFS_H
 
@@ -124,11 +135,17 @@
 /* Define to 1 if you have the `json_object_object_get_ex' function. */
 #undef HAVE_JSON_OBJECT_OBJECT_GET_EX
 
+/* Define to 1 if you have the `json_object_to_json_string_ext' function. */
+#undef HAVE_JSON_OBJECT_TO_JSON_STRING_EXT
+
 /* Define to 1 if you have the `json_tokener_error_desc' function. */
 #undef HAVE_JSON_TOKENER_ERROR_DESC
 
 /* Define to 1 if you have the <libgen.h> header file. */
 #undef HAVE_LIBGEN_H
+
+/* Define to 1 if you have the `gnutls' library (-lgnutls). */
+#undef HAVE_LIBGNUTLS
 
 /* Define to 1 if you have the `json-c' library (-ljson-c). */
 #undef HAVE_LIBJSON_C

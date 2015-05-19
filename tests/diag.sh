@@ -6,6 +6,10 @@
 # begun 2009-05-27 by rgerhards
 # This file is part of the rsyslog project, released under GPLv3
 #valgrind="valgrind --malloc-fill=ff --free-fill=fe --log-fd=1"
+
+# **** use the line below for very hard to find leaks! *****
+#valgrind="valgrind --leak-check=full --show-leak-kinds=all --malloc-fill=ff --free-fill=fe --log-fd=1"
+
 #valgrind="valgrind --tool=drd --log-fd=1"
 #valgrind="valgrind --tool=helgrind --log-fd=1"
 #valgrind="valgrind --tool=exp-ptrcheck --log-fd=1"
@@ -16,10 +20,10 @@ CURRENT_TEST=
 TB_TIMEOUT_STARTSTOP=3000 # timeout for start/stop rsyslogd in tenths (!) of a second 3000 => 5 min
 case $1 in
    'init')	$srcdir/killrsyslog.sh # kill rsyslogd if it runs for some reason
-   		echo $2 > CURRENT_TEST # save test name for auto-debugging
+   		basename $0 > CURRENT_TEST # save test name for auto-debugging
 		if [ "x$2" != "x" ]; then
 			echo "------------------------------------------------------------"
-			echo "Test: $2"
+			echo "Test: $0"
 			echo "------------------------------------------------------------"
 		fi
 		cp $srcdir/testsuites/diag-common.conf diag-common.conf
@@ -231,6 +235,13 @@ case $1 in
 		    source ./diag.sh error-exit 1
 		fi
 		;;
+   'custom-content-check') 
+		cat $3 | grep -qF "$2"
+		if [ "$?" -ne "0" ]; then
+		    echo content-check failed to find "'$2'" inside "'$3'"
+		    source ./diag.sh error-exit 1
+		fi
+		;;
    'assert-content-missing') 
 		cat rsyslog.out.log | grep -qF "$2"
 		if [ "$?" -eq "0" ]; then
@@ -285,7 +296,7 @@ case $1 in
 				echo "core $CORE" >>gdb.in
 				echo "info thread" >> gdb.in
 				echo "thread apply all bt full" >> gdb.in
-				echo "q" >> gdb.in" >> gdb.in" >> gdb.in" >> gdb.in" >> gdb.in
+				echo "q" >> gdb.in
 				gdb ../tools/rsyslogd < gdb.in
 				CORE=
 				rm gdb.in

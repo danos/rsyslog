@@ -60,6 +60,9 @@ TESTS +=  \
 	asynwr_deadlock2.sh \
 	asynwr_deadlock4.sh \
 	abort-uncleancfg-goodcfg.sh \
+	abort-uncleancfg-goodcfg-check.sh \
+	abort-uncleancfg-badcfg-check.sh \
+	abort-uncleancfg-badcfg-check_1.sh \
 	gzipwr_large.sh \
 	gzipwr_large_dynfile.sh \
 	dynfile_invld_async.sh \
@@ -188,6 +191,11 @@ endif
 if ENABLE_MMPSTRUCDATA
 TESTS +=  \
 	mmpstrucdata.sh
+if HAVE_VALGRIND
+TESTS +=  \
+	mmpstrucdata-vg.sh \
+	mmpstrucdata-invalid-vg.sh
+endif
 endif
 
 if ENABLE_MMNORMALIZE
@@ -208,7 +216,8 @@ TESTS +=  \
 	mmjsonparse_simple.sh \
 	mmjsonparse_cim.sh \
 	json_array_subscripting.sh \
-	json_array_looping.sh
+	json_array_looping.sh \
+	json_nonarray_looping.sh
 endif
 
 if ENABLE_GNUTLS
@@ -269,9 +278,12 @@ if ENABLE_IMFILE
 TESTS += imfile-basic.sh \
 	imfile-readmode2.sh \
 	imfile-readmode2-with-persists-data-during-stop.sh \
-	imfile-readmode2-with-persists.sh
+	imfile-readmode2-with-persists.sh \
+	imfile-endregex.sh
 if HAVE_VALGRIND
-TESTS += imfile-basic-vg.sh
+TESTS += imfile-basic-vg.sh \
+	imfile-endregex-vg.sh \
+	imfile-readmode2-vg.sh
 endif
 endif
 
@@ -642,6 +654,12 @@ EXTRA_DIST= 1.rstest 2.rstest 3.rstest err1.rstest \
 	   testsuites/asynwr_deadlock4.conf \
 	   abort-uncleancfg-goodcfg.sh \
 	   testsuites/abort-uncleancfg-goodcfg.conf \
+	   abort-uncleancfg-goodcfg-check.sh \
+	   testsuites/abort-uncleancfg-goodcfg.conf \
+	   abort-uncleancfg-badcfg-check.sh \
+           testsuites/abort-uncleancfg-badcfg.conf 
+	   abort-uncleancfg-badcfg-check_1.sh \
+	   testsuites/abort-uncleancfg-badcfg_1.conf \
 	   gzipwr_large.sh \
 	   testsuites/gzipwr_large.conf \
 	   gzipwr_large_dynfile.sh \
@@ -656,6 +674,9 @@ EXTRA_DIST= 1.rstest 2.rstest 3.rstest err1.rstest \
            testsuites/imfile-readmode2.conf \
            testsuites/imfile-readmode2-with-persists.conf \
            testsuites/imfile-readmode2-with-persists-data-during-stop.conf \
+           imfile-endregex.sh \
+           imfile-endregex-vg.sh \
+           testsuites/imfile-endregex.conf \
 	   imfile-basic.sh \
 	   imfile-basic-vg.sh \
 	   testsuites/imfile-basic.conf \
@@ -769,7 +790,9 @@ EXTRA_DIST= 1.rstest 2.rstest 3.rstest err1.rstest \
 	   json_array_subscripting.sh \
 	   testsuites/json_array_subscripting.conf \
 	   testsuites/json_array_input \
+	   testsuites/json_nonarray_input \
 	   json_array_looping.sh \
+	   json_nonarray_looping.sh \
 	   testsuites/json_array_looping.conf \
 	   mmnormalize_regex.sh \
 	   testsuites/mmnormalize_regex.conf \
