@@ -78,7 +78,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-subdir = plugins/imfile
+subdir = contrib/omhttpfs
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -123,16 +123,17 @@ am__uninstall_files_from_dir = { \
   }
 am__installdirs = "$(DESTDIR)$(pkglibdir)"
 LTLIBRARIES = $(pkglib_LTLIBRARIES)
-imfile_la_DEPENDENCIES =
-am_imfile_la_OBJECTS = imfile_la-imfile.lo
-imfile_la_OBJECTS = $(am_imfile_la_OBJECTS)
+am__DEPENDENCIES_1 =
+omhttpfs_la_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_omhttpfs_la_OBJECTS = omhttpfs_la-omhttpfs.lo
+omhttpfs_la_OBJECTS = $(am_omhttpfs_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-imfile_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+omhttpfs_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(imfile_la_LDFLAGS) $(LDFLAGS) -o $@
+	$(omhttpfs_la_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -167,8 +168,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(imfile_la_SOURCES)
-DIST_SOURCES = $(imfile_la_SOURCES)
+SOURCES = $(omhttpfs_la_SOURCES)
+DIST_SOURCES = $(omhttpfs_la_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -382,11 +383,12 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-pkglib_LTLIBRARIES = imfile.la
-imfile_la_SOURCES = imfile.c
-imfile_la_CPPFLAGS = -I$(top_srcdir) $(PTHREADS_CFLAGS) $(RSRT_CFLAGS)
-imfile_la_LDFLAGS = -module -avoid-version
-imfile_la_LIBADD = 
+pkglib_LTLIBRARIES = omhttpfs.la
+omhttpfs_la_SOURCES = omhttpfs.c
+omhttpfs_la_CPPFLAGS = $(RSRT_CFLAGS) $(PTHREADS_CFLAGS) $(CURL_CFLAGS) $(JSON_C_CFLAGS)
+omhttpfs_la_LDFLAGS = -module -avoid-version
+omhttpfs_la_LIBADD = $(CURL_LIBS) $(JSON_C_LIBS)
+EXTRA_DIST = 
 all: all-am
 
 .SUFFIXES:
@@ -400,9 +402,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu plugins/imfile/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu contrib/omhttpfs/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu plugins/imfile/Makefile
+	  $(AUTOMAKE) --gnu contrib/omhttpfs/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -457,8 +459,8 @@ clean-pkglibLTLIBRARIES:
 	  rm -f $${locs}; \
 	}
 
-imfile.la: $(imfile_la_OBJECTS) $(imfile_la_DEPENDENCIES) $(EXTRA_imfile_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(imfile_la_LINK) -rpath $(pkglibdir) $(imfile_la_OBJECTS) $(imfile_la_LIBADD) $(LIBS)
+omhttpfs.la: $(omhttpfs_la_OBJECTS) $(omhttpfs_la_DEPENDENCIES) $(EXTRA_omhttpfs_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(omhttpfs_la_LINK) -rpath $(pkglibdir) $(omhttpfs_la_OBJECTS) $(omhttpfs_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -466,7 +468,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/imfile_la-imfile.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/omhttpfs_la-omhttpfs.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -492,12 +494,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
-imfile_la-imfile.lo: imfile.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(imfile_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT imfile_la-imfile.lo -MD -MP -MF $(DEPDIR)/imfile_la-imfile.Tpo -c -o imfile_la-imfile.lo `test -f 'imfile.c' || echo '$(srcdir)/'`imfile.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/imfile_la-imfile.Tpo $(DEPDIR)/imfile_la-imfile.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='imfile.c' object='imfile_la-imfile.lo' libtool=yes @AMDEPBACKSLASH@
+omhttpfs_la-omhttpfs.lo: omhttpfs.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(omhttpfs_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT omhttpfs_la-omhttpfs.lo -MD -MP -MF $(DEPDIR)/omhttpfs_la-omhttpfs.Tpo -c -o omhttpfs_la-omhttpfs.lo `test -f 'omhttpfs.c' || echo '$(srcdir)/'`omhttpfs.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/omhttpfs_la-omhttpfs.Tpo $(DEPDIR)/omhttpfs_la-omhttpfs.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='omhttpfs.c' object='omhttpfs_la-omhttpfs.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(imfile_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o imfile_la-imfile.lo `test -f 'imfile.c' || echo '$(srcdir)/'`imfile.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(omhttpfs_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o omhttpfs_la-omhttpfs.lo `test -f 'omhttpfs.c' || echo '$(srcdir)/'`omhttpfs.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

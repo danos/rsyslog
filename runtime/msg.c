@@ -612,6 +612,8 @@ propNameToID(uchar *pName, propid_t *pPropID)
 		*pPropID = PROP_SYS_MYHOSTNAME;
 	} else if(!strcmp((char*) pName, "$!all-json")) {
 		*pPropID = PROP_CEE_ALL_JSON;
+	} else if(!strcmp((char*) pName, "$!all-json-plain")) {
+		*pPropID = PROP_CEE_ALL_JSON_PLAIN;
 	} else if(!strcmp((char*) pName, "$bom")) {
 		*pPropID = PROP_SYS_BOM;
 	} else if(!strcmp((char*) pName, "$uptime")) {
@@ -708,6 +710,8 @@ uchar *propIDToName(propid_t propID)
 			return UCHAR_CONSTANT("*LOCAL_VARIABLE*");
 		case PROP_CEE_ALL_JSON:
 			return UCHAR_CONSTANT("$!all-json");
+		case PROP_CEE_ALL_JSON_PLAIN:
+			return UCHAR_CONSTANT("$!all-json-plain");
 		case PROP_SYS_BOM:
 			return UCHAR_CONSTANT("$BOM");
 		case PROP_UUID:
@@ -1842,7 +1846,7 @@ static inline char *getSeverity(msg_t * const pM)
 	if(pM == NULL)
 		return "";
 
-	if(pM->iSeverity < 0 || pM->iSeverity > 7) {
+	if(pM->iSeverity > 7) {
 		name = "invld";
 	} else {
 		name = syslog_number_names[pM->iSeverity];
@@ -1859,7 +1863,7 @@ static inline char *getSeverityStr(msg_t * const pM)
 	if(pM == NULL)
 		return "";
 
-	if(pM->iSeverity < 0 || pM->iSeverity > 7) {
+	if(pM->iSeverity > 7) {
 		name = "invld";
 	} else {
 		name = syslog_severity_names[pM->iSeverity];
@@ -1875,7 +1879,7 @@ static inline char *getFacility(msg_t * const pM)
 	if(pM == NULL)
 		return "";
 
-	if(pM->iFacility < 0 || pM->iFacility > 23) {
+	if(pM->iFacility > 23) {
 		name = "invld";
 	} else {
 		name = syslog_number_names[pM->iFacility];
@@ -1891,7 +1895,7 @@ static inline char *getFacilityStr(msg_t * const pM)
         if(pM == NULL)
                 return "";
 
-	if(pM->iFacility < 0 || pM->iFacility > 23) {
+	if(pM->iFacility > 23) {
 		name = "invld";
 	} else {
 		name = syslog_fac_names[pM->iFacility];
@@ -3261,12 +3265,17 @@ uchar *MsgGetProp(msg_t *__restrict__ const pMsg, struct templateEntry *__restri
 			pRes = glbl.GetLocalHostName();
 			break;
 		case PROP_CEE_ALL_JSON:
+		case PROP_CEE_ALL_JSON_PLAIN:
 			if(pMsg->json == NULL) {
 				pRes = (uchar*) "{}";
 				bufLen = 2;
 				*pbMustBeFreed = 0;
 			} else {
-				pRes = (uchar*)strdup(json_object_get_string(pMsg->json));
+				if(pProp->id == PROP_CEE_ALL_JSON) {
+					pRes = (uchar*)strdup(RS_json_object_to_json_string_ext(pMsg->json, JSON_C_TO_STRING_SPACED));
+				} else if(pProp->id == PROP_CEE_ALL_JSON_PLAIN) {
+					pRes = (uchar*)strdup(RS_json_object_to_json_string_ext(pMsg->json, JSON_C_TO_STRING_PLAIN));
+				}
 				*pbMustBeFreed = 1;
 			}
 			break;

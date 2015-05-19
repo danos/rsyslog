@@ -136,6 +136,9 @@ sbin_PROGRAMS =
 @ENABLE_MMFIELDS_TRUE@am__append_49 = plugins/mmfields
 @ENABLE_MMPSTRUCDATA_TRUE@am__append_50 = plugins/mmpstrucdata
 @ENABLE_MMRFC5424ADDHMAC_TRUE@am__append_51 = contrib/mmrfc5424addhmac
+
+# omhttpfs
+@ENABLE_OMHTTPFS_TRUE@am__append_52 = contrib/omhttpfs
 subdir = .
 DIST_COMMON = INSTALL NEWS README AUTHORS ChangeLog \
 	$(srcdir)/Makefile.in $(srcdir)/Makefile.am \
@@ -320,7 +323,7 @@ DIST_SUBDIRS = compat runtime grammar . plugins/immark \
 	plugins/mmnormalize plugins/mmjsonparse plugins/mmaudit \
 	plugins/mmanon plugins/mmutf8fix contrib/mmcount \
 	contrib/mmsequence plugins/mmfields plugins/mmpstrucdata \
-	contrib/mmrfc5424addhmac tests
+	contrib/mmrfc5424addhmac contrib/omhttpfs tests
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -493,6 +496,7 @@ UDPSPOOF_LIBS = @UDPSPOOF_LIBS@
 VALGRIND = @VALGRIND@
 VERSION = @VERSION@
 YACC = @YACC@
+YACC_FOUND = @YACC_FOUND@
 YFLAGS = @YFLAGS@
 ZLIB_CFLAGS = @ZLIB_CFLAGS@
 ZLIB_LIBS = @ZLIB_LIBS@
@@ -627,7 +631,7 @@ SUBDIRS = compat runtime grammar . plugins/immark plugins/imuxsock \
 	$(am__append_41) $(am__append_42) $(am__append_43) \
 	$(am__append_44) $(am__append_45) $(am__append_46) \
 	$(am__append_47) $(am__append_48) $(am__append_49) \
-	$(am__append_50) $(am__append_51) tests
+	$(am__append_50) $(am__append_51) $(am__append_52) tests
 
 # make sure "make distcheck" tries to build all modules. This means that
 # a developer must always have an environment where every supporting library
@@ -662,11 +666,6 @@ DISTCHECK_CONFIGURE_FLAGS = --enable-imfile \
 				--enable-testbench \
 				--with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir) 
 
-# temporarily disable these checks for make distcheck 2012-09-06 rgerhards
-#				--enable-mmsnmptrapd \
-#				--enable-gssapi_krb5 \
-#				--enable-extended-tests \
-#				--enable-pgsql 
 ACLOCAL_AMFLAGS = -I m4
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
@@ -1072,6 +1071,9 @@ distdir: $(DISTFILES)
 	      || exit 1; \
 	  fi; \
 	done
+	$(MAKE) $(AM_MAKEFLAGS) \
+	  top_distdir="$(top_distdir)" distdir="$(distdir)" \
+	  dist-hook
 	-test -n "$(am__skip_mode_fix)" \
 	|| find "$(distdir)" -type d ! -perm -755 \
 		-exec chmod u+rwx,go+rx {} \; -o \
@@ -1323,14 +1325,15 @@ uninstall-am: uninstall-nodist_systemdsystemunitDATA \
 	am--refresh check check-am clean clean-cscope clean-generic \
 	clean-libtool clean-pkglibLTLIBRARIES clean-sbinPROGRAMS \
 	cscope cscopelist-am ctags ctags-am dist dist-all dist-bzip2 \
-	dist-gzip dist-lzip dist-shar dist-tarZ dist-xz dist-zip \
-	distcheck distclean distclean-compile distclean-generic \
-	distclean-hdr distclean-libtool distclean-tags distcleancheck \
-	distdir distuninstallcheck dvi dvi-am html html-am info \
-	info-am install install-am install-data install-data-am \
-	install-dvi install-dvi-am install-exec install-exec-am \
-	install-html install-html-am install-info install-info-am \
-	install-man install-nodist_systemdsystemunitDATA install-pdf \
+	dist-gzip dist-hook dist-lzip dist-shar dist-tarZ dist-xz \
+	dist-zip distcheck distclean distclean-compile \
+	distclean-generic distclean-hdr distclean-libtool \
+	distclean-tags distcleancheck distdir distuninstallcheck dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man \
+	install-nodist_systemdsystemunitDATA install-pdf \
 	install-pdf-am install-pkglibLTLIBRARIES install-ps \
 	install-ps-am install-sbinPROGRAMS install-strip installcheck \
 	installcheck-am installdirs installdirs-am maintainer-clean \
@@ -1343,6 +1346,14 @@ uninstall-am: uninstall-nodist_systemdsystemunitDATA \
 
 @HAVE_SYSTEMD_TRUE@%.service: %.service.in
 @HAVE_SYSTEMD_TRUE@	$(AM_V_GEN)sed -e 's,@sbindir\@,$(sbindir),g' $< > $@
+# temporarily disable these checks for make distcheck 2012-09-06 rgerhards
+#				--enable-mmsnmptrapd \
+#				--enable-gssapi_krb5 \
+#				--enable-extended-tests \
+#				--enable-pgsql 
+
+dist-hook:
+	$(AM_V_GEN)echo $(VERSION) > $(distdir)/.tarball-version
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

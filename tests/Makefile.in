@@ -116,6 +116,9 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	asynwr_deadlock.sh asynwr_deadlock_2.sh \
 @ENABLE_TESTBENCH_TRUE@	asynwr_deadlock2.sh asynwr_deadlock4.sh \
 @ENABLE_TESTBENCH_TRUE@	abort-uncleancfg-goodcfg.sh \
+@ENABLE_TESTBENCH_TRUE@	abort-uncleancfg-goodcfg-check.sh \
+@ENABLE_TESTBENCH_TRUE@	abort-uncleancfg-badcfg-check.sh \
+@ENABLE_TESTBENCH_TRUE@	abort-uncleancfg-badcfg-check_1.sh \
 @ENABLE_TESTBENCH_TRUE@	gzipwr_large.sh gzipwr_large_dynfile.sh \
 @ENABLE_TESTBENCH_TRUE@	dynfile_invld_async.sh \
 @ENABLE_TESTBENCH_TRUE@	dynfile_invld_sync.sh \
@@ -164,7 +167,8 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	$(am__append_14) $(am__append_15) \
 @ENABLE_TESTBENCH_TRUE@	$(am__append_16) $(am__append_17) \
 @ENABLE_TESTBENCH_TRUE@	$(am__append_18) $(am__append_19) \
-@ENABLE_TESTBENCH_TRUE@	$(am__append_20) $(am__append_21)
+@ENABLE_TESTBENCH_TRUE@	$(am__append_20) $(am__append_21) \
+@ENABLE_TESTBENCH_TRUE@	$(am__append_22)
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_1 = \
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	discard-rptdmsg-vg.sh \
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	discard-allmark-vg.sh \
@@ -227,20 +231,25 @@ host_triplet = @host@
 @ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_9 = \
 @ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@	mmpstrucdata.sh
 
-@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_10 = \
+@ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_10 = \
+@ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	mmpstrucdata-vg.sh \
+@ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	mmpstrucdata-invalid-vg.sh
+
+@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_11 = \
 @ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_variable.sh \
 @ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_tokenized.sh \
 @ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_regex_defaulted.sh \
 @ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_regex_disabled.sh
 
-@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@LOGNORM_REGEX_SUPPORTED_TRUE@am__append_11 = \
+@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@LOGNORM_REGEX_SUPPORTED_TRUE@am__append_12 = \
 @ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@LOGNORM_REGEX_SUPPORTED_TRUE@	mmnormalize_regex.sh
 
-@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_12 = \
+@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_13 = \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmjsonparse_simple.sh \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmjsonparse_cim.sh \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_array_subscripting.sh \
-@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_array_looping.sh
+@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_array_looping.sh \
+@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_nonarray_looping.sh
 
 
 # TODO: re-enable in newer version
@@ -248,21 +257,21 @@ host_triplet = @host@
 #sndrcv_tls_anon.sh \
 #sndrcv_tls_anon_rebind.sh \
 #imtcp-tls-basic.sh
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_13 = imtcp-tls-basic-vg.sh \
+@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_14 = imtcp-tls-basic-vg.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	 imtcp_conndrop_tls-vg.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	 manytcp-too-few-tls-vg.sh 
 
-@ENABLE_OMUXSOCK_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_14 = uxsock_simple.sh
-@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_15 = sndrcv_relp.sh
-@ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_16 = sndrcv_omudpspoof.sh \
+@ENABLE_OMUXSOCK_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_15 = uxsock_simple.sh
+@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_16 = sndrcv_relp.sh
+@ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_17 = sndrcv_omudpspoof.sh \
 @ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@	 sndrcv_omudpspoof_nonstdpt.sh
 
-@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_17 = omod-if-array.sh \
+@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_18 = omod-if-array.sh \
 @ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	 threadingmq.sh \
 @ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	 threadingmqaq.sh \
 @ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	 badqi.sh
 
-@ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_18 = \
+@ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_19 = \
 @ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	 tabescape_dflt.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	 tabescape_off.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	 timestamp.sh \
@@ -271,20 +280,24 @@ host_triplet = @host@
 @ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	 parsertest.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	 fieldtest.sh
 
-@ENABLE_OMRULESET_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_19 = omruleset.sh \
+@ENABLE_OMRULESET_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_20 = omruleset.sh \
 @ENABLE_OMRULESET_TRUE@@ENABLE_TESTBENCH_TRUE@	 omruleset-queue.sh
 
 
 # random.sh is temporarily disabled as it needs some work
 # to rsyslog core to complete in reasonable time
 #TESTS += random.sh 
-@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_20 = imfile-basic.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_21 = imfile-basic.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-readmode2.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-readmode2-with-persists-data-during-stop.sh \
-@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-readmode2-with-persists.sh
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-readmode2-with-persists.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-endregex.sh
 
-@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_21 = imfile-basic-vg.sh
-@ENABLE_GNUTLS_TRUE@am__append_22 = -lgcrypt
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_22 = imfile-basic-vg.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-endregex-vg.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-readmode2-vg.sh
+
+@ENABLE_GNUTLS_TRUE@am__append_23 = -lgcrypt
 subdir = tests
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp $(top_srcdir)/test-driver README
@@ -744,6 +757,7 @@ UDPSPOOF_LIBS = @UDPSPOOF_LIBS@
 VALGRIND = @VALGRIND@
 VERSION = @VERSION@
 YACC = @YACC@
+YACC_FOUND = @YACC_FOUND@
 YFLAGS = @YFLAGS@
 ZLIB_CFLAGS = @ZLIB_CFLAGS@
 ZLIB_LIBS = @ZLIB_LIBS@
@@ -1165,144 +1179,10 @@ EXTRA_DIST = 1.rstest 2.rstest 3.rstest err1.rstest \
 	   testsuites/asynwr_deadlock4.conf \
 	   abort-uncleancfg-goodcfg.sh \
 	   testsuites/abort-uncleancfg-goodcfg.conf \
-	   gzipwr_large.sh \
-	   testsuites/gzipwr_large.conf \
-	   gzipwr_large_dynfile.sh \
-	   testsuites/gzipwr_large_dynfile.conf \
-	   complex1.sh \
-	   testsuites/complex1.conf \
-	   random.sh \
-	   testsuites/random.conf \
-           imfile-readmode2.sh \
-           imfile-readmode2-with-persists-data-during-stop.sh \
-           imfile-readmode2-with-persists.sh \
-           testsuites/imfile-readmode2.conf \
-           testsuites/imfile-readmode2-with-persists.conf \
-           testsuites/imfile-readmode2-with-persists-data-during-stop.conf \
-	   imfile-basic.sh \
-	   imfile-basic-vg.sh \
-	   testsuites/imfile-basic.conf \
-	   dynfile_invld_async.sh \
-	   dynfile_invld_sync.sh \
-	   dynfile_cachemiss.sh \
-	   testsuites/dynfile_cachemiss.conf \
-	   dynfile_invalid2.sh \
-	   testsuites/dynfile_invalid2.conf \
-	   proprepltest.sh \
-	   testsuites/rfctag.conf \
-	   testsuites/master.rfctag \
-	   testsuites/nolimittag.conf \
-	   testsuites/master.nolimittag \
-	   rulesetmultiqueue.sh \
-	   testsuites/rulesetmultiqueue.conf \
-	   rulesetmultiqueue-v6.sh \
-	   testsuites/rulesetmultiqueue-v6.conf \
-	   omruleset.sh \
-	   testsuites/omruleset.conf \
-	   omruleset-queue.sh \
-	   testsuites/omruleset-queue.conf \
-	   badqi.sh \
-	   testsuites/badqi.conf \
-	   bad_qi/dbq.qi \
-	   execonlyonce.sh \
-	   testsuites/execonlyonce.conf \
-	   testsuites/execonlyonce.data \
-	   execonlywhenprevsuspended.sh \
-	   testsuites/execonlywhenprevsuspended.conf \
-	   execonlywhenprevsuspended2.sh \
-	   testsuites/execonlywhenprevsuspended2.conf \
-	   execonlywhenprevsuspended3.sh \
-	   testsuites/execonlywhenprevsuspended3.conf \
-	   execonlywhenprevsuspended4.sh \
-	   testsuites/execonlywhenprevsuspended4.conf \
-	   execonlywhenprevsuspended_multiwrkr.sh \
-	   testsuites/execonlywhenprevsuspended_multiwrkr.conf \
-	   tabescape_dflt.sh \
-	   testsuites/tabescape_dflt.conf \
-	   testsuites/1.tabescape_dflt \
-	   tabescape_off.sh \
-	   testsuites/tabescape_off.conf \
-	   testsuites/1.tabescape_off \
-	   dircreate_dflt.sh \
-	   testsuites/dircreate_dflt.conf \
-	   dircreate_off.sh \
-	   testsuites/dircreate_off.conf \
-	   imuxsock_logger_parserchain.sh \
-	   testsuites/imuxsock_logger_parserchain.conf \
-	   imuxsock_logger.sh \
-	   testsuites/imuxsock_logger.conf \
-	   imuxsock_logger_err.sh \
-	   imuxsock_logger_root.sh \
-	   testsuites/imuxsock_logger_root.conf \
-	   resultdata/imuxsock_logger.log \
-	   imuxsock_traillf.sh \
-	   testsuites/imuxsock_traillf.conf \
-	   imuxsock_traillf_root.sh \
-	   testsuites/imuxsock_traillf_root.conf \
-	   resultdata/imuxsock_traillf.log \
-	   imuxsock_ccmiddle.sh \
-	   testsuites/imuxsock_ccmiddle.conf \
-	   imuxsock_ccmiddle_root.sh \
-	   testsuites/imuxsock_ccmiddle_root.conf \
-	   resultdata/imuxsock_ccmiddle.log \
-	   imuxsock_hostname.sh \
-	   testsuites/imuxsock_hostname.conf \
-	   resultdata/imuxsock_hostname.log \
-	   testsuites/mysql-truncate.sql \
-	   testsuites/mysql-select-msg.sql \
-	   libdbi-basic.sh \
-	   testsuites/libdbi-basic.conf \
-	   libdbi-asyn.sh \
-	   testsuites/libdbi-asyn.conf \
-	   mysql-basic.sh \
-	   mysql-basic-cnf6.sh \
-	   mysql-basic-vg.sh \
-	   testsuites/mysql-basic.conf \
-	   testsuites/mysql-basic-cnf6.conf \
-	   mysql-asyn.sh \
-	   mysql-asyn-vg.sh \
-	   testsuites/mysql-asyn.conf \
-	   mysql-actq-mt.sh \
-	   mysql-actq-mt-withpause.sh \
-	   mysql-actq-mt-withpause-vg.sh \
-	   testsuites/mysql-actq-mt.conf \
-	   mmpstrucdata.sh \
-	   testsuites/mmpstrucdata.conf \
-	   libdbi-basic-vg.sh \
-	   mmnormalize_variable.sh \
-	   mmnormalize_tokenized.sh \
-	   testsuites/mmnormalize_variable.conf \
-	   testsuites/mmnormalize_variable.rulebase \
-	   testsuites/date_time_msg \
-	   testsuites/mmnormalize_tokenized.conf \
-	   testsuites/mmnormalize_tokenized.rulebase \
-	   testsuites/tokenized_input \
-	   rscript_replace.sh \
-	   testsuites/rscript_replace.conf \
-	   rscript_replace_complex.sh \
-	   testsuites/rscript_replace_complex.conf \
-	   testsuites/complex_replace_input \
-	   rscript_unaffected_reset.sh \
-	   rscript_wrap2.sh \
-	   testsuites/rscript_wrap2.conf \
-	   rscript_wrap3.sh \
-	   testsuites/rscript_wrap3.conf \
-	   testsuites/wrap3_input\
-	   testsuites/gethostname.conf \
-	   json_array_subscripting.sh \
-	   testsuites/json_array_subscripting.conf \
-	   testsuites/json_array_input \
-	   json_array_looping.sh \
-	   testsuites/json_array_looping.conf \
-	   mmnormalize_regex.sh \
-	   testsuites/mmnormalize_regex.conf \
-	   testsuites/mmnormalize_regex.rulebase \
-	   testsuites/regex_input \
-	   mmnormalize_regex_disabled.sh \
-	   testsuites/mmnormalize_regex_disabled.conf \
-	   mmnormalize_regex_defaulted.sh \
-	   testsuites/mmnormalize_regex_defaulted.conf \
-	   cfg.sh
+	   abort-uncleancfg-goodcfg-check.sh \
+	   testsuites/abort-uncleancfg-goodcfg.conf \
+	   abort-uncleancfg-badcfg-check.sh \
+           testsuites/abort-uncleancfg-badcfg.conf 
 
 
 # TODO: re-enable
@@ -1321,7 +1201,7 @@ uxsockrcvr_LDADD = $(SOL_LIBS)
 tcpflood_SOURCES = tcpflood.c
 tcpflood_CPPFLAGS = $(PTHREADS_CFLAGS) $(GNUTLS_CFLAGS)
 tcpflood_LDADD = $(SOL_LIBS) $(PTHREADS_LIBS) $(GNUTLS_LIBS) \
-	$(am__append_22)
+	$(am__append_23)
 minitcpsrv_SOURCES = minitcpsrvr.c
 minitcpsrv_LDADD = $(SOL_LIBS)
 syslog_caller_SOURCES = syslog_caller.c
@@ -2071,6 +1951,27 @@ abort-uncleancfg-goodcfg.sh.log: abort-uncleancfg-goodcfg.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+abort-uncleancfg-goodcfg-check.sh.log: abort-uncleancfg-goodcfg-check.sh
+	@p='abort-uncleancfg-goodcfg-check.sh'; \
+	b='abort-uncleancfg-goodcfg-check.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+abort-uncleancfg-badcfg-check.sh.log: abort-uncleancfg-badcfg-check.sh
+	@p='abort-uncleancfg-badcfg-check.sh'; \
+	b='abort-uncleancfg-badcfg-check.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+abort-uncleancfg-badcfg-check_1.sh.log: abort-uncleancfg-badcfg-check_1.sh
+	@p='abort-uncleancfg-badcfg-check_1.sh'; \
+	b='abort-uncleancfg-badcfg-check_1.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 gzipwr_large.sh.log: gzipwr_large.sh
 	@p='gzipwr_large.sh'; \
 	b='gzipwr_large.sh'; \
@@ -2729,6 +2630,20 @@ mmpstrucdata.sh.log: mmpstrucdata.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmpstrucdata-vg.sh.log: mmpstrucdata-vg.sh
+	@p='mmpstrucdata-vg.sh'; \
+	b='mmpstrucdata-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmpstrucdata-invalid-vg.sh.log: mmpstrucdata-invalid-vg.sh
+	@p='mmpstrucdata-invalid-vg.sh'; \
+	b='mmpstrucdata-invalid-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 mmnormalize_variable.sh.log: mmnormalize_variable.sh
 	@p='mmnormalize_variable.sh'; \
 	b='mmnormalize_variable.sh'; \
@@ -2788,6 +2703,13 @@ json_array_subscripting.sh.log: json_array_subscripting.sh
 json_array_looping.sh.log: json_array_looping.sh
 	@p='json_array_looping.sh'; \
 	b='json_array_looping.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+json_nonarray_looping.sh.log: json_nonarray_looping.sh
+	@p='json_nonarray_looping.sh'; \
+	b='json_nonarray_looping.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -2960,9 +2882,30 @@ imfile-readmode2-with-persists.sh.log: imfile-readmode2-with-persists.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imfile-endregex.sh.log: imfile-endregex.sh
+	@p='imfile-endregex.sh'; \
+	b='imfile-endregex.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 imfile-basic-vg.sh.log: imfile-basic-vg.sh
 	@p='imfile-basic-vg.sh'; \
 	b='imfile-basic-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imfile-endregex-vg.sh.log: imfile-endregex-vg.sh
+	@p='imfile-endregex-vg.sh'; \
+	b='imfile-endregex-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imfile-readmode2-vg.sh.log: imfile-readmode2-vg.sh
+	@p='imfile-readmode2-vg.sh'; \
+	b='imfile-readmode2-vg.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -3139,6 +3082,151 @@ uninstall-am:
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	recheck tags tags-am uninstall uninstall-am
 
+	   abort-uncleancfg-badcfg-check_1.sh \
+	   testsuites/abort-uncleancfg-badcfg_1.conf \
+	   gzipwr_large.sh \
+	   testsuites/gzipwr_large.conf \
+	   gzipwr_large_dynfile.sh \
+	   testsuites/gzipwr_large_dynfile.conf \
+	   complex1.sh \
+	   testsuites/complex1.conf \
+	   random.sh \
+	   testsuites/random.conf \
+           imfile-readmode2.sh \
+           imfile-readmode2-with-persists-data-during-stop.sh \
+           imfile-readmode2-with-persists.sh \
+           testsuites/imfile-readmode2.conf \
+           testsuites/imfile-readmode2-with-persists.conf \
+           testsuites/imfile-readmode2-with-persists-data-during-stop.conf \
+           imfile-endregex.sh \
+           imfile-endregex-vg.sh \
+           testsuites/imfile-endregex.conf \
+	   imfile-basic.sh \
+	   imfile-basic-vg.sh \
+	   testsuites/imfile-basic.conf \
+	   dynfile_invld_async.sh \
+	   dynfile_invld_sync.sh \
+	   dynfile_cachemiss.sh \
+	   testsuites/dynfile_cachemiss.conf \
+	   dynfile_invalid2.sh \
+	   testsuites/dynfile_invalid2.conf \
+	   proprepltest.sh \
+	   testsuites/rfctag.conf \
+	   testsuites/master.rfctag \
+	   testsuites/nolimittag.conf \
+	   testsuites/master.nolimittag \
+	   rulesetmultiqueue.sh \
+	   testsuites/rulesetmultiqueue.conf \
+	   rulesetmultiqueue-v6.sh \
+	   testsuites/rulesetmultiqueue-v6.conf \
+	   omruleset.sh \
+	   testsuites/omruleset.conf \
+	   omruleset-queue.sh \
+	   testsuites/omruleset-queue.conf \
+	   badqi.sh \
+	   testsuites/badqi.conf \
+	   bad_qi/dbq.qi \
+	   execonlyonce.sh \
+	   testsuites/execonlyonce.conf \
+	   testsuites/execonlyonce.data \
+	   execonlywhenprevsuspended.sh \
+	   testsuites/execonlywhenprevsuspended.conf \
+	   execonlywhenprevsuspended2.sh \
+	   testsuites/execonlywhenprevsuspended2.conf \
+	   execonlywhenprevsuspended3.sh \
+	   testsuites/execonlywhenprevsuspended3.conf \
+	   execonlywhenprevsuspended4.sh \
+	   testsuites/execonlywhenprevsuspended4.conf \
+	   execonlywhenprevsuspended_multiwrkr.sh \
+	   testsuites/execonlywhenprevsuspended_multiwrkr.conf \
+	   tabescape_dflt.sh \
+	   testsuites/tabescape_dflt.conf \
+	   testsuites/1.tabescape_dflt \
+	   tabescape_off.sh \
+	   testsuites/tabescape_off.conf \
+	   testsuites/1.tabescape_off \
+	   dircreate_dflt.sh \
+	   testsuites/dircreate_dflt.conf \
+	   dircreate_off.sh \
+	   testsuites/dircreate_off.conf \
+	   imuxsock_logger_parserchain.sh \
+	   testsuites/imuxsock_logger_parserchain.conf \
+	   imuxsock_logger.sh \
+	   testsuites/imuxsock_logger.conf \
+	   imuxsock_logger_err.sh \
+	   imuxsock_logger_root.sh \
+	   testsuites/imuxsock_logger_root.conf \
+	   resultdata/imuxsock_logger.log \
+	   imuxsock_traillf.sh \
+	   testsuites/imuxsock_traillf.conf \
+	   imuxsock_traillf_root.sh \
+	   testsuites/imuxsock_traillf_root.conf \
+	   resultdata/imuxsock_traillf.log \
+	   imuxsock_ccmiddle.sh \
+	   testsuites/imuxsock_ccmiddle.conf \
+	   imuxsock_ccmiddle_root.sh \
+	   testsuites/imuxsock_ccmiddle_root.conf \
+	   resultdata/imuxsock_ccmiddle.log \
+	   imuxsock_hostname.sh \
+	   testsuites/imuxsock_hostname.conf \
+	   resultdata/imuxsock_hostname.log \
+	   testsuites/mysql-truncate.sql \
+	   testsuites/mysql-select-msg.sql \
+	   libdbi-basic.sh \
+	   testsuites/libdbi-basic.conf \
+	   libdbi-asyn.sh \
+	   testsuites/libdbi-asyn.conf \
+	   mysql-basic.sh \
+	   mysql-basic-cnf6.sh \
+	   mysql-basic-vg.sh \
+	   testsuites/mysql-basic.conf \
+	   testsuites/mysql-basic-cnf6.conf \
+	   mysql-asyn.sh \
+	   mysql-asyn-vg.sh \
+	   testsuites/mysql-asyn.conf \
+	   mysql-actq-mt.sh \
+	   mysql-actq-mt-withpause.sh \
+	   mysql-actq-mt-withpause-vg.sh \
+	   testsuites/mysql-actq-mt.conf \
+	   mmpstrucdata.sh \
+	   testsuites/mmpstrucdata.conf \
+	   libdbi-basic-vg.sh \
+	   mmnormalize_variable.sh \
+	   mmnormalize_tokenized.sh \
+	   testsuites/mmnormalize_variable.conf \
+	   testsuites/mmnormalize_variable.rulebase \
+	   testsuites/date_time_msg \
+	   testsuites/mmnormalize_tokenized.conf \
+	   testsuites/mmnormalize_tokenized.rulebase \
+	   testsuites/tokenized_input \
+	   rscript_replace.sh \
+	   testsuites/rscript_replace.conf \
+	   rscript_replace_complex.sh \
+	   testsuites/rscript_replace_complex.conf \
+	   testsuites/complex_replace_input \
+	   rscript_unaffected_reset.sh \
+	   rscript_wrap2.sh \
+	   testsuites/rscript_wrap2.conf \
+	   rscript_wrap3.sh \
+	   testsuites/rscript_wrap3.conf \
+	   testsuites/wrap3_input\
+	   testsuites/gethostname.conf \
+	   json_array_subscripting.sh \
+	   testsuites/json_array_subscripting.conf \
+	   testsuites/json_array_input \
+	   testsuites/json_nonarray_input \
+	   json_array_looping.sh \
+	   json_nonarray_looping.sh \
+	   testsuites/json_array_looping.conf \
+	   mmnormalize_regex.sh \
+	   testsuites/mmnormalize_regex.conf \
+	   testsuites/mmnormalize_regex.rulebase \
+	   testsuites/regex_input \
+	   mmnormalize_regex_disabled.sh \
+	   testsuites/mmnormalize_regex_disabled.conf \
+	   mmnormalize_regex_defaulted.sh \
+	   testsuites/mmnormalize_regex_defaulted.conf \
+	   cfg.sh
 
 # rtinit tests disabled for the moment - also questionable if they
 # really provide value (after all, everything fails if rtinit fails...)
