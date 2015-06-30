@@ -81,70 +81,65 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 sbin_PROGRAMS =
-@ENABLE_INET_TRUE@am__append_1 = lmtcpsrv.la lmtcpclt.la
-
-#
-# gssapi support
-# 
-@ENABLE_GSSAPI_TRUE@am__append_2 = lmgssutil.la
-@ENABLE_RSYSLOGD_TRUE@am__append_3 = tools
-@ENABLE_IMKLOG_TRUE@am__append_4 = plugins/imklog
-@ENABLE_IMKMSG_TRUE@am__append_5 = contrib/imkmsg
-@ENABLE_IMPSTATS_TRUE@am__append_6 = plugins/impstats
-@ENABLE_IMSOLARIS_TRUE@am__append_7 = plugins/imsolaris
-@ENABLE_GSSAPI_TRUE@am__append_8 = plugins/omgssapi plugins/imgssapi
-@ENABLE_RELP_TRUE@am__append_9 = plugins/omrelp plugins/imrelp
-@ENABLE_MYSQL_TRUE@am__append_10 = plugins/ommysql
-@ENABLE_OMLIBDBI_TRUE@am__append_11 = plugins/omlibdbi
-@ENABLE_PGSQL_TRUE@am__append_12 = plugins/ompgsql
-@ENABLE_SNMP_TRUE@am__append_13 = plugins/omsnmp
-@ENABLE_OMSTDOUT_TRUE@am__append_14 = plugins/omstdout
-@ENABLE_PMCISCONAMES_TRUE@am__append_15 = contrib/pmcisconames
-@ENABLE_PMCISCOIOS_TRUE@am__append_16 = plugins/pmciscoios
-@ENABLE_PMAIXFORWARDEDFROM_TRUE@am__append_17 = contrib/pmaixforwardedfrom
-@ENABLE_PMSNARE_TRUE@am__append_18 = contrib/pmsnare
-@ENABLE_PMLASTMSG_TRUE@am__append_19 = plugins/pmlastmsg
-@ENABLE_OMRULESET_TRUE@am__append_20 = plugins/omruleset
-@ENABLE_OMUDPSPOOF_TRUE@am__append_21 = plugins/omudpspoof
-@ENABLE_OMMONGODB_TRUE@am__append_22 = plugins/ommongodb
-@ENABLE_OMHIREDIS_TRUE@am__append_23 = contrib/omhiredis
-@ENABLE_OMZMQ3_TRUE@am__append_24 = contrib/omzmq3
-@ENABLE_OMCZMQ_TRUE@am__append_25 = contrib/omczmq
-@ENABLE_OMRABBITMQ_TRUE@am__append_26 = contrib/omrabbitmq
-@ENABLE_IMZMQ3_TRUE@am__append_27 = contrib/imzmq3
-@ENABLE_IMCZMQ_TRUE@am__append_28 = contrib/imczmq
-@ENABLE_OMUXSOCK_TRUE@am__append_29 = plugins/omuxsock
-@ENABLE_OMHDFS_TRUE@am__append_30 = plugins/omhdfs
-@ENABLE_OMJOURNAL_TRUE@am__append_31 = plugins/omjournal
-@ENABLE_IMJOURNAL_TRUE@am__append_32 = plugins/imjournal
-@ENABLE_ELASTICSEARCH_TRUE@am__append_33 = plugins/omelasticsearch
-@ENABLE_MMSNMPTRAPD_TRUE@am__append_34 = plugins/mmsnmptrapd
-@ENABLE_IMFILE_TRUE@am__append_35 = plugins/imfile
-@ENABLE_IMPTCP_TRUE@am__append_36 = plugins/imptcp
-@ENABLE_IMDIAG_TRUE@am__append_37 = plugins/imdiag
-@ENABLE_MAIL_TRUE@am__append_38 = plugins/ommail
-@ENABLE_OMKAFKA_TRUE@am__append_39 = plugins/omkafka
-@ENABLE_OMPROG_TRUE@am__append_40 = plugins/omprog
-@ENABLE_RFC3195_TRUE@am__append_41 = plugins/im3195
-@ENABLE_MMNORMALIZE_TRUE@am__append_42 = plugins/mmnormalize
-@ENABLE_MMJSONPARSE_TRUE@am__append_43 = plugins/mmjsonparse
-@ENABLE_MMAUDIT_TRUE@am__append_44 = plugins/mmaudit
-@ENABLE_MMANON_TRUE@am__append_45 = plugins/mmanon
-@ENABLE_MMUTF8FIX_TRUE@am__append_46 = plugins/mmutf8fix
-@ENABLE_MMCOUNT_TRUE@am__append_47 = contrib/mmcount
-@ENABLE_MMSEQUENCE_TRUE@am__append_48 = contrib/mmsequence
-@ENABLE_MMFIELDS_TRUE@am__append_49 = plugins/mmfields
-@ENABLE_MMPSTRUCDATA_TRUE@am__append_50 = plugins/mmpstrucdata
-@ENABLE_MMRFC5424ADDHMAC_TRUE@am__append_51 = contrib/mmrfc5424addhmac
+@ENABLE_RSYSLOGD_TRUE@am__append_1 = tools
+@ENABLE_IMKLOG_TRUE@am__append_2 = plugins/imklog
+@ENABLE_IMKMSG_TRUE@am__append_3 = contrib/imkmsg
+@ENABLE_IMPSTATS_TRUE@am__append_4 = plugins/impstats
+@ENABLE_IMSOLARIS_TRUE@am__append_5 = plugins/imsolaris
+@ENABLE_GSSAPI_TRUE@am__append_6 = plugins/omgssapi plugins/imgssapi
+@ENABLE_RELP_TRUE@am__append_7 = plugins/omrelp plugins/imrelp
+@ENABLE_MYSQL_TRUE@am__append_8 = plugins/ommysql
+@ENABLE_OMLIBDBI_TRUE@am__append_9 = plugins/omlibdbi
+@ENABLE_PGSQL_TRUE@am__append_10 = plugins/ompgsql
+@ENABLE_SNMP_TRUE@am__append_11 = plugins/omsnmp
+@ENABLE_OMSTDOUT_TRUE@am__append_12 = plugins/omstdout
+@ENABLE_PMCISCONAMES_TRUE@am__append_13 = contrib/pmcisconames
+@ENABLE_PMCISCOIOS_TRUE@am__append_14 = plugins/pmciscoios
+@ENABLE_PMAIXFORWARDEDFROM_TRUE@am__append_15 = contrib/pmaixforwardedfrom
+@ENABLE_PMSNARE_TRUE@am__append_16 = contrib/pmsnare
+@ENABLE_PMLASTMSG_TRUE@am__append_17 = plugins/pmlastmsg
+@ENABLE_OMRULESET_TRUE@am__append_18 = plugins/omruleset
+@ENABLE_OMUDPSPOOF_TRUE@am__append_19 = plugins/omudpspoof
+@ENABLE_OMMONGODB_TRUE@am__append_20 = plugins/ommongodb
+@ENABLE_OMHIREDIS_TRUE@am__append_21 = contrib/omhiredis
+@ENABLE_OMZMQ3_TRUE@am__append_22 = contrib/omzmq3
+@ENABLE_OMCZMQ_TRUE@am__append_23 = contrib/omczmq
+@ENABLE_OMRABBITMQ_TRUE@am__append_24 = contrib/omrabbitmq
+@ENABLE_IMZMQ3_TRUE@am__append_25 = contrib/imzmq3
+@ENABLE_IMCZMQ_TRUE@am__append_26 = contrib/imczmq
+@ENABLE_OMUXSOCK_TRUE@am__append_27 = plugins/omuxsock
+@ENABLE_OMHDFS_TRUE@am__append_28 = plugins/omhdfs
+@ENABLE_OMJOURNAL_TRUE@am__append_29 = plugins/omjournal
+@ENABLE_IMJOURNAL_TRUE@am__append_30 = plugins/imjournal
+@ENABLE_ELASTICSEARCH_TRUE@am__append_31 = plugins/omelasticsearch
+@ENABLE_MMSNMPTRAPD_TRUE@am__append_32 = plugins/mmsnmptrapd
+@ENABLE_IMFILE_TRUE@am__append_33 = plugins/imfile
+@ENABLE_IMPTCP_TRUE@am__append_34 = plugins/imptcp
+@ENABLE_IMDIAG_TRUE@am__append_35 = plugins/imdiag
+@ENABLE_MAIL_TRUE@am__append_36 = plugins/ommail
+@ENABLE_OMKAFKA_TRUE@am__append_37 = plugins/omkafka
+@ENABLE_OMPROG_TRUE@am__append_38 = plugins/omprog
+@ENABLE_RFC3195_TRUE@am__append_39 = plugins/im3195
+@ENABLE_MMNORMALIZE_TRUE@am__append_40 = plugins/mmnormalize
+@ENABLE_MMJSONPARSE_TRUE@am__append_41 = plugins/mmjsonparse
+@ENABLE_MMAUDIT_TRUE@am__append_42 = plugins/mmaudit
+@ENABLE_MMANON_TRUE@am__append_43 = plugins/mmanon
+@ENABLE_MMUTF8FIX_TRUE@am__append_44 = plugins/mmutf8fix
+@ENABLE_MMCOUNT_TRUE@am__append_45 = contrib/mmcount
+@ENABLE_MMSEQUENCE_TRUE@am__append_46 = contrib/mmsequence
+@ENABLE_MMFIELDS_TRUE@am__append_47 = plugins/mmfields
+@ENABLE_MMPSTRUCDATA_TRUE@am__append_48 = plugins/mmpstrucdata
+@ENABLE_MMRFC5424ADDHMAC_TRUE@am__append_49 = contrib/mmrfc5424addhmac
 
 # omhttpfs
-@ENABLE_OMHTTPFS_TRUE@am__append_52 = contrib/omhttpfs
+@ENABLE_OMHTTPFS_TRUE@am__append_50 = contrib/omhttpfs
 subdir = .
 DIST_COMMON = INSTALL NEWS README AUTHORS ChangeLog \
 	$(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
-	$(srcdir)/config.h.in depcomp COPYING COPYING.LESSER compile \
-	config.guess config.sub install-sh missing ylwrap ltmain.sh
+	$(srcdir)/config.h.in COPYING COPYING.LESSER compile \
+	config.guess config.sub depcomp install-sh missing ylwrap \
+	ltmain.sh
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_check_define.m4 \
 	$(top_srcdir)/m4/atomic_operations.m4 \
@@ -190,38 +185,6 @@ am__uninstall_files_from_dir = { \
 am__installdirs = "$(DESTDIR)$(pkglibdir)" "$(DESTDIR)$(sbindir)" \
 	"$(DESTDIR)$(systemdsystemunitdir)"
 LTLIBRARIES = $(pkglib_LTLIBRARIES)
-am__DEPENDENCIES_1 =
-@ENABLE_GSSAPI_TRUE@lmgssutil_la_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am__lmgssutil_la_SOURCES_DIST = gss-misc.c gss-misc.h
-@ENABLE_GSSAPI_TRUE@am_lmgssutil_la_OBJECTS =  \
-@ENABLE_GSSAPI_TRUE@	lmgssutil_la-gss-misc.lo
-lmgssutil_la_OBJECTS = $(am_lmgssutil_la_OBJECTS)
-AM_V_lt = $(am__v_lt_@AM_V@)
-am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
-am__v_lt_0 = --silent
-am__v_lt_1 = 
-lmgssutil_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(lmgssutil_la_LDFLAGS) $(LDFLAGS) -o $@
-@ENABLE_GSSAPI_TRUE@am_lmgssutil_la_rpath = -rpath $(pkglibdir)
-lmtcpclt_la_DEPENDENCIES =
-am__lmtcpclt_la_SOURCES_DIST = tcpclt.c tcpclt.h
-@ENABLE_INET_TRUE@am_lmtcpclt_la_OBJECTS = lmtcpclt_la-tcpclt.lo
-lmtcpclt_la_OBJECTS = $(am_lmtcpclt_la_OBJECTS)
-lmtcpclt_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(lmtcpclt_la_LDFLAGS) $(LDFLAGS) -o $@
-@ENABLE_INET_TRUE@am_lmtcpclt_la_rpath = -rpath $(pkglibdir)
-lmtcpsrv_la_DEPENDENCIES =
-am__lmtcpsrv_la_SOURCES_DIST = tcps_sess.c tcps_sess.h tcpsrv.c \
-	tcpsrv.h
-@ENABLE_INET_TRUE@am_lmtcpsrv_la_OBJECTS = lmtcpsrv_la-tcps_sess.lo \
-@ENABLE_INET_TRUE@	lmtcpsrv_la-tcpsrv.lo
-lmtcpsrv_la_OBJECTS = $(am_lmtcpsrv_la_OBJECTS)
-lmtcpsrv_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(lmtcpsrv_la_LDFLAGS) $(LDFLAGS) -o $@
-@ENABLE_INET_TRUE@am_lmtcpsrv_la_rpath = -rpath $(pkglibdir)
 PROGRAMS = $(sbin_PROGRAMS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -235,33 +198,8 @@ AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
 am__v_at_1 = 
-DEFAULT_INCLUDES = -I.@am__isrc@
-depcomp = $(SHELL) $(top_srcdir)/depcomp
-am__depfiles_maybe = depfiles
-am__mv = mv -f
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) \
-	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CFLAGS) $(CFLAGS)
-AM_V_CC = $(am__v_CC_@AM_V@)
-am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
-am__v_CC_0 = @echo "  CC      " $@;
-am__v_CC_1 = 
-CCLD = $(CC)
-LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-AM_V_CCLD = $(am__v_CCLD_@AM_V@)
-am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
-am__v_CCLD_0 = @echo "  CCLD    " $@;
-am__v_CCLD_1 = 
-SOURCES = $(lmgssutil_la_SOURCES) $(lmtcpclt_la_SOURCES) \
-	$(lmtcpsrv_la_SOURCES)
-DIST_SOURCES = $(am__lmgssutil_la_SOURCES_DIST) \
-	$(am__lmtcpclt_la_SOURCES_DIST) \
-	$(am__lmtcpsrv_la_SOURCES_DIST)
+SOURCES =
+DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -400,6 +338,8 @@ GNUTLS_CFLAGS = @GNUTLS_CFLAGS@
 GNUTLS_LIBS = @GNUTLS_LIBS@
 GREP = @GREP@
 GSS_LIBS = @GSS_LIBS@
+GT_KSI_CFLAGS = @GT_KSI_CFLAGS@
+GT_KSI_LIBS = @GT_KSI_LIBS@
 GUARDTIME_CFLAGS = @GUARDTIME_CFLAGS@
 GUARDTIME_LIBS = @GUARDTIME_LIBS@
 HIREDIS_CFLAGS = @HIREDIS_CFLAGS@
@@ -554,36 +494,8 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-pkglib_LTLIBRARIES = $(am__append_1) $(am__append_2)
+pkglib_LTLIBRARIES = 
 pkgconfigdir = $(libdir)/pkgconfig
-#
-#
-# TCP (stream) server support
-#
-@ENABLE_INET_TRUE@lmtcpsrv_la_SOURCES = \
-@ENABLE_INET_TRUE@	tcps_sess.c \
-@ENABLE_INET_TRUE@	tcps_sess.h \
-@ENABLE_INET_TRUE@	tcpsrv.c \
-@ENABLE_INET_TRUE@	tcpsrv.h
-
-@ENABLE_INET_TRUE@lmtcpsrv_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_CFLAGS)
-@ENABLE_INET_TRUE@lmtcpsrv_la_LDFLAGS = -module -avoid-version $(LIBLOGGING_STDLOG_LIBS)
-@ENABLE_INET_TRUE@lmtcpsrv_la_LIBADD = 
-
-#
-# TCP (stream) client support
-#
-@ENABLE_INET_TRUE@lmtcpclt_la_SOURCES = \
-@ENABLE_INET_TRUE@	tcpclt.c \
-@ENABLE_INET_TRUE@	tcpclt.h
-
-@ENABLE_INET_TRUE@lmtcpclt_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_CFLAGS)
-@ENABLE_INET_TRUE@lmtcpclt_la_LDFLAGS = -module -avoid-version $(LIBLOGGING_STDLOG_LIBS)
-@ENABLE_INET_TRUE@lmtcpclt_la_LIBADD = 
-@ENABLE_GSSAPI_TRUE@lmgssutil_la_SOURCES = gss-misc.c gss-misc.h
-@ENABLE_GSSAPI_TRUE@lmgssutil_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS)
-@ENABLE_GSSAPI_TRUE@lmgssutil_la_LDFLAGS = -module -avoid-version
-@ENABLE_GSSAPI_TRUE@lmgssutil_la_LIBADD = $(GSS_LIBS)
 
 #
 # systemd support
@@ -615,23 +527,23 @@ EXTRA_DIST = \
 # modules that need to be generated first
 SUBDIRS = compat runtime grammar . plugins/immark plugins/imuxsock \
 	plugins/imtcp plugins/imudp plugins/omtesting \
-	plugins/mmexternal $(am__append_3) $(am__append_4) \
-	$(am__append_5) $(am__append_6) $(am__append_7) \
-	$(am__append_8) $(am__append_9) $(am__append_10) \
-	$(am__append_11) $(am__append_12) $(am__append_13) \
-	$(am__append_14) $(am__append_15) $(am__append_16) \
-	$(am__append_17) $(am__append_18) $(am__append_19) \
-	$(am__append_20) $(am__append_21) $(am__append_22) \
-	$(am__append_23) $(am__append_24) $(am__append_25) \
-	$(am__append_26) $(am__append_27) $(am__append_28) \
-	$(am__append_29) $(am__append_30) $(am__append_31) \
-	$(am__append_32) $(am__append_33) $(am__append_34) \
-	$(am__append_35) $(am__append_36) $(am__append_37) \
-	$(am__append_38) $(am__append_39) $(am__append_40) \
-	$(am__append_41) $(am__append_42) $(am__append_43) \
-	$(am__append_44) $(am__append_45) $(am__append_46) \
-	$(am__append_47) $(am__append_48) $(am__append_49) \
-	$(am__append_50) $(am__append_51) $(am__append_52) tests
+	plugins/mmexternal $(am__append_1) $(am__append_2) \
+	$(am__append_3) $(am__append_4) $(am__append_5) \
+	$(am__append_6) $(am__append_7) $(am__append_8) \
+	$(am__append_9) $(am__append_10) $(am__append_11) \
+	$(am__append_12) $(am__append_13) $(am__append_14) \
+	$(am__append_15) $(am__append_16) $(am__append_17) \
+	$(am__append_18) $(am__append_19) $(am__append_20) \
+	$(am__append_21) $(am__append_22) $(am__append_23) \
+	$(am__append_24) $(am__append_25) $(am__append_26) \
+	$(am__append_27) $(am__append_28) $(am__append_29) \
+	$(am__append_30) $(am__append_31) $(am__append_32) \
+	$(am__append_33) $(am__append_34) $(am__append_35) \
+	$(am__append_36) $(am__append_37) $(am__append_38) \
+	$(am__append_39) $(am__append_40) $(am__append_41) \
+	$(am__append_42) $(am__append_43) $(am__append_44) \
+	$(am__append_45) $(am__append_46) $(am__append_47) \
+	$(am__append_48) $(am__append_49) $(am__append_50) tests
 
 # make sure "make distcheck" tries to build all modules. This means that
 # a developer must always have an environment where every supporting library
@@ -639,39 +551,45 @@ SUBDIRS = compat runtime grammar . plugins/immark plugins/imuxsock \
 # temporarily be removed below. The intent behind forcing everthing to compile
 # in a make distcheck is so that we detect code that accidently was not updated
 # when some global update happened.
-DISTCHECK_CONFIGURE_FLAGS = --enable-imfile \
-				--enable-snmp \
-				--enable-libdbi \
-				--enable-mysql \
-				--enable-relp \
-				--enable-rsyslogd \
-				--enable-mail \
-				--enable-klog \
-				--enable-diagtools \
-				--enable-gnutls \
-				--enable-omstdout \
-				--enable-pmlastmsg \
-				--enable-omruleset \
-				--enable-omprog \
-				--enable-imdiag \
-				--enable-imptcp \
-				--enable-omuxsock \
-				--enable-impstats \
-				--enable-memcheck \
-				--enable-pmaixforwardedfrom \
-				--enable-pmcisconames \
-				--enable-pmsnare \
-				--enable-elasticsearch \
-				--enable-valgrind \
-				--enable-testbench \
-				--with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir) 
+DISTCHECK_CONFIGURE_FLAGS = \
+	--disable-silent-rules \
+	--disable-testbench
+
+THIS_IS_TEMPORARILY_DISABLED = \
+	--enable-distcheck-workaround \
+	--enable-testbench \
+	--enable-imdiag \
+	--enable-testbench \
+	--enable-imfile \
+	--enable-snmp \
+	--enable-libdbi \
+	--enable-mysql \
+	--enable-relp \
+	--enable-rsyslogd \
+	--enable-mail \
+	--enable-klog \
+	--enable-diagtools \
+	--enable-gnutls \
+	--enable-omstdout \
+	--enable-pmlastmsg \
+	--enable-omruleset \
+	--enable-omprog \
+	--enable-imptcp \
+	--enable-omuxsock \
+	--enable-impstats \
+	--enable-memcheck \
+	--enable-pmaixforwardedfrom \
+	--enable-pmcisconames \
+	--enable-pmsnare \
+	--enable-elasticsearch \
+	--enable-valgrind \
+	--with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir) 
 
 ACLOCAL_AMFLAGS = -I m4
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .c .lo .o .obj
 am--refresh: Makefile
 	@:
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
@@ -756,15 +674,6 @@ clean-pkglibLTLIBRARIES:
 	  echo rm -f $${locs}; \
 	  rm -f $${locs}; \
 	}
-
-lmgssutil.la: $(lmgssutil_la_OBJECTS) $(lmgssutil_la_DEPENDENCIES) $(EXTRA_lmgssutil_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(lmgssutil_la_LINK) $(am_lmgssutil_la_rpath) $(lmgssutil_la_OBJECTS) $(lmgssutil_la_LIBADD) $(LIBS)
-
-lmtcpclt.la: $(lmtcpclt_la_OBJECTS) $(lmtcpclt_la_DEPENDENCIES) $(EXTRA_lmtcpclt_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(lmtcpclt_la_LINK) $(am_lmtcpclt_la_rpath) $(lmtcpclt_la_OBJECTS) $(lmtcpclt_la_LIBADD) $(LIBS)
-
-lmtcpsrv.la: $(lmtcpsrv_la_OBJECTS) $(lmtcpsrv_la_DEPENDENCIES) $(EXTRA_lmtcpsrv_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(lmtcpsrv_la_LINK) $(am_lmtcpsrv_la_rpath) $(lmtcpsrv_la_OBJECTS) $(lmtcpsrv_la_LIBADD) $(LIBS)
 install-sbinPROGRAMS: $(sbin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	@list='$(sbin_PROGRAMS)'; test -n "$(sbindir)" || list=; \
@@ -814,69 +723,6 @@ clean-sbinPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
-
-mostlyclean-compile:
-	-rm -f *.$(OBJEXT)
-
-distclean-compile:
-	-rm -f *.tab.c
-
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmgssutil_la-gss-misc.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmtcpclt_la-tcpclt.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmtcpsrv_la-tcps_sess.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmtcpsrv_la-tcpsrv.Plo@am__quote@
-
-.c.o:
-@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
-@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ $<
-
-.c.obj:
-@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
-@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-.c.lo:
-@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
-@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
-@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
-
-lmgssutil_la-gss-misc.lo: gss-misc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lmgssutil_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lmgssutil_la-gss-misc.lo -MD -MP -MF $(DEPDIR)/lmgssutil_la-gss-misc.Tpo -c -o lmgssutil_la-gss-misc.lo `test -f 'gss-misc.c' || echo '$(srcdir)/'`gss-misc.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lmgssutil_la-gss-misc.Tpo $(DEPDIR)/lmgssutil_la-gss-misc.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gss-misc.c' object='lmgssutil_la-gss-misc.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lmgssutil_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lmgssutil_la-gss-misc.lo `test -f 'gss-misc.c' || echo '$(srcdir)/'`gss-misc.c
-
-lmtcpclt_la-tcpclt.lo: tcpclt.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lmtcpclt_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lmtcpclt_la-tcpclt.lo -MD -MP -MF $(DEPDIR)/lmtcpclt_la-tcpclt.Tpo -c -o lmtcpclt_la-tcpclt.lo `test -f 'tcpclt.c' || echo '$(srcdir)/'`tcpclt.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lmtcpclt_la-tcpclt.Tpo $(DEPDIR)/lmtcpclt_la-tcpclt.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tcpclt.c' object='lmtcpclt_la-tcpclt.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lmtcpclt_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lmtcpclt_la-tcpclt.lo `test -f 'tcpclt.c' || echo '$(srcdir)/'`tcpclt.c
-
-lmtcpsrv_la-tcps_sess.lo: tcps_sess.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lmtcpsrv_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lmtcpsrv_la-tcps_sess.lo -MD -MP -MF $(DEPDIR)/lmtcpsrv_la-tcps_sess.Tpo -c -o lmtcpsrv_la-tcps_sess.lo `test -f 'tcps_sess.c' || echo '$(srcdir)/'`tcps_sess.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lmtcpsrv_la-tcps_sess.Tpo $(DEPDIR)/lmtcpsrv_la-tcps_sess.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tcps_sess.c' object='lmtcpsrv_la-tcps_sess.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lmtcpsrv_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lmtcpsrv_la-tcps_sess.lo `test -f 'tcps_sess.c' || echo '$(srcdir)/'`tcps_sess.c
-
-lmtcpsrv_la-tcpsrv.lo: tcpsrv.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lmtcpsrv_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lmtcpsrv_la-tcpsrv.lo -MD -MP -MF $(DEPDIR)/lmtcpsrv_la-tcpsrv.Tpo -c -o lmtcpsrv_la-tcpsrv.lo `test -f 'tcpsrv.c' || echo '$(srcdir)/'`tcpsrv.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lmtcpsrv_la-tcpsrv.Tpo $(DEPDIR)/lmtcpsrv_la-tcpsrv.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tcpsrv.c' object='lmtcpsrv_la-tcpsrv.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lmtcpsrv_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lmtcpsrv_la-tcpsrv.lo `test -f 'tcpsrv.c' || echo '$(srcdir)/'`tcpsrv.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -1251,10 +1097,9 @@ clean-am: clean-generic clean-libtool clean-pkglibLTLIBRARIES \
 
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
-distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-hdr distclean-libtool distclean-tags
+distclean-am: clean-am distclean-generic distclean-hdr \
+	distclean-libtool distclean-tags
 
 dvi: dvi-recursive
 
@@ -1299,14 +1144,12 @@ installcheck-am:
 maintainer-clean: maintainer-clean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-recursive
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic \
-	mostlyclean-libtool
+mostlyclean-am: mostlyclean-generic mostlyclean-libtool
 
 pdf: pdf-recursive
 
@@ -1326,21 +1169,19 @@ uninstall-am: uninstall-nodist_systemdsystemunitDATA \
 	clean-libtool clean-pkglibLTLIBRARIES clean-sbinPROGRAMS \
 	cscope cscopelist-am ctags ctags-am dist dist-all dist-bzip2 \
 	dist-gzip dist-hook dist-lzip dist-shar dist-tarZ dist-xz \
-	dist-zip distcheck distclean distclean-compile \
-	distclean-generic distclean-hdr distclean-libtool \
-	distclean-tags distcleancheck distdir distuninstallcheck dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-info install-info-am install-man \
+	dist-zip distcheck distclean distclean-generic distclean-hdr \
+	distclean-libtool distclean-tags distcleancheck distdir \
+	distuninstallcheck dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-info install-info-am install-man \
 	install-nodist_systemdsystemunitDATA install-pdf \
 	install-pdf-am install-pkglibLTLIBRARIES install-ps \
 	install-ps-am install-sbinPROGRAMS install-strip installcheck \
 	installcheck-am installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am \
-	uninstall-nodist_systemdsystemunitDATA \
+	maintainer-clean-generic mostlyclean mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-am uninstall \
+	uninstall-am uninstall-nodist_systemdsystemunitDATA \
 	uninstall-pkglibLTLIBRARIES uninstall-sbinPROGRAMS
 
 
