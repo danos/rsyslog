@@ -41,6 +41,7 @@
 #include <fcntl.h>
 #include <gt_http.h>
 
+#include "librsgt_common.h"
 #include "librsgt.h"
 
 typedef unsigned char uchar;
@@ -345,7 +346,10 @@ rsgt_tlvDecodeIMPRINT(tlvrecord_t *rec, imprint_t **imprint)
 	memcpy(imp->data, rec->data+1, imp->len);
 	*imprint = imp;
 	r = 0;
-done:	return r;
+done:	
+	if(rsgt_read_debug)
+		printf("debug: read tlvDecodeIMPRINT returned %d TLVLen=%d, HashID=%d\n", r, rec->tlvlen, imp->hashID);
+	return r;
 }
 
 static int
@@ -674,7 +678,7 @@ rsgt_objfree(uint16_t tlvtype, void *obj)
 /**
  * Read block parameters. This detects if the block contains the
  * individual log hashes, the intermediate hashes and the overall
- * block paramters (from the signature block). As we do not have any
+ * block parameters (from the signature block). As we do not have any
  * begin of block record, we do not know e.g. the hash algorithm or IV
  * until reading the block signature record. And because the file is
  * purely sequential and variable size, we need to read all records up to
@@ -854,6 +858,8 @@ rsgt_vrfy_chkTreeHash(gtfile gf, FILE *sigfp, FILE *nsigfp,
 	}
 	r = 0;
 done:
+	if(rsgt_read_debug)
+		printf("debug: rsgt_vrfy_chkTreeHash returned %d, hashID=%d, Length=%d\n", r, imp->hashID, hashOutputLengthOctets(imp->hashID));
 	if(imp != NULL)
 		rsgt_objfree(0x0901, imp);
 	return r;
@@ -1089,4 +1095,10 @@ done:
 	if(timestamp != NULL)
 		GTTimestamp_free(timestamp);
 	return r;
+}
+
+/* Helper function to enable debug */
+void rsgt_set_debug(int iDebug)
+{
+	rsgt_read_debug = iDebug; 
 }

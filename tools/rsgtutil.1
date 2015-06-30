@@ -91,6 +91,22 @@ will also fail.
 Sets the publications server. If not set but required by the operation a
 default server is used. The default server is not necessarily optimal
 in regard to performance and reliability.
+.TP
+.B \-h\fP,\fB  \-\-help
+Shows short help for the utility.
+.TP
+.B \-d\fP,\fB  \-\-debug
+Enables additional debug output useful for developers.
+.TP
+.BI \-a \ <GT|KSI>\fP,\fB \ \-\-api \ <GT|KSI>
+Specifies the API used by the utility. This parameter overwrites the Libary
+used by this utility. However it is only possible to verify .gtsig signatures
+with the old Guardtime library and .ksisig signatures only with the new
+Guardtime KSI Libary. So the parameter won\(aqt have any affect when
+verifying signatures.
+Available options:
+GT = Guardtime Client Library
+KSI = Guardtime KSI Library
 .UNINDENT
 .SH OPERATION MODES
 .sp

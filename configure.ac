@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([rsyslog],[8.10.0],[rsyslog@lists.adiscon.com])
+AC_INIT([rsyslog],[8.11.0],[rsyslog@lists.adiscon.com])
 AM_INIT_AUTOMAKE([subdir-objects])
 
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
@@ -818,9 +818,9 @@ AM_CONDITIONAL(ENABLE_RSYSLOGRT, test x$enable_rsyslogrt = xyes)
 RSRT_CFLAGS="\$(RSRT_CFLAGS1) \$(LIBESTR_CFLAGS) \$(JSON_C_CFLAGS)"
 if test "$GCC" = "yes"; then
   RSRT_CFLAGS="$RSRT_CFLAGS -W -Wall -Wformat-security -Wshadow -Wcast-align -Wpointer-arith -Wmissing-format-attribute"
-  if $CC -Werror=implicit-function-declaration -x c -c /dev/null 2>/dev/null; then
+  if $CC -Werror=implicit-function-declaration -x c -c /dev/null -o /dev/null 2>/dev/null; then
     RSRT_CFLAGS="$RSRT_CFLAGS -Werror=implicit-function-declaration"
-  elif $CC -Werror-implicit-function-declaration -x c -c /dev/null 2>/dev/null; then
+  elif $CC -Werror-implicit-function-declaration -x c -c /dev/null -o /dev/null 2>/dev/null; then
     RSRT_CFLAGS="$RSRT_CFLAGS -Werror-implicit-function-declaration"
   fi
 
@@ -1091,6 +1091,22 @@ if test "x$enable_guardtime" = "xyes"; then
 	PKG_CHECK_MODULES(GUARDTIME, libgt >= 0.3.1)
 fi
 AM_CONDITIONAL(ENABLE_GUARDTIME, test x$enable_guardtime = xyes)
+
+
+# GuardTime KSI support
+AC_ARG_ENABLE(gt-ksi,
+        [AS_HELP_STRING([--enable-gt-ksi],[Enable log file signing support via GuardTime KSI @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_gt_ksi="yes" ;;
+          no) enable_gt_ksi="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-gt-ksi) ;;
+         esac],
+        [enable_gt_ksi=no]
+)
+if test "x$enable_gt_ksi" = "xyes"; then
+	PKG_CHECK_MODULES(GT_KSI, libksi >= 3.2.2.0)
+fi
+AM_CONDITIONAL(ENABLE_GT_KSI, test x$enable_gt_ksi = xyes)
 
 
 # liblogging-stdlog support
@@ -1592,6 +1608,20 @@ AC_ARG_ENABLE(generate-man-pages,
 )
 
 
+# This provides a work-around to use "make distcheck" by disabling
+# some tests that do have problems with the distcheck environment.
+AC_ARG_ENABLE(distcheck-workaround,
+        [AS_HELP_STRING([--enable-distcheck-workaround],[enable to use make distcheck by disabling some tests that do not support the distcheck environment @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_distcheck_workaround="yes" ;;
+          no) enable_distcheck_workaround="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-distcheck_workaround) ;;
+         esac],
+        [enable_distcheck_workaround="no"]
+)
+AM_CONDITIONAL(ENABLE_DISTCHECK_WORKAROUND, test x$enable_distcheck_workaround = xyes)
+
+
 # Running from git source?
 in_git_src=no
 AS_IF([test -d "$srcdir"/.git && ! test -f  "$srcdir"/.tarball-version], [in_git_src=yes])
@@ -1701,6 +1731,7 @@ echo "    have to generate man pages:               $have_to_generate_man_pages"
 echo "    Unlimited select() support enabled:       $enable_unlimited_select"
 echo "    uuid support enabled:                     $enable_uuid"
 echo "    Log file signing support:                 $enable_guardtime"
+echo "    Log file signing support via KSI:         $enable_gt_ksi"
 echo "    Log file encryption support:              $enable_libgcrypt"
 echo "    anonymization support enabled:            $enable_mmanon"
 echo "    message counting support enabled:         $enable_mmcount"

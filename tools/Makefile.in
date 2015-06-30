@@ -78,8 +78,9 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-sbin_PROGRAMS = rsyslogd$(EXEEXT) $(am__EXEEXT_4)
-bin_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3)
+sbin_PROGRAMS = rsyslogd$(EXEEXT) $(am__EXEEXT_5)
+bin_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+	$(am__EXEEXT_4)
 @ENABLE_LIBLOGGING_STDLOG_TRUE@am__append_1 = $(LIBLOGGING_STDLOG_LIBS)
 @ENABLE_DIAGTOOLS_TRUE@am__append_2 = rsyslog_diag_hostname msggen
 @ENABLE_OMMONGODB_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_3 = logctl
@@ -87,10 +88,16 @@ bin_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3)
 @ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_5 = rsgtutil.1
 @ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_6 = rsgtutil.1
 @ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_7 = rsgtutil.1
-@ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_8 = rscryutil
-@ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_9 = rscryutil.1
-@ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_10 = rscryutil.1
-@ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_11 = rscryutil.1
+@ENABLE_GT_KSI_TRUE@@ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_8 = $(GT_KSI_CFLAGS) -DENABLEKSI
+@ENABLE_GT_KSI_TRUE@@ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_9 = ../runtime/librsksi.la $(GT_KSI_LIBS)
+@ENABLE_GT_KSI_TRUE@@ENABLE_GUARDTIME_FALSE@@ENABLE_USERTOOLS_TRUE@am__append_10 = rsgtutil
+@ENABLE_GT_KSI_TRUE@@ENABLE_GUARDTIME_FALSE@@ENABLE_USERTOOLS_TRUE@am__append_11 = rsgtutil.1
+@ENABLE_GT_KSI_TRUE@@ENABLE_GUARDTIME_FALSE@@ENABLE_USERTOOLS_TRUE@am__append_12 = rsgtutil.1
+@ENABLE_GT_KSI_TRUE@@ENABLE_GUARDTIME_FALSE@@ENABLE_USERTOOLS_TRUE@am__append_13 = rsgtutil.1
+@ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_14 = rscryutil
+@ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_15 = rscryutil.1
+@ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_16 = rscryutil.1
+@ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@am__append_17 = rscryutil.1
 subdir = tools
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp
@@ -110,11 +117,12 @@ CONFIG_CLEAN_VPATH_FILES =
 @ENABLE_OMMONGODB_TRUE@@ENABLE_USERTOOLS_TRUE@am__EXEEXT_1 =  \
 @ENABLE_OMMONGODB_TRUE@@ENABLE_USERTOOLS_TRUE@	logctl$(EXEEXT)
 @ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@am__EXEEXT_2 = rsgtutil$(EXEEXT)
-@ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@am__EXEEXT_3 = rscryutil$(EXEEXT)
+@ENABLE_GT_KSI_TRUE@@ENABLE_GUARDTIME_FALSE@@ENABLE_USERTOOLS_TRUE@am__EXEEXT_3 = rsgtutil$(EXEEXT)
+@ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@am__EXEEXT_4 = rscryutil$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)" \
 	"$(DESTDIR)$(man1dir)" "$(DESTDIR)$(man5dir)" \
 	"$(DESTDIR)$(man8dir)"
-@ENABLE_DIAGTOOLS_TRUE@am__EXEEXT_4 = rsyslog_diag_hostname$(EXEEXT) \
+@ENABLE_DIAGTOOLS_TRUE@am__EXEEXT_5 = rsyslog_diag_hostname$(EXEEXT) \
 @ENABLE_DIAGTOOLS_TRUE@	msggen$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS) $(sbin_PROGRAMS)
 am__logctl_SOURCES_DIST = logctl.c
@@ -136,8 +144,13 @@ rscryutil_OBJECTS = rscryutil-rscryutil.$(OBJEXT)
 @ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@	$(am__DEPENDENCIES_1)
 rsgtutil_SOURCES = rsgtutil.c
 rsgtutil_OBJECTS = rsgtutil-rsgtutil.$(OBJEXT)
+@ENABLE_GT_KSI_TRUE@@ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@am__DEPENDENCIES_2 = ../runtime/librsksi.la \
+@ENABLE_GT_KSI_TRUE@@ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@	$(am__DEPENDENCIES_1)
+@ENABLE_GT_KSI_TRUE@@ENABLE_GUARDTIME_FALSE@@ENABLE_USERTOOLS_TRUE@rsgtutil_DEPENDENCIES = ../runtime/librsksi.la \
+@ENABLE_GT_KSI_TRUE@@ENABLE_GUARDTIME_FALSE@@ENABLE_USERTOOLS_TRUE@	$(am__DEPENDENCIES_1)
 @ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@rsgtutil_DEPENDENCIES = ../runtime/librsgt.la \
-@ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@	$(am__DEPENDENCIES_1)
+@ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@	$(am__DEPENDENCIES_1) \
+@ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@	$(am__DEPENDENCIES_2)
 am__rsyslog_diag_hostname_SOURCES_DIST = gethostn.c
 @ENABLE_DIAGTOOLS_TRUE@am_rsyslog_diag_hostname_OBJECTS =  \
 @ENABLE_DIAGTOOLS_TRUE@	gethostn.$(OBJEXT)
@@ -152,13 +165,13 @@ am_rsyslogd_OBJECTS = rsyslogd-syslogd.$(OBJEXT) \
 	rsyslogd-smfile.$(OBJEXT) rsyslogd-smfwd.$(OBJEXT) \
 	rsyslogd-smtradfwd.$(OBJEXT) rsyslogd-iminternal.$(OBJEXT)
 rsyslogd_OBJECTS = $(am_rsyslogd_OBJECTS)
-@ENABLE_LIBLOGGING_STDLOG_TRUE@am__DEPENDENCIES_2 =  \
+@ENABLE_LIBLOGGING_STDLOG_TRUE@am__DEPENDENCIES_3 =  \
 @ENABLE_LIBLOGGING_STDLOG_TRUE@	$(am__DEPENDENCIES_1)
 rsyslogd_DEPENDENCIES = ../grammar/libgrammar.la \
-	../runtime/librsyslog.la $(am__DEPENDENCIES_1) \
+	../runtime/librsyslog.la ../compat/compat.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_2)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_3)
 rsyslogd_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(rsyslogd_LDFLAGS) $(LDFLAGS) -o $@
@@ -292,6 +305,8 @@ GNUTLS_CFLAGS = @GNUTLS_CFLAGS@
 GNUTLS_LIBS = @GNUTLS_LIBS@
 GREP = @GREP@
 GSS_LIBS = @GSS_LIBS@
+GT_KSI_CFLAGS = @GT_KSI_CFLAGS@
+GT_KSI_LIBS = @GT_KSI_LIBS@
 GUARDTIME_CFLAGS = @GUARDTIME_CFLAGS@
 GUARDTIME_LIBS = @GUARDTIME_LIBS@
 HIREDIS_CFLAGS = @HIREDIS_CFLAGS@
@@ -446,8 +461,8 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-CLEANFILES = $(am__append_6) $(am__append_10)
-man1_MANS = $(am__append_5) $(am__append_9)
+CLEANFILES = $(am__append_6) $(am__append_12) $(am__append_16)
+man1_MANS = $(am__append_5) $(am__append_11) $(am__append_15)
 man_MANS = rsyslogd.8 rsyslog.conf.5
 rsyslogd_SOURCES = \
 	syslogd.c \
@@ -487,21 +502,30 @@ rsyslogd_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_CFLAGS
 # otherwise dependencies are not properly calculated (resulting in a
 # potentially incomplete build, a problem we had several times...)
 rsyslogd_LDADD = ../grammar/libgrammar.la ../runtime/librsyslog.la \
-	$(ZLIB_LIBS) $(PTHREADS_LIBS) $(RSRT_LIBS) $(SOL_LIBS) \
-	$(LIBUUID_LIBS) $(am__append_1)
+	../compat/compat.la $(ZLIB_LIBS) $(PTHREADS_LIBS) $(RSRT_LIBS) \
+	$(SOL_LIBS) $(LIBUUID_LIBS) $(am__append_1)
 rsyslogd_LDFLAGS = -export-dynamic \
 	-Wl,--whole-archive,$(top_builddir)/runtime/.libs/librsyslog.a,--no-whole-archive
 
 EXTRA_DIST = $(man_MANS) rsgtutil.rst rscryutil.rst recover_qi.pl \
-	$(am__append_7) $(am__append_11)
+	$(am__append_7) $(am__append_13) $(am__append_17)
 @ENABLE_DIAGTOOLS_TRUE@rsyslog_diag_hostname_SOURCES = gethostn.c
 @ENABLE_DIAGTOOLS_TRUE@msggen_SOURCES = msggen.c
 @ENABLE_OMMONGODB_TRUE@@ENABLE_USERTOOLS_TRUE@logctl_SOURCES = logctl.c
 @ENABLE_OMMONGODB_TRUE@@ENABLE_USERTOOLS_TRUE@logctl_CPPFLAGS = $(LIBMONGO_CLIENT_CFLAGS)
 @ENABLE_OMMONGODB_TRUE@@ENABLE_USERTOOLS_TRUE@logctl_LDADD = $(LIBMONGO_CLIENT_LIBS)
+@ENABLE_GT_KSI_TRUE@@ENABLE_GUARDTIME_FALSE@@ENABLE_USERTOOLS_TRUE@rsgtutil = rsgtutil.c
 @ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@rsgtutil = rsgtutil.c
-@ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@rsgtutil_CPPFLAGS = $(RSRT_CFLAGS) $(GUARDTIME_CFLAGS)
-@ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@rsgtutil_LDADD = ../runtime/librsgt.la $(GUARDTIME_LIBS)
+@ENABLE_GT_KSI_TRUE@@ENABLE_GUARDTIME_FALSE@@ENABLE_USERTOOLS_TRUE@rsgtutil_CPPFLAGS = $(RSRT_CFLAGS) $(GT_KSI_CFLAGS) -DENABLEKSI
+@ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@rsgtutil_CPPFLAGS =  \
+@ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@	$(RSRT_CFLAGS) \
+@ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@	$(GUARDTIME_CFLAGS) \
+@ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@	-DENABLEGT \
+@ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@	$(am__append_8)
+@ENABLE_GT_KSI_TRUE@@ENABLE_GUARDTIME_FALSE@@ENABLE_USERTOOLS_TRUE@rsgtutil_LDADD = ../runtime/librsksi.la $(GT_KSI_LIBS)
+@ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@rsgtutil_LDADD = ../runtime/librsgt.la \
+@ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@	$(GUARDTIME_LIBS) \
+@ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@	$(am__append_9)
 @ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@rscryutil = rscryutil.c
 @ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@rscryutil_CPPFLAGS = -I../runtime $(RSRT_CFLAGS) $(LIBGCRYPT_CFLAGS)
 @ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@rscryutil_LDADD = ../runtime/libgcry.la $(LIBGCRYPT_LIBS)
@@ -1316,6 +1340,8 @@ uninstall-man: uninstall-man1 uninstall-man5 uninstall-man8
 
 @ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@rsgtutil.1: rsgtutil.rst
 @ENABLE_GUARDTIME_TRUE@@ENABLE_USERTOOLS_TRUE@	$(AM_V_GEN) $(RST2MAN) $< $@
+@ENABLE_GT_KSI_TRUE@@ENABLE_GUARDTIME_FALSE@@ENABLE_USERTOOLS_TRUE@rsgtutil.1: rsgtutil.rst
+@ENABLE_GT_KSI_TRUE@@ENABLE_GUARDTIME_FALSE@@ENABLE_USERTOOLS_TRUE@	$(AM_V_GEN) $(RST2MAN) $< $@
 @ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@rscryutil.1: rscryutil.rst
 @ENABLE_LIBGCRYPT_TRUE@@ENABLE_USERTOOLS_TRUE@	$(AM_V_GEN) $(RST2MAN) $< $@
 
