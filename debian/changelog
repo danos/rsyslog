@@ -1,3 +1,10 @@
+rsyslog (8.11.0-2) UNRELEASED; urgency=medium
+
+  * Properly handle transactions in ompgsql. Patch cherry-picked from upstream
+    Git. (Closes: #788183)
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 15 Jul 2015 02:47:38 +0200
+
 rsyslog (8.11.0-1) unstable; urgency=medium
 
   * New upstream release.
