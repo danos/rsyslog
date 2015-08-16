@@ -25,6 +25,8 @@ TESTS +=  \
 	fac_invld3.sh \
 	fac_invld4_rfc5424.sh \
 	rfc5424parser.sh \
+	tcp_forwarding_tpl.sh \
+	tcp_forwarding_dflt_tpl.sh \
 	arrayqueue.sh \
 	global_vars.sh \
 	da-mainmsg-q.sh \
@@ -43,7 +45,6 @@ TESTS +=  \
 	imtcp_addtlframedelim.sh \
 	imtcp_no_octet_counted.sh \
 	imtcp_spframingfix.sh \
-	imptcp_spframingfix.sh \
 	sndrcv.sh \
 	sndrcv_failover.sh \
 	sndrcv_gzip.sh \
@@ -126,6 +127,7 @@ TESTS +=  \
 	linkedlistqueue.sh \
 	key_dereference_on_uninitialized_variable_space.sh
 
+
 if HAVE_VALGRIND
 TESTS +=  \
 	discard-rptdmsg-vg.sh \
@@ -173,6 +175,8 @@ TESTS +=  \
 	imptcp_addtlframedelim.sh \
 	imptcp_conndrop.sh \
 	imptcp_no_octet_counted.sh \
+	imptcp_spframingfix.sh \
+	rscript_random.sh \
 	rscript_replace.sh \
 	rscript_replace_complex.sh \
 	rscript_wrap2.sh \
@@ -408,6 +412,10 @@ EXTRA_DIST= \
 	testsuites/omod-if-array.conf \
 	testsuites/1.omod-if-array \
 	testsuites/1.field1 \
+	tcp_forwarding_tpl.sh \
+	testsuites/tcp_forwarding_tpl.conf \
+	tcp_forwarding_dflt_tpl.sh \
+	testsuites/tcp_forwarding_dflt_tpl.conf \
 	killrsyslog.sh \
 	parsertest.sh \
 	fieldtest.sh \
@@ -804,6 +812,8 @@ EXTRA_DIST= \
 	testsuites/mmnormalize_tokenized.conf \
 	testsuites/mmnormalize_tokenized.rulebase \
 	testsuites/tokenized_input \
+	rscript_random.sh \
+	testsuites/rscript_random.conf \
 	rscript_replace.sh \
 	testsuites/rscript_replace.conf \
 	rscript_replace_complex.sh \

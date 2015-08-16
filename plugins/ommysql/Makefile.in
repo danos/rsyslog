@@ -265,7 +265,15 @@ LIBM = @LIBM@
 LIBMONGO_CLIENT_CFLAGS = @LIBMONGO_CLIENT_CFLAGS@
 LIBMONGO_CLIENT_LIBS = @LIBMONGO_CLIENT_LIBS@
 LIBOBJS = @LIBOBJS@
-LIBS = @LIBS@
+
+# under RHEL 7, we have an issue when gnutls is linked. For some reason
+# (autoconf magic?) we link ommysql against gnutls. I have not found the
+# root cause, but setting LIBS= below makes the problem go away. A better
+# solution would be appreciated, but for the time being this seems to
+# solve the issue.
+# more info: https://github.com/rsyslog/rsyslog/issues/408
+# rgerhards, 2015-07-08
+LIBS = 
 LIBSYSTEMD_JOURNAL_CFLAGS = @LIBSYSTEMD_JOURNAL_CFLAGS@
 LIBSYSTEMD_JOURNAL_LIBS = @LIBSYSTEMD_JOURNAL_LIBS@
 LIBTOOL = @LIBTOOL@

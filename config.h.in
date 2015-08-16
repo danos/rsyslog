@@ -144,9 +144,6 @@
 /* Define to 1 if you have the <libgen.h> header file. */
 #undef HAVE_LIBGEN_H
 
-/* Define to 1 if you have the `gnutls' library (-lgnutls). */
-#undef HAVE_LIBGNUTLS
-
 /* Define to 1 if you have the `json-c' library (-ljson-c). */
 #undef HAVE_LIBJSON_C
 
@@ -158,6 +155,9 @@
 
 /* Define to 1 if you have the <librdkafka/rdkafka.h> header file. */
 #undef HAVE_LIBRDKAFKA_RDKAFKA_H
+
+/* gnutls is available */
+#undef HAVE_LIB_GNUTLS
 
 /* Define to 1 if you have the <locale.h> header file. */
 #undef HAVE_LOCALE_H

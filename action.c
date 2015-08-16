@@ -397,7 +397,7 @@ actionConstructFinalize(action_t *__restrict__ const pThis, struct nvlst *lst)
 			if(pThis->peParamPassing[i] != ACT_STRING_PASSING) {
 				errmsg.LogError(0, RS_RET_INVLD_OMOD, "action '%s'(%d) is transactional but "
 						"parameter %d "
-						"uses invalid paramter passing mode -- disabling "
+						"uses invalid parameter passing mode -- disabling "
 						"action. This is probably caused by a pre-v7 "
 						"output module that needs upgrade.",
 						pThis->pszName, pThis->iActionNbr, i);
@@ -1458,6 +1458,10 @@ doSubmitToActionQ(action_t * const pAction, wti_t * const pWti, msg_t *pMsg)
 	}
 	pWti->execState.bPrevWasSuspended
 		= (iRet == RS_RET_SUSPENDED || iRet == RS_RET_ACTION_FAILED);
+
+	if (iRet == RS_RET_ACTION_FAILED)	/* Increment failed counter */
+		STATSCOUNTER_INC(pAction->ctrFail, pAction->mutCtrFail);
+
 	DBGPRINTF("action '%s': set suspended state to %d\n",
 		pAction->pszName, pWti->execState.bPrevWasSuspended);
 

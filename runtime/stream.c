@@ -448,13 +448,13 @@ static rsRetVal strmCloseFile(strm_t *pThis)
 			DBGPRINTF("error %d unlinking '%s' - ignored: %s\n",
 				   errno, pThis->pszCurrFName, errStr);
 		}
-		free(pThis->pszCurrFName);
-		pThis->pszCurrFName = NULL;
 	}
 
 	pThis->iCurrOffs = 0;	/* we are back at begin of file */
 
 finalize_it:
+	free(pThis->pszCurrFName);
+	pThis->pszCurrFName = NULL;
 	RETiRet;
 }
 
@@ -826,7 +826,6 @@ strmReadMultiLine(strm_t *pThis, cstr_t **ppCStr, regex_t *preg, sbool bEscapeLF
 		CHKiRet(cstrConstruct(&thisLine));
 		/* append previous message to current message if necessary */
 		if(pThis->prevLineSegment != NULL) {
-			dbgprintf("DDDDD: readMultiLine: have previous line segment: '%s'\n", rsCStrGetSzStr(pThis->prevLineSegment));
 			CHKiRet(cstrAppendCStr(thisLine, pThis->prevLineSegment));
 			cstrDestruct(&pThis->prevLineSegment);
 		}
@@ -843,7 +842,6 @@ strmReadMultiLine(strm_t *pThis, cstr_t **ppCStr, regex_t *preg, sbool bEscapeLF
 
 		/* we have a line, now let's assemble the message */
 		const int isMatch = !regexec(preg, (char*)rsCStrGetSzStrNoNULL(thisLine), 0, NULL, 0);
-dbgprintf("DDDD: readMultiLine: match %d, line '%s'\n", isMatch, rsCStrGetSzStr(thisLine));
 
 		if(isMatch) {
 			/* in this case, the *previous* message is complete and we are
@@ -853,24 +851,26 @@ dbgprintf("DDDD: readMultiLine: match %d, line '%s'\n", isMatch, rsCStrGetSzStr(
 				/* may be NULL in initial poll! */
 				finished = 1;
 				*ppCStr = pThis->prevMsgSegment;
-dbgprintf("DDDD: readMultiLine: have match and msg %p\n", *ppCStr);
 			}
 			CHKiRet(rsCStrConstructFromCStr(&pThis->prevMsgSegment, thisLine));
 			
 		} else {
-			CHKiRet(cstrAppendCStr(pThis->prevMsgSegment, thisLine));
-			if(bEscapeLF) {
-				rsCStrAppendStrWithLen(pThis->prevMsgSegment, (uchar*)"\\n", 2);
-			} else {
-				cstrAppendChar(pThis->prevMsgSegment, '\n');
+			if(pThis->prevMsgSegment != NULL) {
+				/* may be NULL in initial poll! */
+				CHKiRet(cstrAppendCStr(pThis->prevMsgSegment, thisLine));
+				if(bEscapeLF) {
+					rsCStrAppendStrWithLen(pThis->prevMsgSegment, (uchar*)"\\n", 2);
+				} else {
+					cstrAppendChar(pThis->prevMsgSegment, '\n');
+				}
+				/* we could do this faster, but for now keep it simple */
+
 			}
-			/* we could do this faster, but for now keep it simple */
 		}
 		cstrDestruct(&thisLine);
 	} while(finished == 0);
 
 finalize_it:
-dbgprintf("DDDDD: readMultiLine returns[%d]: [*ppCStr %p]\n", iRet,  *ppCStr);
         RETiRet;
 }
 
@@ -1097,11 +1097,28 @@ doWriteCall(strm_t *pThis, uchar *pBuf, size_t *pLenBuf)
 	char *pWriteBuf;
 	DEFiRet;
 	ISOBJ_TYPE_assert(pThis, strm);
+#ifdef __FreeBSD__
+	sbool crnlNow = 0;
+#endif /* __FreeBSD__ */
 
 	lenBuf = *pLenBuf;
 	pWriteBuf = (char*) pBuf;
 	iTotalWritten = 0;
 	do {
+#ifdef __FreeBSD__
+		if (pThis->bIsTTY && !pThis->iZipLevel && !pThis->cryprov) {
+			char *pNl = NULL;
+			if (crnlNow == 0) pNl = strchr(pWriteBuf, '\n');
+			else crnlNow = 0;
+			if (pNl == pWriteBuf) {
+				iWritten = write(pThis->fd, "\r", 1);
+				if (iWritten > 0) {
+					crnlNow = 1;
+					iWritten = 0;
+				}
+			} else iWritten = write(pThis->fd, pWriteBuf, pNl ? pNl - pWriteBuf : lenBuf);
+		} else
+#endif /* __FreeBSD__ */
 		iWritten = write(pThis->fd, pWriteBuf, lenBuf);
 		if(iWritten < 0) {
 			char errStr[1024];
