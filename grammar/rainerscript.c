@@ -1100,7 +1100,7 @@ cnfparamvalsIsSet(struct cnfparamblk *params, struct cnfparamvals *vals)
 
 
 void
-cnfparamsPrint(struct cnfparamblk *params, struct cnfparamvals *vals)
+cnfparamsPrint(const struct cnfparamblk *params, const struct cnfparamvals *vals)
 {
 	int i;
 	char *cstr;
@@ -1265,7 +1265,7 @@ int SKIP_STRING = 0x1;
 int SKIP_JSON = 0x2;
 
 static void
-varFreeMembersSelectively(struct var *r, int skipMask)
+varFreeMembersSelectively(const struct var *r, const int skipMask)
 {
 	int kill_string = ! (skipMask & SKIP_STRING);
 	if(kill_string && (r->datatype == 'S')) es_deleteStr(r->d.estr);
@@ -1274,7 +1274,7 @@ varFreeMembersSelectively(struct var *r, int skipMask)
 }
 
 static void
-varFreeMembers(struct var *r)
+varFreeMembers(const struct var *r)
 {
 	varFreeMembersSelectively(r, SKIP_NOTHING);
 }
@@ -1579,6 +1579,20 @@ doFuncWrap(struct var *__restrict__ const sourceVal, struct var *__restrict__ co
     return res;
 }
 
+static inline long long
+doRandomGen(struct var *__restrict__ const sourceVal) {
+	int success = 0;
+	long long max = var2Number(sourceVal, &success);
+	if (! success) {
+		dbgprintf("rainerscript: random(max) didn't get a valid 'max' limit, defaulting random-number value to 0");
+		return 0;
+	}
+	long int x = randomNumber();
+	if (max > MAX_RANDOM_NUMBER) {
+		dbgprintf("rainerscript: desired random-number range [0 - %ld) is wider than supported limit of [0 - %ld)", max, MAX_RANDOM_NUMBER);
+	}
+	return x % max;
+}
 
 /* Perform a function call. This has been moved out of cnfExprEval in order
  * to keep the code small and easier to maintain.
@@ -1636,6 +1650,12 @@ doFuncCall(struct cnffunc *__restrict__ const func, struct var *__restrict__ con
 		varFreeMembers(&r[0]);
 		varFreeMembers(&r[1]);
 		if(func->nParams == 3) varFreeMembers(&r[2]);
+		break;
+	case CNFFUNC_RANDOM:
+		cnfexprEval(func->expr[0], &r[0], usrptr);
+		ret->d.n = doRandomGen(&r[0]);
+		ret->datatype = 'N';
+		varFreeMembers(&r[0]);
 		break;
 	case CNFFUNC_GETENV:
 		/* note: the optimizer shall have replaced calls to getenv()
@@ -1816,7 +1836,8 @@ evalVar(struct cnfvar *__restrict__ const var, void *__restrict__ const usrptr,
  * and it was generally 5 to 10 times SLOWER than what we do here...
  */
 static int
-evalStrArrayCmp(es_str_t *const estr_l, struct cnfarray *__restrict__ const ar,
+evalStrArrayCmp(es_str_t *const estr_l,
+		const struct cnfarray *__restrict__ const ar,
 		const int cmpop)
 {
 	int i;
@@ -3643,106 +3664,75 @@ cnffparamlstNew(struct cnfexpr *expr, struct cnffparamlst *next)
 	return lst;
 }
 
+static const char* const numInWords[] = {"zero", "one", "two", "three", "four", "five", "six"};
+
+#define GENERATE_FUNC_WITH_NARG_RANGE(name, minArg, maxArg, funcId, errMsg) \
+	if(nParams < minArg || nParams > maxArg) {							\
+		parser_errmsg(errMsg, name, nParams);							\
+		return CNFFUNC_INVALID;											\
+	}																	\
+	return funcId
+
+
+#define GENERATE_FUNC_WITH_ERR_MSG(name, expectedParams, funcId, errMsg) \
+	if(nParams != expectedParams) {										\
+		parser_errmsg(errMsg, name, numInWords[expectedParams], nParams); \
+		return CNFFUNC_INVALID;											\
+	}																	\
+	return funcId
+
+
+#define GENERATE_FUNC(name, expectedParams, func_id)					\
+	GENERATE_FUNC_WITH_ERR_MSG(											\
+		name, expectedParams, func_id,									\
+		"number of parameters for %s() must be %s but is %d.")
+
+
+#define FUNC_NAME(name) !es_strbufcmp(fname, (unsigned char*)name, sizeof(name) - 1)
+
+
 /* Obtain function id from name AND number of params. Issues the
  * relevant error messages if errors are detected.
  */
 static inline enum cnffuncid
 funcName2ID(es_str_t *fname, unsigned short nParams)
 {
-	if(!es_strbufcmp(fname, (unsigned char*)"strlen", sizeof("strlen") - 1)) {
-		if(nParams != 1) {
-			parser_errmsg("number of parameters for strlen() must be one "
-				      "but is %d.", nParams);
-			return CNFFUNC_INVALID;
-		}
-		return CNFFUNC_STRLEN;
-	} else if(!es_strbufcmp(fname, (unsigned char*)"getenv", sizeof("getenv") - 1)) {
-		if(nParams != 1) {
-			parser_errmsg("number of parameters for getenv() must be one "
-				      "but is %d.", nParams);
-			return CNFFUNC_INVALID;
-		}
-		return CNFFUNC_GETENV;
-	} else if(!es_strbufcmp(fname, (unsigned char*)"tolower", sizeof("tolower") - 1)) {
-		if(nParams != 1) {
-			parser_errmsg("number of parameters for tolower() must be one "
-				      "but is %d.", nParams);
-			return CNFFUNC_INVALID;
-		}
-		return CNFFUNC_TOLOWER;
-	} else if(!es_strbufcmp(fname, (unsigned char*)"cstr", sizeof("cstr") - 1)) {
-		if(nParams != 1) {
-			parser_errmsg("number of parameters for cstr() must be one "
-				      "but is %d.", nParams);
-			return CNFFUNC_INVALID;
-		}
-		return CNFFUNC_CSTR;
-	} else if(!es_strbufcmp(fname, (unsigned char*)"cnum", sizeof("cnum") - 1)) {
-		if(nParams != 1) {
-			parser_errmsg("number of parameters for cnum() must be one "
-				      "but is %d.", nParams);
-			return CNFFUNC_INVALID;
-		}
-		return CNFFUNC_CNUM;
-	} else if(!es_strbufcmp(fname, (unsigned char*)"re_match", sizeof("re_match") - 1)) {
-		if(nParams != 2) {
-			parser_errmsg("number of parameters for re_match() must be two "
-				      "but is %d.", nParams);
-			return CNFFUNC_INVALID;
-		}
-		return CNFFUNC_RE_MATCH;
-	} else if(!es_strbufcmp(fname, (unsigned char*)"re_extract", sizeof("re_extract") - 1)) {
-		if(nParams != 5) {
-			parser_errmsg("number of parameters for re_extract() must be five "
-				      "but is %d.", nParams);
-			return CNFFUNC_INVALID;
-		}
-		return CNFFUNC_RE_EXTRACT;
-	} else if(!es_strbufcmp(fname, (unsigned char*)"field", sizeof("field") - 1)) {
-		if(nParams != 3) {
-			parser_errmsg("number of parameters for field() must be three "
-				      "but is %d.", nParams);
-			return CNFFUNC_INVALID;
-		}
-		return CNFFUNC_FIELD;
-	} else if(!es_strbufcmp(fname, (unsigned char*)"exec_template", sizeof("exec_template") - 1)) {
-		if(nParams != 1) {
-			parser_errmsg("number of parameters for exec-template() must be one "
-				      "but is %d.", nParams);
-			return CNFFUNC_INVALID;
-		}
-		return CNFFUNC_EXEC_TEMPLATE;
-	} else if(!es_strbufcmp(fname, (unsigned char*)"prifilt", sizeof("prifilt") - 1)) {
-		if(nParams != 1) {
-			parser_errmsg("number of parameters for prifilt() must be one "
-				      "but is %d.", nParams);
-			return CNFFUNC_INVALID;
-		}
-		return CNFFUNC_PRIFILT;
-	} else if(!es_strbufcmp(fname, (unsigned char*)"lookup", sizeof("lookup") - 1)) {
-		if(nParams != 2) {
-			parser_errmsg("number of parameters for lookup() must be two "
-				      "but is %d.", nParams);
-			return CNFFUNC_INVALID;
-		}
-		return CNFFUNC_LOOKUP;
-	} else if(!es_strbufcmp(fname, (unsigned char*)"replace", sizeof("replace") - 1)) {
-		if(nParams != 3) {
-			parser_errmsg("number of parameters for replace() must be three "
-                          "(operand_string, fragment_to_find, fragment_to_replace_in_its_place) "
-                          "but is %d.", nParams);
-			return CNFFUNC_INVALID;
-		}
-		return CNFFUNC_REPLACE;
-	} else if(!es_strbufcmp(fname, (unsigned char*)"wrap", sizeof("wrap") - 1)) {
-		if(nParams < 2 || nParams > 3) {
-			parser_errmsg("number of parameters for wrap() must either be "
-                          "two (operand_string, wrapper) or"
-                          "three (operand_string, wrapper, wrapper_escape_str)"
-                          "but is %d.", nParams);
-			return CNFFUNC_INVALID;
-		}
-		return CNFFUNC_WRAP;
+	if(FUNC_NAME("strlen")) {
+		GENERATE_FUNC("strlen", 1, CNFFUNC_STRLEN);
+	} else if(FUNC_NAME("getenv")) {
+		GENERATE_FUNC("getenv", 1, CNFFUNC_GETENV);
+	} else if(FUNC_NAME("tolower")) {
+		GENERATE_FUNC("tolower", 1, CNFFUNC_TOLOWER);
+	} else if(FUNC_NAME("cstr")) {
+		GENERATE_FUNC("cstr", 1, CNFFUNC_CSTR);
+	} else if(FUNC_NAME("cnum")) {
+		GENERATE_FUNC("cnum", 1, CNFFUNC_CNUM);
+	} else if(FUNC_NAME("re_match")) {
+		GENERATE_FUNC("re_match", 2, CNFFUNC_RE_MATCH);
+	} else if(FUNC_NAME("re_extract")) {
+		GENERATE_FUNC("re_extract", 5, CNFFUNC_RE_EXTRACT);
+	} else if(FUNC_NAME("field")) {
+		GENERATE_FUNC("field", 3, CNFFUNC_FIELD);
+	} else if(FUNC_NAME("exec_template")) {
+		GENERATE_FUNC("exec_template", 1, CNFFUNC_EXEC_TEMPLATE);
+	} else if(FUNC_NAME("prifilt")) {
+		GENERATE_FUNC("prifilt", 1, CNFFUNC_PRIFILT);
+	} else if(FUNC_NAME("lookup")) {
+		GENERATE_FUNC("lookup", 2, CNFFUNC_LOOKUP);
+	} else if(FUNC_NAME("replace")) {
+		GENERATE_FUNC_WITH_ERR_MSG(
+			"replace", 3, CNFFUNC_REPLACE,
+			"number of parameters for %s() must be %s "
+			"(operand_string, fragment_to_find, fragment_to_replace_in_its_place)"
+			"but is %d.");
+	} else if(FUNC_NAME("wrap")) {
+		GENERATE_FUNC_WITH_NARG_RANGE("wrap", 2, 3, CNFFUNC_WRAP,
+									  "number of parameters for wrap() must either be "
+									  "two (operand_string, wrapper) or"
+									  "three (operand_string, wrapper, wrapper_escape_str)"
+									  "but is %d.");
+	} else if(FUNC_NAME("random")) {
+		GENERATE_FUNC("random", 1, CNFFUNC_RANDOM);
 	} else {
 		return CNFFUNC_INVALID;
 	}
@@ -3756,6 +3746,12 @@ initFunc_re_match(struct cnffunc *func)
 	char *regex = NULL;
 	regex_t *re;
 	DEFiRet;
+
+	if(func->nParams != 2) {
+		parser_errmsg("rsyslog logic error in line %d of file %s\n",
+			__LINE__, __FILE__);
+		FINALIZE;
+	}
 
 	func->funcdata = NULL;
 	if(func->expr[1]->nodetype != 'S') {
@@ -3790,6 +3786,12 @@ initFunc_exec_template(struct cnffunc *func)
 	char *tplName = NULL;
 	DEFiRet;
 
+	if(func->nParams != 1) {
+		parser_errmsg("rsyslog logic error in line %d of file %s\n",
+			__LINE__, __FILE__);
+		FINALIZE;
+	}
+
 	if(func->expr[0]->nodetype != 'S') {
 		parser_errmsg("exec_template(): param 1 must be a constant string");
 		FINALIZE;
@@ -3816,6 +3818,12 @@ initFunc_prifilt(struct cnffunc *func)
 	uchar *cstr;
 	DEFiRet;
 
+	if(func->nParams != 1) {
+		parser_errmsg("rsyslog logic error in line %d of file %s\n",
+			__LINE__, __FILE__);
+		FINALIZE;
+	}
+
 	func->funcdata = NULL;
 	if(func->expr[0]->nodetype != 'S') {
 		parser_errmsg("param 1 of prifilt() must be a constant string");
@@ -3837,6 +3845,12 @@ initFunc_lookup(struct cnffunc *func)
 {
 	uchar *cstr = NULL;
 	DEFiRet;
+
+	if(func->nParams != 2) {
+		parser_errmsg("rsyslog logic error in line %d of file %s\n",
+			__LINE__, __FILE__);
+		FINALIZE;
+	}
 
 	func->funcdata = NULL;
 	if(func->expr[0]->nodetype != 'S') {
@@ -4014,7 +4028,7 @@ cnfDoInclude(char *name)
 }
 
 void
-varDelete(struct var *v)
+varDelete(const struct var *v)
 {
 	switch(v->datatype) {
 	case 'S':
@@ -4030,7 +4044,7 @@ varDelete(struct var *v)
 }
 
 void
-cnfparamvalsDestruct(struct cnfparamvals *paramvals, struct cnfparamblk *blk)
+cnfparamvalsDestruct(const struct cnfparamvals *paramvals, const struct cnfparamblk *blk)
 {
 	int i;
 	if(paramvals == NULL)
@@ -4040,7 +4054,7 @@ cnfparamvalsDestruct(struct cnfparamvals *paramvals, struct cnfparamblk *blk)
 			varDelete(&paramvals[i].val);
 		}
 	}
-	free(paramvals);
+	free((void*)paramvals);
 }
 
 /* find the index (or -1!) for a config param by name. This is used to 

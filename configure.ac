@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([rsyslog],[8.11.0],[rsyslog@lists.adiscon.com])
+AC_INIT([rsyslog],[8.12.0],[rsyslog@lists.adiscon.com])
 AM_INIT_AUTOMAKE([subdir-objects])
 
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
@@ -763,7 +763,15 @@ AC_ARG_ENABLE(gnutls,
 if test "x$enable_gnutls" = "xyes"; then
 	PKG_CHECK_MODULES(GNUTLS, gnutls >= 1.4.0)
 	AC_DEFINE([ENABLE_GNUTLS], [1], [Indicator that GnuTLS is present])
-        AC_CHECK_LIB(gnutls, gnutls_global_init)
+	AC_CHECK_LIB(
+	    [gnutls],
+	    [gnutls_global_init],
+	    [
+	     AC_DEFINE(HAVE_LIB_GNUTLS, 1, [gnutls is available])
+	    ],
+	    [AC_MSG_WARN([gnutls_global_init function missing or not detected])],
+	    []
+	)
 	AC_CHECK_FUNCS(gnutls_certificate_set_retrieve_function,,)
 	AC_CHECK_FUNCS(gnutls_certificate_type_set_priority,,)
 fi
@@ -1105,6 +1113,7 @@ AC_ARG_ENABLE(gt-ksi,
 )
 if test "x$enable_gt_ksi" = "xyes"; then
 	PKG_CHECK_MODULES(GT_KSI, libksi >= 3.2.2.0)
+	PKG_CHECK_MODULES(GT_KSI, libksi < 3.3.0.0)
 fi
 AM_CONDITIONAL(ENABLE_GT_KSI, test x$enable_gt_ksi = xyes)
 
@@ -1646,6 +1655,8 @@ else
         AC_MSG_NOTICE([Not running from git source])
 fi
 
+
+AM_CONDITIONAL(ENABLE_GENERATE_MAN_PAGES, test x$have_to_generate_man_pages = xyes)
 
 # rst2man
 AC_CHECK_PROGS([RST2MAN], [rst2man rst2man.py], [false])

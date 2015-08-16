@@ -91,19 +91,19 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	fac_ftp.sh fac_ntp.sh fac_uucp.sh \
 @ENABLE_TESTBENCH_TRUE@	fac_invld1.sh fac_invld2.sh \
 @ENABLE_TESTBENCH_TRUE@	fac_invld3.sh fac_invld4_rfc5424.sh \
-@ENABLE_TESTBENCH_TRUE@	rfc5424parser.sh arrayqueue.sh \
-@ENABLE_TESTBENCH_TRUE@	global_vars.sh da-mainmsg-q.sh \
-@ENABLE_TESTBENCH_TRUE@	validation-run.sh empty-ruleset.sh \
-@ENABLE_TESTBENCH_TRUE@	imtcp-multiport.sh daqueue-persist.sh \
-@ENABLE_TESTBENCH_TRUE@	diskqueue.sh diskqueue-fsync.sh \
-@ENABLE_TESTBENCH_TRUE@	rulesetmultiqueue.sh \
+@ENABLE_TESTBENCH_TRUE@	rfc5424parser.sh tcp_forwarding_tpl.sh \
+@ENABLE_TESTBENCH_TRUE@	tcp_forwarding_dflt_tpl.sh \
+@ENABLE_TESTBENCH_TRUE@	arrayqueue.sh global_vars.sh \
+@ENABLE_TESTBENCH_TRUE@	da-mainmsg-q.sh validation-run.sh \
+@ENABLE_TESTBENCH_TRUE@	empty-ruleset.sh imtcp-multiport.sh \
+@ENABLE_TESTBENCH_TRUE@	daqueue-persist.sh diskqueue.sh \
+@ENABLE_TESTBENCH_TRUE@	diskqueue-fsync.sh rulesetmultiqueue.sh \
 @ENABLE_TESTBENCH_TRUE@	rulesetmultiqueue-v6.sh manytcp.sh \
 @ENABLE_TESTBENCH_TRUE@	rsf_getenv.sh imtcp_conndrop_tls.sh \
 @ENABLE_TESTBENCH_TRUE@	imtcp_conndrop.sh \
 @ENABLE_TESTBENCH_TRUE@	imtcp_addtlframedelim.sh \
 @ENABLE_TESTBENCH_TRUE@	imtcp_no_octet_counted.sh \
-@ENABLE_TESTBENCH_TRUE@	imtcp_spframingfix.sh \
-@ENABLE_TESTBENCH_TRUE@	imptcp_spframingfix.sh sndrcv.sh \
+@ENABLE_TESTBENCH_TRUE@	imtcp_spframingfix.sh sndrcv.sh \
 @ENABLE_TESTBENCH_TRUE@	sndrcv_failover.sh sndrcv_gzip.sh \
 @ENABLE_TESTBENCH_TRUE@	sndrcv_udp.sh sndrcv_udp_nonstdpt.sh \
 @ENABLE_TESTBENCH_TRUE@	sndrcv_udp_nonstdpt_v6.sh \
@@ -213,6 +213,8 @@ host_triplet = @host@
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	imptcp_addtlframedelim.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	imptcp_conndrop.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	imptcp_no_octet_counted.sh \
+@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	imptcp_spframingfix.sh \
+@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_random.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_replace.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_replace_complex.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_wrap2.sh \
@@ -930,6 +932,10 @@ EXTRA_DIST = \
 	testsuites/omod-if-array.conf \
 	testsuites/1.omod-if-array \
 	testsuites/1.field1 \
+	tcp_forwarding_tpl.sh \
+	testsuites/tcp_forwarding_tpl.conf \
+	tcp_forwarding_dflt_tpl.sh \
+	testsuites/tcp_forwarding_dflt_tpl.conf \
 	killrsyslog.sh \
 	parsertest.sh \
 	fieldtest.sh \
@@ -1326,6 +1332,8 @@ EXTRA_DIST = \
 	testsuites/mmnormalize_tokenized.conf \
 	testsuites/mmnormalize_tokenized.rulebase \
 	testsuites/tokenized_input \
+	rscript_random.sh \
+	testsuites/rscript_random.conf \
 	rscript_replace.sh \
 	testsuites/rscript_replace.conf \
 	rscript_replace_complex.sh \
@@ -1854,6 +1862,20 @@ rfc5424parser.sh.log: rfc5424parser.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tcp_forwarding_tpl.sh.log: tcp_forwarding_tpl.sh
+	@p='tcp_forwarding_tpl.sh'; \
+	b='tcp_forwarding_tpl.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tcp_forwarding_dflt_tpl.sh.log: tcp_forwarding_dflt_tpl.sh
+	@p='tcp_forwarding_dflt_tpl.sh'; \
+	b='tcp_forwarding_dflt_tpl.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 arrayqueue.sh.log: arrayqueue.sh
 	@p='arrayqueue.sh'; \
 	b='arrayqueue.sh'; \
@@ -1976,13 +1998,6 @@ imtcp_no_octet_counted.sh.log: imtcp_no_octet_counted.sh
 imtcp_spframingfix.sh.log: imtcp_spframingfix.sh
 	@p='imtcp_spframingfix.sh'; \
 	b='imtcp_spframingfix.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imptcp_spframingfix.sh.log: imptcp_spframingfix.sh
-	@p='imptcp_spframingfix.sh'; \
-	b='imptcp_spframingfix.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -2718,6 +2733,20 @@ imptcp_conndrop.sh.log: imptcp_conndrop.sh
 imptcp_no_octet_counted.sh.log: imptcp_no_octet_counted.sh
 	@p='imptcp_no_octet_counted.sh'; \
 	b='imptcp_no_octet_counted.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imptcp_spframingfix.sh.log: imptcp_spframingfix.sh
+	@p='imptcp_spframingfix.sh'; \
+	b='imptcp_spframingfix.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+rscript_random.sh.log: rscript_random.sh
+	@p='rscript_random.sh'; \
+	b='rscript_random.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
