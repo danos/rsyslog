@@ -1,3 +1,10 @@
+rsyslog (8.4.2-1+deb8u1) UNRELEASED; urgency=medium
+
+  * Disable transactions in ompgsql as they were not working properly.
+    Patch cherry-picked from upstream Git. (Closes: #788183)
+
+ -- Michael Biebl <biebl@debian.org>  Sat, 29 Aug 2015 13:49:00 +0200
+
 rsyslog (8.4.2-1) unstable; urgency=high
 
   * New upstream release.
