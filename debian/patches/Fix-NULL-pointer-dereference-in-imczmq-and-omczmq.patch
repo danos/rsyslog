@@ -1,0 +1,53 @@
+From: Luca Boccassi <luca.boccassi@gmail.com>
+Date: Mon, 7 Sep 2015 01:19:27 +0100
+Subject: Fix NULL pointer dereference in imczmq and omczmq
+
+---
+ contrib/imczmq/imczmq.c | 4 ++--
+ contrib/omczmq/omczmq.c | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/contrib/imczmq/imczmq.c b/contrib/imczmq/imczmq.c
+index af12856..d5c44d2 100644
+--- a/contrib/imczmq/imczmq.c
++++ b/contrib/imczmq/imczmq.c
+@@ -302,7 +302,7 @@ static rsRetVal addListener(instanceConf_t* iconf){
+ 	DBGPRINTF("imczmq: authtype is: %s\n", iconf->authType);
+ 
+ 	/* if we are a CURVE server */
+-	if (!strcmp(iconf->authType, "CURVESERVER")) {
++	if ((iconf->authType != NULL) && (!strcmp(iconf->authType, "CURVESERVER"))) {
+ 
+ 		iconf->is_server = true;
+ 
+@@ -329,7 +329,7 @@ static rsRetVal addListener(instanceConf_t* iconf){
+ 	}
+ 
+ 	/* if we are a CURVE client */
+-	if (!strcmp(iconf->authType, "CURVECLIENT")) {
++	if ((iconf->authType != NULL) && (!strcmp(iconf->authType, "CURVECLIENT"))) {
+ 		DBGPRINTF("imczmq: we are a curve client...\n");
+ 
+ 		iconf->is_server = false;
+diff --git a/contrib/omczmq/omczmq.c b/contrib/omczmq/omczmq.c
+index 55cc188..891e772 100644
+--- a/contrib/omczmq/omczmq.c
++++ b/contrib/omczmq/omczmq.c
+@@ -136,7 +136,7 @@ static rsRetVal initCZMQ(instanceData* pData) {
+ 	}
+ 
+ 	/* if we are a CURVE server */
+-	if (!strcmp(pData->authType, "CURVESERVER")) {
++	if ((pData->authType != NULL) && (!strcmp(pData->authType, "CURVESERVER"))) {
+ 		DBGPRINTF("omczmq: we are a curve server...\n");
+ 		
+ 		is_server = true;
+@@ -164,7 +164,7 @@ static rsRetVal initCZMQ(instanceData* pData) {
+ 	}
+ 
+ 	/* if we are a CURVE client */
+-	if (!strcmp(pData->authType, "CURVECLIENT")) {
++	if ((pData->authType != NULL) && (!strcmp(pData->authType, "CURVECLIENT"))) {
+ 		DBGPRINTF("omczmq: we are a curve client...\n");
+ 
+ 		is_server = false;
