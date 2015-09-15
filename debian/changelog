@@ -1,4 +1,4 @@
-rsyslog (8.12.0-2) UNRELEASED; urgency=medium
+rsyslog (8.12.0-2) unstable; urgency=medium
 
   [ Michael Biebl ]
   * Drop versioned Depends on initscripts. This dependency was added for the
@@ -8,7 +8,7 @@ rsyslog (8.12.0-2) UNRELEASED; urgency=medium
   * Enable CZMQ plugins. (Closes: #798223)
   * Fix NULL pointer dereference in imczmq and omczmq.
 
- -- Michael Biebl <biebl@debian.org>  Fri, 04 Sep 2015 23:18:46 +0200
+ -- Michael Biebl <biebl@debian.org>  Tue, 15 Sep 2015 19:43:12 +0200
 
 rsyslog (8.12.0-1) unstable; urgency=medium
 
