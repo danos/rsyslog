@@ -1,9 +1,9 @@
 How to use rsyslog and CZMQ
-===================================
+===========================
 
 Starting with version 8.6.0, rsyslog comes with output and input modules named
-respectively "imczmq" and "omczmq", allowing to publish log messages via the
-ZeroMQ protocol. More information about the protocol can be found on the website
+"imczmq" and "omczmq", allowing one to publish log messages via the ZeroMQ
+protocol. More information about the protocol can be found on the website
 http://zeromq.org/
 
 Example configurations, taken from rsyslog upstream, follow.
@@ -22,7 +22,7 @@ input(
 )
 -------------------------------------------------------------------------------
 
-Explanation of Options:
+Explanation of options:
 
 type: type of action (imczmq for this plugin)
 endpoints: comma delimited list of zeromq endpoints (see zeromq documentation)
@@ -49,7 +49,7 @@ action(
 )
 -------------------------------------------------------------------------------
 
-Explanation of Options:
+Explanation of options:
 
 name: name of this action
 type: type of action (omczmq for this plugin)
