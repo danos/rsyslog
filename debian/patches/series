@@ -1,3 +1,4 @@
 Don-t-create-a-database.patch
 Don-t-explicitly-link-tcpflood-against-lgcrypt.patch
 Fix-NULL-pointer-dereference-in-imczmq-and-omczmq.patch
+Fix-potential-buffer-overflow-detection.patch
