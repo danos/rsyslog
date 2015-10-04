@@ -9,10 +9,10 @@ library dependency in.
  1 file changed, 3 deletions(-)
 
 diff --git a/tests/Makefile.am b/tests/Makefile.am
-index ce392da..fa00042 100644
+index 914d947..8bfc7d3 100644
 --- a/tests/Makefile.am
 +++ b/tests/Makefile.am
-@@ -867,9 +867,6 @@ uxsockrcvr_LDADD = $(SOL_LIBS)
+@@ -875,9 +875,6 @@ uxsockrcvr_LDADD = $(SOL_LIBS)
  tcpflood_SOURCES = tcpflood.c
  tcpflood_CPPFLAGS = $(PTHREADS_CFLAGS) $(GNUTLS_CFLAGS)
  tcpflood_LDADD = $(SOL_LIBS) $(PTHREADS_LIBS) $(GNUTLS_LIBS)

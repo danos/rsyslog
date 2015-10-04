@@ -2,6 +2,7 @@ rsyslog (8.13.0-1) UNRELEASED; urgency=medium
 
   * New upstream release.
   * Bump Build-Depends on liblognorm-dev to (>= 1.1.2) as per configure.ac.
+  * Rebase patches.
 
  -- Michael Biebl <biebl@debian.org>  Mon, 05 Oct 2015 01:06:57 +0200
 
