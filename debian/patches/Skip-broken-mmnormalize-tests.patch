@@ -1,0 +1,42 @@
+From: Michael Biebl <biebl@debian.org>
+Date: Sun, 25 Oct 2015 21:29:27 +0100
+Subject: Skip broken mmnormalize tests
+
+Skip tests which are broken by the liblognorm update.
+
+See https://github.com/rsyslog/rsyslog/issues/546
+---
+ tests/mmnormalize_tokenized.sh | 4 ++++
+ tests/mmnormalize_variable.sh  | 4 ++++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/tests/mmnormalize_tokenized.sh b/tests/mmnormalize_tokenized.sh
+index e3f7243..10f45f8 100755
+--- a/tests/mmnormalize_tokenized.sh
++++ b/tests/mmnormalize_tokenized.sh
+@@ -3,6 +3,10 @@
+ # This file is part of the rsyslog project, released under ASL 2.0
+ echo ===============================================================================
+ echo \[mmnormalize_tokenized.sh\]: test for mmnormalize tokenized field_type
++
++echo "Currently broken, see https://github.com/rsyslog/rsyslog/issues/546"
++exit 77
++
+ . $srcdir/diag.sh init
+ . $srcdir/diag.sh startup mmnormalize_tokenized.conf
+ . $srcdir/diag.sh tcpflood -m 1 -I $srcdir/testsuites/tokenized_input
+diff --git a/tests/mmnormalize_variable.sh b/tests/mmnormalize_variable.sh
+index b86edef..203a30e 100755
+--- a/tests/mmnormalize_variable.sh
++++ b/tests/mmnormalize_variable.sh
+@@ -3,6 +3,10 @@
+ # This file is part of the rsyslog project, released under ASL 2.0
+ echo ===============================================================================
+ echo \[mmnormalize_variable.sh\]: basic test for mmnormalize module variable-support
++
++echo "Currently broken, see https://github.com/rsyslog/rsyslog/issues/546"
++exit 77
++
+ . $srcdir/diag.sh init
+ . $srcdir/diag.sh startup mmnormalize_variable.conf
+ . $srcdir/diag.sh tcpflood -m 1 -I $srcdir/testsuites/date_time_msg
