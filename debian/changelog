@@ -1,4 +1,4 @@
-rsyslog (8.13.0-1) UNRELEASED; urgency=medium
+rsyslog (8.13.0-1) unstable; urgency=medium
 
   * New upstream release.
   * Bump Build-Depends on liblognorm-dev to (>= 1.1.2) as per configure.ac.
@@ -7,7 +7,7 @@ rsyslog (8.13.0-1) UNRELEASED; urgency=medium
     to upstream those failing tests point at a bug in liblognorm, not rsyslog
     itself. (Closes: #800873)
 
- -- Michael Biebl <biebl@debian.org>  Mon, 05 Oct 2015 01:06:57 +0200
+ -- Michael Biebl <biebl@debian.org>  Sun, 25 Oct 2015 22:14:41 +0100
 
 rsyslog (8.12.0-3) unstable; urgency=medium
 
