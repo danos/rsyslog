@@ -91,7 +91,8 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	fac_ftp.sh fac_ntp.sh fac_uucp.sh \
 @ENABLE_TESTBENCH_TRUE@	fac_invld1.sh fac_invld2.sh \
 @ENABLE_TESTBENCH_TRUE@	fac_invld3.sh fac_invld4_rfc5424.sh \
-@ENABLE_TESTBENCH_TRUE@	rfc5424parser.sh tcp_forwarding_tpl.sh \
+@ENABLE_TESTBENCH_TRUE@	rawmsg-after-pri.sh rfc5424parser.sh \
+@ENABLE_TESTBENCH_TRUE@	tcp_forwarding_tpl.sh \
 @ENABLE_TESTBENCH_TRUE@	tcp_forwarding_dflt_tpl.sh \
 @ENABLE_TESTBENCH_TRUE@	arrayqueue.sh global_vars.sh \
 @ENABLE_TESTBENCH_TRUE@	da-mainmsg-q.sh validation-run.sh \
@@ -157,12 +158,13 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	rscript_unaffected_reset.sh \
 @ENABLE_TESTBENCH_TRUE@	rscript_replace_complex.sh \
 @ENABLE_TESTBENCH_TRUE@	rscript_wrap2.sh rscript_wrap3.sh \
-@ENABLE_TESTBENCH_TRUE@	rs_optimizer_pri.sh cee_simple.sh \
-@ENABLE_TESTBENCH_TRUE@	cee_diskqueue.sh incltest.sh \
-@ENABLE_TESTBENCH_TRUE@	incltest_dir.sh \
+@ENABLE_TESTBENCH_TRUE@	rscript_re_extract.sh \
+@ENABLE_TESTBENCH_TRUE@	rscript_re_match.sh rs_optimizer_pri.sh \
+@ENABLE_TESTBENCH_TRUE@	cee_simple.sh cee_diskqueue.sh \
+@ENABLE_TESTBENCH_TRUE@	incltest.sh incltest_dir.sh \
 @ENABLE_TESTBENCH_TRUE@	incltest_dir_wildcard.sh \
 @ENABLE_TESTBENCH_TRUE@	incltest_dir_empty_wildcard.sh \
-@ENABLE_TESTBENCH_TRUE@	linkedlistqueue.sh \
+@ENABLE_TESTBENCH_TRUE@	linkedlistqueue.sh lookup_table.sh \
 @ENABLE_TESTBENCH_TRUE@	key_dereference_on_uninitialized_variable_space.sh \
 @ENABLE_TESTBENCH_TRUE@	$(am__append_1) $(am__append_2) \
 @ENABLE_TESTBENCH_TRUE@	$(am__append_3) $(am__append_4) \
@@ -1003,6 +1005,8 @@ EXTRA_DIST = \
 	testsuites/fac_invld3.conf \
 	fac_invld4_rfc5424.sh \
 	testsuites/fac_invld4_rfc5424.conf \
+	rawmsg-after-pri.sh \
+	testsuites/rawmsg-after-pri.conf \
 	rs_optimizer_pri.sh \
 	testsuites/rs_optimizer_pri.conf \
 	rscript_prifilt.sh \
@@ -1370,6 +1374,14 @@ EXTRA_DIST = \
 	testsuites/stop_when_array_has_element.conf \
 	key_dereference_on_uninitialized_variable_space.sh \
 	testsuites/key_dereference_on_uninitialized_variable_space.conf \
+	rscript_re_extract.sh \
+	testsuites/rscript_re_extract.conf \
+	rscript_re_match.sh \
+	testsuites/rscript_re_match.conf \
+	lookup_table.sh \
+	testsuites/lookup_table.conf \
+	testsuites/xlate.lkp_tbl \
+	testsuites/xlate_more.lkp_tbl \
 	cfg.sh
 
 
@@ -1855,6 +1867,13 @@ fac_invld3.sh.log: fac_invld3.sh
 fac_invld4_rfc5424.sh.log: fac_invld4_rfc5424.sh
 	@p='fac_invld4_rfc5424.sh'; \
 	b='fac_invld4_rfc5424.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+rawmsg-after-pri.sh.log: rawmsg-after-pri.sh
+	@p='rawmsg-after-pri.sh'; \
+	b='rawmsg-after-pri.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -2524,6 +2543,20 @@ rscript_wrap3.sh.log: rscript_wrap3.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+rscript_re_extract.sh.log: rscript_re_extract.sh
+	@p='rscript_re_extract.sh'; \
+	b='rscript_re_extract.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+rscript_re_match.sh.log: rscript_re_match.sh
+	@p='rscript_re_match.sh'; \
+	b='rscript_re_match.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 rs_optimizer_pri.sh.log: rs_optimizer_pri.sh
 	@p='rs_optimizer_pri.sh'; \
 	b='rs_optimizer_pri.sh'; \
@@ -2576,6 +2609,13 @@ incltest_dir_empty_wildcard.sh.log: incltest_dir_empty_wildcard.sh
 linkedlistqueue.sh.log: linkedlistqueue.sh
 	@p='linkedlistqueue.sh'; \
 	b='linkedlistqueue.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+lookup_table.sh.log: lookup_table.sh
+	@p='lookup_table.sh'; \
+	b='lookup_table.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
