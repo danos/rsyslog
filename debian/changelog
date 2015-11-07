@@ -1,6 +1,7 @@
 rsyslog (8.14.0-1) UNRELEASED; urgency=medium
 
   * New upstream release.
+  * Rebase patches.
 
  -- Michael Biebl <biebl@debian.org>  Sat, 07 Nov 2015 19:57:23 +0100
 
