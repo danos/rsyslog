@@ -53,4 +53,14 @@ This creates a template called "sysklogd" and assigns it to the forward
 rule when logging to "remote-host".
 
 
- -- Michael Biebl <biebl@debian.org>  Sat, 07 Feb 2009 18:54:37 +0100
+Logging to xconsole
+-------------------
+The default rsyslog configuration no longer forwards any log messages to
+/dev/xconsole. It is simple to re-enable support for xconsole though. For that,
+the rsyslog package ships example files in /usr/share/doc/rsyslog/examples.
+
+To create the /dev/xconsole pipe, copy examples/tmpfiles.d/xconsole.conf to
+/etc/tmpfiles.d/ and then run "systemd-tmpfiles --create xconsole.conf".
+
+And finally copy examples/rsyslog.d/xconsole.conf to /etc/rsyslog.d/ and
+restart the rsyslog service.

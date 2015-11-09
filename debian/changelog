@@ -1,3 +1,13 @@
+rsyslog (8.14.0-2) UNRELEASED; urgency=medium
+
+  * Remove logging to /dev/xconsole from the default rsyslog configuration.
+    It is a rarely used feature and causes rsyslog to repeatedly retry if
+    there is noone reading from /dev/xconsole. Instead ship the configuration
+    as example files and add instructions to README.Debian how one can
+    re-enable support for xconsole. (Closes: #745492, #783687)
+
+ -- Michael Biebl <biebl@debian.org>  Thu, 12 Nov 2015 21:36:31 +0100
+
 rsyslog (8.14.0-1) unstable; urgency=medium
 
   * New upstream release.
