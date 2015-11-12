@@ -7,6 +7,9 @@ rsyslog (8.14.0-2) UNRELEASED; urgency=medium
     re-enable support for xconsole. (Closes: #745492, #783687)
   * Remove section about sysklogd from README.Debian, sysklogd is not really
     relevant anymore nowadays.
+  * Ship an example file for logging to the console on tty8 which can be
+    dropped into /etc/rsyslog.d instead of having it as comment in
+    /etc/rsyslog.conf.
 
  -- Michael Biebl <biebl@debian.org>  Thu, 12 Nov 2015 21:36:31 +0100
 
