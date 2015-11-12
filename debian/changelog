@@ -1,4 +1,4 @@
-rsyslog (8.14.0-2) UNRELEASED; urgency=medium
+rsyslog (8.14.0-2) unstable; urgency=medium
 
   * Remove logging to /dev/xconsole from the default rsyslog configuration.
     It is a rarely used feature and causes rsyslog to repeatedly retry if
@@ -11,7 +11,7 @@ rsyslog (8.14.0-2) UNRELEASED; urgency=medium
     dropped into /etc/rsyslog.d instead of having it as comment in
     /etc/rsyslog.conf.
 
- -- Michael Biebl <biebl@debian.org>  Thu, 12 Nov 2015 21:36:31 +0100
+ -- Michael Biebl <biebl@debian.org>  Thu, 12 Nov 2015 22:11:11 +0100
 
 rsyslog (8.14.0-1) unstable; urgency=medium
 
