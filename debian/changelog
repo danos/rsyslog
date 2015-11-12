@@ -5,6 +5,8 @@ rsyslog (8.14.0-2) UNRELEASED; urgency=medium
     there is noone reading from /dev/xconsole. Instead ship the configuration
     as example files and add instructions to README.Debian how one can
     re-enable support for xconsole. (Closes: #745492, #783687)
+  * Remove section about sysklogd from README.Debian, sysklogd is not really
+    relevant anymore nowadays.
 
  -- Michael Biebl <biebl@debian.org>  Thu, 12 Nov 2015 21:36:31 +0100
 

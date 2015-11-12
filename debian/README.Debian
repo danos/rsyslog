@@ -35,24 +35,6 @@ rotate the existing standard Debian log files, if it is safe to do so
 (i.e. only if .0 is newer than .1).
 
 
-Forwarding messages to sysklogd
--------------------------------
-If you are forwarding messages from a rsyslog client to a sysklogd
-server, it can lead to doubled hostnames in the syslog message on the
-server side. The reason is a limitation in sysklogd which does not parse
-the hostname in the syslog header (as defined by RFC 3164). See Debian
-bug #514051 for more details.
-
-A simple workaround in rsyslog is, to define a custom template, which
-does not include the hostname:
-
- $template sysklogd,"<%PRI%>%TIMESTAMP% %syslogtag%%msg%"
- *.* @remote-host;sysklogd
-
-This creates a template called "sysklogd" and assigns it to the forward
-rule when logging to "remote-host".
-
-
 Logging to xconsole
 -------------------
 The default rsyslog configuration no longer forwards any log messages to
