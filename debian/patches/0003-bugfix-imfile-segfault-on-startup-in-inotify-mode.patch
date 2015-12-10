@@ -1,0 +1,24 @@
+From: Rainer Gerhards <rgerhards@adiscon.com>
+Date: Thu, 9 Oct 2014 08:22:39 +0200
+Subject: bugfix imfile: segfault on startup in "inotify" mode
+
+A segfault happened when more than one file was monitored.
+
+(cherry-picked from commit 8bf43525fe1bf08fd542ad054c987ccf7c97616c)
+---
+ plugins/imfile/imfile.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/plugins/imfile/imfile.c b/plugins/imfile/imfile.c
+index d37cb03..1dde52f 100644
+--- a/plugins/imfile/imfile.c
++++ b/plugins/imfile/imfile.c
+@@ -1093,7 +1093,7 @@ dirsAddFile(int i)
+ 
+ 	if(dir->currMaxFiles == dir->allocMaxFiles) {
+ 		newMax = 2 * allocMaxFiles;
+-		newFileTab = realloc(dirs, newMax * sizeof(dirInfoFiles_t));
++		newFileTab = realloc(dirs->files, newMax * sizeof(dirInfoFiles_t));
+ 		if(newFileTab == NULL) {
+ 			errmsg.LogError(0, RS_RET_OUT_OF_MEMORY,
+ 					"cannot alloc memory to map directory '%s' file relationship "

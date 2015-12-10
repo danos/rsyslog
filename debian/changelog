@@ -1,3 +1,10 @@
+rsyslog (8.4.2-1+deb8u2) UNRELEASED; urgency=medium
+
+  * Fix crash in imfile module when using inotify mode.
+    Patch cherry-picked from upstream Git. (Closes: #770998)
+
+ -- Michael Biebl <biebl@debian.org>  Thu, 10 Dec 2015 21:21:37 +0100
+
 rsyslog (8.4.2-1+deb8u1) jessie; urgency=medium
 
   * Disable transactions in ompgsql as they were not working properly.
