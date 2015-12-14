@@ -1,0 +1,26 @@
+From: Tomas Heinrich <theinric@redhat.com>
+Date: Fri, 17 Jul 2015 21:00:23 +0200
+Subject: Prevent a segfault in dynafile creation
+
+A failure during the dynafile creation (in prepareFile(), most of the
+time) led to a misaddressing and a segfault.
+
+(cherry-picked from commit 008f0097b610742595034cdab381749dbc00f93)
+---
+ tools/omfile.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/tools/omfile.c b/tools/omfile.c
+index 39c0173..29089cb 100644
+--- a/tools/omfile.c
++++ b/tools/omfile.c
+@@ -779,7 +779,8 @@ prepareDynFile(instanceData *__restrict__ const pData, const uchar *__restrict__
+ 	DBGPRINTF("Added new entry %d for file cache, file '%s'.\n", iFirstFree, newFileName);
+ 
+ finalize_it:
+-	pCache[pData->iCurrElt]->nInactive = 0;
++	if(iRet == RS_RET_OK)
++		pCache[pData->iCurrElt]->nInactive = 0;
+ 	RETiRet;
+ }
+ 
