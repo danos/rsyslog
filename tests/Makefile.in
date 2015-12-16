@@ -86,10 +86,12 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	inputfilegen$(EXEEXT) \
 @ENABLE_TESTBENCH_TRUE@	minitcpsrv$(EXEEXT)
 @ENABLE_TESTBENCH_TRUE@TESTS = stop-localvar.sh stop-msgvar.sh \
-@ENABLE_TESTBENCH_TRUE@	fac_authpriv.sh fac_local0.sh \
-@ENABLE_TESTBENCH_TRUE@	fac_local7.sh fac_mail.sh fac_news.sh \
-@ENABLE_TESTBENCH_TRUE@	fac_ftp.sh fac_ntp.sh fac_uucp.sh \
-@ENABLE_TESTBENCH_TRUE@	fac_invld1.sh fac_invld2.sh \
+@ENABLE_TESTBENCH_TRUE@	msgvar-concurrency.sh \
+@ENABLE_TESTBENCH_TRUE@	localvar-concurrency.sh \
+@ENABLE_TESTBENCH_TRUE@	exec_tpl-concurrency.sh fac_authpriv.sh \
+@ENABLE_TESTBENCH_TRUE@	fac_local0.sh fac_local7.sh fac_mail.sh \
+@ENABLE_TESTBENCH_TRUE@	fac_news.sh fac_ftp.sh fac_ntp.sh \
+@ENABLE_TESTBENCH_TRUE@	fac_uucp.sh fac_invld1.sh fac_invld2.sh \
 @ENABLE_TESTBENCH_TRUE@	fac_invld3.sh fac_invld4_rfc5424.sh \
 @ENABLE_TESTBENCH_TRUE@	rawmsg-after-pri.sh rfc5424parser.sh \
 @ENABLE_TESTBENCH_TRUE@	tcp_forwarding_tpl.sh \
@@ -100,8 +102,7 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	daqueue-persist.sh diskqueue.sh \
 @ENABLE_TESTBENCH_TRUE@	diskqueue-fsync.sh rulesetmultiqueue.sh \
 @ENABLE_TESTBENCH_TRUE@	rulesetmultiqueue-v6.sh manytcp.sh \
-@ENABLE_TESTBENCH_TRUE@	rsf_getenv.sh imtcp_conndrop_tls.sh \
-@ENABLE_TESTBENCH_TRUE@	imtcp_conndrop.sh \
+@ENABLE_TESTBENCH_TRUE@	rsf_getenv.sh imtcp_conndrop.sh \
 @ENABLE_TESTBENCH_TRUE@	imtcp_addtlframedelim.sh \
 @ENABLE_TESTBENCH_TRUE@	imtcp_no_octet_counted.sh \
 @ENABLE_TESTBENCH_TRUE@	imtcp_spframingfix.sh sndrcv.sh \
@@ -177,7 +178,8 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	$(am__append_17) $(am__append_18) \
 @ENABLE_TESTBENCH_TRUE@	$(am__append_19) $(am__append_20) \
 @ENABLE_TESTBENCH_TRUE@	$(am__append_21) $(am__append_22) \
-@ENABLE_TESTBENCH_TRUE@	$(am__append_23) $(am__append_24)
+@ENABLE_TESTBENCH_TRUE@	$(am__append_23) $(am__append_24) \
+@ENABLE_TESTBENCH_TRUE@	$(am__append_25)
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_1 = \
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	discard-rptdmsg-vg.sh \
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	discard-allmark-vg.sh \
@@ -246,10 +248,10 @@ host_triplet = @host@
 @ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	mmpstrucdata-invalid-vg.sh
 
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_12 = \
-@ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_variable.sh \
-@ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_tokenized.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_regex_defaulted.sh \
-@ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_regex_disabled.sh
+@ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_regex_disabled.sh \
+@ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_variable.sh \
+@ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_tokenized.sh
 
 @ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@LOGNORM_REGEX_SUPPORTED_TRUE@am__append_13 = \
 @ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@LOGNORM_REGEX_SUPPORTED_TRUE@	mmnormalize_regex.sh
@@ -261,8 +263,14 @@ host_triplet = @host@
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_array_looping.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_nonarray_looping.sh
 
-@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_15 = \
-@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	stop_when_array_has_element.sh
+@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_15 = \
+@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	json_null_array-vg.sh \
+@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	json_null-vg.sh
+
+@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_16 = \
+@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	stop_when_array_has_element.sh \
+@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_null_array.sh \
+@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_null.sh
 
 
 # TODO: re-enable in newer version
@@ -270,23 +278,23 @@ host_triplet = @host@
 #sndrcv_tls_anon.sh \
 #sndrcv_tls_anon_rebind.sh \
 #imtcp-tls-basic.sh
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_16 = \
+@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_17 = \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imtcp-tls-basic-vg.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imtcp_conndrop_tls-vg.sh
 
-@ENABLE_OMUXSOCK_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_17 = uxsock_simple.sh
-@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_18 = sndrcv_relp.sh
-@ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_19 = \
+@ENABLE_OMUXSOCK_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_18 = uxsock_simple.sh
+@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_19 = sndrcv_relp.sh
+@ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_20 = \
 @ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_omudpspoof.sh \
 @ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_omudpspoof_nonstdpt.sh
 
-@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_20 = \
+@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_21 = \
 @ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	omod-if-array.sh \
 @ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	threadingmq.sh \
 @ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	threadingmqaq.sh \
 @ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	badqi.sh
 
-@ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_21 = \
+@ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_22 = \
 @ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	tabescape_dflt.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	tabescape_off.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	timestamp.sh \
@@ -295,7 +303,7 @@ host_triplet = @host@
 @ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	parsertest.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	fieldtest.sh
 
-@ENABLE_OMRULESET_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_22 = \
+@ENABLE_OMRULESET_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_23 = \
 @ENABLE_OMRULESET_TRUE@@ENABLE_TESTBENCH_TRUE@	omruleset.sh \
 @ENABLE_OMRULESET_TRUE@@ENABLE_TESTBENCH_TRUE@	omruleset-queue.sh
 
@@ -303,19 +311,19 @@ host_triplet = @host@
 # random.sh is temporarily disabled as it needs some work
 # to rsyslog core to complete in reasonable time
 #TESTS += random.sh 
-@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_23 = \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_24 = \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-basic.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-readmode2.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-readmode2-with-persists-data-during-stop.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-readmode2-with-persists.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-endregex.sh
 
-@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_24 = \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_25 = \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-basic-vg.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-endregex-vg.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-readmode2-vg.sh
 
-@ENABLE_GNUTLS_TRUE@am__append_25 = -lgcrypt
+@ENABLE_GNUTLS_TRUE@am__append_26 = -lgcrypt
 subdir = tests
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp $(top_srcdir)/test-driver README
@@ -675,6 +683,8 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
+GLIB_CFLAGS = @GLIB_CFLAGS@
+GLIB_LIBS = @GLIB_LIBS@
 GNUTLS_CFLAGS = @GNUTLS_CFLAGS@
 GNUTLS_LIBS = @GNUTLS_LIBS@
 GREP = @GREP@
@@ -715,6 +725,8 @@ LIBM = @LIBM@
 LIBMONGO_CLIENT_CFLAGS = @LIBMONGO_CLIENT_CFLAGS@
 LIBMONGO_CLIENT_LIBS = @LIBMONGO_CLIENT_LIBS@
 LIBOBJS = @LIBOBJS@
+LIBRDKAFKA_CFLAGS = @LIBRDKAFKA_CFLAGS@
+LIBRDKAFKA_LIBS = @LIBRDKAFKA_LIBS@
 LIBS = @LIBS@
 LIBSYSTEMD_JOURNAL_CFLAGS = @LIBSYSTEMD_JOURNAL_CFLAGS@
 LIBSYSTEMD_JOURNAL_LIBS = @LIBSYSTEMD_JOURNAL_LIBS@
@@ -977,6 +989,12 @@ EXTRA_DIST = \
 	testsuites/stop-localvar.conf \
 	stop-msgvar.sh \
 	testsuites/stop-msgvar.conf \
+	msgvar-concurrency.sh \
+	testsuites/msgvar-concurrency.conf \
+	localvar-concurrency.sh \
+	testsuites/localvar-concurrency.conf \
+	exec_tpl-concurrency.sh \
+	testsuites/exec_tpl-concurrency.conf \
 	global_vars.sh \
 	testsuites/global_vars.conf \
 	rfc5424parser.sh \
@@ -1401,7 +1419,7 @@ uxsockrcvr_LDADD = $(SOL_LIBS)
 tcpflood_SOURCES = tcpflood.c
 tcpflood_CPPFLAGS = $(PTHREADS_CFLAGS) $(GNUTLS_CFLAGS)
 tcpflood_LDADD = $(SOL_LIBS) $(PTHREADS_LIBS) $(GNUTLS_LIBS) \
-	$(am__append_25)
+	$(am__append_26)
 minitcpsrv_SOURCES = minitcpsrvr.c
 minitcpsrv_LDADD = $(SOL_LIBS)
 syslog_caller_SOURCES = syslog_caller.c
@@ -1787,6 +1805,27 @@ stop-msgvar.sh.log: stop-msgvar.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+msgvar-concurrency.sh.log: msgvar-concurrency.sh
+	@p='msgvar-concurrency.sh'; \
+	b='msgvar-concurrency.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+localvar-concurrency.sh.log: localvar-concurrency.sh
+	@p='localvar-concurrency.sh'; \
+	b='localvar-concurrency.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+exec_tpl-concurrency.sh.log: exec_tpl-concurrency.sh
+	@p='exec_tpl-concurrency.sh'; \
+	b='exec_tpl-concurrency.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 fac_authpriv.sh.log: fac_authpriv.sh
 	@p='fac_authpriv.sh'; \
 	b='fac_authpriv.sh'; \
@@ -1986,13 +2025,6 @@ manytcp.sh.log: manytcp.sh
 rsf_getenv.sh.log: rsf_getenv.sh
 	@p='rsf_getenv.sh'; \
 	b='rsf_getenv.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imtcp_conndrop_tls.sh.log: imtcp_conndrop_tls.sh
-	@p='imtcp_conndrop_tls.sh'; \
-	b='imtcp_conndrop_tls.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -2921,20 +2953,6 @@ mmpstrucdata-invalid-vg.sh.log: mmpstrucdata-invalid-vg.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-mmnormalize_variable.sh.log: mmnormalize_variable.sh
-	@p='mmnormalize_variable.sh'; \
-	b='mmnormalize_variable.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-mmnormalize_tokenized.sh.log: mmnormalize_tokenized.sh
-	@p='mmnormalize_tokenized.sh'; \
-	b='mmnormalize_tokenized.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
 mmnormalize_regex_defaulted.sh.log: mmnormalize_regex_defaulted.sh
 	@p='mmnormalize_regex_defaulted.sh'; \
 	b='mmnormalize_regex_defaulted.sh'; \
@@ -2945,6 +2963,20 @@ mmnormalize_regex_defaulted.sh.log: mmnormalize_regex_defaulted.sh
 mmnormalize_regex_disabled.sh.log: mmnormalize_regex_disabled.sh
 	@p='mmnormalize_regex_disabled.sh'; \
 	b='mmnormalize_regex_disabled.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmnormalize_variable.sh.log: mmnormalize_variable.sh
+	@p='mmnormalize_variable.sh'; \
+	b='mmnormalize_variable.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmnormalize_tokenized.sh.log: mmnormalize_tokenized.sh
+	@p='mmnormalize_tokenized.sh'; \
+	b='mmnormalize_tokenized.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -2991,9 +3023,37 @@ json_nonarray_looping.sh.log: json_nonarray_looping.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+json_null_array-vg.sh.log: json_null_array-vg.sh
+	@p='json_null_array-vg.sh'; \
+	b='json_null_array-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+json_null-vg.sh.log: json_null-vg.sh
+	@p='json_null-vg.sh'; \
+	b='json_null-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 stop_when_array_has_element.sh.log: stop_when_array_has_element.sh
 	@p='stop_when_array_has_element.sh'; \
 	b='stop_when_array_has_element.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+json_null_array.sh.log: json_null_array.sh
+	@p='json_null_array.sh'; \
+	b='json_null_array.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+json_null.sh.log: json_null.sh
+	@p='json_null.sh'; \
+	b='json_null.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
