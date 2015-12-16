@@ -1,3 +1,9 @@
+rsyslog (8.15.0-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 16 Dec 2015 23:00:57 +0100
+
 rsyslog (8.14.0-2) unstable; urgency=medium
 
   * Remove logging to /dev/xconsole from the default rsyslog configuration.
