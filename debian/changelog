@@ -1,6 +1,7 @@
 rsyslog (8.15.0-1) UNRELEASED; urgency=medium
 
   * New upstream release.
+  * Drop debian/patches/Skip-broken-mmnormalize-tests.patch, fixed upstream.
 
  -- Michael Biebl <biebl@debian.org>  Wed, 16 Dec 2015 23:00:57 +0100
 
