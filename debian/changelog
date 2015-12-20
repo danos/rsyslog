@@ -1,11 +1,11 @@
-rsyslog (8.15.0-1) UNRELEASED; urgency=medium
+rsyslog (8.15.0-1) unstable; urgency=medium
 
   * New upstream release.
   * Drop debian/patches/Skip-broken-mmnormalize-tests.patch, fixed upstream.
   * Add tests which are missing in the dist tarball and which are required to
     run the test suite.
 
- -- Michael Biebl <biebl@debian.org>  Wed, 16 Dec 2015 23:00:57 +0100
+ -- Michael Biebl <biebl@debian.org>  Sun, 20 Dec 2015 17:36:00 +0100
 
 rsyslog (8.14.0-2) unstable; urgency=medium
 
