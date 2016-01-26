@@ -1,3 +1,9 @@
+rsyslog (8.16.0-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 26 Jan 2016 20:38:42 +0100
+
 rsyslog (8.15.0-1) unstable; urgency=medium
 
   * New upstream release.
