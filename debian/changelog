@@ -1,10 +1,10 @@
-rsyslog (8.16.0-1) UNRELEASED; urgency=medium
+rsyslog (8.16.0-1) unstable; urgency=medium
 
   * New upstream release.
   * Rebase patches.
   * Enable more hardening flags via DEB_BUILD_MAINT_OPTIONS = hardening=+all.
 
- -- Michael Biebl <biebl@debian.org>  Tue, 26 Jan 2016 20:38:42 +0100
+ -- Michael Biebl <biebl@debian.org>  Wed, 27 Jan 2016 19:59:20 +0100
 
 rsyslog (8.15.0-1) unstable; urgency=medium
 
