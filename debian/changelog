@@ -1,3 +1,10 @@
+rsyslog (8.16.0-1~bpo8+1) jessie-backports; urgency=medium
+
+  * Rebuild for jessie-backports.
+  * Revert "Enable CZMQ plugins", we don't have libczmq in jessie.
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 23 Mar 2016 02:24:45 +0100
+
 rsyslog (8.16.0-1) unstable; urgency=medium
 
   * New upstream release.
