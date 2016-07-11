@@ -24,7 +24,7 @@ Build-Depends: debhelper (>= 8),
                libsystemd-dev (>= 209) [linux-any],
                pkg-config,
                bison
-Standards-Version: 3.9.6
+Standards-Version: 3.9.8
 Vcs-Git: git://anonscm.debian.org/collab-maint/rsyslog.git
 Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/rsyslog.git
 Homepage: http://www.rsyslog.com/
