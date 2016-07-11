@@ -1,6 +1,7 @@
 rsyslog (8.19.0-1) UNRELEASED; urgency=medium
 
   * New upstream release.
+  * Rebase patches.
 
  -- Michael Biebl <biebl@debian.org>  Tue, 12 Jul 2016 01:26:52 +0200
 
