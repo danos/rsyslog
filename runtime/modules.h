@@ -136,7 +136,7 @@ struct modInfo_s {
 			 */
 			rsRetVal (*beginTransaction)(void*);
 			rsRetVal (*commitTransaction)(void *const, actWrkrIParams_t *const, const unsigned);
-			rsRetVal (*doAction)(uchar**, void*);
+			rsRetVal (*doAction)(void** params, void*pWrkrData);
 			rsRetVal (*endTransaction)(void*);
 			rsRetVal (*parseSelectorAct)(uchar**, void**,omodStringRequest_t**);
 			rsRetVal (*newActInst)(uchar *modName, struct nvlst *lst, void **, omodStringRequest_t **);
@@ -200,6 +200,6 @@ PROTOTYPEObj(module);
  */
 rsRetVal modulesProcessCnf(struct cnfobj *o);
 uchar *modGetName(modInfo_t *pThis);
-rsRetVal addModToCnfList(cfgmodules_etry_t *pNew, cfgmodules_etry_t *pLast);
+rsRetVal addModToCnfList(cfgmodules_etry_t **pNew, cfgmodules_etry_t *pLast);
 rsRetVal readyModForCnf(modInfo_t *pThis, cfgmodules_etry_t **ppNew, cfgmodules_etry_t **ppLast);
 #endif /* #ifndef MODULES_H_INCLUDED */

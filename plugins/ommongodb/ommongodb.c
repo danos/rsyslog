@@ -34,8 +34,6 @@
 #include <time.h>
 #include <mongo.h>
 #include <json.h>
-/* For struct json_object_iter, should not be necessary in future versions */
-#include <json_object_private.h>
 
 #include "rsyslog.h"
 #include "conf.h"
@@ -337,6 +335,7 @@ getDefaultBSON(msg_t *pMsg)
 
 static bson *BSONFromJSONArray(struct json_object *json);
 static bson *BSONFromJSONObject(struct json_object *json);
+static gboolean BSONAppendExtendedJSON(bson *doc, const gchar *name, struct json_object *json);
 
 /* Append a BSON variant of json to doc using name.  Return TRUE on success */
 static gboolean
@@ -354,17 +353,17 @@ BSONAppendJSONObject(bson *doc, const gchar *name, struct json_object *json)
 	case json_type_int: {
 		int64_t i;
 
-#ifdef HAVE_JSON_OBJECT_NEW_INT64
 		i = json_object_get_int64(json);
-#else /* HAVE_JSON_OBJECT_NEW_INT64 */
-		i = json_object_get_int(json);
-#endif /* HAVE_JSON_OBJECT_NEW_INT64 */
 		if (i >= INT32_MIN && i <= INT32_MAX)
 			return bson_append_int32(doc, name, i);
 		else
 			return bson_append_int64(doc, name, i);
 	}
 	case json_type_object: {
+
+		if (BSONAppendExtendedJSON(doc, name, json) == TRUE)
+		    return TRUE;
+
 		bson *sub;
 		gboolean ok;
 
@@ -393,6 +392,37 @@ BSONAppendJSONObject(bson *doc, const gchar *name, struct json_object *json)
 	default:
 		return FALSE;
 	}
+}
+
+/* Note: this function assumes that at max a single sub-object exists. This
+ * may need to be extended to cover cases where multiple objects are contained.
+ * However, I am not sure about the original intent of this contribution and
+ * just came across it when refactoring the json calls. As everything seems
+ * to work since quite a while, I do not make any changes now.
+ * rgerhards, 2016-04-09
+ */
+static gboolean
+BSONAppendExtendedJSON(bson *doc, const gchar *name, struct json_object *json)
+{
+	struct json_object_iterator itEnd = json_object_iter_end(json);
+	struct json_object_iterator it = json_object_iter_begin(json);
+
+	if (!json_object_iter_equal(&it, &itEnd)) {
+		const char *const key = json_object_iter_peek_name(&it);
+		if (strcmp(key, "$date") == 0) {
+			struct tm tm;
+			gint64 ts;
+			struct json_object *val;
+
+			val = json_object_iter_peek_value(&it);
+			DBGPRINTF("ommongodb: extended json date detected %s", json_object_get_string(val));
+			tm.tm_isdst = -1;
+			strptime(json_object_get_string(val), "%Y-%m-%dT%H:%M:%S%z", &tm);
+			ts = 1000 * (gint64) mktime(&tm);
+			return bson_append_utc_datetime(doc, name, ts);
+		}
+	}
+	return FALSE;
 }
 
 /* Return a BSON variant of json, which must be a json_type_array */
@@ -435,15 +465,18 @@ static bson *
 BSONFromJSONObject(struct json_object *json)
 {
 	bson *doc = NULL;
-	struct json_object_iter it;
 
 	doc = bson_new();
 	if(doc == NULL)
 		goto error;
 
-	json_object_object_foreachC(json, it) {
-		if (BSONAppendJSONObject(doc, it.key, it.val) == FALSE)
+	struct json_object_iterator it = json_object_iter_begin(json);
+	struct json_object_iterator itEnd = json_object_iter_end(json);
+	while (!json_object_iter_equal(&it, &itEnd)) {
+		if (BSONAppendJSONObject(doc, json_object_iter_peek_name(&it),
+			json_object_iter_peek_value(&it)) == FALSE)
 			goto error;
+		json_object_iter_next(&it);
 	}
 
 	if(bson_finish(doc) == FALSE)
@@ -464,7 +497,7 @@ CODESTARTtryResume
 	}
 ENDtryResume
 
-BEGINdoAction
+BEGINdoAction_NoStrings
 	bson *doc = NULL;
 	instanceData *pData;
 CODESTARTdoAction
@@ -476,9 +509,9 @@ CODESTARTdoAction
 	}
 
 	if(pData->tplName == NULL) {
-		doc = getDefaultBSON((msg_t*)ppString[0]);
+		doc = getDefaultBSON((msg_t*)pMsgData);
 	} else {
-		doc = BSONFromJSONObject((struct json_object *)ppString[0]);
+		doc = BSONFromJSONObject((struct json_object *)pMsgData);
 	}
 	if(doc == NULL) {
 		dbgprintf("ommongodb: error creating BSON doc\n");
@@ -557,9 +590,9 @@ CODESTARTnewActInst
 	}
 
 	if(pData->db == NULL)
-		pData->db = (uchar*)strdup("syslog");
+		CHKmalloc(pData->db = (uchar*)strdup("syslog"));
 	if(pData->collection == NULL)
-		pData->collection = (uchar*)strdup("log");
+		 CHKmalloc(pData->collection = (uchar*)strdup("log"));
 
 	/* we now create a db+collection string as we need to pass this
 	 * into the API and we do not want to generate it each time ;)

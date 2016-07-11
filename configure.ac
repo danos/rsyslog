@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([rsyslog],[8.16.0],[rsyslog@lists.adiscon.com])
+AC_INIT([rsyslog],[8.19.0],[rsyslog@lists.adiscon.com])
 AM_INIT_AUTOMAKE([subdir-objects])
 
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
@@ -26,30 +26,7 @@ PKG_PROG_PKG_CONFIG
 
 # modules we require
 PKG_CHECK_MODULES(LIBESTR, libestr >= 0.1.9)
-PKG_CHECK_MODULES([JSON_C], [libfastjson],, [
-	PKG_CHECK_MODULES([JSON_C], [json],, [
-		PKG_CHECK_MODULES([JSON_C], [json-c],,)
-	])
-])
-
-save_CFLAGS="$CFLAGS"
-save_LIBS="$LIBS"
-
-CFLAGS="$CFLAGS $JSON_C_CFLAGS"
-LIBS="$LIBS $JSON_C_LIBS"
-
-# if int64 is supported, use it
-AC_CHECK_LIB(json-c, json_object_new_object,,)
-AC_CHECK_FUNCS(json_object_new_int64,,)
-
-# look for newer API
-AC_CHECK_FUNCS(json_tokener_error_desc,,)
-AC_CHECK_FUNCS(json_object_object_get_ex,,)
-AC_CHECK_FUNCS(json_object_to_json_string_ext,,)
-AC_CHECK_TYPES([json_bool],,,[[#include <json_object.h>]])
-
-CFLAGS="$save_CFLAGS"
-LIBS="$save_LIBS"
+PKG_CHECK_MODULES([JSON_C], [libfastjson],,)
 
 AC_DEFINE_UNQUOTED([PLATFORM_ID], ["${host}"], [platform id for display purposes])
 # we don't mind if we don't have the lsb_release utility. But if we have, it's
@@ -133,8 +110,6 @@ AC_CHECK_MEMBERS([struct sockaddr.sa_len],,,[$sa_includes])
 AC_FUNC_CHOWN
 AC_FUNC_FORK
 AC_PROG_GCC_TRADITIONAL
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
 AC_FUNC_SELECT_ARGTYPES
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
@@ -160,6 +135,7 @@ AC_CHECK_DECL([GLOB_NOMAGIC], [AC_DEFINE(HAVE_GLOB_NOMAGIC, [1], [set define])],
 AC_MSG_CHECKING(for MAXHOSTNAMELEN)
 AC_TRY_COMPILE([
 	#include <sys/param.h>
+	#include <netdb.h>
 	], [
 	return MAXHOSTNAMELEN;
 	]
@@ -259,12 +235,18 @@ AC_ARG_ENABLE(gssapi_krb5,
          esac],
 	[enable_gssapi_krb5=no]
 )
+
+case "${os_type}" in
+solaris) GSSLIB=gss ;;
+*)       GSSLIB=gssapi_krb5 ;;
+esac
+  
 if test $enable_gssapi_krb5 = yes; then
-	AC_CHECK_LIB(gssapi_krb5, gss_acquire_cred, [
+	AC_CHECK_LIB($GSSLIB, gss_acquire_cred, [
 		AC_CHECK_HEADER(gssapi/gssapi.h, [
 			AC_DEFINE(USE_GSSAPI,,
 				  Define if you want to use GSSAPI)
-			GSS_LIBS="-lgssapi_krb5"
+			GSS_LIBS="-l$GSSLIB"
 			AC_SUBST(GSS_LIBS)
 		])
 	])
@@ -295,6 +277,22 @@ AC_CHECK_HEADERS(
     ],
     [AC_MSG_FAILURE([pthread is missing])]
 )
+
+AC_CHECK_LIB(
+  [pthread],
+	[pthread_rwlockattr_setkind_np],
+	[AC_DEFINE(
+	   [HAVE_PTHREAD_RWLOCKATTR_SETKIND_NP],
+		 [1],
+		 [Set-kind available for rwlock attr.])])
+
+AC_CHECK_LIB(
+  [pthread],
+	[pthread_setname_np],
+	[AC_DEFINE(
+	   [HAVE_PTHREAD_SETNAME_NP],
+		 [1],
+		 [Can set thread-name.])])
 
 AC_CHECK_FUNCS(
     [pthread_setschedparam],
@@ -1099,6 +1097,13 @@ if test "x$enable_relp" = "xyes"; then
 fi
 AM_CONDITIONAL(ENABLE_RELP, test x$enable_relp = xyes)
 
+# RELP default port
+AC_ARG_ENABLE(omrelp-default-port,
+        [AS_HELP_STRING([--enable-omrelp-default-port],[set omrelp default port @<:@default=514@:>@])],
+	[ AC_DEFINE_UNQUOTED(RELP_DFLT_PT, "${enableval}", [default port for omrelp]) ],
+	[ AC_DEFINE(RELP_DFLT_PT, "514", [default port for omrelp]) ]
+)
+
 
 # GuardTime support
 AC_ARG_ENABLE(guardtime,
@@ -1476,7 +1481,30 @@ AC_ARG_ENABLE(omkafka,
          esac],
         [enable_omkafka=no]
 )
+AC_ARG_ENABLE(kafka_tests,
+        [AS_HELP_STRING([--enable-kafka-tests],[Enable Kafka tests, needs Java @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_kafka_tests="yes" ;;
+          no) enable_kafka_tests="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-kafka-tests) ;;
+         esac],
+        [enable_kafka_tests=no]
+)
+AM_CONDITIONAL(ENABLE_KAFKA_TESTS, test x$enable_kafka_tests = xyes)
+
 if test "x$enable_omkafka" = "xyes"; then
+	if test "x$enable_kafka_tests" = "xyes"; then
+		AX_PROG_JAVAC #we don't need javac, but macro documentation says JAVAC *must* be checked before JAVA
+		AX_PROG_JAVA
+		AC_CHECK_PROG(WGET, [wget], [yes], [no])
+		if test "x${WGET}" = "xno"; then
+			AC_MSG_FAILURE([wget, which is a kafka-tests dependency, not found])
+		fi
+		AC_CHECK_PROG(READLINK, [readlink], [yes], [no])
+		if test "x${READLINK}" = "xno"; then
+			AC_MSG_FAILURE([readlink, which is a kafka-tests dependency, not found])
+		fi
+	fi
 	PKG_CHECK_MODULES([LIBRDKAFKA], [librdkafka],, [
 		AC_CHECK_LIB([rdkafka], [rd_kafka_produce], [
 			AC_MSG_WARN([librdkafka is missing but library present, using -lrdkafka])
@@ -1486,9 +1514,12 @@ if test "x$enable_omkafka" = "xyes"; then
 		])
 	])
 	AC_CHECK_HEADERS([librdkafka/rdkafka.h])
+else
+	if test "x$enable_kafka_tests" = "xyes"; then
+		AC_MSG_ERROR([kafka-tests can not be enabled while omkafka is disabled])
+	fi
 fi
 AM_CONDITIONAL(ENABLE_OMKAFKA, test x$enable_omkafka = xyes)
-
 
 #MONGODB SUPPORT
 
@@ -1609,7 +1640,29 @@ AC_ARG_ENABLE(omhiredis,
 )
 #
 if test "x$enable_omhiredis" = "xyes"; then
-	PKG_CHECK_MODULES(HIREDIS, hiredis >= 0.10.1)
+    PKG_CHECK_MODULES(HIREDIS, hiredis >= 0.10.1, [],
+        [AC_SEARCH_LIBS(redisConnectWithTimeout, hiredis,
+            [AC_COMPILE_IFELSE(
+                [AC_LANG_PROGRAM(
+                    [[ #include <hiredis/hiredis.h> ]],
+                    [[ #define major 0
+                       #define minor 10
+                       #define patch 1
+                       #if (( HIREDIS_MAJOR > major ) || \
+                         (( HIREDIS_MAJOR == major ) && ( HIREDIS_MINOR > minor )) || \
+                         (( HIREDIS_MAJOR == major ) && ( HIREDIS_MINOR == minor ) && ( HIREDIS_PATCH >= patch ))) \
+                       /* OK */
+                       #else
+                       # error Hiredis version must be >= major.minor.path
+                       #endif
+                    ]]
+                )],
+                [],
+                [AC_MSG_ERROR([hiredis version must be >= 0.10.1])]
+            )],
+            [AC_MSG_ERROR([hiredis not found])]
+        )]
+    )
 fi
 AM_CONDITIONAL(ENABLE_OMHIREDIS, test x$enable_omhiredis = xyes)
 
@@ -1637,6 +1690,27 @@ fi
 AM_CONDITIONAL(ENABLE_OMHTTPFS, test x$enable_omhttpfs = xyes)
 
 # END HTTPFS SUPPORT
+
+# AMQP 1.0 PROTOCOL SUPPORT
+# uses the Proton protocol library
+
+AC_ARG_ENABLE(omamqp1,
+        [AS_HELP_STRING([--enable-omamqp1],[Compiles omamqp1 output module @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_omamqp1="yes" ;;
+          no) enable_omamqp1="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-omamqp1) ;;
+         esac],
+        [enable_omamqp1=no]
+)
+if test "x$enable_omamqp1" = "xyes"; then
+        PKG_CHECK_MODULES(PROTON, libqpid-proton >= 0.9)
+        AC_SUBST(PROTON_CFLAGS)
+        AC_SUBST(PROTON_LIBS)
+fi
+AM_CONDITIONAL(ENABLE_OMAMQP1, test x$enable_omamqp1 = xyes)
+
+# END AMQP 1.0 PROTOCOL SUPPORT
 
 # man pages
 AC_CHECKING([if required man pages already exist])
@@ -1763,6 +1837,7 @@ AC_CONFIG_FILES([Makefile \
 		contrib/mmrfc5424addhmac/Makefile \
 		contrib/pmcisconames/Makefile \
 		contrib/omhttpfs/Makefile \
+		contrib/omamqp1/Makefile \
 		tests/Makefile])
 AC_OUTPUT
 
@@ -1812,6 +1887,7 @@ echo "    omzmq3 module will be compiled:           $enable_omzmq3"
 echo "    omczmq module will be compiled:           $enable_omczmq"
 echo "    omrabbitmq module will be compiled:       $enable_omrabbitmq"
 echo "    omhttpfs module will be compiled:         $enable_omhttpfs"
+echo "    omamqp1 module will be compiled:          $enable_omamqp1"
 echo
 echo "---{ parser modules }---"
 echo "    pmlastmsg module will be compiled:        $enable_pmlastmsg"
@@ -1849,6 +1925,7 @@ echo "---{ debugging support }---"
 echo "    Testbench enabled:                        $enable_testbench"
 echo "    Extended Testbench enabled:               $enable_extended_tests"
 echo "    MySQL Tests enabled:                      $enable_mysql_tests"
+echo "    Kafka Tests enabled:                      $enable_kafka_tests"
 echo "    Debug mode enabled:                       $enable_debug"
 echo "    Runtime Instrumentation enabled:          $enable_rtinst"
 echo "    (total) debugless mode enabled:           $enable_debugless"

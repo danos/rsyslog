@@ -3,7 +3,7 @@
  *
  * Begun 2005-09-15 RGerhards
  *
- * Copyright (C) 2005-2015 by Rainer Gerhards and Adiscon GmbH
+ * Copyright (C) 2005-2016 by Rainer Gerhards and Adiscon GmbH
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -443,6 +443,11 @@ enum rsRetVal_				/** return value. All methods return this if not specified oth
 	RS_RET_CONF_PARAM_INVLD = -2425,/**< config parameter is invalid */
 	RS_RET_KSI_ERR = -2426,/**< error in KSI subsystem */
 	RS_RET_ERR_LIBLOGNORM = -2427,/**< cannot obtain liblognorm ctx */
+	RS_RET_CONC_CTRL_ERR = -2428,/**< error in lock/unlock/condition/concurrent-modification operation */
+	RS_RET_SENDER_GONE_AWAY = -2429,/**< warning: sender not seen for configured amount of time */
+	RS_RET_SENDER_APPEARED = -2430,/**< info: new sender appeared */
+	RS_RET_FILE_ALREADY_IN_TABLE = -2431,/**< in imfile: table already contains to be added file */
+	RS_RET_ERR_DROP_PRIV = -2432,/**< error droping privileges */
 
 	/* RainerScript error messages (range 1000.. 1999) */
 	RS_RET_SYSVAR_NOT_FOUND = 1001, /**< system variable could not be found (maybe misspelled) */
@@ -466,6 +471,8 @@ enum rsRetVal_				/** return value. All methods return this if not specified oth
 #else
 #	define CHKiRet(code) if((iRet = code) != RS_RET_OK) goto finalize_it
 #endif
+
+# define CHKiConcCtrl(code) if (code != 0) { iRet = RS_RET_CONC_CTRL_ERR; goto finalize_it; }
 
 /* macro below is to be used if we need our own handling, eg for cleanup */
 #define CHKiRet_Hdlr(code) if((iRet = code) != RS_RET_OK)
@@ -525,9 +532,9 @@ typedef enum rsObjectID rsObjID;
 #define RSFREEOBJ(x) {(x)->OID = OIDrsFreed; free(x);}
 #endif
 
+extern pthread_attr_t default_thread_attr;
 #ifdef HAVE_PTHREAD_SETSCHEDPARAM
 extern struct sched_param default_sched_param;
-extern pthread_attr_t default_thread_attr;
 extern int default_thr_sched_policy;
 #endif
 
@@ -605,20 +612,6 @@ rsRetVal rsrtExit(void);
 int rsrtIsInit(void);
 void rsrtSetErrLogger(void (*errLogger)(const int, const int, const uchar*));
 
-
-/* our own support for breaking changes in json-c */
-#ifdef HAVE_JSON_OBJECT_OBJECT_GET_EX
-#	define RS_json_object_object_get_ex(obj, key, retobj) \
-		json_object_object_get_ex((obj), (key), (retobj))
-#else
-#	define RS_json_object_object_get_ex(obj, key, retobj) \
-		(!json_object_is_type(obj, json_type_object) || \
-				(*(retobj) = json_object_object_get((obj), (key))) == NULL) ? FALSE : TRUE
-#endif
-
-#ifndef HAVE_JSON_BOOL
-typedef int json_bool;
-#endif
 
 /* this define below is (later) intended to be used to implement empty
  * structs. TODO: check if compilers supports this and, if not, define

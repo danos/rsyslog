@@ -1208,7 +1208,7 @@ void closeUDPListenSockets(int *pSockArr)
  * 1 - server, 0 - client
  * param rcvbuf indicates desired rcvbuf size; 0 means OS default
  */
-int *create_udp_socket(uchar *hostname, uchar *pszPort, int bIsServer, int rcvbuf)
+int *create_udp_socket(uchar *hostname, uchar *pszPort, int bIsServer, int rcvbuf, int ipfreebind)
 {
         struct addrinfo hints, *res, *r;
         int error, maxs, *s, *socks, on = 1;
@@ -1348,6 +1348,7 @@ int *create_udp_socket(uchar *hostname, uchar *pszPort, int bIsServer, int rcvbu
 		}
 
 		if(bIsServer) {
+
 			/* rgerhards, 2007-06-22: if we run on a kernel that does not support
 			 * the IPV6_V6ONLY socket option, we need to use a work-around. On such
 			 * systems the IPv6 socket does also accept IPv4 sockets. So an IPv4
@@ -1360,7 +1361,18 @@ int *create_udp_socket(uchar *hostname, uchar *pszPort, int bIsServer, int rcvbu
 			     && (errno != EADDRINUSE)
 	#		endif
 			   ) {
-				errmsg.LogError(errno, NO_ERRCODE, "bind");
+				if (errno == EADDRNOTAVAIL && ipfreebind != IPFREEBIND_DISABLED) {
+					if (setsockopt(*s, IPPROTO_IP, IP_FREEBIND, &on, sizeof(on)) < 0) {
+						errmsg.LogError(errno, NO_ERRCODE, "setsockopt(IP_FREEBIND)");
+					}
+					else if (bind(*s, r->ai_addr, r->ai_addrlen) < 0) {
+						errmsg.LogError(errno, NO_ERRCODE, "bind with IP_FREEBIND");
+					} else {
+						if (ipfreebind >= IPFREEBIND_ENABLED_WITH_LOG)
+							errmsg.LogMsg(0, RS_RET_OK_WARN, LOG_WARNING, "bound address %s IP free", hostname);
+						continue;
+					}
+				}
 				close(*s);
 				*s = -1;
 				continue;
@@ -1465,6 +1477,9 @@ finalize_it:
  * However, it caches entries in order to avoid too-frequent requery.
  * rgerhards, 2012-03-06
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-align" /* TODO: how can we fix these warnings? */
+/* Problem with the warnings: they seem to stem back from the way the API is structured */
 static rsRetVal
 getIFIPAddr(uchar *szif, int family, uchar *pszbuf, int lenBuf)
 {
@@ -1503,6 +1518,7 @@ finalize_it:
 	RETiRet;
 
 }
+#pragma GCC diagnostic pop
 
 
 /* queryInterface function

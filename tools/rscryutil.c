@@ -146,7 +146,7 @@ done:	return r;
 static int
 eiGetEND(FILE *eifp, off64_t *offs)
 {
-	char rectype[EIF_MAX_RECTYPE_LEN+1];
+	char rectype[EIF_MAX_RECTYPE_LEN+1] = "";
 	char value[EIF_MAX_VALUE_LEN+1];
 	int r;
 
@@ -276,7 +276,7 @@ doDecrypt(FILE *logfp, FILE *eifp, FILE *outfp)
 {
 	off64_t blkEnd;
 	off64_t currOffs = 0;
-	int r;
+	int r = 1;
 	int fd;
         struct stat buf;
 
@@ -347,6 +347,10 @@ write_keyfile(char *fn)
 	fmode = O_WRONLY|O_CREAT;
 	if(!optionForce)
 		fmode |= O_EXCL;
+	if(fn == NULL) {
+		fprintf(stderr, "program error: keyfile is NULL");
+		exit(1);
+	}
 	if((fd = open(fn, fmode, S_IRUSR)) == -1) {
 		fprintf(stderr, "error opening keyfile ");
 		perror(fn);

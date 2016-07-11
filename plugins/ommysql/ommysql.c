@@ -33,6 +33,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <time.h>
+#include <netdb.h>
 #include <mysql.h>
 #include "conf.h"
 #include "syslogd-types.h"
@@ -332,7 +333,7 @@ CODESTARTnewActInst
 			strncpy(pData->dbsrv, cstr, sizeof(pData->dbsrv));
 			free(cstr);
 		} else if(!strcmp(actpblk.descr[i].name, "serverport")) {
-			pData->dbsrvPort = (int) pvals[i].val.d.n, NULL;
+			pData->dbsrvPort = (int) pvals[i].val.d.n;
 		} else if(!strcmp(actpblk.descr[i].name, "db")) {
 			cstr = es_str2cstr(pvals[i].val.d.estr, NULL);
 			strncpy(pData->dbname, cstr, sizeof(pData->dbname));
