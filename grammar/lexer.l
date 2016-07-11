@@ -32,6 +32,7 @@
 #include "config.h"
 #include "rsyslog.h"
 #include "srUtils.h"
+#pragma GCC diagnostic ignored "-Wsign-compare"
 }
 
 %{
@@ -55,6 +56,8 @@
 	/* LINENO: support for setting the linenumber */
 %x INCALL
 	/* INCALL: support for the call statement */
+%x IN_PROCEDURE_CALL
+	/* IN_PROCEDURE_CALL: support for the call statement */	
 %x EXPR
 	/* EXPR is a bit ugly, but we need it to support pre v6-syntax. The problem
 	 * is that cfsysline statement start with $..., the same like variables in
@@ -108,6 +111,25 @@ int fileno(FILE *stream);
  /* keywords */
 "if"				{ BEGIN EXPR; return IF; }
 "foreach"			{ BEGIN EXPR; return FOREACH; }
+"reload_lookup_table"		{ BEGIN IN_PROCEDURE_CALL; return RELOAD_LOOKUP_TABLE_PROCEDURE; }
+<IN_PROCEDURE_CALL>"("		{ return yytext[0]; }
+<IN_PROCEDURE_CALL>\'([^'\\]|\\['"\\$bntr]|\\x[0-9a-f][0-9a-f]|\\[0-7][0-7][0-7])*\'	 {
+				   yytext[yyleng-1] = '\0';
+				   unescapeStr((uchar*)yytext+1, yyleng-2);
+				   yylval.estr = es_newStrFromBuf(yytext+1, strlen(yytext)-1);
+				   return STRING; }
+<IN_PROCEDURE_CALL>\"([^"\\$]|\\["'\\$bntr]|\\x[0-9a-f][0-9a-f]|\\[0-7][0-7][0-7])*\" {
+				   yytext[yyleng-1] = '\0';
+				   unescapeStr((uchar*)yytext+1, yyleng-2);
+				   yylval.estr = es_newStrFromBuf(yytext+1, strlen(yytext)-1);
+				   return STRING; }
+<IN_PROCEDURE_CALL>"," 		{ return yytext[0]; }
+<IN_PROCEDURE_CALL>")" 		{ BEGIN INITIAL; return yytext[0]; }
+<IN_PROCEDURE_CALL>[ \t\n]* 		{  }
+<IN_PROCEDURE_CALL>. 		{ parser_errmsg("invalid character '%s' in expression "
+					        "- is there an invalid escape sequence somewhere?",
+						yytext); }
+<EXPR>"("			{ BEGIN EXPR; return yytext[0]; }
 <EXPR>"then"			{ BEGIN INITIAL; return THEN; }
 <EXPR>"do"			{ BEGIN INITIAL; return DO; }
 <EXPR>";"			{ BEGIN INITIAL; return ';'; }
@@ -139,9 +161,9 @@ int fileno(FILE *stream);
 <EXPR>"startswith"		{ return CMP_STARTSWITH; }
 <EXPR>"startswith_i"		{ return CMP_STARTSWITHI; }
 <EXPR>0[0-7]+ |			/* octal number */
-<EXPR>0x[0-7a-f] |		/* hex number, following rule is dec; strtoll handles all! */
+<EXPR>0x[0-9a-f]+ |		/* hex number, following rule is dec; strtoll handles all! */
 <EXPR>([1-9][0-9]*|0)		{ yylval.n = strtoll(yytext, NULL, 0); return NUMBER; }
-<EXPR>\$[$!./]{0,1}[@a-z][!@a-z0-9\-_\.\[\]]*	{ yylval.s = strdup(yytext+1); return VAR; }
+<EXPR>\$[$!./]{0,1}[@a-z_][!@a-z0-9\-_\.\[\]]*	{ yylval.s = strdup(yytext+1); return VAR; }
 <EXPR>\'([^'\\]|\\['"\\$bntr]|\\x[0-9a-f][0-9a-f]|\\[0-7][0-7][0-7])*\'	 {
 				   yytext[yyleng-1] = '\0';
 				   unescapeStr((uchar*)yytext+1, yyleng-2);
@@ -211,6 +233,8 @@ int fileno(FILE *stream);
 				  BEGIN INOBJ; return BEGINOBJ; }
 "lookup_table"[ \n\t]*"("	{ yylval.objType = CNFOBJ_LOOKUP_TABLE;
 				  BEGIN INOBJ; return BEGINOBJ; }
+"dyn_stats"[ \n\t]*"("		{ yylval.objType = CNFOBJ_DYN_STATS;
+				  BEGIN INOBJ; return BEGINOBJ; }
 "action"[ \n\t]*"("		{ BEGIN INOBJ; return BEGIN_ACTION; }
 ^[ \t]*:\$?[a-z\-]+[ ]*,[ ]*!?[a-z]+[ ]*,[ ]*\"(\\\"|[^\"])*\"	{
 				  yylval.s = strdup(rmLeadingSpace(yytext));
@@ -251,7 +275,7 @@ int fileno(FILE *stream);
 						yytext); }
 \$[a-z]+.*$			{ /* see comment on $IncludeConfig above */
 				  if(!strncasecmp(yytext, "$includeconfig ", 14)) {
-					yyless(14);
+					yyless((yy_size_t)14);
 				  	BEGIN INCL;
 				  } else if(!strncasecmp(yytext, "$ruleset ", 9)) {
 					yylval.s = strdup(yytext);

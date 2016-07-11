@@ -26,6 +26,7 @@
 #include "linkedlist.h"
 #include "queue.h"
 #include "lookup.h"
+#include "dynstats.h"
 
 /* --- configuration objects (the plan is to have ALL upper layers in this file) --- */
 
@@ -70,6 +71,7 @@ struct globals_s {
 				      config) if there was any issue in conf */
 	int uidDropPriv;	/* user-id to which priveleges should be dropped to */
 	int gidDropPriv;	/* group-id to which priveleges should be dropped to */
+	int gidDropPrivKeepSupplemental; /* keep supplemental groups when dropping? */
 	int umask;		/* umask to use */
 	uchar *pszConfDAGFile;	/* name of config DAG file, non-NULL means generate one */
 
@@ -145,6 +147,7 @@ struct rsconf_s {
 	defaults_t defaults;
 	templates_t templates;
 	lookup_tables_t lu_tabs;
+	dynstats_buckets_t dynstats_buckets;
 	outchannels_t och;
 	actions_t actions;
 	rulesets_t rulesets;
