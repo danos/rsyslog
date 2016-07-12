@@ -15,6 +15,9 @@
 /* Indicator that LIBGCRYPT is present */
 #undef ENABLE_LIBGCRYPT
 
+/* Indicator that RELP is present */
+#undef ENABLE_RELP
+
 /* Regular expressions support enabled. */
 #undef FEATURE_REGEXP
 

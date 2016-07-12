@@ -97,9 +97,15 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	minitcpsrv$(EXEEXT) \
 @ENABLE_TESTBENCH_TRUE@	omrelp_dflt_port$(EXEEXT) \
 @ENABLE_TESTBENCH_TRUE@	mangle_qi$(EXEEXT)
-@ENABLE_TESTBENCH_TRUE@TESTS = stop-localvar.sh stop-msgvar.sh \
+@ENABLE_TESTBENCH_TRUE@TESTS = hostname-with-slash-pmrfc5424.sh \
+@ENABLE_TESTBENCH_TRUE@	hostname-with-slash-pmrfc3164.sh \
+@ENABLE_TESTBENCH_TRUE@	hostname-with-slash-dflt-invld.sh \
+@ENABLE_TESTBENCH_TRUE@	hostname-with-slash-dflt-slash-valid.sh \
+@ENABLE_TESTBENCH_TRUE@	stop-localvar.sh stop-msgvar.sh \
 @ENABLE_TESTBENCH_TRUE@	glbl-unloadmodules.sh \
-@ENABLE_TESTBENCH_TRUE@	glbl-invld-param.sh omfwd-keepalive.sh \
+@ENABLE_TESTBENCH_TRUE@	glbl-invld-param.sh \
+@ENABLE_TESTBENCH_TRUE@	invalid_nested_include.sh \
+@ENABLE_TESTBENCH_TRUE@	omfwd-keepalive.sh omfile-read-only.sh \
 @ENABLE_TESTBENCH_TRUE@	msgvar-concurrency.sh \
 @ENABLE_TESTBENCH_TRUE@	localvar-concurrency.sh \
 @ENABLE_TESTBENCH_TRUE@	exec_tpl-concurrency.sh privdropuser.sh \
@@ -130,11 +136,11 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	rawmsg-after-pri.sh rfc5424parser.sh \
 @ENABLE_TESTBENCH_TRUE@	tcp_forwarding_tpl.sh \
 @ENABLE_TESTBENCH_TRUE@	tcp_forwarding_dflt_tpl.sh \
-@ENABLE_TESTBENCH_TRUE@	arrayqueue.sh global_vars.sh \
-@ENABLE_TESTBENCH_TRUE@	da-mainmsg-q.sh validation-run.sh \
-@ENABLE_TESTBENCH_TRUE@	empty-ruleset.sh imtcp-basic.sh \
-@ENABLE_TESTBENCH_TRUE@	imtcp-NUL.sh imtcp-NUL-rawmsg.sh \
-@ENABLE_TESTBENCH_TRUE@	imtcp-multiport.sh \
+@ENABLE_TESTBENCH_TRUE@	tcp_forwarding_retries.sh arrayqueue.sh \
+@ENABLE_TESTBENCH_TRUE@	global_vars.sh da-mainmsg-q.sh \
+@ENABLE_TESTBENCH_TRUE@	validation-run.sh empty-ruleset.sh \
+@ENABLE_TESTBENCH_TRUE@	imtcp-basic.sh imtcp-NUL.sh \
+@ENABLE_TESTBENCH_TRUE@	imtcp-NUL-rawmsg.sh imtcp-multiport.sh \
 @ENABLE_TESTBENCH_TRUE@	imtcp_incomplete_frame_at_end.sh \
 @ENABLE_TESTBENCH_TRUE@	daqueue-persist.sh daqueue-invld-qi.sh \
 @ENABLE_TESTBENCH_TRUE@	diskqueue.sh diskqueue-fsync.sh \
@@ -213,9 +219,11 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	rscript_gt_var.sh rscript_le.sh \
 @ENABLE_TESTBENCH_TRUE@	rscript_le_var.sh rscript_lt.sh \
 @ENABLE_TESTBENCH_TRUE@	rscript_lt_var.sh rscript_ne.sh \
-@ENABLE_TESTBENCH_TRUE@	rscript_ne_var.sh rs_optimizer_pri.sh \
-@ENABLE_TESTBENCH_TRUE@	cee_simple.sh cee_diskqueue.sh \
-@ENABLE_TESTBENCH_TRUE@	incltest.sh incltest_dir.sh \
+@ENABLE_TESTBENCH_TRUE@	rscript_ne_var.sh \
+@ENABLE_TESTBENCH_TRUE@	empty-prop-comparison.sh \
+@ENABLE_TESTBENCH_TRUE@	rs_optimizer_pri.sh cee_simple.sh \
+@ENABLE_TESTBENCH_TRUE@	cee_diskqueue.sh incltest.sh \
+@ENABLE_TESTBENCH_TRUE@	incltest_dir.sh \
 @ENABLE_TESTBENCH_TRUE@	incltest_dir_wildcard.sh \
 @ENABLE_TESTBENCH_TRUE@	incltest_dir_empty_wildcard.sh \
 @ENABLE_TESTBENCH_TRUE@	linkedlistqueue.sh lookup_table.sh \
@@ -426,7 +434,10 @@ host_triplet = @host@
 
 @ENABLE_OMUXSOCK_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_28 = uxsock_simple.sh
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_29 = sndrcv_relp.sh \
-@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@         sndrcv_relp_tls.sh
+@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@         sndrcv_relp_tls.sh \
+@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@         sndrcv_relp_dflt_pt.sh \
+@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 imrelp-basic.sh \
+@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 imrelp-manyconn.sh
 
 @ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_30 = \
 @ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_omudpspoof.sh \
@@ -527,7 +538,8 @@ syslog_caller_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 am_tcpflood_OBJECTS = tcpflood-tcpflood.$(OBJEXT)
 tcpflood_OBJECTS = $(am_tcpflood_OBJECTS)
 tcpflood_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_uxsockrcvr_OBJECTS = uxsockrcvr.$(OBJEXT)
 uxsockrcvr_OBJECTS = $(am_uxsockrcvr_OBJECTS)
 uxsockrcvr_DEPENDENCIES = $(am__DEPENDENCIES_1)
@@ -1018,9 +1030,14 @@ TESTS_ENVIRONMENT = RSYSLOG_MODDIR='$(abs_top_builddir)'/runtime/.libs/
 DISTCLEANFILES = rsyslog.pid
 test_files = testbench.h runtime-dummy.c
 EXTRA_DIST = \
+	hostname-with-slash-pmrfc5424.sh \
+	hostname-with-slash-pmrfc3164.sh \
+	hostname-with-slash-dflt-invld.sh \
+	hostname-with-slash-dflt-slash-valid.sh \
 	glbl-unloadmodules.sh \
 	glbl-invld-param.sh \
 	1.rstest 2.rstest 3.rstest err1.rstest \
+	invalid_nested_include.sh \
 	validation-run.sh \
 	tls-certs/ca-key.pem \
 	tls-certs/ca.pem \
@@ -1117,6 +1134,7 @@ EXTRA_DIST = \
 	testsuites/tcp_forwarding_tpl.conf \
 	tcp_forwarding_dflt_tpl.sh \
 	testsuites/tcp_forwarding_dflt_tpl.conf \
+	tcp_forwarding_retries.sh \
 	killrsyslog.sh \
 	parsertest.sh \
 	fieldtest.sh \
@@ -1169,6 +1187,7 @@ EXTRA_DIST = \
 	stop-msgvar.sh \
 	testsuites/stop-msgvar.conf \
 	omfwd-keepalive.sh \
+	omfile-read-only.sh \
 	msgvar-concurrency.sh \
 	testsuites/msgvar-concurrency.conf \
 	msgvar-concurrency-array.sh \
@@ -1403,12 +1422,17 @@ EXTRA_DIST = \
 	sndrcv.sh \
 	testsuites/sndrcv_sender.conf \
 	testsuites/sndrcv_rcvr.conf \
+	imrelp-basic.sh \
+	imrelp-manyconn.sh \
 	sndrcv_relp.sh \
 	testsuites/sndrcv_relp_sender.conf \
 	testsuites/sndrcv_relp_rcvr.conf \
 	sndrcv_relp_tls.sh \
 	testsuites/sndrcv_relp_tls_sender.conf \
 	testsuites/sndrcv_relp_tls_rcvr.conf \
+	sndrcv_relp_dflt_pt.sh \
+	testsuites/sndrcv_relp_dflt_pt_rcvr.conf \
+	testsuites/sndrcv_relp_dflt_pt_sender.conf \
 	sndrcv_udp.sh \
 	testsuites/sndrcv_udp_sender.conf \
 	testsuites/sndrcv_udp_rcvr.conf \
@@ -1776,6 +1800,7 @@ EXTRA_DIST = \
 	ksi-verify-long-vg.sh \
 	ksi-extract-verify-short-vg.sh \
 	ksi-extract-verify-long-vg.sh \
+	empty-prop-comparison.sh \
 	sndrcv_tls_anon_rebind.sh \
 	testsuites/sndrcv_tls_anon_rebind_sender.conf \
 	testsuites/sndrcv_tls_anon_rebind_rcvr.conf \
@@ -1791,9 +1816,9 @@ chkseq_SOURCES = chkseq.c
 uxsockrcvr_SOURCES = uxsockrcvr.c
 uxsockrcvr_LDADD = $(SOL_LIBS)
 tcpflood_SOURCES = tcpflood.c
-tcpflood_CPPFLAGS = $(PTHREADS_CFLAGS) $(GNUTLS_CFLAGS)
+tcpflood_CPPFLAGS = $(PTHREADS_CFLAGS) $(GNUTLS_CFLAGS) $(RELP_CFLAGS)
 tcpflood_LDADD = $(SOL_LIBS) $(PTHREADS_LIBS) $(GNUTLS_LIBS) \
-	$(am__append_36)
+	$(RELP_LIBS) $(am__append_36)
 minitcpsrv_SOURCES = minitcpsrvr.c
 minitcpsrv_LDADD = $(SOL_LIBS)
 syslog_caller_SOURCES = syslog_caller.c
@@ -2174,6 +2199,34 @@ recheck: all $(check_PROGRAMS)
 	        am__force_recheck=am--force-recheck \
 	        TEST_LOGS="$$log_list"; \
 	exit $$?
+hostname-with-slash-pmrfc5424.sh.log: hostname-with-slash-pmrfc5424.sh
+	@p='hostname-with-slash-pmrfc5424.sh'; \
+	b='hostname-with-slash-pmrfc5424.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+hostname-with-slash-pmrfc3164.sh.log: hostname-with-slash-pmrfc3164.sh
+	@p='hostname-with-slash-pmrfc3164.sh'; \
+	b='hostname-with-slash-pmrfc3164.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+hostname-with-slash-dflt-invld.sh.log: hostname-with-slash-dflt-invld.sh
+	@p='hostname-with-slash-dflt-invld.sh'; \
+	b='hostname-with-slash-dflt-invld.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+hostname-with-slash-dflt-slash-valid.sh.log: hostname-with-slash-dflt-slash-valid.sh
+	@p='hostname-with-slash-dflt-slash-valid.sh'; \
+	b='hostname-with-slash-dflt-slash-valid.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 stop-localvar.sh.log: stop-localvar.sh
 	@p='stop-localvar.sh'; \
 	b='stop-localvar.sh'; \
@@ -2202,9 +2255,23 @@ glbl-invld-param.sh.log: glbl-invld-param.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+invalid_nested_include.sh.log: invalid_nested_include.sh
+	@p='invalid_nested_include.sh'; \
+	b='invalid_nested_include.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 omfwd-keepalive.sh.log: omfwd-keepalive.sh
 	@p='omfwd-keepalive.sh'; \
 	b='omfwd-keepalive.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+omfile-read-only.sh.log: omfile-read-only.sh
+	@p='omfile-read-only.sh'; \
+	b='omfile-read-only.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -2506,6 +2573,13 @@ tcp_forwarding_tpl.sh.log: tcp_forwarding_tpl.sh
 tcp_forwarding_dflt_tpl.sh.log: tcp_forwarding_dflt_tpl.sh
 	@p='tcp_forwarding_dflt_tpl.sh'; \
 	b='tcp_forwarding_dflt_tpl.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tcp_forwarding_retries.sh.log: tcp_forwarding_retries.sh
+	@p='tcp_forwarding_retries.sh'; \
+	b='tcp_forwarding_retries.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -3339,6 +3413,13 @@ rscript_ne.sh.log: rscript_ne.sh
 rscript_ne_var.sh.log: rscript_ne_var.sh
 	@p='rscript_ne_var.sh'; \
 	b='rscript_ne_var.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+empty-prop-comparison.sh.log: empty-prop-comparison.sh
+	@p='empty-prop-comparison.sh'; \
+	b='empty-prop-comparison.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -4340,6 +4421,27 @@ sndrcv_relp.sh.log: sndrcv_relp.sh
 sndrcv_relp_tls.sh.log: sndrcv_relp_tls.sh
 	@p='sndrcv_relp_tls.sh'; \
 	b='sndrcv_relp_tls.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+sndrcv_relp_dflt_pt.sh.log: sndrcv_relp_dflt_pt.sh
+	@p='sndrcv_relp_dflt_pt.sh'; \
+	b='sndrcv_relp_dflt_pt.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imrelp-basic.sh.log: imrelp-basic.sh
+	@p='imrelp-basic.sh'; \
+	b='imrelp-basic.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imrelp-manyconn.sh.log: imrelp-manyconn.sh
+	@p='imrelp-manyconn.sh'; \
+	b='imrelp-manyconn.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
