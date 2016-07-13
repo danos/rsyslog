@@ -25,6 +25,14 @@ case "$1" in
 	fi
     ;;
 
+    triggered)
+	# Try to restart rsyslog
+	if invoke-rc.d rsyslog status >/dev/null 2>&1 ; then
+		invoke-rc.d rsyslog restart || true
+	fi
+	exit 0
+    ;;
+
     abort-upgrade|abort-remove|abort-deconfigure)
     ;;
 
