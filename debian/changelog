@@ -1,4 +1,4 @@
-rsyslog (8.20.0-1) UNRELEASED; urgency=medium
+rsyslog (8.20.0-1) unstable; urgency=medium
 
   * New upstream release.
   * Rebase patches.
@@ -12,7 +12,7 @@ rsyslog (8.20.0-1) UNRELEASED; urgency=medium
   * Bump debhelper compatibility level to 9.
   * Install module libraries into multiarch paths.
 
- -- Michael Biebl <biebl@debian.org>  Tue, 12 Jul 2016 01:26:52 +0200
+ -- Michael Biebl <biebl@debian.org>  Fri, 12 Aug 2016 22:46:32 +0200
 
 rsyslog (8.16.0-1) unstable; urgency=medium
 
