@@ -1,3 +1,4 @@
+#!/usr/bin/dh-exec
 debian/rsyslog.conf  etc/
 usr/sbin/
 usr/share/man/
@@ -27,4 +28,8 @@ usr/lib/rsyslog/ommail.so
 usr/lib/rsyslog/omprog.so
 usr/lib/rsyslog/omuxsock.so
 usr/lib/rsyslog/pm*.so
+[linux-any] usr/lib/rsyslog/imkmsg.so
+[linux-any] usr/lib/rsyslog/imptcp.so
+[linux-any] usr/lib/rsyslog/imjournal.so
+[linux-any] usr/lib/rsyslog/omjournal.so
 lib/systemd/system/rsyslog.service

@@ -8,6 +8,7 @@ rsyslog (8.20.0-1) UNRELEASED; urgency=medium
   * Bump Build-Depends on liblognorm-dev to (>= 2.0.0) to ensure we have a
     version which was built against libfastjson.
   * Add Build-Depends on procps. The test suite requires the ps utility.
+  * Use dh-exec to install arch specific modules.
 
  -- Michael Biebl <biebl@debian.org>  Tue, 12 Jul 2016 01:26:52 +0200
 

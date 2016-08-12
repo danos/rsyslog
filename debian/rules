@@ -61,14 +61,6 @@ override_dh_auto_install:
 
 override_dh_install:
 	dh_install -X .la --list-missing
-ifeq ($(DEB_HOST_ARCH_OS), linux)
-	install --mode=644 \
-		debian/tmp/usr/lib/rsyslog/imkmsg.so \
-		debian/tmp/usr/lib/rsyslog/imptcp.so \
-		debian/tmp/usr/lib/rsyslog/imjournal.so \
-		debian/tmp/usr/lib/rsyslog/omjournal.so \
-		debian/rsyslog/usr/lib/rsyslog/
-endif
 
 override_dh_installinit:
 	dh_installinit -R
