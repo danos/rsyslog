@@ -9,6 +9,7 @@ rsyslog (8.20.0-1) UNRELEASED; urgency=medium
     version which was built against libfastjson.
   * Add Build-Depends on procps. The test suite requires the ps utility.
   * Use dh-exec to install arch specific modules.
+  * Bump debhelper compatibility level to 9.
 
  -- Michael Biebl <biebl@debian.org>  Tue, 12 Jul 2016 01:26:52 +0200
 
