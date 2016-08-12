@@ -1,2 +1,2 @@
-usr/lib/rsyslog/imrelp.so
-usr/lib/rsyslog/omrelp.so
+usr/lib/*/rsyslog/imrelp.so
+usr/lib/*/rsyslog/omrelp.so
