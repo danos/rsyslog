@@ -46,6 +46,7 @@ override_dh_auto_configure:
 		--enable-mmsequence \
 		--enable-imczmq \
 		--enable-omczmq \
+		--enable-omhiredis \
 		--disable-libgcrypt \
 		--enable-testbench \
 		--enable-imdiag \

@@ -8,6 +8,7 @@ Build-Depends: debhelper (>= 9.20141010),
                dh-systemd (>= 1.4),
                dh-exec,
                zlib1g-dev,
+               libhiredis-dev,
                libmysqlclient-dev,
                libpq-dev,
                libmongo-client-dev (>= 0.1.4),
@@ -167,3 +168,14 @@ Depends: ${shlibs:Depends},
 Description: ZeroMQ protocol support for rsyslog via CZMQ
  These plugins allows rsyslog to send and receive ZeroMQ syslog
  messages via the CZMQ library.
+
+Package: rsyslog-hiredis
+Architecture: any
+Priority: extra
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         rsyslog (= ${binary:Version})
+Description: Redis output plugin for rsyslog
+ This plugin allows rsyslog to write syslog messages to Redis, a
+ key-value database in a similar vein to memcache but the dataset
+ is non-volatile.
