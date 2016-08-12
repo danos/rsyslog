@@ -5,6 +5,8 @@ rsyslog (8.20.0-1) UNRELEASED; urgency=medium
   * Bump Standards-Version to 3.9.8.
   * Switch from libjson-c-dev to libfastjson-dev.
   * Bump Build-Depends on librelp-dev to (>= 1.2.12) as per configure.ac.
+  * Bump Build-Depends on liblognorm-dev to (>= 2.0.0) to ensure we have a
+    version which was built against libfastjson.
 
  -- Michael Biebl <biebl@debian.org>  Tue, 12 Jul 2016 01:26:52 +0200
 
