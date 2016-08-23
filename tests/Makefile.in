@@ -143,8 +143,8 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	imtcp-NUL-rawmsg.sh imtcp-multiport.sh \
 @ENABLE_TESTBENCH_TRUE@	imtcp_incomplete_frame_at_end.sh \
 @ENABLE_TESTBENCH_TRUE@	daqueue-persist.sh daqueue-invld-qi.sh \
-@ENABLE_TESTBENCH_TRUE@	diskqueue.sh diskqueue-fsync.sh \
-@ENABLE_TESTBENCH_TRUE@	rulesetmultiqueue.sh \
+@ENABLE_TESTBENCH_TRUE@	daqueue-dirty-shutdown.sh diskqueue.sh \
+@ENABLE_TESTBENCH_TRUE@	diskqueue-fsync.sh rulesetmultiqueue.sh \
 @ENABLE_TESTBENCH_TRUE@	rulesetmultiqueue-v6.sh manytcp.sh \
 @ENABLE_TESTBENCH_TRUE@	rsf_getenv.sh imtcp_conndrop.sh \
 @ENABLE_TESTBENCH_TRUE@	imtcp_addtlframedelim.sh \
@@ -1404,6 +1404,7 @@ EXTRA_DIST = \
 	rcvr_fail_restore.sh \
 	testsuites/rcvr_fail_restore_rcvr.conf \
 	testsuites/rcvr_fail_restore_sender.conf \
+	daqueue-dirty-shutdown.sh \
 	daqueue-invld-qi.sh \
 	daqueue-persist.sh \
 	daqueue-persist-drvr.sh \
@@ -2664,6 +2665,13 @@ daqueue-persist.sh.log: daqueue-persist.sh
 daqueue-invld-qi.sh.log: daqueue-invld-qi.sh
 	@p='daqueue-invld-qi.sh'; \
 	b='daqueue-invld-qi.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+daqueue-dirty-shutdown.sh.log: daqueue-dirty-shutdown.sh
+	@p='daqueue-dirty-shutdown.sh'; \
+	b='daqueue-dirty-shutdown.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
