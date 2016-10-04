@@ -1,6 +1,10 @@
 rsyslog (8.22.0-1) UNRELEASED; urgency=medium
 
+  [ Michael Biebl ]
   * New upstream release.
+
+  [ Matt Zahorik ]
+  * Enable hiredis output plugin (Closes: #833535)
 
  -- Michael Biebl <biebl@debian.org>  Tue, 04 Oct 2016 20:37:58 +0200
 
