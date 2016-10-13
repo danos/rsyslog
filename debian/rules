@@ -7,7 +7,7 @@ include /usr/share/dpkg/buildflags.mk
 DEB_HOST_ARCH_OS ?= $(shell dpkg-architecture -qDEB_HOST_ARCH_OS)
 
 %:
-	dh $@ --with autoreconf,systemd
+	dh $@
 
 ifeq ($(DEB_HOST_ARCH_OS), linux)
 confflags += 	--enable-imptcp \
@@ -62,9 +62,6 @@ override_dh_auto_install:
 
 override_dh_install:
 	dh_install -X .la --list-missing
-
-override_dh_installinit:
-	dh_installinit -R
 
 override_dh_auto_test:
 ifeq (, $(findstring nocheck, $(DEB_BUILD_OPTIONS)))
