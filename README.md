@@ -39,7 +39,6 @@ Follow the instructions at: http://www.rsyslog.com/doc/build_from_repo.html
 
 ### Build Environment
 
-
 In general, you need
 
 * libestr
@@ -49,23 +48,41 @@ It is best to build these from source.
 
 #### CentOS 6
 
-for json-c, we need
+For json-c, we need:
 ```
-  $ export PKG_CONFIG_PATH=/lib64/pkgconfig/
+export PKG_CONFIG_PATH=/lib64/pkgconfig/
 ```
+
 ```
 sudo yum install git valgrind autoconf automake flex bison python-docutils python-sphinx json-c-devel libuuid-devel libgcrypt-devel zlib-devel openssl-devel libcurl-devel gnutls-devel mysql-devel postgresql-devel libdbi-dbd-mysql libdbi-devel net-snmp-devel
 ```
 
-
 #### Ubuntu
 
-Note: this list is (obviously) incomplete. We intend to complete it as we 
-have more information and install additional systems.
+Add Adiscon repository:
 ```
-sudo apt-get install libdbi-dev libmysqlclient-dev postgresql-client libpq-dev  libnet-dev   librdkafka-dev   libgrok-dev libgrok1 libgrok-dev libpcre3-dev libtokyocabinet-dev libglib2.0-dev  libmongo-client-dev  libhiredis-dev
+apt-get update && apt-get install -y software-properties-common
+add-apt-repository -y ppa:adiscon/v8-stable
 ```
-for KSI, from the Adiscon PPA:
+
+*Note:* if you are a developer who wants to work with git master branch,
+adding the Adiscon repository is probably not a good idea. It then
+is better to also compile the supporting libraries from source, because
+newer versions of rsyslog may need newer versions of the libraries than
+there are in the repositories.
+Libraries in question are at least: libestr, liblognorm, libfastjson.
+
+Needed packages to build with omhiredis support:
+```
+apt-get update && apt-get install -y build-essential pkg-config libestr-dev libfastjson-dev zlib1g-dev uuid-dev libgcrypt20-dev liblogging-stdlog-dev libhiredis-dev
+```
+
+Aditional packages for other modules:
+```
+libdbi-dev libmysqlclient-dev postgresql-client libpq-dev libnet-dev librdkafka-dev libgrok-dev libgrok1 libgrok-dev libpcre3-dev libtokyocabinet-dev libglib2.0-dev libmongo-client-dev  
+```
+
+For KSI, from the Adiscon PPA:
 ```
 sudo apt-get install libksi0 libksi-devel
 ```
@@ -75,20 +92,20 @@ sudo apt-get install libksi0 libksi-devel
 ```
 sudo zypper install gcc make autoconf automake libtool libcurl-devel flex bison valgrind python-docutils libjson-devel uuid-devel libgcrypt-devel libgnutls-devel libmysqlclient-devel libdbi-devel libnet-devel postgresql-devel net-snmp-devellibuuid-devel libdbi-drivers-dbd-mysql
 ```
+
 For the testbench VMs:
 ```
 sudo zypper install gvim mutt
 ```
 
-
 #### SUSE LINUX Enterprise Server 11
 
-Available Packages:
+Available packages:
 ```
 zypper install gcc make autoconf libtool flex bison
 ```
 
-Missing Packages:
+Missing packages:
 ```
 libcurl-devel valgrind python-docutils uuid-devel libgcrypt-devel libgnutls-devel libmysqlclient-devel libdbi-devel postgresql-devel net-snmp-devel libdbi-drivers-dbd-mysql json-c zlib-dev libdbi
 ```
