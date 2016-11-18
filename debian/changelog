@@ -4,6 +4,7 @@ rsyslog (8.23.0-1) UNRELEASED; urgency=medium
   * Rebase patches.
   * Bump Build-Depends on libfastjson-dev to (>= 0.99.3).
   * Use the new default-mysql-* metapackages.
+  * Remove logging rules for news.{crit,err,notice} (INN).
 
  -- Michael Biebl <biebl@debian.org>  Fri, 18 Nov 2016 01:59:05 +0100
 
