@@ -2,6 +2,7 @@ rsyslog (8.23.0-1) UNRELEASED; urgency=medium
 
   * New upstream release.
   * Rebase patches.
+  * Bump Build-Depends on libfastjson-dev to (>= 0.99.3).
 
  -- Michael Biebl <biebl@debian.org>  Fri, 18 Nov 2016 01:59:05 +0100
 
