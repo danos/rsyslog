@@ -7,7 +7,7 @@ Build-Depends: debhelper (>= 10),
                dh-exec,
                zlib1g-dev,
                libhiredis-dev,
-               libmysqlclient-dev,
+               default-libmysqlclient-dev,
                libpq-dev,
                libmongo-client-dev (>= 0.1.4),
                libcurl4-gnutls-dev,
@@ -71,8 +71,8 @@ Depends: ${shlibs:Depends},
          rsyslog (= ${binary:Version}),
          dbconfig-common,
          ucf
-Recommends: mysql-client | virtual-mysql-client
-Suggests: mysql-server | virtual-mysql-server
+Recommends: default-mysql-client | virtual-mysql-client
+Suggests: default-mysql-server | virtual-mysql-server
 Description: MySQL output plugin for rsyslog
  This plugin allows rsyslog to write syslog messages into a MySQL database.
 
