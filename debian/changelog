@@ -1,4 +1,4 @@
-rsyslog (8.23.0-1) UNRELEASED; urgency=medium
+rsyslog (8.23.0-1) unstable; urgency=medium
 
   * New upstream release.
   * Rebase patches.
@@ -6,7 +6,7 @@ rsyslog (8.23.0-1) UNRELEASED; urgency=medium
   * Use the new default-mysql-* metapackages.
   * Remove logging rules for news.{crit,err,notice} (INN).
 
- -- Michael Biebl <biebl@debian.org>  Fri, 18 Nov 2016 01:59:05 +0100
+ -- Michael Biebl <biebl@debian.org>  Fri, 18 Nov 2016 07:43:24 +0100
 
 rsyslog (8.22.0-2) unstable; urgency=medium
 
