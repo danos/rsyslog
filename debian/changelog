@@ -1,3 +1,10 @@
+rsyslog (8.23.0-2) UNRELEASED; urgency=medium
+
+  * Fix empty-hostname.sh test and change support for empty hostname
+    (Closes: #844914)
+
+ -- Michael Biebl <biebl@debian.org>  Thu, 24 Nov 2016 11:33:10 +0100
+
 rsyslog (8.23.0-1) unstable; urgency=medium
 
   * New upstream release.
