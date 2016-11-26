@@ -11,7 +11,7 @@
  *
  * File begun on 2007-07-22 by RGerhards
  *
- * Copyright 2007-2015 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2007-2016 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -94,17 +94,17 @@ static struct cnfparamblk pblk =
  * if the transactional entry points exist.
  */
 static rsRetVal
-dummyBeginTransaction() 
+dummyBeginTransaction(__attribute__((unused)) void * dummy)
 {
 	return RS_RET_OK;
 }
 static rsRetVal
-dummyEndTransaction() 
+dummyEndTransaction(__attribute__((unused)) void * dummy)
 {
 	return RS_RET_OK;
 }
 static rsRetVal
-dummyIsCompatibleWithFeature() 
+dummyIsCompatibleWithFeature(__attribute__((unused)) syslogFeature eFeat)
 {
 	return RS_RET_INCOMPATIBLE;
 }
@@ -125,7 +125,7 @@ dummynewActInst(uchar *modName, struct nvlst __attribute__((unused)) *dummy1,
 
 /* add a user to the current list of users (always at the root) */
 static void
-modUsrAdd(modInfo_t *pThis, char *pszUsr)
+modUsrAdd(modInfo_t *pThis, const char *pszUsr)
 {
 	modUsr_t *pUsr;
 
@@ -152,7 +152,7 @@ finalize_it:
  * rgerhards, 2008-03-11
  */
 static void
-modUsrDel(modInfo_t *pThis, char *pszUsr)
+modUsrDel(modInfo_t *pThis, const char *pszUsr)
 {
 	modUsr_t *pUsr;
 	modUsr_t *pPrev = NULL;
@@ -201,8 +201,7 @@ modUsrPrint(modInfo_t *pThis)
  * to be called at end of run to detect "module leaks" and who is causing them.
  * rgerhards, 2008-03-11
  */
-//static void
-void
+static void
 modUsrPrintAll(void)
 {
 	modInfo_t *pMod;
@@ -250,8 +249,13 @@ static void moduleDestruct(modInfo_t *pThis)
 		DBGPRINTF("moduleDestruct: compiled with valgrind, do "
 			"not unload module\n");
 #	else
-		if (pThis->eKeepType == eMOD_NOKEEP) {
-			dlclose(pThis->pModHdlr);
+		if(glblUnloadModules) {
+			if(pThis->eKeepType == eMOD_NOKEEP) {
+				dlclose(pThis->pModHdlr);
+			}
+		} else {
+			DBGPRINTF("moduleDestruct: not unloading module "
+				"due to user configuration\n");
 		}
 #	endif
 	}
@@ -334,7 +338,7 @@ static uchar *modGetStateName(modInfo_t *pThis)
 
 /* Add a module to the loaded module linked list
  */
-static inline void
+static void
 addModToGlblList(modInfo_t *pThis)
 {
 	assert(pThis != NULL);
@@ -415,33 +419,43 @@ finalize_it:
  * module list. Needed to prevent mem leaks.
  */
 static inline void
-abortCnfUse(cfgmodules_etry_t *pNew)
+abortCnfUse(cfgmodules_etry_t **pNew)
 {
-	free(pNew);
+	if(pNew != NULL) {
+		free(*pNew);
+		*pNew = NULL;
+	}
 }
 
 
 /* Add a module to the config module list for current loadConf.
  * Requires last pointer obtained by readyModForCnf().
+ * The module pointer is handed over to this function. It is no
+ * longer available to caller one we are called.
  */
 rsRetVal
-addModToCnfList(cfgmodules_etry_t *pNew, cfgmodules_etry_t *pLast)
+addModToCnfList(cfgmodules_etry_t **pNew, cfgmodules_etry_t *pLast)
 {
 	DEFiRet;
-	assert(pNew != NULL);
+	assert(*pNew != NULL);
 
+	if(pNew == NULL)
+		ABORT_FINALIZE(RS_RET_ERR);
 	if(loadConf == NULL) {
+		abortCnfUse(pNew);
 		FINALIZE; /* we are in an early init state */
 	}
 
 	if(pLast == NULL) {
-		loadConf->modules.root = pNew;
+		loadConf->modules.root = *pNew;
 	} else {
 		/* there already exist entries */
-		pLast->next = pNew;
+		pLast->next = *pNew;
 	}
 
 finalize_it:
+	if(pNew != NULL)
+		*pNew = NULL;
 	RETiRet;
 }
 
@@ -572,7 +586,7 @@ doModInit(rsRetVal (*modInit)(int, int*, rsRetVal(**)(), rsRetVal(*)(), modInfo_
 
 	if((iRet = moduleConstruct(&pNew)) != RS_RET_OK) {
 		pNew = NULL;
-		ABORT_FINALIZE(iRet);
+		FINALIZE;
 	}
 
 	CHKiRet((*modInit)(CURR_MOD_IF_VERSION, &pNew->iIFVers, &pNew->modQueryEtryPt, queryHostEtryPt, pNew));
@@ -1010,7 +1024,7 @@ modUnloadAndDestructAll(eModLinkType_t modLinkTypesToUnload)
 }
 
 /* find module with given name in global list */
-static inline rsRetVal
+static rsRetVal
 findModule(uchar *pModName, int iModNameLen, modInfo_t **pMod)
 {
 	modInfo_t *pModInfo;
@@ -1054,8 +1068,8 @@ Load(uchar *pModName, sbool bConfLoad, struct nvlst *lst)
 	int bHasExtension;
         void *pModHdlr, *pModInit;
 	modInfo_t *pModInfo;
-	cfgmodules_etry_t *pNew;
-	cfgmodules_etry_t *pLast;
+	cfgmodules_etry_t *pNew = NULL;
+	cfgmodules_etry_t *pLast = NULL;
 	uchar *pModDirCurr, *pModDirNext;
 	int iLoadCnt;
 	struct dlhandle_s *pHandle = NULL;
@@ -1111,7 +1125,7 @@ Load(uchar *pModName, sbool bConfLoad, struct nvlst *lst)
 					/* regular modules need to be added to conf list (for
 					 * builtins, this happend during initial load).
 					 */
-					addModToCnfList(pNew, pLast);
+					addModToCnfList(&pNew, pLast);
 				}
 			}
 		}
@@ -1231,18 +1245,19 @@ Load(uchar *pModName, sbool bConfLoad, struct nvlst *lst)
 					errmsg.LogError(0, localRet,
 						"module '%s', failed processing config parameters",
 						pPathBuf);
-					abortCnfUse(pNew);
 					ABORT_FINALIZE(localRet);
 				}
 			}
 			pModInfo->bSetModCnfCalled = 1;
 		}
-		addModToCnfList(pNew, pLast);
+		addModToCnfList(&pNew, pLast);
 	}
 
 finalize_it:
 	if(pPathBuf != pathBuf) /* used malloc()ed memory? */
 		free(pPathBuf);
+	if(iRet != RS_RET_OK)
+		abortCnfUse(&pNew);
 	pthread_mutex_unlock(&mutObjGlobalOp);
 	RETiRet;
 }
@@ -1306,7 +1321,7 @@ SetModDir(uchar *pszModDir)
  * called by anyone interested in using a module. -- rgerhards, 20080-03-10
  */
 static rsRetVal
-Use(char *srcFile, modInfo_t *pThis)
+Use(const char *srcFile, modInfo_t *pThis)
 {
 	DEFiRet;
 
@@ -1329,7 +1344,7 @@ Use(char *srcFile, modInfo_t *pThis)
  * module is unloaded. -- rgerhards, 20080-03-10
  */
 static rsRetVal
-Release(char *srcFile, modInfo_t **ppThis)
+Release(const char *srcFile, modInfo_t **ppThis)
 {
 	DEFiRet;
 	modInfo_t *pThis;

@@ -111,6 +111,8 @@
 #include "parserif.h"
 #include "statsobj.h"
 
+#pragma GCC diagnostic ignored "-Wswitch-enum"
+
 #define NO_TIME_PROVIDED 0 /* indicate we do not provide any cached time */
 
 /* forward definitions */
@@ -197,6 +199,29 @@ static struct cnfparamblk pblk =
 	  cnfparamdescr
 	};
 
+
+/* primarily a helper for debug purposes, get human-readble name of state */
+/* currently not needed, but may be useful in the future!
+static const char *
+batchState2String(const batch_state_t state)
+{
+	switch(state) {
+	case BATCH_STATE_RDY:
+		return "BATCH_STATE_RDY";
+	case BATCH_STATE_BAD:
+		return "BATCH_STATE_BAD";
+	case BATCH_STATE_SUB:
+		return "BATCH_STATE_SUB";
+	case BATCH_STATE_COMM:
+		return "BATCH_STATE_COMM";
+	case BATCH_STATE_DISC:
+		return "BATCH_STATE_DISC";
+	default:
+		return "ERROR, batch state not known!";
+	}
+}
+*/
+
 /* ------------------------------ methods ------------------------------ */ 
 
 /* This function returns the "current" time for this action. Current time
@@ -221,7 +246,7 @@ static struct cnfparamblk pblk =
  * because that would provide little to no benefit but complicate things
  * a lot. So we simply return the system time.
  */
-static inline time_t
+static time_t
 getActNow(action_t * const pThis)
 {
 	assert(pThis != NULL);
@@ -642,7 +667,7 @@ static void actionRetry(action_t * const pThis, wti_t * const pWti)
  * CPU time. TODO: maybe a config option for that?
  * rgerhards, 2007-08-02
  */
-static inline void
+static void
 actionSuspend(action_t * const pThis, wti_t * const pWti)
 {
 	time_t ttNow;
@@ -716,12 +741,14 @@ actionDoRetry(action_t * const pThis, wti_t * const pWti)
 
 	iRetries = 0;
 	while((*pWti->pbShutdownImmediate == 0) && getActionState(pWti, pThis) == ACT_STATE_RTRY) {
-		DBGPRINTF("actionDoRetry: %s enter loop, iRetries=%d\n", pThis->pszName, iRetries);
+		DBGPRINTF("actionDoRetry: %s enter loop, iRetries=%d, ResumeInRow %d\n",
+			pThis->pszName, iRetries, getActionResumeInRow(pWti, pThis));
 		iRet = pThis->pMod->tryResume(pWti->actWrkrInfo[pThis->iActionNbr].actWrkrData);
 		DBGPRINTF("actionDoRetry: %s action->tryResume returned %d\n", pThis->pszName, iRet);
 		if((getActionResumeInRow(pWti, pThis) > 9) && (getActionResumeInRow(pWti, pThis) % 10 == 0)) {
 			bTreatOKasSusp = 1;
 			setActionResumeInRow(pWti, pThis, 0);
+			iRet = RS_RET_SUSPENDED;
 		} else {
 			bTreatOKasSusp = 0;
 		}
@@ -844,7 +871,7 @@ finalize_it:
  * depending on its current state.
  * rgerhards, 2009-05-07
  */
-static inline rsRetVal
+static rsRetVal
 actionPrepare(action_t *__restrict__ const pThis, wti_t *__restrict__ const pWti)
 {
 	DEFiRet;
@@ -968,8 +995,11 @@ finalize_it:
 }
 
 
-static void
-releaseDoActionParams(action_t *__restrict__ const pAction, wti_t *__restrict__ const pWti)
+/* the #pragmas can go away when we have disable array-passing mode */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-align"
+void
+releaseDoActionParams(action_t *__restrict__ const pAction, wti_t *__restrict__ const pWti, int action_destruct)
 {
 	int jArr;
 	int j;
@@ -978,39 +1008,49 @@ releaseDoActionParams(action_t *__restrict__ const pAction, wti_t *__restrict__ 
 
 	pWrkrInfo = &(pWti->actWrkrInfo[pAction->iActionNbr]);
 	for(j = 0 ; j < pAction->iNumTpls ; ++j) {
-		switch(pAction->peParamPassing[j]) {
-		case ACT_ARRAY_PASSING:
-			ppMsgs = (uchar***) pWrkrInfo->p.nontx.actParams[0].param;
-			/* if we every use array passing mode again, we need to check
-			 * this code. It hasn't been used since refactoring for v7.
-			 */
-			if(ppMsgs != NULL) {
-				if(((uchar**)ppMsgs)[j] != NULL) {
-					jArr = 0;
-					while(ppMsgs[j][jArr] != NULL) {
-						free(ppMsgs[j][jArr]);
-						ppMsgs[j][jArr] = NULL;
-						++jArr;
-					}
-					free(((uchar**)ppMsgs)[j]);
-					((uchar**)ppMsgs)[j] = NULL;
-				}
+		if (action_destruct) {
+			if (ACT_STRING_PASSING == pAction->peParamPassing[j]) {
+				free(pWrkrInfo->p.nontx.actParams[j].param);
+				pWrkrInfo->p.nontx.actParams[j].param = NULL;
 			}
-			break;
-		case ACT_JSON_PASSING:
-			json_object_put((struct json_object*)
-					pWrkrInfo->p.nontx.actParams[j].param);
-			pWrkrInfo->p.nontx.actParams[j].param = NULL;
-			break;
-		case ACT_STRING_PASSING:
-		case ACT_MSG_PASSING:
-			/* no need to do anything with these */
-			break;
+		} else {
+			switch(pAction->peParamPassing[j]) {
+			case ACT_ARRAY_PASSING:
+
+				ppMsgs = (uchar***) pWrkrInfo->p.nontx.actParams[0].param;
+				/* if we every use array passing mode again, we need to check
+				 * this code. It hasn't been used since refactoring for v7.
+				 */
+				if(ppMsgs != NULL) {
+					if(((uchar**)ppMsgs)[j] != NULL) {
+						jArr = 0;
+						while(ppMsgs[j][jArr] != NULL) {
+							free(ppMsgs[j][jArr]);
+							ppMsgs[j][jArr] = NULL;
+							++jArr;
+						}
+						free(((uchar**)ppMsgs)[j]);
+						((uchar**)ppMsgs)[j] = NULL;
+					}
+				}
+				break;
+			case ACT_JSON_PASSING:
+				json_object_put((struct json_object*)
+								pWrkrInfo->p.nontx.actParams[j].param);
+				pWrkrInfo->p.nontx.actParams[j].param = NULL;
+				break;
+			case ACT_STRING_PASSING:
+			case ACT_MSG_PASSING:
+				/* no need to do anything with these */
+				break;
+			}
 		}
 	}
 
 	return;
 }
+#pragma GCC diagnostic pop
+
 
 /* This is used in resume processing. We only finally know that a resume
  * worked when we have been able to actually process a messages. As such,
@@ -1052,21 +1092,16 @@ handleActionExecResult(action_t *__restrict__ const pThis,
 			pThis->bHadAutoCommit = 1;
 			actionSetActionWorked(pThis, pWti); /* we had a successful call! */
 			break;
-		case RS_RET_SUSPENDED:
-			actionRetry(pThis, pWti);
-			break;
 		case RS_RET_DISABLE_ACTION:
 			actionDisable(pThis);
 			break;
-		default:/* permanent failure of this message - no sense in retrying. This is
-			 * not yet handled (but easy TODO)
-			 */
-			iRet = ret;
-			FINALIZE;
+		case RS_RET_SUSPENDED:
+		default:/* error happened - if it hits us here, we treat it as suspension */
+			actionRetry(pThis, pWti);
+			break;
 	}
 	iRet = getReturnCode(pThis, pWti);
 
-finalize_it:
 	RETiRet;
 }
 
@@ -1078,7 +1113,7 @@ actionCallDoAction(action_t *__restrict__ const pThis,
 	actWrkrIParams_t *__restrict__ const iparams,
 	wti_t *__restrict__ const pWti)
 {
-	uchar *param[CONF_OMOD_NUMSTRINGS_MAXSIZE];
+	void *param[CONF_OMOD_NUMSTRINGS_MAXSIZE];
 	int i;
 	DEFiRet;
 
@@ -1127,7 +1162,7 @@ actionCallCommitTransaction(action_t * const pThis,
  * this readies the action and then calls doAction()
  * rgerhards, 2008-01-28
  */
-rsRetVal
+static rsRetVal
 actionProcessMessage(action_t * const pThis, void *actParams, wti_t * const pWti)
 {
 	DEFiRet;
@@ -1168,6 +1203,8 @@ doTransaction(action_t *__restrict__ const pThis, wti_t *__restrict__ const pWti
 		}
 	}
 finalize_it:
+	if(iRet == RS_RET_DEFER_COMMIT || iRet == RS_RET_PREVIOUS_COMMITTED)
+		iRet = RS_RET_OK; /* this is expected for transactional action! */
 	RETiRet;
 }
 
@@ -1178,9 +1215,10 @@ actionTryCommit(action_t *__restrict__ const pThis, wti_t *__restrict__ const pW
 {
 	DEFiRet;
 
-	doTransaction(pThis, pWti);
-
 	CHKiRet(actionPrepare(pThis, pWti));
+
+	CHKiRet(doTransaction(pThis, pWti));
+
 	if(getActionState(pWti, pThis) == ACT_STATE_ITX) {
 		iRet = pThis->pMod->mod.om.endTransaction(pWti->actWrkrInfo[pThis->iActionNbr].actWrkrData);
 		switch(iRet) {
@@ -1214,6 +1252,26 @@ actionTryCommit(action_t *__restrict__ const pThis, wti_t *__restrict__ const pW
 finalize_it:
 	RETiRet;
 }
+
+/* If a transcation failed, we write the error file (if configured).
+ * TODO: implement
+ */
+static void
+actionWriteErrorFile(action_t *__restrict__ const pThis, wti_t *__restrict__ const pWti)
+{
+	unsigned i;
+	actWrkrInfo_t *const wrkrInfo = &(pWti->actWrkrInfo[pThis->iActionNbr]);
+	const unsigned nMsgs = wrkrInfo->p.tx.currIParam;
+
+	DBGPRINTF("action %d commit failed, writing %u messages to error file\n",
+		pThis->iActionNbr, nMsgs);
+	for(i = 0 ; i < nMsgs ; ++i) {
+		// TODO: get actual param count!
+		dbgprintf("msg %d: '%s'\n", i,
+			actParam(wrkrInfo->p.tx.iparams, 1, i, 0).param);
+	}
+}
+
 
 /* Note: we currently need to return an iRet, as this is used in 
  * direct mode. TODO: However, it may be worth further investigating this,
@@ -1249,11 +1307,21 @@ actionCommit(action_t *__restrict__ const pThis, wti_t *__restrict__ const pWti)
 	bDone = 0;
 	do {
 		iRet = actionTryCommit(pThis, pWti);
-		DBGPRINTF("actionCommit, in retry loop, iRet %d\n", iRet);
+		DBGPRINTF("actionCommit, action %d, in retry loop, iRet %d\n",
+			pThis->iActionNbr, iRet);
 		if(iRet == RS_RET_FORCE_TERM) {
 			ABORT_FINALIZE(RS_RET_FORCE_TERM);
+		} else if(iRet == RS_RET_SUSPENDED) {
+			iRet = actionDoRetry(pThis, pWti);
+			if(iRet == RS_RET_FORCE_TERM) {
+				ABORT_FINALIZE(RS_RET_FORCE_TERM);
+			} else if(iRet != RS_RET_OK) {
+				actionWriteErrorFile(pThis, pWti);
+				bDone = 1;
+			}
+			continue;
 		} else if(iRet == RS_RET_OK ||
-			  iRet == RS_RET_SUSPENDED ||
+		          iRet == RS_RET_SUSPENDED ||
 			  iRet == RS_RET_ACTION_FAILED) {
 			bDone = 1;
 		}
@@ -1278,7 +1346,7 @@ actionCommitAllDirect(wti_t *__restrict__ const pWti)
 		pAction = pWti->actWrkrInfo[i].pAction;
 		if(pAction == NULL)
 			continue;
-		DBGPRINTF("actionCommitAll: action %d, state %u, nbr to commit %d "
+		DBGPRINTF("actionCommitAllDirect: action %d, state %u, nbr to commit %d "
 			  "isTransactional %d\n",
 			  i, getActionStateByNbr(pWti, i), pWti->actWrkrInfo->p.tx.currIParam,
 			  pAction->isTransactional);
@@ -1313,7 +1381,7 @@ processMsgMain(action_t *__restrict__ const pAction,
 				    pWti->actWrkrInfo[pAction->iActionNbr].p.nontx.actParams,
 				    pWti);
 	if(pAction->bNeedReleaseBatch)
-		releaseDoActionParams(pAction, pWti);
+		releaseDoActionParams(pAction, pWti, 0);
 finalize_it:
 	if(iRet == RS_RET_OK) {
 		if(pWti->execState.bDoAutoCommit)
@@ -1862,7 +1930,7 @@ resetConfigVariables(uchar __attribute__((unused)) *pp, void __attribute__((unus
 /* initialize (current) config variables.
  * Used at program start and when a new scope is created.
  */
-static inline void
+static void
 initConfigVariables(void)
 {
 	cs.bActionWriteAllMarkMsgs = 1;

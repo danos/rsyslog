@@ -28,6 +28,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <sysexits.h>
 
 #ifdef ENABLEGT
 	/* Guardtime Includes */
@@ -48,18 +49,24 @@ typedef unsigned char uchar;
 static enum { MD_DUMP, MD_DETECT_FILE_TYPE, MD_SHOW_SIGBLK_PARAMS,
               MD_VERIFY, MD_EXTEND, MD_CONVERT, MD_EXTRACT
 } mode = MD_DUMP;
-static enum { FILEMODE_LOGSIG, FILEMODE_RECSIG }; 
+#ifdef ENABLEKSI
+static enum { FILEMODE_LOGSIG, FILEMODE_RECSIG } filemode = FILEMODE_LOGSIG; 
+#endif
 static enum { API_GT, API_KSI } apimode = API_GT;
 static int verbose = 0;
 static int debug = 0; 
+/* Helper variables for VERIFY Mode */
+char *constraint_oid = NULL;
+char *constraint_value = NULL;
 /* Helper variables for EXTRACT Mode */
 static int append = 0;
 char *outputfile = NULL;
-char *linenumbers = "";
+const char *linenumbers = "";
+
 
 #ifdef ENABLEGT
 static void
-dumpFile(char *name)
+dumpFile(const char *name)
 {
 	FILE *fp;
 	char hdr[9];
@@ -103,7 +110,7 @@ err:
 }
 
 static void
-showSigblkParams(char *name)
+showSigblkParams(const char *name)
 {
 	FILE *fp;
 	block_sig_t *bs;
@@ -120,7 +127,7 @@ showSigblkParams(char *name)
 			goto err;
 		}
 	}
-	if((r = rsgt_chkFileHdr(fp, "LOGSIG11")) != 0) goto err;
+	if((r = rsgt_chkFileHdr(fp, (char*)"LOGSIG11")) != 0) goto err;
 
 	while(1) { /* we will err out on EOF */
 		if((r = rsgt_getBlockParams(fp, 0, &bs, &bh, &bHasRecHashes,
@@ -144,7 +151,7 @@ err:
 }
 
 static void
-convertFile(char *name)
+convertFile(const char *name)
 {
 	FILE *oldsigfp = NULL, *newsigfp = NULL;
 	char hdr[9];
@@ -238,7 +245,7 @@ err:
 
 #ifdef ENABLEKSI
 static void
-dumpFileKSI(char *name)
+dumpFileKSI(const char *name)
 {
 	FILE *fp;
 	char hdr[9];
@@ -259,7 +266,9 @@ dumpFileKSI(char *name)
 	if(!strcmp(hdr, "LOGSIG10"))
 		printf("File Header: Version 10 (deprecated) - conversion needed.\n");
 	else if(!strcmp(hdr, "LOGSIG11"))
-		printf("File Header: Version 11\n");
+		printf("File Header: Log Signature File Version 11\n");
+	else if(!strcmp(hdr, "RECSIG11"))
+		printf("File Header: Record Integrity Proof File Version 11\n");
 	else
 		printf("File Header: '%s'\n", hdr);
 	while(1) { /* we will err out on EOF */
@@ -280,7 +289,7 @@ err:	fprintf(stderr, "error %d (%s) processing file %s\n", r, RSKSIE2String(r), 
 }
 
 static void
-showSigblkParamsKSI(char *name)
+showSigblkParamsKSI(const char *name)
 {
 	FILE *fp;
 	block_sig_t *bs;
@@ -297,10 +306,10 @@ showSigblkParamsKSI(char *name)
 			goto err;
 		}
 	}
-	if((r = rsksi_chkFileHdr(fp, "LOGSIG11", verbose)) != 0) goto err;
+	if((r = rsksi_chkFileHdr(fp, (char*)"LOGSIG11", verbose)) != 0) goto err;
 
 	while(1) { /* we will err out on EOF */
-		if((r = rsksi_getBlockParams(NULL, fp, 0, &bs, &bh, &bHasRecHashes,
+		if((r = rsksi_getBlockParams(fp, 0, &bs, &bh, &bHasRecHashes,
 				        &bHasIntermedHashes)) != 0)
 			goto err;
 		++blkCnt;
@@ -321,7 +330,7 @@ err:
 }
 
 static void
-convertFileKSI(char *name)
+convertFileKSI(const char *name)
 {
 	FILE *oldsigfp = NULL, *newsigfp = NULL;
 	char hdr[9];
@@ -353,7 +362,7 @@ convertFileKSI(char *name)
 			if ( fwrite(LOGSIGHDR, sizeof(LOGSIGHDR)-1, 1, newsigfp) != 1) goto err;
 		}
 
-		if ((r = rsksi_ConvertSigFile(name, oldsigfp, newsigfp, verbose)) != 0)
+		if ((r = rsksi_ConvertSigFile(oldsigfp, newsigfp, verbose)) != 0)
 			goto err;
 		else {
 			/* Close FILES */
@@ -415,10 +424,10 @@ err:
 
 #ifdef ENABLEGT
 static void
-detectFileType(char *name)
+detectFileType(const char *name)
 {
 	FILE *fp;
-	char *typeName;
+	const char *typeName;
 	char hdr[9];
 	int r = -1;
 	
@@ -448,7 +457,7 @@ detectFileType(char *name)
 err:	fprintf(stderr, "error %d (%s) processing file %s\n", r, RSGTE2String(r), name);
 }
 
-static inline int
+static int
 doVerifyRec(FILE *logfp, FILE *sigfp, FILE *nsigfp,
 	    gtfile gf, gterrctx_t *ectx, uint8_t bInBlock)
 {
@@ -490,7 +499,7 @@ done:
  * note: here we need to have the LOG file name, not signature!
  */
 static int
-verifyGT(char *name, char *errbuf, char *sigfname, char *oldsigfname, char *nsigfname, FILE *logfp, FILE *sigfp, FILE *nsigfp)
+verifyGT(const char *name, char *errbuf, char *sigfname, char *oldsigfname, char *nsigfname, FILE *logfp, FILE *sigfp, FILE *nsigfp)
 {
 	block_sig_t *bs = NULL;
 	block_hdr_t *bh = NULL;
@@ -502,13 +511,13 @@ verifyGT(char *name, char *errbuf, char *sigfname, char *oldsigfname, char *nsig
 	gterrctx_t ectx;
 	rsgt_errctxInit(&ectx);
 
-	rsgtInit("rsyslog rsgtutil " VERSION);
+	rsgtInit((char*)"rsyslog rsgtutil " VERSION);
 	bInitDone = 1;
 	ectx.verbose = verbose;
 	ectx.fp = stderr;
 	ectx.filename = strdup(sigfname);
 
-	if((r = rsgt_chkFileHdr(sigfp, "LOGSIG11")) != 0) {
+	if((r = rsgt_chkFileHdr(sigfp, (char*)"LOGSIG11")) != 0) {
 		if (debug)
 			fprintf(stderr, "error %d in rsgt_chkFileHdr\n", r); 
 		goto done;
@@ -628,7 +637,7 @@ done:
 
 	rsgtExit();
 	rsgt_errctxExit(&ectx);
-	return 1;
+	return 0; /* Means success NOW */
 
 err:
 	if(r != 0)
@@ -649,16 +658,16 @@ err:
 		rsgtExit();
 		rsgt_errctxExit(&ectx);
 	}
-	return 0;
+	return RSGTE_IO; /* Return IO error here */
 }
 #endif
 
 #ifdef ENABLEKSI
 static void
-detectFileTypeKSI(char *name)
+detectFileTypeKSI(const char *name)
 {
 	FILE *fp;
-	char *typeName;
+	const char *typeName;
 	char hdr[9];
 	int r = -1;
 	
@@ -688,7 +697,7 @@ detectFileTypeKSI(char *name)
 err:	fprintf(stderr, "error %d (%s) processing file %s\n", r, RSKSIE2String(r), name);
 }
 
-static inline int
+static int
 doVerifyRecKSI(FILE *logfp, FILE *sigfp, FILE *nsigfp,
 		ksifile ksi, ksierrctx_t *ectx, uint8_t bInBlock)
 {
@@ -730,12 +739,12 @@ done:
  * note: here we need to have the LOG file name, not signature!
  */
 static int
-verifyKSI(char *name, char *errbuf, char *sigfname, char *oldsigfname, char *nsigfname, FILE *logfp, FILE *sigfp, FILE *nsigfp)
+verifyKSI(const char *name, char *errbuf, char *sigfname, char *oldsigfname, char *nsigfname, FILE *logfp, FILE *sigfp, FILE *nsigfp)
 {
-	int FILEMODE = FILEMODE_LOGSIG; /* Default FileMode */ 
+	filemode = FILEMODE_LOGSIG; /* Default FileMode */ 
 	block_sig_t *bs = NULL;
 	block_hdr_t *bh = NULL;
-	ksifile ksi;
+	ksifile ksi = NULL;
 	uint8_t bHasRecHashes, bHasIntermedHashes;
 	uint8_t bInBlock;
 	int r = 0;
@@ -752,7 +761,7 @@ verifyKSI(char *name, char *errbuf, char *sigfname, char *oldsigfname, char *nsi
 
 	/* Init KSI related variables */
 	rsksi_errctxInit(&ectx);
-	rsksiInit("rsyslog rsksiutil " VERSION);
+	rsksiInit((char*)"rsyslog rsksiutil " VERSION);
 	bInitDone = 1;
 	ectx.verbose = verbose;
 	ectx.fp = stderr;
@@ -760,11 +769,24 @@ verifyKSI(char *name, char *errbuf, char *sigfname, char *oldsigfname, char *nsi
 	ksi = rsksi_vrfyConstruct_gf();
 	if(ksi == NULL) {
 		fprintf(stderr, "verifyKSI:\t\t\t Error initializing signature file structure\n");
+		r = RSGTE_IO;
 		goto done;
 	}
 
+	if(debug) {
+		KSI_CTX_setLoggerCallback(ksi->ctx->ksi_ctx, KSI_LOG_StreamLogger, stdout);
+		KSI_CTX_setLogLevel(ksi->ctx->ksi_ctx, KSI_LOG_DEBUG);
+	}
+
 	/* Check if we have a logsignature file */
-	if((r = rsksi_chkFileHdr(sigfp, "LOGSIG11", verbose)) == 0) {
+	if (constraint_oid != NULL && constraint_value != NULL) {
+		if((r = rsksi_setDefaultConstraint(ksi, constraint_oid, constraint_value)) != 0) {
+			goto done;
+		}
+	}
+
+	/* Check if we have a logsignature file */
+	if((r = rsksi_chkFileHdr(sigfp, (char*)"LOGSIG11", 0)) == 0) {
 		/* Verify Log signature */
 		if(debug) printf("debug: verifyKSI:\t\t\t Found log signature file ... \n");
 		if(mode == MD_EXTEND) {
@@ -781,19 +803,23 @@ verifyKSI(char *name, char *errbuf, char *sigfname, char *oldsigfname, char *nsi
 
 		while(!feof(logfp)) {
 			if(bInBlock == 0) {
+				/* Free block sig & header memory */
 				if (bs != NULL) rsksi_objfree(0x0904, bs);
 				if (bh != NULL) rsksi_objfree(0x0901, bh);
-				if((r = rsksi_getBlockParams(ksi, sigfp, 1, &bs, &bh, &bHasRecHashes,
+
+				/* Get/Verify Block Paramaters */
+				if((r = rsksi_getBlockParams(sigfp, 1, &bs, &bh, &bHasRecHashes,
 								&bHasIntermedHashes)) != 0) {
 					if(ectx.blkNum == 0) {
 						fprintf(stderr, "verifyKSI:\t\t\t Error %d before finding any signature block - is the file still open and being written to?\n", r);
+						r = RSGTE_IO;
 					} else {
 						if(verbose) fprintf(stderr, "verifyKSI:\t\t\t EOF after signature block %lld\n", (long long unsigned) ectx.blkNum);
 					}
 					goto done;
 				}
 				/* Copy block header */
-				if ((r = verifyBLOCK_HDRKSI(ksi, sigfp, nsigfp, &tlvrec)) != 0) goto done;
+				if ((r = verifyBLOCK_HDRKSI(sigfp, nsigfp, &tlvrec)) != 0) goto done;
 
 				rsksi_vrfyBlkInit(ksi, bh, bHasRecHashes, bHasIntermedHashes);
 				ectx.recNum = 0;
@@ -804,30 +830,37 @@ verifyKSI(char *name, char *errbuf, char *sigfname, char *oldsigfname, char *nsi
 				goto done;
 			if(ectx.recNum == bs->recCount) {
 				/* And Verify Block signature */
-				if((r = verifyBLOCK_SIGKSI(bs, ksi, sigfp, nsigfp, (mode == MD_EXTEND) ? 1 : 0, NULL, &ectx)) != 0)
+				r = verifyBLOCK_SIGKSI(bs, ksi, sigfp, nsigfp, (mode == MD_EXTEND) ? 1 : 0, NULL, &ectx);
+				if(r == RSGTE_MISS_KSISIG) {
+					fprintf(stderr, "verifyKSI:\t\t\t WARNING: missing KSI signature in block %lu\n", ectx.blkNum);
+					r = RSGTE_SUCCESS;
+				}
+				else if(r != RSGTE_SUCCESS) {
+					fprintf(stderr, "verifyKSI:\t\t\t error %d while verifying BLOCK signature in block %lld\n", r, (long long unsigned) ectx.blkNum);
 					goto done;
+				}
 				bInBlock = 0;
 			} else	bInBlock = 1;
 		}
-	} else if((r = rsksi_chkFileHdr(sigfp, "RECSIG11", verbose)) == 0) {
+	} else if((r = rsksi_chkFileHdr(sigfp, (char*)"RECSIG11", verbose)) == 0) {
 		/* Verify Log Excerpts */
 		if(debug) printf("verifyKSI:\t\t\t Found record integrity proof file ... \n");
-		FILEMODE = FILEMODE_RECSIG; 
+		filemode = FILEMODE_RECSIG; 
 
-		bInBlock = 0;
 		ectx.blkNum = 0;
 		ectx.recNumInFile = 0;
 
 		while(	!feof(logfp) && 
 				!feof(sigfp)) {
-			/* Free memory */
+			/* Free block sig & header memory */
 			if (bs != NULL) rsksi_objfree(0x0905, bs);
 			if (bh != NULL) rsksi_objfree(0x0901, bh);
 
 			/* Get/Verify Block Paramaters */
-			if((r = rsksi_getExcerptBlockParams(ksi, sigfp, 1, &bs, &bh)) != 0) {
+			if((r = rsksi_getExcerptBlockParams(sigfp, 1, &bs, &bh)) != 0) {
 				if(ectx.blkNum == 0) {
 					fprintf(stderr, "verifyKSI:\t\t\t Error %d before finding any signature block\n", r);
+					r = RSGTE_IO;
 				} else {
 					if(verbose) fprintf(stderr, "verifyKSI:\t\t\t EOF after signature block %lld\n", (long long unsigned) ectx.blkNum);
 				}
@@ -895,9 +928,34 @@ if (debug) printf("debug: verifyKSI:\t\t\t DONE with LOOP iCurrentLine=%d > iMax
 		fprintf(stderr, "verifyKSI:\t\t\t Error %d invalid file header found \n", r); 
 	}
 done:
-	/* Free mem first */
-	if (lineRec != NULL)
+	/* Free linerec helper mem */
+	if (lineRec != NULL) {
 		free(lineRec);
+		lineRec = NULL; 
+	}
+
+	/* Free block sig & header memory */
+	if (bs != NULL) rsksi_objfree(0x0905, bs);
+	if (bh != NULL) rsksi_objfree(0x0901, bh);
+
+	/* Free KSI File helper stuff */
+	if (ksi != NULL) {
+		/* Free Top Root Hash as well! */
+		uint8_t j;
+		for(j = 0 ; j < ksi->nRoots ; ++j) {
+			if(ksi->roots_valid[j] == 1) {
+				KSI_DataHash_free(ksi->roots_hash[j]);
+				ksi->roots_valid[j] = 0;
+				if (debug) printf("debug: verifyKSI:\t\t\t Free ROOTHASH Level %d \n", j); 
+			}
+		}
+
+		/* Free other ksi helper variables */
+		rsksiCtxDel(ksi->ctx);
+		free(ksi->IV);
+		rsksiimprintDel(ksi->x_prev);
+		free(ksi);
+	}
 
 	if(r != RSGTE_EOF)
 		goto err;
@@ -921,7 +979,7 @@ done:
 	if(nsigfp != NULL) { fclose(nsigfp); nsigfp = NULL; }
 
 	/* Check for Extend in LogSig Mode: Everything went fine, so we rename files if we updated them */
-	if(FILEMODE == FILEMODE_LOGSIG && mode == MD_EXTEND) {
+	if(filemode == FILEMODE_LOGSIG && mode == MD_EXTEND) {
 		if(unlink(oldsigfname) != 0) {
 			if(errno != ENOENT) {
 				perror("unlink oldsig");
@@ -958,7 +1016,7 @@ done:
 	}
 
 	rsksi_errctxExit(&ectx);
-	return 1;
+	return 0; /* NULL means SUCCESS now */
 err:
 	if(r != 0)
 		sprintf(errbuf, "error %d (%s) processing file %s\n", r, RSKSIE2String(r), name);
@@ -970,7 +1028,19 @@ err:
 	if(nsigfp != NULL) { fclose(nsigfp); unlink(nsigfname); }
 
 	if(bInitDone) { rsksi_errctxExit(&ectx); }
-	return 0; 
+
+	if (ectx.ksistate == KSI_NETWORK_ERROR ||
+		ectx.ksistate == KSI_NETWORK_CONNECTION_TIMEOUT ||
+		ectx.ksistate == KSI_NETWORK_SEND_TIMEOUT ||
+		ectx.ksistate == KSI_NETWORK_RECIEVE_TIMEOUT ||
+		ectx.ksistate == KSI_HTTP_ERROR )
+	{
+		/* Return correct error code */
+		return RSGTE_NETWORK_ERROR; 
+	}
+	else
+		/* Default error return code */
+		return RSGTE_INVLD_SIGNATURE; 
 }
 
 /* EXTRACT Loglines Function using KSI API 
@@ -978,7 +1048,7 @@ err:
  * Input: logfilename and open file handles
  */
 static int
-extractKSI(char *name, char *errbuf, char *sigfname, FILE *logfp, FILE *sigfp)
+extractKSI(const char *name, char *errbuf, char *sigfname, FILE *logfp, FILE *sigfp)
 {
 	char newsigfname[4096];
 	FILE *newsigfp = NULL; 
@@ -990,14 +1060,13 @@ extractKSI(char *name, char *errbuf, char *sigfname, FILE *logfp, FILE *sigfp)
 	int iLineNumbers = 0;
 	int* paiLineNumbers = NULL; 
 	int r = 0;
-	unsigned int j = 0; 
-	int iReturn = 1;
+	int iReturn = 0; /* NULL Means SUCCESS now! */ 
 	
 	/* KSI Signature related variables */
 	block_sig_t *bs = NULL;
 	block_hdr_t *bh = NULL;
 	tlvrecord_t tlvbhrec; 
-	ksifile ksi;
+	ksifile ksi = NULL;
 	uint8_t bHasRecHashes, bHasIntermedHashes;
 	uint8_t bInBlock;
 	int bInitDone = 0;
@@ -1025,13 +1094,14 @@ extractKSI(char *name, char *errbuf, char *sigfname, FILE *logfp, FILE *sigfp)
 	/* Count number of linenumbers */ 
 	if (strlen(linenumbers) > 0 ) {
 		/* Get count of line numbers */ 
-		char* pszTmp = linenumbers;
+		const char* pszTmp = linenumbers;
 		if (*(pszTmp) != ',')
 			iLineNumbers++; 
+		else
+			pszTmp++; /*Next Char*/
 
 		while(pszTmp != NULL) {
 			pszTmp = strchr(pszTmp, ',');
-
 			if( pszTmp != NULL) {
 				pszTmp++;
 				if ( *(pszTmp) == ',' ) {
@@ -1042,6 +1112,11 @@ extractKSI(char *name, char *errbuf, char *sigfname, FILE *logfp, FILE *sigfp)
 				}
 			}
 		}
+		if (iLineNumbers == 0) {
+			fprintf(stderr, "extractKSI:\t\t\t error invalid linenumbers\n");
+			r = RSGTE_IO;
+			goto done;
+		}
 		if (debug) printf("debug: extractKSI:\t\t\t found '%d' linenumbers\n", iLineNumbers);
 
 		/* Convert line numbers into int Array */
@@ -1049,8 +1124,8 @@ extractKSI(char *name, char *errbuf, char *sigfname, FILE *logfp, FILE *sigfp)
 		int iNumPos = 0; 
 		int iNumLength = 0; 
 		char szTmpNum[11]; 
-		char* pszBegin = linenumbers;
-		char* pszEnd = linenumbers;
+		const char* pszBegin = linenumbers;
+		char* pszEnd; 
 		while(pszBegin != NULL) {
 			/* Cut number from string */
 			pszEnd = strchr(pszBegin, ',');
@@ -1087,7 +1162,7 @@ extractKSI(char *name, char *errbuf, char *sigfname, FILE *logfp, FILE *sigfp)
 	/* Init KSI library */
 	ksierrctx_t ectx;
 	rsksi_errctxInit(&ectx);
-	rsksiInit("rsyslog rsksiutil " VERSION);
+	rsksiInit((char*)"rsyslog rsksiutil " VERSION);
 	bInitDone = 1;
 	/* Set defaults for KSI Signature extraction */
 	ectx.verbose = verbose;
@@ -1095,7 +1170,7 @@ extractKSI(char *name, char *errbuf, char *sigfname, FILE *logfp, FILE *sigfp)
 	ectx.filename = strdup(sigfname);
 
 	/* Check for valid file header in sigfile */
-	if((r = rsksi_chkFileHdr(sigfp, "LOGSIG11", verbose)) != 0) {
+	if((r = rsksi_chkFileHdr(sigfp, (char*)"LOGSIG11", verbose)) != 0) {
 		if (debug) printf("debug: extractKSI:\t\t\t error %d in rsksi_chkFileHdr\n", r); 
 		goto done;
 	}	
@@ -1108,6 +1183,11 @@ extractKSI(char *name, char *errbuf, char *sigfname, FILE *logfp, FILE *sigfp)
 		if (debug) printf("debug: extractKSI:\t\t\t error initializing signature file structures\n");
 		r = RSGTE_IO;
 		goto done;
+	}
+
+	if(debug) {
+		KSI_CTX_setLoggerCallback(ksi->ctx->ksi_ctx, KSI_LOG_StreamLogger, stdout);
+		KSI_CTX_setLogLevel(ksi->ctx->ksi_ctx, KSI_LOG_DEBUG);
 	}
 
 	/* Start extracting process */
@@ -1160,11 +1240,8 @@ extractKSI(char *name, char *errbuf, char *sigfname, FILE *logfp, FILE *sigfp)
 	{
 		/* Free previous hashchain */
 		if (hashchain != NULL) {
-			if (hashchain->rec_hash.data == NULL) free(hashchain->rec_hash.data); 
-			for(j = 0 ; j < hashchain->stepCount ; ++j) {
-				if (hashchain->hashsteps[j]->sib_hash.data == NULL) free(hashchain->hashsteps[j]->sib_hash.data); 
-			}
-			free(hashchain); 
+			rsksi_objfree(0x0907, hashchain); 
+			hashchain = NULL;
 		}
 
 		/* Init new HashChain */
@@ -1216,7 +1293,7 @@ extractKSI(char *name, char *errbuf, char *sigfname, FILE *logfp, FILE *sigfp)
 				break; 
 			}
 
-if (debug) printf("debug: extractKSI:\t\t\t line '%d': %.64s...\n", iLineSearch, lineRec); 
+if (debug) printf("debug: extractKSI:\t\t\t line '%d': %.64s...\n", iLineCurrent, lineRec); 
 
 			/* Extract line if correct one */
 			if (iLineCurrent == iLineSearch) {
@@ -1245,11 +1322,11 @@ if (debug) printf("debug: extractKSI:\t\t\t line '%d': %.64s...\n", iLineSearch,
 			/* Check if this is a new signature block */
 			if(bInBlock == 0) {
 				/* Free memory */
-				if(bs != NULL) rsksi_objfree(0x0904, bs);
-				if(bh != NULL) rsksi_objfree(0x0901, bh);
+				if(bs != NULL) { rsksi_objfree(0x0904, bs); bs = NULL; }
+				if(bh != NULL) { rsksi_objfree(0x0901, bh); bh = NULL; }
 				
 				/* Get/Verify Block Paramaters */
-				if((r = rsksi_getBlockParams(ksi, sigfp, 1, &bs, &bh, &bHasRecHashes, &bHasIntermedHashes)) != 0) {
+				if((r = rsksi_getBlockParams(sigfp, 1, &bs, &bh, &bHasRecHashes, &bHasIntermedHashes)) != 0) {
 					if(ectx.blkNum == 0) {
 						fprintf(stderr, "extractKSI:\t\t\t Error %d before finding any signature block - is the file still open and being written to?\n", r);
 						r = RSGTE_IO;
@@ -1265,7 +1342,7 @@ if (debug) printf("debug: extractKSI:\t\t\t line '%d': %.64s...\n", iLineSearch,
 				}
 
 				/* Verify block header */
-				if ((r = verifyBLOCK_HDRKSI(ksi, sigfp, NULL, &tlvbhrec)) != 0) {
+				if ((r = verifyBLOCK_HDRKSI(sigfp, NULL, &tlvbhrec)) != 0) {
 					perror(sigfname);
 					r = RSGTE_IO;
 					goto done;
@@ -1293,7 +1370,7 @@ if (debug) printf("debug: extractKSI:\t\t\t line '%d': %.64s...\n", iLineSearch,
 				if (bBlockSigWritten == 0) {
 					/* WRITE BLOCK Signature */
 					if (debug) printf("debug: extractKSI:\t\t\t rsksi_ExtractBlockSignature #1: \n"); 
-					if ((r = rsksi_ExtractBlockSignature(newsigfp, ksi, bs, &ectx, verbose)) != RSGTE_SUCCESS) {
+					if ((r = rsksi_ExtractBlockSignature(newsigfp, bs)) != RSGTE_SUCCESS) {
 						fprintf(stderr, "extractKSI:\t\t\t error %d while writing block signature for (%d): '%.64s...'\n", r, iLineCurrent, lineRec);
 						goto done;
 					}
@@ -1317,7 +1394,12 @@ if (debug) printf("debug: extractKSI:\t\t\t line '%d': %.64s...\n", iLineSearch,
 				}
 
 				/* Verify Block signature */
-				if((r = verifyBLOCK_SIGKSI(bs, ksi, sigfp, NULL, 0, ksiRootHash, &ectx)) != RSGTE_SUCCESS) {
+				r = verifyBLOCK_SIGKSI(bs, ksi, sigfp, NULL, 0, ksiRootHash, &ectx);
+				if(r == RSGTE_MISS_KSISIG) {
+					fprintf(stderr, "\tWARNING: missing KSI signature in block %lu\n", ectx.blkNum);
+					r = RSGTE_SUCCESS;
+				}
+				else if(r != RSGTE_SUCCESS) {
 					fprintf(stderr, "extractKSI:\t\t\t error %d while verifiying BLOCK signature for logline (%d): '%.64s...'\n", r, iLineCurrent, lineRec);
 					goto done;
 				}
@@ -1327,7 +1409,7 @@ if (debug) printf("debug: extractKSI:\t\t\t line '%d': %.64s...\n", iLineSearch,
 
 				if (bLogLineFound == 1 ) {
 					/* Write HashChain now */
-					if ((r = rsksi_WriteHashChain(newsigfp, hashchain, bs, verbose)) != RSGTE_SUCCESS) {
+					if ((r = rsksi_WriteHashChain(newsigfp, hashchain, verbose)) != RSGTE_SUCCESS) {
 						fprintf(stderr, "extractKSI:\t\t\t error %d while starting new hash chain for (%d): '%.64s...'\n", r, iLineCurrent, lineRec);
 						goto done;
 					}
@@ -1351,6 +1433,35 @@ done:
 	if (paiLineNumbers != NULL)
 		free(paiLineNumbers); 
 
+	/* Free hashchain */
+	if (hashchain != NULL) {
+		rsksi_objfree(0x0907, hashchain); 
+		hashchain = NULL;
+	}
+
+	/* Free Blockheader / Sig */
+	if (bs != NULL) rsksi_objfree(0x0904, bs);
+	if (bh != NULL) rsksi_objfree(0x0901, bh);
+
+	/* Free KSI File helper stuff */
+	if (ksi != NULL) {
+		/* Free Top Root Hash as well! */
+		uint8_t j;
+		for(j = 0 ; j < ksi->nRoots ; ++j) {
+			if(ksi->roots_valid[j] == 1) {
+				KSI_DataHash_free(ksi->roots_hash[j]);
+				ksi->roots_valid[j] = 0;
+				if (debug) printf("debug: extractKSI:\t\t\t Free ROOTHASH Level %d \n", j); 
+			}
+		}
+
+		/* Free other ksi helper variables */
+		rsksiCtxDel(ksi->ctx);
+		free(ksi->IV);
+		rsksiimprintDel(ksi->x_prev);
+		free(ksi);
+	}
+
 	if(r != RSGTE_EOF) {
 		goto done2;
 	}
@@ -1369,9 +1480,21 @@ done:
 	}
 
 done2: 
-	if(r != 0 && r != RSGTE_EOF) {
+	if(r != 0 && r != RSGTE_EOF && bInitDone /*Only check if KSI Init was done*/) {
 		sprintf(errbuf, "extractKSI:\t\t\t error %d (%s) processing file %s\n", r, RSKSIE2String(r), name);
-		iReturn = 0; 
+		
+		if (ectx.ksistate == KSI_NETWORK_ERROR ||
+			ectx.ksistate == KSI_NETWORK_CONNECTION_TIMEOUT ||
+			ectx.ksistate == KSI_NETWORK_SEND_TIMEOUT ||
+			ectx.ksistate == KSI_NETWORK_RECIEVE_TIMEOUT ||
+			ectx.ksistate == KSI_HTTP_ERROR )
+		{
+			/* Set correct error code */
+			iReturn = RSGTE_NETWORK_ERROR; 
+		}
+		else
+			/* Default error return code */
+			iReturn = RSGTE_INVLD_SIGNATURE; 
 	} else
 		errbuf[0] = '\0';
 
@@ -1399,7 +1522,7 @@ done2:
 /* VERIFY if logfile has a Guardtime Signfile 
 */
 static void
-verify(char *name, char *errbuf)
+verify(const char *name, char *errbuf)
 {
 	int iSuccess = 1; 
 	char sigfname[4096];
@@ -1468,7 +1591,7 @@ verifyGT:
 #ifdef ENABLEGT
 	iSuccess = verifyGT(name, errbuf, sigfname, oldsigfname, nsigfname, logfp, sigfp, nsigfp); 
 #else
-	iSuccess = 0; 
+	iSuccess = RSGTE_CONFIG_ERROR; 
 	sprintf(errbuf, "ERROR, unable to perform verify using GuardTime library, rsyslog need to be configured with --enable-guardtime.\n"); 
 #endif
 	goto done; 
@@ -1477,29 +1600,34 @@ verifyKSI:
 #ifdef ENABLEKSI
 	/* puburl is mandatory for KSI now! */
 	if (strlen(rsksi_read_puburl) <= 0) {
-		iSuccess = 0; 
+		iSuccess = RSGTE_CONFIG_ERROR; 
 		sprintf(errbuf, "ERROR, missing --publications-server parameter is mandatory when verifying KSI signatures.\n"); 
 		goto done; /* abort */
 	}
 	iSuccess = verifyKSI(name, errbuf, sigfname, oldsigfname, nsigfname, logfp, sigfp, nsigfp); 
 #else
-	iSuccess = 0; 
+	iSuccess = RSGTE_CONFIG_ERROR; 
 	sprintf(errbuf, "ERROR, unable to perform verify using GuardTime KSI library, rsyslog need to be configured with --enable-gt-ksi.\n"); 
 #endif
-	goto done; 
+goto done; 
 
 err:
 done:
 	/* Output error if return was 0*/
-	if (iSuccess == 0)
+	if (iSuccess != 0) {
 		fputs(errbuf, stderr); 
+		if (iSuccess == RSGTE_NETWORK_ERROR)
+			exit(EX_UNAVAILABLE);	/* Return service unavailable error */
+		else
+			exit(EX_DATAERR);	/* Return default error */
+	}
 	return;
 }
 
 /* EXTRACT loglines including their signatures from a logfile 
 */
 static void
-extract(char *name, char *errbuf)
+extract(const char *name, char *errbuf)
 {
 	int iSuccess = 1; 
 	char sigfname[4096];
@@ -1539,7 +1667,7 @@ extract(char *name, char *errbuf)
 
 extractGT:
 #ifdef ENABLEGT
-	iSuccess = 0; 
+	iSuccess = RSGTE_CONFIG_ERROR; 
 	sprintf(errbuf, "ERROR, extract loglines from old signature files is NOT supported.\n"); 
 #endif
 	goto done; 
@@ -1548,13 +1676,14 @@ extractKSI:
 #ifdef ENABLEKSI
 	/* puburl is mandatory for KSI now! */
 	if (strlen(rsksi_read_puburl) <= 0) {
-		iSuccess = 0; 
+		iSuccess = RSGTE_CONFIG_ERROR; 
 		sprintf(errbuf, "ERROR, missing --publications-server parameter is mandatory when extracting KSI signatures.\n"); 
 		goto done; /* abort */
 	} 
 	iSuccess = extractKSI(name, errbuf, sigfname, logfp, sigfp); 
+
 #else
-	iSuccess = 0; 
+	iSuccess = RSGTE_CONFIG_ERROR; 
 	sprintf(errbuf, "ERROR, unable to extract loglines from %s using GuardTime KSI library, rsyslog need to be configured with --enable-gt-ksi.\n", name); 
 #endif
 	goto done; 
@@ -1562,13 +1691,18 @@ extractKSI:
 err:
 done:
 	/* Output error if return was 0*/
-	if (iSuccess == 0)
+	if (iSuccess != 0) {
 		fputs(errbuf, stderr); 
+		if (iSuccess == RSGTE_NETWORK_ERROR)
+			exit(EX_UNAVAILABLE);	/* Return service unavailable error */
+		else
+			exit(EX_DATAERR);	/* Return error */
+	}
 	return;
 }
 
 static void
-processFile(char *name)
+processFile(const char *name)
 {
 	char errbuf[4096];
 
@@ -1589,13 +1723,13 @@ processFile(char *name)
 		if(verbose)
 			fprintf(stdout, "ProcessMode: Dump FileHashes\n"); 
 
-		if (apimode == API_GT)
+		if (strstr(name, ".gtsig") != NULL )	/* Detect API Mode by file extension */
 #ifdef ENABLEGT
 			dumpFile(name);
 #else
 			fprintf(stderr, "ERROR, unable to perform dump using GuardTime Api, rsyslog need to be configured with --enable-guardtime.\n"); 
 #endif
-		if (apimode == API_KSI)
+		if (strstr(name, ".ksisig") != NULL )	/* Detect API Mode by file extension */
 #ifdef ENABLEKSI
 			dumpFileKSI(name);
 #else
@@ -1635,6 +1769,9 @@ processFile(char *name)
 			fprintf(stdout, "ProcessMode: Extract"); 
 		extract(name, errbuf);
 		break;
+	default:fprintf(stderr, "%s:%d: program error, invalid switch value\n", __FILE__, __LINE__);
+		abort();
+		break;
 	}
 }
 
@@ -1660,37 +1797,39 @@ static struct option long_options[] =
 	{"extract", required_argument, NULL, 'x'},
 	{"output", required_argument, NULL, 'o'},
 	{"append", no_argument, NULL, 'A'},
+	{"cnstr", required_argument, NULL, 'C'},
 	{NULL, 0, NULL, 0} 
 }; 
 
 /* Helper function to show some HELP */
-void 
+static void
 rsgtutil_usage(void)
 {
 	fprintf(stderr, "usage: rsgtutil [options]\n"
 			"Use \"man rsgtutil\" for more details.\n\n"
-			"\t-h, --help \t\t\t Show this help.\n"
-			"\t-D, --dump \t\t\t dump operations mode.\n"
-			"\t-t, --verify \t\t\t Verify operations mode.\n"
-			"\t-e, --extend \t\t\t Extends the RFC3161 signatures.\n"
-			"\t-x, --extract <LINENUMBERS> \t\t\t Extract these linenumbers including signatures.\n"
-			"\t-B, --show-sigblock-params \t Show signature block parameters.\n"
-			"\t-T, --detect-file-type \t Show Type of signature file.\n"
-			"\t-c, --convert \t\t\t Convert Signature Format Version 10 to 11.\n"
-			"\t-V, --Version \t\t\t Print utility version\n"
+			"\t-h, --help \t\t\t\t Show this help.\n"
+			"\t-D, --dump \t\t\t\t dump operations mode.\n"
+			"\t-t, --verify \t\t\t\t Verify operations mode.\n"
+			"\t-e, --extend \t\t\t\t Extends the RFC3161 signatures.\n"
+			"\t-x, --extract <LINENUMBERS> \t\t Extract these linenumbers including signatures.\n"
+			"\t-B, --show-sigblock-params \t\t Show signature block parameters.\n"
+			"\t-T, --detect-file-type \t\t\t Show Type of signature file.\n"
+			"\t-c, --convert \t\t\t\t Convert Signature Format Version 10 to 11.\n"
+			"\t-V, --version \t\t\t\t Print utility version\n"
 			"\t\tOptional parameters\n"
-			"\t-a <GT|KSI>, --api  <GT|KSI> \t Set which API to use.\n"
+			"\t-a <GT|KSI>, --api  <GT|KSI> \t\t Set which API to use.\n"
 			"\t\tGT = Guardtime Client Library\n"
 			"\t\tKSI = Guardtime KSI Library\n"
-			"\t-s, --show-verified \t\t Also show correctly verified blocks.\n"
+			"\t-s, --show-verified \t\t\t Also show correctly verified blocks.\n"
 			"\t-P <URL>, --publications-server <URL> \t Sets the publications server.\n"
 			"\t-E <URL>, --extend-server <URL> \t Sets the extension server.\n"
-			"\t-u <USERID>, --userid <USERID> \t Sets the userid used (Needed for the extension server).\n"
+			"\t-u <USERID>, --userid <USERID> \t\t Sets the userid used (Needed for the extension server).\n"
 			"\t-k <USERKEY>, --userkey <USERKEY> \t Sets the userkey used (Needed for the extension server).\n"
 			"\t-o <FILENAME>, --output <FILENAME> \t Sets an output filename (EXTRACT Mode only).\n"
-			"\t-A, --append \t\t\t Append extracted output to file (EXTRACT Mode only).\n"
-			"\t-v, --verbose \t\t\t Verbose output.\n"
-			"\t-d, --debug \t\t\t Debug (developer) output.\n"
+			"\t-A, --append \t\t\t\t Append extracted output to file (EXTRACT Mode only).\n"
+			"\t-C <oid>=<value>, --cnstr <oid>=<value>\t Specify the OID of the PKI certificate field (e.g. e-mail address) and the expected value.\n"
+			"\t-v, --verbose \t\t\t\t Verbose output.\n"
+			"\t-d, --debug \t\t\t\t Debug (developer) output.\n"
 			);
 }
 
@@ -1701,7 +1840,7 @@ main(int argc, char *argv[])
 	int opt;
 
 	while(1) {
-		opt = getopt_long(argc, argv, "aABcdDeEHkoPstTuvVx", long_options, NULL);
+		opt = getopt_long(argc, argv, "a:ABcC:dDeE:hk:o:P:stTu:vVx:", long_options, NULL);
 		if(opt == -1)
 			break;
 		switch(opt) {
@@ -1799,6 +1938,76 @@ main(int argc, char *argv[])
 			break;
 		case 'A':
 			append = 1;
+			break;
+		case 'C':
+#ifdef ENABLEKSI
+			if (strlen(optarg) > 0 && (strchr(optarg, '=') != NULL)) {
+				/* Get pos of = */ 
+				char* pszTmp = optarg;
+				i = 0; /* Reset */
+
+				while(pszTmp != NULL) {
+					if ( *(pszTmp) == '=' ) {
+						/* Extract pszOID */
+						constraint_oid = malloc( i + 1 ); 
+						strncpy(constraint_oid, optarg, i);
+						*(constraint_oid+i) = '\0'; 
+
+						/* Extract pszValue */
+						constraint_value = malloc( strlen(pszTmp) + 1 ); 
+						pszTmp++;
+						strncpy(constraint_value, pszTmp, strlen(pszTmp));
+						*(constraint_value+strlen(pszTmp)) = '\0'; 
+						break; 
+					}
+					
+					pszTmp++; /* Next Char*/
+					i++; /* Increment Count */
+				}
+
+				if (constraint_oid == NULL || constraint_value == NULL) {
+					/* Free mem */
+					if (constraint_oid != NULL) { free(constraint_oid); constraint_oid = NULL; }
+					if (constraint_value != NULL) { free(constraint_value); constraint_value = NULL; } 
+
+					fprintf(stderr, "--cnstr:\t\t\t error missing oid or value\n");
+					return 1;
+				} else {
+					fprintf(stderr, "--cnstr= oid='%s' value='%s' \n", constraint_oid, constraint_value );
+					
+					/* Check for constraint aliases */
+					if(		strcmp(constraint_oid, "E") == 0 || 
+							strcmp(constraint_oid, "email") == 0 ||
+							strcmp(constraint_oid, "1.2.840.113549.1.9.1") == 0) {
+						free(constraint_oid);
+						constraint_oid = KSI_CERT_EMAIL;
+					}
+					else if(strcmp(constraint_oid, "CN") == 0 || 
+							strcmp(constraint_oid, "cname") == 0 ||
+							strcmp(constraint_oid, "2.5.4.3") == 0) {
+						free(constraint_oid);
+						constraint_oid = KSI_CERT_COMMON_NAME; 
+					}
+					else if(strcmp(constraint_oid, "C") == 0 || 
+							strcmp(constraint_oid, "country") == 0 ||
+							strcmp(constraint_oid, "2.5.4.6") == 0) {
+						free(constraint_oid);
+						constraint_oid = KSI_CERT_COUNTRY; 
+					}
+					else if(strcmp(constraint_oid, "O") == 0 || 
+							strcmp(constraint_oid, "org") == 0 ||
+							strcmp(constraint_oid, "2.5.4.10") == 0) {
+						free(constraint_oid);
+						constraint_oid = KSI_CERT_ORGANIZATION; 
+					}
+				}
+			} else {
+				fprintf(stderr, "--cnstr:\t\t\t error invalid constrain parameter\n");
+				return 1;
+			}
+#else 
+			fprintf(stderr, "--cnstr only with ksi library supported\n" );
+#endif
 			break;
 		case 'h':
 		case '?':

@@ -15,6 +15,9 @@
 /* Indicator that LIBGCRYPT is present */
 #undef ENABLE_LIBGCRYPT
 
+/* Indicator that RELP is present */
+#undef ENABLE_RELP
+
 /* Regular expressions support enabled. */
 #undef FEATURE_REGEXP
 
@@ -126,26 +129,8 @@
 /* jemalloc support is integrated. */
 #undef HAVE_JEMALLOC
 
-/* Define to 1 if the system has the type `json_bool'. */
-#undef HAVE_JSON_BOOL
-
-/* Define to 1 if you have the `json_object_new_int64' function. */
-#undef HAVE_JSON_OBJECT_NEW_INT64
-
-/* Define to 1 if you have the `json_object_object_get_ex' function. */
-#undef HAVE_JSON_OBJECT_OBJECT_GET_EX
-
-/* Define to 1 if you have the `json_object_to_json_string_ext' function. */
-#undef HAVE_JSON_OBJECT_TO_JSON_STRING_EXT
-
-/* Define to 1 if you have the `json_tokener_error_desc' function. */
-#undef HAVE_JSON_TOKENER_ERROR_DESC
-
 /* Define to 1 if you have the <libgen.h> header file. */
 #undef HAVE_LIBGEN_H
-
-/* Define to 1 if you have the `json-c' library (-ljson-c). */
-#undef HAVE_LIBJSON_C
 
 /* Define to 1 if liblogging-stdlog is available. */
 #undef HAVE_LIBLOGGING_STDLOG
@@ -164,10 +149,6 @@
 
 /* Define to 1 if you have the `lseek64' function. */
 #undef HAVE_LSEEK64
-
-/* Define to 1 if your system has a GNU libc compatible `malloc' function, and
-   to 0 otherwise. */
-#undef HAVE_MALLOC
 
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
@@ -208,12 +189,14 @@
 /* Define to 1 if you have the <pthread.h> header file. */
 #undef HAVE_PTHREAD_H
 
-/* Define to 1 if you have the `pthread_setschedparam' function. */
-#undef HAVE_PTHREAD_SETSCHEDPARAM
+/* Set-kind available for rwlock attr. */
+#undef HAVE_PTHREAD_RWLOCKATTR_SETKIND_NP
 
-/* Define to 1 if your system has a GNU libc compatible `realloc' function,
-   and to 0 otherwise. */
-#undef HAVE_REALLOC
+/* Can set thread-name. */
+#undef HAVE_PTHREAD_SETNAME_NP
+
+/* Can set thread scheduling parameters */
+#undef HAVE_PTHREAD_SETSCHEDPARAM
 
 /* Define to 1 if you have the `recvmmsg' function. */
 #undef HAVE_RECVMMSG
@@ -388,8 +371,7 @@
    slash. */
 #undef LSTAT_FOLLOWS_SLASHED_SYMLINK
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* Define with a value if your <sys/param.h> does not define MAXHOSTNAMELEN */
@@ -437,6 +419,9 @@
 
 /* platform id for display purposes */
 #undef PLATFORM_ID_LSB
+
+/* default port for omrelp */
+#undef RELP_DFLT_PT
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE
@@ -558,9 +543,6 @@
 #undef inline
 #endif
 
-/* Define to rpl_malloc if the replacement function should be used. */
-#undef malloc
-
 /* Define to `int' if <sys/types.h> does not define. */
 #undef mode_t
 
@@ -569,9 +551,6 @@
 
 /* Define to `int' if <sys/types.h> does not define. */
 #undef pid_t
-
-/* Define to rpl_realloc if the replacement function should be used. */
-#undef realloc
 
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t

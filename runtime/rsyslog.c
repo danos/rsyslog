@@ -35,7 +35,7 @@
  *
  * Module begun 2008-04-16 by Rainer Gerhards
  *
- * Copyright 2008-2014 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2008-2016 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -83,14 +83,11 @@
 #include "atomic.h"
 #include "srUtils.h"
 
+pthread_attr_t default_thread_attr;
 #ifdef HAVE_PTHREAD_SETSCHEDPARAM
 struct sched_param default_sched_param;
-pthread_attr_t default_thread_attr;
 int default_thr_sched_policy;
 #endif
-
-/* forward definitions */
-static void dfltErrLogger(const int, const int, const uchar *errMsg);
 
 /* globally visible static data - see comment in rsyslog.h for details */
 uchar *glblModPath; /* module load path */
@@ -106,7 +103,7 @@ static int iRefCount = 0; /* our refcount - it MUST exist only once inside a pro
  * default so that we can log errors during the intial phase, most importantly
  * during initialization. -- rgerhards. 2008-04-17
  */
-static void
+void
 dfltErrLogger(const int severity, const int iErr, const uchar *errMsg)
 {
 	fprintf(stderr, "rsyslog runtime error(%d,%d): %s\n", severity, iErr, errMsg);
@@ -134,7 +131,7 @@ rsrtSetErrLogger(void (*errLogger)(const int, const int, const uchar*))
  * rgerhards, 2008-04-16
  */
 rsRetVal
-rsrtInit(char **ppErrObj, obj_if_t *pObjIF)
+rsrtInit(const char **ppErrObj, obj_if_t *pObjIF)
 {
 	DEFiRet;
 
@@ -145,11 +142,12 @@ rsrtInit(char **ppErrObj, obj_if_t *pObjIF)
 		stdlog_init(0);
 		stdlog_hdl = NULL;
 #endif
+		CHKiRet(pthread_attr_init(&default_thread_attr));
+		pthread_attr_setstacksize(&default_thread_attr, 4096*1024);
 #ifdef HAVE_PTHREAD_SETSCHEDPARAM
 	    	CHKiRet(pthread_getschedparam(pthread_self(),
 			    		      &default_thr_sched_policy,
 					      &default_sched_param));
-		CHKiRet(pthread_attr_init(&default_thread_attr));
 		CHKiRet(pthread_attr_setschedpolicy(&default_thread_attr,
 			    			    default_thr_sched_policy));
 		CHKiRet(pthread_attr_setschedparam(&default_thread_attr,
@@ -195,6 +193,8 @@ rsrtInit(char **ppErrObj, obj_if_t *pObjIF)
 		CHKiRet(rsconfClassInit(NULL));
 		if(ppErrObj != NULL) *ppErrObj = "lookup";
 		CHKiRet(lookupClassInit());
+		if(ppErrObj != NULL) *ppErrObj = "dynstats";
+		CHKiRet(dynstatsClassInit());
 
 		/* dummy "classes" */
 		if(ppErrObj != NULL) *ppErrObj = "str";
@@ -226,6 +226,11 @@ rsrtExit(void)
 		confClassExit();
 		glblClassExit();
 		rulesetClassExit();
+		wtiClassExit();
+		wtpClassExit();
+		strgenClassExit();
+		propClassExit();
+		statsobjClassExit();
 
 		objClassExit(); /* *THIS* *MUST/SHOULD?* always be the first class initilizer being called (except debug)! */
 	}

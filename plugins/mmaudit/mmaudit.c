@@ -113,7 +113,7 @@ CODESTARTtryResume
 ENDtryResume
 
 
-static inline void
+static void
 skipWhitespace(uchar **buf)
 {
 	while(**buf && isspace(**buf))
@@ -121,7 +121,7 @@ skipWhitespace(uchar **buf)
 }
 
 
-static inline rsRetVal
+static rsRetVal
 parseName(uchar **buf, char *name, unsigned lenName)
 {
 	unsigned i;
@@ -138,7 +138,7 @@ parseName(uchar **buf, char *name, unsigned lenName)
 }
 
 
-static inline rsRetVal
+static rsRetVal
 parseValue(uchar **buf, char *val, unsigned lenval)
 {
 	char termc;
@@ -206,8 +206,9 @@ finalize_it:
 }
 
 
-BEGINdoAction
-	msg_t *pMsg;
+BEGINdoAction_NoStrings
+	msg_t **ppMsg = (msg_t **) pMsgData;
+	msg_t *pMsg = ppMsg[0];
 	uchar *buf;
 	int typeID;
 	struct json_object *jsonRoot;
@@ -217,7 +218,6 @@ BEGINdoAction
 	char auditID[1024];
 	int bSuccess = 0;
 CODESTARTdoAction
-	pMsg = (msg_t*) ppString[0];
 	/* note that we can performance-optimize the interface, but this also
 	 * requires changes to the libraries. For now, we accept message
 	 * duplication. -- rgerhards, 2010-12-01

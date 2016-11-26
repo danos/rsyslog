@@ -10,7 +10,7 @@
  *
  * File begun on 2008-02-14 by RGerhards (extracted from syslogd.c)
  *
- * Copyright 2008-2014 Adiscon GmbH.
+ * Copyright 2008-2016 Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
@@ -38,6 +38,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <time.h>
+#include <libgen.h>
 #include <dbi/dbi.h>
 #include "dirty.h"
 #include "syslogd-types.h"
@@ -133,7 +134,7 @@ static struct cnfparamblk actpblk =
 /* this function gets the default template. It coordinates action between
  * old-style and new-style configuration parts.
  */
-static inline uchar*
+static uchar*
 getDfltTpl(void)
 {
 	if(loadModConf != NULL && loadModConf->tplName != NULL)
@@ -282,7 +283,24 @@ static rsRetVal initConn(instanceData *pData, int bSilent)
 		/* Connect to database */
 		dbi_conn_set_option(pData->conn, "host",     (char*) pData->host);
 		dbi_conn_set_option(pData->conn, "username", (char*) pData->usrName);
-		dbi_conn_set_option(pData->conn, "dbname",   (char*) pData->dbName);
+
+		/* libdbi-driver-sqlite(2/3) requires to provide sqlite3_db dir which is absolute path, where database file lives,
+		 * and dbname, which is database file name itself. So in order to keep the config API unchanged,
+		 * we split the dbname to path and filename. 
+		 */
+		int is_sqlite2 = !strcmp((const char *)pData->drvrName, "sqlite");
+		int is_sqlite3 = !strcmp((const char *)pData->drvrName, "sqlite3");
+		if(is_sqlite2 || is_sqlite3) {
+			char *dn = strdup((char*)pData->dbName);
+			dn = dirname(dn);
+			dbi_conn_set_option(pData->conn, is_sqlite3 ? "sqlite3_dbdir" : "sqlite_dbdir",dn);
+
+			char *bn = strdup((char*)pData->dbName);
+			bn = basename(bn);
+			dbi_conn_set_option(pData->conn, "dbname", bn);
+		} else {
+			dbi_conn_set_option(pData->conn, "dbname",   (char*) pData->dbName);
+		}
 		if(pData->pwd != NULL)
 			dbi_conn_set_option(pData->conn, "password", (char*) pData->pwd);
 		if(dbi_conn_connect(pData->conn) < 0) {
@@ -301,7 +319,8 @@ finalize_it:
 /* The following function writes the current log entry
  * to an established database connection.
  */
-rsRetVal writeDB(uchar *psz, instanceData *pData)
+static rsRetVal
+writeDB(const uchar *psz, instanceData *const __restrict__ pData)
 {
 	DEFiRet;
 	dbi_result dbiRes = NULL;
@@ -352,7 +371,7 @@ CODESTARTbeginTransaction
 	if(pWrkrData->pData->conn == NULL) {
 		CHKiRet(initConn(pWrkrData->pData, 0));
 	}
-#	if HAVE_DBI_TXSUPP
+#	ifdef HAVE_DBI_TXSUPP
 	if (pData->txSupport == 1) {
 		if (dbi_conn_transaction_begin(pData->conn) != 0) {	
 			const char *emsg;
@@ -372,7 +391,7 @@ BEGINdoAction
 CODESTARTdoAction
 	pthread_mutex_lock(&mutDoAct);
 	CHKiRet(writeDB(ppString[0], pWrkrData->pData));
-#	if HAVE_DBI_TXSUPP
+#	ifdef HAVE_DBI_TXSUPP
 	if (pData->txSupport == 1) {
 		iRet = RS_RET_DEFER_COMMIT;
 	}
@@ -384,7 +403,7 @@ ENDdoAction
 /* transaction support 2013-03 */
 BEGINendTransaction
 CODESTARTendTransaction
-#	if HAVE_DBI_TXSUPP
+#	ifdef HAVE_DBI_TXSUPP
 	if (dbi_conn_transaction_commit(pData->conn) != 0) {	
 		const char *emsg;
 		dbi_conn_error(pData->conn, &emsg);

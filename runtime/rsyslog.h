@@ -3,7 +3,7 @@
  *
  * Begun 2005-09-15 RGerhards
  *
- * Copyright (C) 2005-2015 by Rainer Gerhards and Adiscon GmbH
+ * Copyright (C) 2005-2016 by Rainer Gerhards and Adiscon GmbH
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -25,6 +25,10 @@
  */
 #ifndef INCLUDED_RSYSLOG_H
 #define INCLUDED_RSYSLOG_H
+#pragma GCC diagnostic ignored "-Wdeclaration-after-statement"
+#pragma GCC diagnostic ignored "-Wredundant-decls" // TODO: remove!
+#pragma GCC diagnostic ignored "-Wstrict-prototypes" // TODO: remove!
+#pragma GCC diagnostic ignored "-Wswitch-default" // TODO: remove!
 #include <pthread.h>
 #include "typedefs.h"
 
@@ -117,18 +121,23 @@
 #define LOG_FAC_INVLD   24
 #define	LOG_INVLD	(LOG_FAC_INVLD<<3)	/* invalid facility/PRI code */
 
-/* we need to use a function to avoid side-effects. This MUST guard
- * against invalid facility values. rgerhards, 2014-09-16
+/* we need to evaluate our argument only once, as otherwise we may
+ * have side-effects (this was seen in some version).
+ * Note: I know that "static inline" is not the right thing from a C99
+ * PoV, but some environments treat, even in C99 mode, compile
+ * non-static inline into the source even if not defined as "extern". This
+ * obviously results in linker errors. Using "static inline" as below together
+ * with "__attribute__((unused))" works in all cases. Note also that we
+ * cannot work around this in pri2fac, as we would otherwise need to evaluate
+ * pri more than once.
  */
-static inline syslog_pri_t pri2fac(const syslog_pri_t pri)
+static inline syslog_pri_t __attribute__((unused))
+pri2fac(const syslog_pri_t pri)
 {
-	unsigned fac = pri >> 3;
-	return (fac > 23) ? LOG_FAC_INVLD : fac;
+       unsigned fac = pri >> 3;
+       return (fac > 23) ? LOG_FAC_INVLD : fac;
 }
-static inline syslog_pri_t pri2sev(const syslog_pri_t pri)
-{
-	return pri & 0x07;
-}
+#define pri2sev(pri) ((pri) & 0x07)
 
 /* the rsyslog core provides information about present feature to plugins
  * asking it. Below are feature-test macros which must be used to query
@@ -443,6 +452,15 @@ enum rsRetVal_				/** return value. All methods return this if not specified oth
 	RS_RET_CONF_PARAM_INVLD = -2425,/**< config parameter is invalid */
 	RS_RET_KSI_ERR = -2426,/**< error in KSI subsystem */
 	RS_RET_ERR_LIBLOGNORM = -2427,/**< cannot obtain liblognorm ctx */
+	RS_RET_CONC_CTRL_ERR = -2428,/**< error in lock/unlock/condition/concurrent-modification operation */
+	RS_RET_SENDER_GONE_AWAY = -2429,/**< warning: sender not seen for configured amount of time */
+	RS_RET_SENDER_APPEARED = -2430,/**< info: new sender appeared */
+	RS_RET_FILE_ALREADY_IN_TABLE = -2431,/**< in imfile: table already contains to be added file */
+	RS_RET_ERR_DROP_PRIV = -2432,/**< error droping privileges */
+	RS_RET_FILE_OPEN_ERROR = -2433, /**< error other than "not found" occured during open() */
+	RS_RET_FILE_CHOWN_ERROR = -2434, /**< error during chown() */
+	RS_RET_RENAME_TMP_QI_ERROR = -2435, /**< renaming temporary .qi file failed */
+	RS_RET_ERR_SETENV = -2436, /**< error setting an environment variable */
 
 	/* RainerScript error messages (range 1000.. 1999) */
 	RS_RET_SYSVAR_NOT_FOUND = 1001, /**< system variable could not be found (maybe misspelled) */
@@ -461,11 +479,13 @@ enum rsRetVal_				/** return value. All methods return this if not specified oth
  * Be sure to call the to-be-returned variable always "iRet" and
  * the function finalizer always "finalize_it".
  */
-#if HAVE_BUILTIN_EXCEPT
+#ifdef HAVE_BUILTIN_EXCEPT
 #	define CHKiRet(code) if(__builtin_expect(((iRet = code) != RS_RET_OK), 0)) goto finalize_it
 #else
 #	define CHKiRet(code) if((iRet = code) != RS_RET_OK) goto finalize_it
 #endif
+
+# define CHKiConcCtrl(code) if (code != 0) { iRet = RS_RET_CONC_CTRL_ERR; errno = code; goto finalize_it; }
 
 /* macro below is to be used if we need our own handling, eg for cleanup */
 #define CHKiRet_Hdlr(code) if((iRet = code) != RS_RET_OK)
@@ -525,9 +545,9 @@ typedef enum rsObjectID rsObjID;
 #define RSFREEOBJ(x) {(x)->OID = OIDrsFreed; free(x);}
 #endif
 
+extern pthread_attr_t default_thread_attr;
 #ifdef HAVE_PTHREAD_SETSCHEDPARAM
 extern struct sched_param default_sched_param;
-extern pthread_attr_t default_thread_attr;
 extern int default_thr_sched_policy;
 #endif
 
@@ -548,7 +568,7 @@ extern int default_thr_sched_policy;
  * best to avoid this as well ;-)
  * rgerhards, 2013-12-04
  */
-struct __attribute__ ((__packed__)) actWrkrIParams {
+struct actWrkrIParams {
 	uchar *param;
 	uint32_t lenBuf;  /* length of string buffer (if string ptr) */
 	uint32_t lenStr;  /* length of current string (if string ptr) */
@@ -581,7 +601,7 @@ struct __attribute__ ((__packed__)) actWrkrIParams {
 #define LOCK_MUTEX		1
 
 /* The following prototype is convenient, even though it may not be the 100% correct place.. -- rgerhards 2008-01-07 */
-void dbgprintf(char *, ...) __attribute__((format(printf, 1, 2)));
+void dbgprintf(const char *, ...) __attribute__((format(printf, 1, 2)));
 
 
 #include "debug.h"
@@ -600,25 +620,13 @@ extern uchar *glblModPath; /* module load path */
 extern void (*glblErrLogger)(const int, const int, const uchar*);
 
 /* some runtime prototypes */
-rsRetVal rsrtInit(char **ppErrObj, obj_if_t *pObjIF);
+rsRetVal rsrtInit(const char **ppErrObj, obj_if_t *pObjIF);
 rsRetVal rsrtExit(void);
 int rsrtIsInit(void);
 void rsrtSetErrLogger(void (*errLogger)(const int, const int, const uchar*));
 
+void dfltErrLogger(const int, const int, const uchar *errMsg);
 
-/* our own support for breaking changes in json-c */
-#ifdef HAVE_JSON_OBJECT_OBJECT_GET_EX
-#	define RS_json_object_object_get_ex(obj, key, retobj) \
-		json_object_object_get_ex((obj), (key), (retobj))
-#else
-#	define RS_json_object_object_get_ex(obj, key, retobj) \
-		(!json_object_is_type(obj, json_type_object) || \
-				(*(retobj) = json_object_object_get((obj), (key))) == NULL) ? FALSE : TRUE
-#endif
-
-#ifndef HAVE_JSON_BOOL
-typedef int json_bool;
-#endif
 
 /* this define below is (later) intended to be used to implement empty
  * structs. TODO: check if compilers supports this and, if not, define

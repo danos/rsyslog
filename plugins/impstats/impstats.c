@@ -1,7 +1,7 @@
 /* impstats.c
  * A module to periodically output statistics gathered by rsyslog.
  *
- * Copyright 2010-2013 Adiscon GmbH.
+ * Copyright 2010-2016 Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
@@ -145,7 +145,7 @@ CODESTARTisCompatibleWithFeature
 		iRet = RS_RET_OK;
 ENDisCompatibleWithFeature
 
-static inline void
+static void
 initConfigSettings(void)
 {
 	cs.iStatsInterval = DEFAULT_STATS_PERIOD;
@@ -158,7 +158,7 @@ initConfigSettings(void)
 
 /* actually submit a message to the rsyslog core
  */
-static inline void
+static void
 doSubmitMsg(uchar *line)
 {
 	msg_t *pMsg;
@@ -188,8 +188,8 @@ finalize_it:
 
 
 /* log stats message to file; limited error handling done */
-static inline void
-doLogToFile(uchar *ln, size_t lenLn)
+static void
+doLogToFile(const char *ln, const size_t lenLn)
 {
 	struct iovec iov[4];
 	ssize_t nwritten;
@@ -210,13 +210,13 @@ doLogToFile(uchar *ln, size_t lenLn)
 	time(&t);
 	iov[0].iov_base = ctime_r(&t, timebuf);
 	iov[0].iov_len = nexpect = strlen(iov[0].iov_base) - 1; /* -1: strip \n */
-	iov[1].iov_base = ": ";
+	iov[1].iov_base = (void*)": ";
 	iov[1].iov_len = 2;
 	nexpect += 2;
-	iov[2].iov_base = ln;
+	iov[2].iov_base = (void*)ln;
 	iov[2].iov_len = lenLn;
 	nexpect += lenLn;
-	iov[3].iov_base = "\n";
+	iov[3].iov_base = (void*)"\n";
 	iov[3].iov_len = 1;
 	nexpect++;
 	nwritten = writev(runModConf->logfd, iov, 4);
@@ -233,11 +233,11 @@ done:	return;
  * required (but may be a simple verb like "BEGIN" and "END".
  */
 static rsRetVal
-submitLine(uchar *const ln, const size_t lenLn)
+submitLine(const char *const ln, const size_t lenLn)
 {
 	DEFiRet;
 	if(runModConf->bLogToSyslog)
-		doSubmitMsg(ln);
+		doSubmitMsg((uchar*)ln);
 	if(runModConf->logfile != NULL)
 		doLogToFile(ln, lenLn);
 	RETiRet;
@@ -247,10 +247,10 @@ submitLine(uchar *const ln, const size_t lenLn)
  * Note: usrptr exists only to satisfy requirements of statsobj callback interface!
  */
 static rsRetVal
-doStatsLine(void __attribute__((unused)) *usrptr, cstr_t *cstr)
+doStatsLine(void __attribute__((unused)) *usrptr, const char *const str)
 {
 	DEFiRet;
-	iRet = submitLine(rsCStrGetSzStrNoNULL(cstr), cstrLen(cstr));
+	iRet = submitLine(str, strlen(str));
 	RETiRet;
 }
 
@@ -258,7 +258,7 @@ doStatsLine(void __attribute__((unused)) *usrptr, cstr_t *cstr)
 /* the function to generate the actual statistics messages
  * rgerhards, 2010-09-09
  */
-static inline void
+static void
 generateStatsMsgs(void)
 {
 	struct rusage ru;
@@ -388,7 +388,7 @@ ENDendCnfLoad
 
 
 /* we need our special version of checkRuleset(), as we do not have any instances */
-static inline rsRetVal
+static rsRetVal
 checkRuleset(modConfData_t *modConf)
 {
 	ruleset_t *pRuleset;
@@ -470,6 +470,7 @@ CODESTARTfreeCnf
 	if(runModConf->logfd != -1)
 		close(runModConf->logfd);
 	free(runModConf->logfile);
+	free(runModConf->pszBindRuleset);
 ENDfreeCnf
 
 
@@ -485,10 +486,10 @@ CODESTARTrunInput
 		srSleep(runModConf->iStatsInterval, 0); /* seconds, micro seconds */
 		DBGPRINTF("impstats: woke up, generating messages\n");
 		if(runModConf->bBracketing)
-			submitLine((uchar*)"BEGIN", sizeof("BEGIN")-1);
+			submitLine("BEGIN", sizeof("BEGIN")-1);
 		generateStatsMsgs();
 		if(runModConf->bBracketing)
-			submitLine((uchar*)"END", sizeof("END")-1);
+			submitLine("END", sizeof("END")-1);
 	}
 ENDrunInput
 

@@ -22,7 +22,7 @@
  * machine to a separate module which then is called via the DoCharRcvd() interface
  * of this class here. -- rgerhards, 2009-06-01
  *
- * Copyright 2007-2012 Adiscon GmbH.
+ * Copyright 2007-2016 Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -72,6 +72,8 @@
 #include "errmsg.h"
 #include "prop.h"
 #include "unicode-helper.h"
+
+#pragma GCC diagnostic ignored "-Wswitch-enum"
 
 MODULE_TYPE_LIB
 MODULE_TYPE_NOKEEP
@@ -157,7 +159,7 @@ onErrClose(strms_sess_t *pSess)
 /* add new listener port to listener port list
  * rgerhards, 2009-05-21
  */
-static inline rsRetVal
+static rsRetVal
 addNewLstnPort(strmsrv_t *pThis, uchar *pszPort)
 {
 	strmLstnPortList_t *pEntry;
@@ -356,7 +358,7 @@ finalize_it:
 /* Initialize STRM listener socket for a single port
  * rgerhards, 2009-05-21
  */
-static inline rsRetVal
+static rsRetVal
 initSTRMListener(strmsrv_t *pThis, strmLstnPortList_t *pPortEntry)
 {
 	DEFiRet;

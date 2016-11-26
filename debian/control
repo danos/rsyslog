@@ -2,28 +2,29 @@ Source: rsyslog
 Section: admin
 Priority: important
 Maintainer: Michael Biebl <biebl@debian.org>
-Build-Depends: debhelper (>= 8),
-               dpkg-dev (>= 1.16.1),
-               dh-autoreconf,
-               dh-systemd (>= 1.4),
+Build-Depends: debhelper (>= 10),
+               dpkg-dev (>= 1.17.14),
+               dh-exec,
                zlib1g-dev,
-               libmysqlclient-dev,
+               libhiredis-dev,
+               default-libmysqlclient-dev,
                libpq-dev,
                libmongo-client-dev (>= 0.1.4),
                libcurl4-gnutls-dev,
                librdkafka-dev,
                libkrb5-dev,
                libgnutls28-dev,
-               librelp-dev (>= 1.2.5),
+               librelp-dev (>= 1.2.12),
                libestr-dev (>= 0.1.9),
-               liblognorm-dev (>= 1.1.2),
+               liblognorm-dev (>= 2.0.0),
                liblogging-stdlog-dev (>= 1.0.3),
-               libjson-c-dev,
+               libfastjson-dev (>= 0.99.3),
                uuid-dev,
                libsystemd-dev (>= 209) [linux-any],
                pkg-config,
-               bison
-Standards-Version: 3.9.6
+               bison,
+               procps <!nocheck>
+Standards-Version: 3.9.8
 Vcs-Git: git://anonscm.debian.org/collab-maint/rsyslog.git
 Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/rsyslog.git
 Homepage: http://www.rsyslog.com/
@@ -69,8 +70,8 @@ Depends: ${shlibs:Depends},
          rsyslog (= ${binary:Version}),
          dbconfig-common,
          ucf
-Recommends: mysql-client | virtual-mysql-client
-Suggests: mysql-server | virtual-mysql-server
+Recommends: default-mysql-client | virtual-mysql-client
+Suggests: default-mysql-server | virtual-mysql-server
 Description: MySQL output plugin for rsyslog
  This plugin allows rsyslog to write syslog messages into a MySQL database.
 
@@ -154,3 +155,14 @@ Description: RELP protocol support for rsyslog
  These plugins allow rsyslog to send and receive syslog messages via the
  RELP protocol. RELP ensures reliable transport over the network even on
  connection loss or if a peer becomes unavailable.
+
+Package: rsyslog-hiredis
+Architecture: any
+Priority: extra
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         rsyslog (= ${binary:Version})
+Description: Redis output plugin for rsyslog
+ This plugin allows rsyslog to write syslog messages to Redis, a
+ key-value database in a similar vein to memcache but the dataset
+ is non-volatile.

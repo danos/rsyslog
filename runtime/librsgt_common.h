@@ -80,23 +80,13 @@ struct block_hashstep_s {
 struct block_hashchain_s {
  	imprint_t rec_hash;
 	uint64_t stepCount; /* Helper to count left & right links */
-	block_hashstep_t *hashsteps[MAX_ROOTS]; /* Using MAX_ROOTS here as well for the moment! */
+	block_hashstep_t *hashsteps[MAX_ROOTS]; /* Using MAX_ROOTS here as well */
 	uint8_t direction;	/* left-link or right-link */
 	uint8_t level;		/* default 0 */
-// 	block_hashstep_t left_link;
-// 	block_hashstep_t right_link;
 };
 
 
-static inline char *
-sigTypeName(uint8_t sigID)
-{
-	switch(sigID) {
-	case SIGID_RFC3161:
-		return "RFC3161";
-	default:return "[unknown]";
-	}
-}
+#define sigTypeName(sigID) ( ((sigID) == SIGID_RFC3161) ? "RFC3161" : "[unknown]" )
 
 /* Flags and record types for TLV handling */
 #define RSGT_FLAG_NONCRIT 0x20

@@ -4,7 +4,7 @@
  *
  * Module begun 2008-10-09 by Rainer Gerhards (based on previous code from syslogd.c)
  *
- * Copyright 2008-2015 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2008-2016 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -226,18 +226,6 @@ SetModPtr(parser_t *pThis, modInfo_t *pMod)
 }
 
 
-/* Specify if we should do standard message sanitazion before we pass the data
- * down to the parser.
- */
-static rsRetVal
-SetDoSanitazion(parser_t *pThis, int bDoIt)
-{
-	ISOBJ_TYPE_assert(pThis, parser);
-	pThis->bDoSanitazion = bDoIt;
-	return RS_RET_OK;
-}
-
-
 /* Specify if we should do standard PRI parsing before we pass the data
  * down to the parser module.
  */
@@ -259,7 +247,7 @@ ENDobjConstruct(parser)
  * to our global list of available parsers.
  * rgerhards, 2009-11-03
  */
-rsRetVal parserConstructFinalize(parser_t *pThis)
+static rsRetVal parserConstructFinalize(parser_t *pThis)
 {
 	DEFiRet;
 
@@ -291,7 +279,7 @@ parserConstructViaModAndName(modInfo_t *__restrict__ pMod, uchar *const __restri
 	/* check some features */
 	localRet = pMod->isCompatibleWithFeature(sFEATUREAutomaticSanitazion);
 	if(localRet == RS_RET_OK){
-		CHKiRet(SetDoSanitazion(pParser, RSTRUE));
+		pParser->bDoSanitazion = RSTRUE;
 	}
 	localRet = pMod->isCompatibleWithFeature(sFEATUREAutomaticPRIParsing);
 	if(localRet == RS_RET_OK){
@@ -321,7 +309,7 @@ ENDobjDestruct(parser)
  * pMsg->pszRawMsg buffer is updated.
  * rgerhards, 2008-10-09
  */
-static inline rsRetVal uncompressMessage(msg_t *pMsg)
+static rsRetVal uncompressMessage(msg_t *pMsg)
 {
 	DEFiRet;
 	uchar *deflateBuf = NULL;
@@ -388,7 +376,7 @@ finalize_it:
  * NULs in the debug log.
  * rgerhards, 2007-09-14
  */
-static inline rsRetVal
+static rsRetVal
 SanitizeMsg(msg_t *pMsg)
 {
 	DEFiRet;
@@ -579,7 +567,7 @@ finalize_it:
  * this module as it is expected that allmost all parsers will need
  * that functionality and so they do not need to implement it themsleves.
  */
-static inline rsRetVal
+static rsRetVal
 ParsePRI(msg_t *pMsg)
 {
 	syslog_pri_t pri;
@@ -716,7 +704,6 @@ CODESTARTobjQueryInterface(parser)
 	pIf->Destruct = parserDestruct;
 	pIf->SetName = SetName;
 	pIf->SetModPtr = SetModPtr;
-	pIf->SetDoSanitazion = SetDoSanitazion;
 	pIf->SetDoPRIParsing = SetDoPRIParsing;
 	pIf->ParseMsg = ParseMsg;
 	pIf->SanitizeMsg = SanitizeMsg;

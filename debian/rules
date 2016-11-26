@@ -1,13 +1,11 @@
 #!/usr/bin/make -f
 
-export DEB_BUILD_MAINT_OPTIONS = hardening=+all
-DPKG_EXPORT_BUILDFLAGS = 1
-include /usr/share/dpkg/buildflags.mk
+include /usr/share/dpkg/architecture.mk
 
-DEB_HOST_ARCH_OS ?= $(shell dpkg-architecture -qDEB_HOST_ARCH_OS)
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 %:
-	dh $@ --with autoreconf,systemd
+	dh $@
 
 ifeq ($(DEB_HOST_ARCH_OS), linux)
 confflags += 	--enable-imptcp \
@@ -44,6 +42,7 @@ override_dh_auto_configure:
 		--enable-mmutf8fix \
 		--enable-mmpstrucdata \
 		--enable-mmsequence \
+		--enable-omhiredis \
 		--disable-libgcrypt \
 		--enable-testbench \
 		--enable-imdiag \
@@ -59,17 +58,6 @@ override_dh_auto_install:
 
 override_dh_install:
 	dh_install -X .la --list-missing
-ifeq ($(DEB_HOST_ARCH_OS), linux)
-	install --mode=644 \
-		debian/tmp/usr/lib/rsyslog/imkmsg.so \
-		debian/tmp/usr/lib/rsyslog/imptcp.so \
-		debian/tmp/usr/lib/rsyslog/imjournal.so \
-		debian/tmp/usr/lib/rsyslog/omjournal.so \
-		debian/rsyslog/usr/lib/rsyslog/
-endif
-
-override_dh_installinit:
-	dh_installinit -R
 
 override_dh_auto_test:
 ifeq (, $(findstring nocheck, $(DEB_BUILD_OPTIONS)))

@@ -2,7 +2,7 @@
  *
  * An implementation of the sigprov interface for KSI.
  * 
- * Copyright 2013-2015 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2013-2016 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -62,14 +62,23 @@ static void
 errfunc(__attribute__((unused)) void *usrptr, uchar *emsg)
 {
 	errmsg.LogError(0, RS_RET_SIGPROV_ERR, "KSI Signature Provider"
-		"Error: %s - disabling signatures", emsg);
+		"Error: %s", emsg);
 }
+
+static void
+logfunc(__attribute__((unused)) void *usrptr, uchar *emsg)
+{
+	errmsg.LogMsg(0, RS_RET_NO_ERRCODE, LOG_INFO,
+		"KSI Signature Provider: %s", emsg);
+}
+
 
 /* Standard-Constructor
  */
 BEGINobjConstruct(lmsig_ksi)
 	pThis->ctx = rsksiCtxNew();
 	rsksisetErrFunc(pThis->ctx, errfunc, NULL);
+	rsksisetLogFunc(pThis->ctx, logfunc, NULL);
 ENDobjConstruct(lmsig_ksi)
 
 
@@ -84,7 +93,7 @@ ENDobjDestruct(lmsig_ksi)
  * after construction, but before the OnFileOpen() entry point.
  * Defaults are expected to have been set during construction.
  */
-rsRetVal
+static rsRetVal
 SetCnfParam(void *pT, struct nvlst *lst)
 {
 	char *ag_uri = NULL, *ag_loginid = NULL, *ag_key = NULL;
@@ -107,7 +116,11 @@ SetCnfParam(void *pT, struct nvlst *lst)
 			continue;
 		if(!strcmp(pblk.descr[i].name, "sig.hashfunction")) {
 			cstr = (uchar*) es_str2cstr(pvals[i].val.d.estr, NULL);
-			if(rsksiSetHashFunction(pThis->ctx, (char*)cstr) != 0) {
+			if(rsksiSetHashFunction(pThis->ctx, (char*)cstr) == 2) {
+				errmsg.LogError(0, RS_RET_ERR, "Hash function "
+					"'%s' has been removed due to insecurity - "
+					"using default", cstr);
+			} else if(rsksiSetHashFunction(pThis->ctx, (char*)cstr) != 0) {
 				errmsg.LogError(0, RS_RET_ERR, "Hash function "
 					"'%s' unknown - using default", cstr);
 			}

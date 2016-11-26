@@ -36,15 +36,13 @@
 #include <assert.h>
 #include <ctype.h>
 #include <sys/socket.h>
-#if HAVE_SYSINFO_UPTIME
+#ifdef HAVE_SYSINFO_UPTIME
 #include <sys/sysinfo.h>
 #endif
 #include <netdb.h>
 #include <libestr.h>
 #include <json.h>
-/* For struct json_object_iter, should not be necessary in future versions */
-#include <json_object_private.h>
-#if HAVE_MALLOC_H
+#ifdef HAVE_MALLOC_H
 #  include <malloc.h>
 #endif
 #ifdef USE_LIBUUID
@@ -68,6 +66,10 @@
 #include "parserif.h"
 #include <errno.h>
 
+
+/* inlines */
+extern void msgSetPRI(msg_t *const __restrict__ pMsg, syslog_pri_t pri);
+
 /* TODO: move the global variable root to the config object - had no time to to it
  * right now before vacation -- rgerhards, 2013-07-22
  */
@@ -83,9 +85,9 @@ DEFobjCurrIf(prop)
 DEFobjCurrIf(net)
 DEFobjCurrIf(var)
 
-static char *one_digit[10] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+static const char *one_digit[10] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
-static char *two_digits[100] = {
+static const char *two_digits[100] = {
 	"00", "01", "02", "03", "04", "05", "06", "07", "08", "09",
 	"10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
 	"20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
@@ -97,10 +99,10 @@ static char *two_digits[100] = {
 	"80", "81", "82", "83", "84", "85", "86", "87", "88", "89",
 	"90", "91", "92", "93", "94", "95", "96", "97", "98", "99"};
 
-static char *wdayNames[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+static const char *wdayNames[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 
 /* Table of days in a year, needed for getYearDay */
-static char *daysInYear[366] = {
+static const char *daysInYear[366] = {
 	       "001", "002", "003", "004", "005", "006", "007", "008", "009",
 	"010", "011", "012", "013", "014", "015", "016", "017", "018", "019",
 	"020", "021", "022", "023", "024", "025", "026", "027", "028", "029",
@@ -144,7 +146,7 @@ static char *daysInYear[366] = {
  * algos need to be upgraded after the year 2099 in any case.
  * Quite honestly, I don't expect that this is a real problem ;)
  */
-static char *years[] = {
+static const char *years[] = {
 	"1967", "1968", "1969", "1970", "1971", "1972", "1973", "1974",
 	"1975", "1976", "1977", "1978", "1979", "1980", "1981", "1982",
 	"1983", "1984", "1985", "1986", "1987", "1988", "1989", "1990",
@@ -373,7 +375,7 @@ static char hexdigit[16] =
 	 '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
 /*syslog facility names (as of RFC5424) */
-static char *syslog_fac_names[LOG_NFACILITIES] = { "kern", "user", "mail", "daemon", "auth", "syslog", "lpr",
+static const char *syslog_fac_names[LOG_NFACILITIES] = { "kern", "user", "mail", "daemon", "auth", "syslog", "lpr",
 			    	      "news", "uucp", "cron", "authpriv", "ftp", "ntp", "audit",
 			    	      "alert", "clock", "local0", "local1", "local2", "local3",
 			    	      "local4", "local5", "local6", "local7", "invld" };
@@ -384,14 +386,14 @@ static short len_syslog_fac_names[LOG_NFACILITIES] = { 4, 4, 4, 6, 4, 6, 3,
 			    	          6, 6, 6, 6, 5 };
 
 /* table of severity names (in numerical order)*/
-static char *syslog_severity_names[8] = { "emerg", "alert", "crit", "err", "warning", "notice", "info", "debug" };
+static const char *syslog_severity_names[8] = { "emerg", "alert", "crit", "err", "warning", "notice", "info", "debug" };
 static short len_syslog_severity_names[8] = { 5, 5, 4, 3, 7, 6, 4, 5 };
 
 /* numerical values as string - this is the most efficient approach to convert severity
  * and facility values to a numerical string... -- rgerhars, 2009-06-17
  */
 
-static char *syslog_number_names[LOG_NFACILITIES] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14",
+static const char *syslog_number_names[LOG_NFACILITIES] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14",
 					 "15", "16", "17", "18", "19", "20", "21", "22", "23", "24" };
 
 /* global variables */
@@ -438,7 +440,7 @@ MsgSetRcvFromIPWithoutAddRef(msg_t *pThis, prop_t *new)
 /* set RcvFrom name in msg object WITHOUT calling AddRef.
  * rgerhards, 2013-01-22
  */
-void MsgSetRcvFromWithoutAddRef(msg_t *pThis, prop_t *new)
+static void MsgSetRcvFromWithoutAddRef(msg_t *pThis, prop_t *new)
 {
 	assert(pThis != NULL);
 
@@ -466,7 +468,7 @@ MsgSetRulesetByName(msg_t * const pMsg, cstr_t *rulesetName)
 /* do a DNS reverse resolution, if not already done, reflect status
  * rgerhards, 2009-11-16
  */
-static inline rsRetVal
+static rsRetVal
 resolveDNS(msg_t * const pMsg) {
 	rsRetVal localRet;
 	prop_t *propFromHost = NULL;
@@ -497,7 +499,7 @@ finalize_it:
 }
 
 
-static inline void
+static void
 getInputName(msg_t * const pM, uchar **ppsz, int *plen)
 {
 	BEGINfunc
@@ -511,7 +513,7 @@ getInputName(msg_t * const pM, uchar **ppsz, int *plen)
 }
 
 
-static inline uchar*
+static uchar*
 getRcvFromIP(msg_t * const pM)
 {
 	uchar *psz;
@@ -539,103 +541,103 @@ propNameToID(uchar *pName, propid_t *pPropID)
 
 	/* sometimes there are aliases to the original MonitoWare
 	 * property names. These come after || in the ifs below. */
-	if(!strcmp((char*) pName, "msg")) {
+	if(!strcasecmp((char*) pName, "msg")) {
 		*pPropID = PROP_MSG;
-	} else if(!strcmp((char*) pName, "timestamp")
-		  || !strcmp((char*) pName, "timereported")) {
+	} else if(!strcasecmp((char*) pName, "timestamp")
+		  || !strcasecmp((char*) pName, "timereported")) {
 		*pPropID = PROP_TIMESTAMP;
-	} else if(!strcmp((char*) pName, "hostname") || !strcmp((char*) pName, "source")) {
+	} else if(!strcasecmp((char*) pName, "hostname") || !strcasecmp((char*) pName, "source")) {
 		*pPropID = PROP_HOSTNAME;
-	} else if(!strcmp((char*) pName, "syslogtag")) {
+	} else if(!strcasecmp((char*) pName, "syslogtag")) {
 		*pPropID = PROP_SYSLOGTAG;
-	} else if(!strcmp((char*) pName, "rawmsg")) {
+	} else if(!strcasecmp((char*) pName, "rawmsg")) {
 		*pPropID = PROP_RAWMSG;
-	} else if(!strcmp((char*) pName, "rawmsg-after-pri")) {
+	} else if(!strcasecmp((char*) pName, "rawmsg-after-pri")) {
 		*pPropID = PROP_RAWMSG_AFTER_PRI;
-	} else if(!strcmp((char*) pName, "inputname")) {
+	} else if(!strcasecmp((char*) pName, "inputname")) {
 		*pPropID = PROP_INPUTNAME;
-	} else if(!strcmp((char*) pName, "fromhost")) {
+	} else if(!strcasecmp((char*) pName, "fromhost")) {
 		*pPropID = PROP_FROMHOST;
-	} else if(!strcmp((char*) pName, "fromhost-ip")) {
+	} else if(!strcasecmp((char*) pName, "fromhost-ip")) {
 		*pPropID = PROP_FROMHOST_IP;
-	} else if(!strcmp((char*) pName, "pri")) {
+	} else if(!strcasecmp((char*) pName, "pri")) {
 		*pPropID = PROP_PRI;
-	} else if(!strcmp((char*) pName, "pri-text")) {
+	} else if(!strcasecmp((char*) pName, "pri-text")) {
 		*pPropID = PROP_PRI_TEXT;
-	} else if(!strcmp((char*) pName, "iut")) {
+	} else if(!strcasecmp((char*) pName, "iut")) {
 		*pPropID = PROP_IUT;
-	} else if(!strcmp((char*) pName, "syslogfacility")) {
+	} else if(!strcasecmp((char*) pName, "syslogfacility")) {
 		*pPropID = PROP_SYSLOGFACILITY;
-	} else if(!strcmp((char*) pName, "syslogfacility-text")) {
+	} else if(!strcasecmp((char*) pName, "syslogfacility-text")) {
 		*pPropID = PROP_SYSLOGFACILITY_TEXT;
-	} else if(!strcmp((char*) pName, "syslogseverity") || !strcmp((char*) pName, "syslogpriority")) {
+	} else if(!strcasecmp((char*) pName, "syslogseverity") || !strcasecmp((char*) pName, "syslogpriority")) {
 		*pPropID = PROP_SYSLOGSEVERITY;
-	} else if(!strcmp((char*) pName, "syslogseverity-text") || !strcmp((char*) pName, "syslogpriority-text")) {
+	} else if(!strcasecmp((char*) pName, "syslogseverity-text") || !strcasecmp((char*) pName, "syslogpriority-text")) {
 		*pPropID = PROP_SYSLOGSEVERITY_TEXT;
-	} else if(!strcmp((char*) pName, "timegenerated")) {
+	} else if(!strcasecmp((char*) pName, "timegenerated")) {
 		*pPropID = PROP_TIMEGENERATED;
-	} else if(!strcmp((char*) pName, "programname")) {
+	} else if(!strcasecmp((char*) pName, "programname")) {
 		*pPropID = PROP_PROGRAMNAME;
-	} else if(!strcmp((char*) pName, "protocol-version")) {
+	} else if(!strcasecmp((char*) pName, "protocol-version")) {
 		*pPropID = PROP_PROTOCOL_VERSION;
-	} else if(!strcmp((char*) pName, "structured-data")) {
+	} else if(!strcasecmp((char*) pName, "structured-data")) {
 		*pPropID = PROP_STRUCTURED_DATA;
-	} else if(!strcmp((char*) pName, "app-name")) {
+	} else if(!strcasecmp((char*) pName, "app-name")) {
 		*pPropID = PROP_APP_NAME;
-	} else if(!strcmp((char*) pName, "procid")) {
+	} else if(!strcasecmp((char*) pName, "procid")) {
 		*pPropID = PROP_PROCID;
-	} else if(!strcmp((char*) pName, "msgid")) {
+	} else if(!strcasecmp((char*) pName, "msgid")) {
 		*pPropID = PROP_MSGID;
-	} else if(!strcmp((char*) pName, "jsonmesg")) {
+	} else if(!strcasecmp((char*) pName, "jsonmesg")) {
 		*pPropID = PROP_JSONMESG;
-	} else if(!strcmp((char*) pName, "parsesuccess")) {
+	} else if(!strcasecmp((char*) pName, "parsesuccess")) {
 		*pPropID = PROP_PARSESUCCESS;
 #ifdef USE_LIBUUID
-	} else if(!strcmp((char*) pName, "uuid")) {
+	} else if(!strcasecmp((char*) pName, "uuid")) {
 		*pPropID = PROP_UUID;
 #endif
 	/* here start system properties (those, that do not relate to the message itself */
-	} else if(!strcmp((char*) pName, "$now")) {
+	} else if(!strcasecmp((char*) pName, "$NOW")) {
 		*pPropID = PROP_SYS_NOW;
-	} else if(!strcmp((char*) pName, "$year")) {
+	} else if(!strcasecmp((char*) pName, "$YEAR")) {
 		*pPropID = PROP_SYS_YEAR;
-	} else if(!strcmp((char*) pName, "$month")) {
+	} else if(!strcasecmp((char*) pName, "$MONTH")) {
 		*pPropID = PROP_SYS_MONTH;
-	} else if(!strcmp((char*) pName, "$day")) {
+	} else if(!strcasecmp((char*) pName, "$DAY")) {
 		*pPropID = PROP_SYS_DAY;
-	} else if(!strcmp((char*) pName, "$hour")) {
+	} else if(!strcasecmp((char*) pName, "$HOUR")) {
 		*pPropID = PROP_SYS_HOUR;
-	} else if(!strcmp((char*) pName, "$hhour")) {
+	} else if(!strcasecmp((char*) pName, "$HHOUR")) {
 		*pPropID = PROP_SYS_HHOUR;
-	} else if(!strcmp((char*) pName, "$qhour")) {
+	} else if(!strcasecmp((char*) pName, "$QHOUR")) {
 		*pPropID = PROP_SYS_QHOUR;
-	} else if(!strcmp((char*) pName, "$minute")) {
+	} else if(!strcasecmp((char*) pName, "$MINUTE")) {
 		*pPropID = PROP_SYS_MINUTE;
-	} else if(!strcmp((char*) pName, "$now-utc")) {
-		*pPropID = PROP_SYS_NOW;
-	} else if(!strcmp((char*) pName, "$year-utc")) {
+	} else if(!strcasecmp((char*) pName, "$now-utc")) {
+		*pPropID = PROP_SYS_NOW_UTC;
+	} else if(!strcasecmp((char*) pName, "$year-utc")) {
 		*pPropID = PROP_SYS_YEAR_UTC;
-	} else if(!strcmp((char*) pName, "$month-utc")) {
+	} else if(!strcasecmp((char*) pName, "$month-utc")) {
 		*pPropID = PROP_SYS_MONTH_UTC;
-	} else if(!strcmp((char*) pName, "$day-utc")) {
+	} else if(!strcasecmp((char*) pName, "$day-utc")) {
 		*pPropID = PROP_SYS_DAY_UTC;
-	} else if(!strcmp((char*) pName, "$hour-utc")) {
+	} else if(!strcasecmp((char*) pName, "$hour-utc")) {
 		*pPropID = PROP_SYS_HOUR_UTC;
-	} else if(!strcmp((char*) pName, "$hhour-utc")) {
+	} else if(!strcasecmp((char*) pName, "$hhour-utc")) {
 		*pPropID = PROP_SYS_HHOUR_UTC;
-	} else if(!strcmp((char*) pName, "$qhour-utc")) {
+	} else if(!strcasecmp((char*) pName, "$qhour-utc")) {
 		*pPropID = PROP_SYS_QHOUR_UTC;
-	} else if(!strcmp((char*) pName, "$minute-utc")) {
+	} else if(!strcasecmp((char*) pName, "$minute-utc")) {
 		*pPropID = PROP_SYS_MINUTE_UTC;
-	} else if(!strcmp((char*) pName, "$myhostname")) {
+	} else if(!strcasecmp((char*) pName, "$MYHOSTNAME")) {
 		*pPropID = PROP_SYS_MYHOSTNAME;
-	} else if(!strcmp((char*) pName, "$!all-json")) {
+	} else if(!strcasecmp((char*) pName, "$!all-json")) {
 		*pPropID = PROP_CEE_ALL_JSON;
-	} else if(!strcmp((char*) pName, "$!all-json-plain")) {
+	} else if(!strcasecmp((char*) pName, "$!all-json-plain")) {
 		*pPropID = PROP_CEE_ALL_JSON_PLAIN;
-	} else if(!strcmp((char*) pName, "$bom")) {
+	} else if(!strcasecmp((char*) pName, "$BOM")) {
 		*pPropID = PROP_SYS_BOM;
-	} else if(!strcmp((char*) pName, "$uptime")) {
+	} else if(!strcasecmp((char*) pName, "$UPTIME")) {
 		*pPropID = PROP_SYS_UPTIME;
 	} else if(!strncmp((char*) pName, "$!", 2) || pName[0] == '!') {
 		*pPropID = PROP_CEE;
@@ -667,6 +669,8 @@ uchar *propIDToName(propid_t propID)
 			return UCHAR_CONSTANT("syslogtag");
 		case PROP_RAWMSG:
 			return UCHAR_CONSTANT("rawmsg");
+		case PROP_RAWMSG_AFTER_PRI:
+			return UCHAR_CONSTANT("rawmsg-after-pri");
 		case PROP_INPUTNAME:
 			return UCHAR_CONSTANT("inputname");
 		case PROP_FROMHOST:
@@ -705,6 +709,10 @@ uchar *propIDToName(propid_t propID)
 			return UCHAR_CONSTANT("jsonmesg");
 		case PROP_PARSESUCCESS:
 			return UCHAR_CONSTANT("parsesuccess");
+#ifdef USE_LIBUUID
+		case PROP_UUID:
+			return UCHAR_CONSTANT("uuid");
+#endif
 		case PROP_SYS_NOW:
 			return UCHAR_CONSTANT("$NOW");
 		case PROP_SYS_YEAR:
@@ -722,35 +730,37 @@ uchar *propIDToName(propid_t propID)
 		case PROP_SYS_MINUTE:
 			return UCHAR_CONSTANT("$MINUTE");
 		case PROP_SYS_NOW_UTC:
-			return UCHAR_CONSTANT("$NOW_UTC");
+			return UCHAR_CONSTANT("$NOW-UTC");
 		case PROP_SYS_YEAR_UTC:
-			return UCHAR_CONSTANT("$YEAR_UTC");
+			return UCHAR_CONSTANT("$YEAR-UTC");
 		case PROP_SYS_MONTH_UTC:
-			return UCHAR_CONSTANT("$MONTH_UTC");
+			return UCHAR_CONSTANT("$MONTH-UTC");
 		case PROP_SYS_DAY_UTC:
-			return UCHAR_CONSTANT("$DAY_UTC");
+			return UCHAR_CONSTANT("$DAY-UTC");
 		case PROP_SYS_HOUR_UTC:
-			return UCHAR_CONSTANT("$HOUR_UTC");
+			return UCHAR_CONSTANT("$HOUR-UTC");
 		case PROP_SYS_HHOUR_UTC:
-			return UCHAR_CONSTANT("$HHOUR_UTC");
+			return UCHAR_CONSTANT("$HHOUR-UTC");
 		case PROP_SYS_QHOUR_UTC:
-			return UCHAR_CONSTANT("$QHOUR_UTC");
+			return UCHAR_CONSTANT("$QHOUR-UTC");
 		case PROP_SYS_MINUTE_UTC:
-			return UCHAR_CONSTANT("$MINUTE_UTC");
+			return UCHAR_CONSTANT("$MINUTE-UTC");
 		case PROP_SYS_MYHOSTNAME:
 			return UCHAR_CONSTANT("$MYHOSTNAME");
-		case PROP_CEE:
-			return UCHAR_CONSTANT("*CEE-based property*");
-		case PROP_LOCAL_VAR:
-			return UCHAR_CONSTANT("*LOCAL_VARIABLE*");
 		case PROP_CEE_ALL_JSON:
 			return UCHAR_CONSTANT("$!all-json");
 		case PROP_CEE_ALL_JSON_PLAIN:
 			return UCHAR_CONSTANT("$!all-json-plain");
 		case PROP_SYS_BOM:
 			return UCHAR_CONSTANT("$BOM");
-		case PROP_UUID:
-			return UCHAR_CONSTANT("uuid");
+		case PROP_SYS_UPTIME:
+			return UCHAR_CONSTANT("$UPTIME");
+		case PROP_CEE:
+			return UCHAR_CONSTANT("*CEE-based property*");
+		case PROP_LOCAL_VAR:
+			return UCHAR_CONSTANT("*LOCAL_VARIABLE*");
+		case PROP_GLOBAL_VAR:
+			return UCHAR_CONSTANT("*GLOBAL_VARIABLE*");
 		default:
 			return UCHAR_CONSTANT("*invalid property id*");
 	}
@@ -776,7 +786,8 @@ uchar *propIDToName(propid_t propID)
  * a binary 0 on all machines [but today almost always...]).
  * rgerhards, 2008-10-06
  */
-static inline rsRetVal msgBaseConstruct(msg_t **ppThis)
+static rsRetVal
+msgBaseConstruct(msg_t **ppThis)
 {
 	DEFiRet;
 	msg_t *pM;
@@ -819,9 +830,7 @@ static inline rsRetVal msgBaseConstruct(msg_t **ppThis)
 	pM->rcvFrom.pRcvFrom = NULL;
 	pM->pRuleset = NULL;
 	pM->json = NULL;
-	pthread_mutex_init(&pM->mut_json, NULL);
 	pM->localvars = NULL;
-	pthread_mutex_init(&pM->mut_localvars, NULL);
 	pM->dfltTZ[0] = '\0';
 	memset(&pM->tRcvdAt, 0, sizeof(pM->tRcvdAt));
 	memset(&pM->tTIMESTAMP, 0, sizeof(pM->tTIMESTAMP));
@@ -922,7 +931,7 @@ static inline void freeHOSTNAME(msg_t *pThis)
 
 BEGINobjDestruct(msg) /* be sure to specify the object type also in END and CODESTART macros! */
 	int currRefCount;
-#	if HAVE_MALLOC_TRIM
+#	ifdef HAVE_MALLOC_TRIM
 	int currCnt;
 #	endif
 CODESTARTobjDestruct(msg)
@@ -967,10 +976,8 @@ CODESTARTobjDestruct(msg)
 			rsCStrDestruct(&pThis->pCSMSGID);
 		if(pThis->json != NULL)
 			json_object_put(pThis->json);
-		pthread_mutex_destroy(&pThis->mut_json);
 		if(pThis->localvars != NULL)
 			json_object_put(pThis->localvars);
-		pthread_mutex_destroy(&pThis->mut_localvars);
 		if(pThis->pszUUID != NULL)
 			free(pThis->pszUUID);
 #	ifndef HAVE_ATOMIC_BUILTINS
@@ -985,7 +992,7 @@ CODESTARTobjDestruct(msg)
 		 * 100,000 messages (which is an approximation, as we do not work with atomic
 		 * operations on the counter. --- rgerhards, 2009-06-22.
 		 */
-#		if HAVE_MALLOC_TRIM
+#		ifdef HAVE_MALLOC_TRIM
 		{	/* standard C requires a new block for a new variable definition!
 			 * To simplify matters, we use modulo arithmetic and live with the fact
 			 * that we trim too often when the counter wraps.
@@ -1199,7 +1206,6 @@ static rsRetVal MsgSerialize(msg_t *pThis, strm_t *pStrm)
 	objSerializePTR(pStrm, pszUUID, PSZ);
 
 	if(pThis->pRuleset != NULL) {
-		rulesetGetName(pThis->pRuleset);
 		CHKiRet(obj.SerializeProp(pStrm, UCHAR_CONSTANT("pszRuleset"), PROPTYPE_PSZ,
 			rulesetGetName(pThis->pRuleset)));
 	}
@@ -1221,7 +1227,7 @@ finalize_it:
  * But as an interim help during refactoring let's introduce this function
  * here (and thus NOT as method of var object!). -- rgerhads, 2012-11-06
  */
-static inline void
+static void
 reinitVar(var_t *pVar)
 {
 	rsCStrDestruct(&pVar->pcsName); /* no longer needed */
@@ -1461,8 +1467,8 @@ static rsRetVal aquirePROCIDFromTAG(msg_t * const pM)
 		FINALIZE;
 	}
 
-	/* OK, finaally we could obtain a PROCID. So let's use it ;) */
-	CHKiRet(cstrFinalize(pM->pCSPROCID));
+	/* OK, finally we could obtain a PROCID. So let's use it ;) */
+	cstrFinalize(pM->pCSPROCID);
 
 finalize_it:
 	RETiRet;
@@ -1483,7 +1489,7 @@ finalize_it:
  * IMPORTANT: A locked message object must be provided, else a crash will occur.
  * rgerhards, 2005-10-19
  */
-static inline rsRetVal
+static rsRetVal
 aquireProgramName(msg_t * const pM)
 {
 	int i;
@@ -1525,10 +1531,19 @@ void setProtocolVersion(msg_t * const pM, int iNewVersion)
 }
 
 /* note: string is taken from constant pool, do NOT free */
-char *getProtocolVersionString(msg_t * const pM)
+static const char *getProtocolVersionString(msg_t * const pM)
 {
 	assert(pM != NULL);
 	return(pM->iProtocolVersion ? "1" : "0");
+}
+
+void
+msgSetPRI(msg_t *const __restrict__ pMsg, syslog_pri_t pri)
+{
+	if(pri > LOG_MAXPRI)
+		pri = LOG_PRI_INVLD;
+	pMsg->iFacility = pri2fac(pri),
+	pMsg->iSeverity = pri2sev(pri);
 }
 
 #ifdef USE_LIBUUID
@@ -1563,7 +1578,7 @@ static void msgSetUUID(msg_t * const pM)
 	dbgprintf("[MsgSetUUID] END\n");
 }
 
-void getUUID(msg_t * const pM, uchar **pBuf, int *piLen)
+static void getUUID(msg_t * const pM, uchar **pBuf, int *piLen)
 {
 	dbgprintf("[getUUID] START\n");
 	if(pM == NULL) {
@@ -1667,7 +1682,8 @@ uchar *getMSG(msg_t * const pM)
 
 
 /* Get PRI value as integer */
-static int getPRIi(msg_t * const pM)
+int
+getPRIi(const msg_t * const pM)
 {
 	syslog_pri_t pri = (pM->iFacility << 3) + (pM->iSeverity);
 	if(pri > 191)
@@ -1678,7 +1694,7 @@ static int getPRIi(msg_t * const pM)
 
 /* Get PRI value in text form
  */
-char *
+const char *
 getPRI(msg_t * const pM)
 {
 	/* PRI is a number in the range 0..191. Thus, we use a simple lookup table to obtain the
@@ -1694,7 +1710,7 @@ getPRI(msg_t * const pM)
 }
 
 
-char *
+const char *
 getTimeReported(msg_t * const pM, enum tplFormatTypes eFmt)
 {
 	BEGINfunc
@@ -1794,9 +1810,116 @@ getTimeReported(msg_t * const pM, enum tplFormatTypes eFmt)
 	return "INVALID eFmt OPTION!";
 }
 
-static char *getTimeGenerated(msg_t * const pM, enum tplFormatTypes eFmt)
+
+
+static const char *getTimeUTC(struct syslogTime *const __restrict__ pTmIn,
+	const enum tplFormatTypes eFmt,
+	unsigned short *const __restrict__ pbMustBeFreed)
+{
+	struct syslogTime tUTC;
+	char *retbuf = NULL;
+	BEGINfunc
+
+	timeConvertToUTC(pTmIn, &tUTC);
+	struct syslogTime *const pTm = &tUTC;
+
+	switch(eFmt) {
+	case tplFmtDefault:
+		if((retbuf = MALLOC(16)) != NULL) {
+			datetime.formatTimestamp3164(pTm, retbuf, 0);
+		}
+		break;
+	case tplFmtMySQLDate:
+		if((retbuf = MALLOC(15)) != NULL) {
+			datetime.formatTimestampToMySQL(pTm, retbuf);
+		}
+		break;
+        case tplFmtPgSQLDate:
+		if((retbuf = MALLOC(21)) != NULL) {
+                        datetime.formatTimestampToPgSQL(pTm, retbuf);
+                }
+                break;
+	case tplFmtRFC3164Date:
+	case tplFmtRFC3164BuggyDate:
+		if((retbuf = MALLOC(16)) != NULL) {
+			datetime.formatTimestamp3164(pTm, retbuf, (eFmt == tplFmtRFC3164BuggyDate));
+		}
+		break;
+	case tplFmtRFC3339Date:
+		if((retbuf = MALLOC(33)) != NULL) {
+			datetime.formatTimestamp3339(pTm, retbuf);
+		}
+		break;
+	case tplFmtUnixDate:
+		if((retbuf = MALLOC(12)) != NULL) {
+			datetime.formatTimestampUnix(pTm, retbuf);
+		}
+		break;
+	case tplFmtSecFrac:
+		if((retbuf = MALLOC(7)) != NULL) {
+			datetime.formatTimestampSecFrac(pTm, retbuf);
+		}
+		break;
+	case tplFmtWDayName:
+		retbuf = strdup(wdayNames[getWeekdayNbr(pTm)]);
+		break;
+	case tplFmtWDay:
+		retbuf = strdup(one_digit[getWeekdayNbr(pTm)]);
+		break;
+	case tplFmtMonth:
+		retbuf = strdup(two_digits[(int)pTm->month]);
+		break;
+	case tplFmtYear:
+		if(pTm->year >= 1967 && pTm->year <= 2099)
+			retbuf = strdup(years[pTm->year - 1967]);
+		else
+			retbuf = strdup("YEAR OUT OF RANGE(1967-2099)");
+		break;
+	case tplFmtDay:
+		retbuf = strdup(two_digits[(int)pTm->day]);
+		break;
+	case tplFmtHour:
+		retbuf = strdup(two_digits[(int)pTm->hour]);
+		break;
+	case tplFmtMinute:
+		retbuf = strdup(two_digits[(int)pTm->minute]);
+		break;
+	case tplFmtSecond:
+		retbuf = strdup(two_digits[(int)pTm->second]);
+		break;
+	case tplFmtTZOffsHour:
+		retbuf = strdup(two_digits[(int)pTm->OffsetHour]);
+		break;
+	case tplFmtTZOffsMin:
+		retbuf = strdup(two_digits[(int)pTm->OffsetMinute]);
+		break;
+	case tplFmtTZOffsDirection:
+		retbuf = strdup((pTm->OffsetMode == '+')? "+" : "-");
+		break;
+	case tplFmtOrdinal:
+		retbuf = strdup(daysInYear[getOrdinal(pTm)]);
+		break;
+	case tplFmtWeek:
+		retbuf = strdup(two_digits[getWeek(pTm)]);
+		break;
+	}
+
+	if(retbuf == NULL) {
+		retbuf = (char*)"internal error: invalid eFmt option or malloc problem";
+		*pbMustBeFreed = 0;
+	} else {
+		*pbMustBeFreed = 1;
+	}
+	ENDfunc
+	return retbuf;
+}
+
+static const char *
+getTimeGenerated(msg_t *const __restrict__ pM,
+	const enum tplFormatTypes eFmt)
 {
 	BEGINfunc
+	struct syslogTime *const pTm = &pM->tRcvdAt;
 	if(pM == NULL)
 		return "";
 
@@ -1808,7 +1931,7 @@ static char *getTimeGenerated(msg_t * const pM, enum tplFormatTypes eFmt)
 				MsgUnlock(pM);
 				return "";
 			}
-			datetime.formatTimestamp3164(&pM->tRcvdAt, pM->pszRcvdAt3164, 0);
+			datetime.formatTimestamp3164(pTm, pM->pszRcvdAt3164, 0);
 		}
 		MsgUnlock(pM);
 		return(pM->pszRcvdAt3164);
@@ -1819,7 +1942,7 @@ static char *getTimeGenerated(msg_t * const pM, enum tplFormatTypes eFmt)
 				MsgUnlock(pM);
 				return "";
 			}
-			datetime.formatTimestampToMySQL(&pM->tRcvdAt, pM->pszRcvdAt_MySQL);
+			datetime.formatTimestampToMySQL(pTm, pM->pszRcvdAt_MySQL);
 		}
 		MsgUnlock(pM);
 		return(pM->pszRcvdAt_MySQL);
@@ -1830,7 +1953,7 @@ static char *getTimeGenerated(msg_t * const pM, enum tplFormatTypes eFmt)
                                 MsgUnlock(pM);
                                 return "";
                         }
-                        datetime.formatTimestampToPgSQL(&pM->tRcvdAt, pM->pszRcvdAt_PgSQL);
+                        datetime.formatTimestampToPgSQL(pTm, pM->pszRcvdAt_PgSQL);
                 }
                 MsgUnlock(pM);
                 return(pM->pszRcvdAt_PgSQL);
@@ -1842,7 +1965,7 @@ static char *getTimeGenerated(msg_t * const pM, enum tplFormatTypes eFmt)
 					MsgUnlock(pM);
 					return "";
 				}
-			datetime.formatTimestamp3164(&pM->tRcvdAt, pM->pszRcvdAt3164,
+			datetime.formatTimestamp3164(pTm, pM->pszRcvdAt3164,
 						     (eFmt == tplFmtRFC3164BuggyDate));
 		}
 		MsgUnlock(pM);
@@ -1854,14 +1977,14 @@ static char *getTimeGenerated(msg_t * const pM, enum tplFormatTypes eFmt)
 				MsgUnlock(pM);
 				return "";
 			}
-			datetime.formatTimestamp3339(&pM->tRcvdAt, pM->pszRcvdAt3339);
+			datetime.formatTimestamp3339(pTm, pM->pszRcvdAt3339);
 		}
 		MsgUnlock(pM);
 		return(pM->pszRcvdAt3339);
 	case tplFmtUnixDate:
 		MsgLock(pM);
 		if(pM->pszRcvdAt_Unix[0] == '\0') {
-			datetime.formatTimestampUnix(&pM->tRcvdAt, pM->pszRcvdAt_Unix);
+			datetime.formatTimestampUnix(pTm, pM->pszRcvdAt_Unix);
 		}
 		MsgUnlock(pM);
 		return(pM->pszRcvdAt_Unix);
@@ -1870,49 +1993,49 @@ static char *getTimeGenerated(msg_t * const pM, enum tplFormatTypes eFmt)
 			MsgLock(pM);
 			/* re-check, may have changed while we did not hold lock */
 			if(pM->pszRcvdAt_SecFrac[0] == '\0') {
-				datetime.formatTimestampSecFrac(&pM->tRcvdAt, pM->pszRcvdAt_SecFrac);
+				datetime.formatTimestampSecFrac(pTm, pM->pszRcvdAt_SecFrac);
 			}
 			MsgUnlock(pM);
 		}
 		return(pM->pszRcvdAt_SecFrac);
 	case tplFmtWDayName:
-		return wdayNames[getWeekdayNbr(&pM->tRcvdAt)];
+		return wdayNames[getWeekdayNbr(pTm)];
 	case tplFmtWDay:
-		return one_digit[getWeekdayNbr(&pM->tRcvdAt)];
+		return one_digit[getWeekdayNbr(pTm)];
 	case tplFmtMonth:
-		return two_digits[(int)pM->tRcvdAt.month];
+		return two_digits[(int)pTm->month];
 	case tplFmtYear:
-		if(pM->tRcvdAt.year >= 1967 && pM->tRcvdAt.year <= 2099)
-			return years[pM->tRcvdAt.year - 1967];
+		if(pTm->year >= 1967 && pTm->year <= 2099)
+			return years[pTm->year - 1967];
 		else
 			return "YEAR OUT OF RANGE(1967-2099)";
 	case tplFmtDay:
-		return two_digits[(int)pM->tRcvdAt.day];
+		return two_digits[(int)pTm->day];
 	case tplFmtHour:
-		return two_digits[(int)pM->tRcvdAt.hour];
+		return two_digits[(int)pTm->hour];
 	case tplFmtMinute:
-		return two_digits[(int)pM->tRcvdAt.minute];
+		return two_digits[(int)pTm->minute];
 	case tplFmtSecond:
-		return two_digits[(int)pM->tRcvdAt.second];
+		return two_digits[(int)pTm->second];
 	case tplFmtTZOffsHour:
-		return two_digits[(int)pM->tRcvdAt.OffsetHour];
+		return two_digits[(int)pTm->OffsetHour];
 	case tplFmtTZOffsMin:
-		return two_digits[(int)pM->tRcvdAt.OffsetMinute];
+		return two_digits[(int)pTm->OffsetMinute];
 	case tplFmtTZOffsDirection:
-		return (pM->tRcvdAt.OffsetMode == '+')? "+" : "-";
+		return (pTm->OffsetMode == '+')? "+" : "-";
 	case tplFmtOrdinal:
-		return daysInYear[getOrdinal(&pM->tRcvdAt)];
+		return daysInYear[getOrdinal(pTm)];
 	case tplFmtWeek:
-		return two_digits[getWeek(&pM->tRcvdAt)];
+		return two_digits[getWeek(pTm)];
 	}
 	ENDfunc
 	return "INVALID eFmt OPTION!";
 }
 
 
-static inline char *getSeverity(msg_t * const pM)
+static const char *getSeverity(msg_t * const pM)
 {
-	char *name = NULL;
+	const char *name = NULL;
 
 	if(pM == NULL)
 		return "";
@@ -1927,9 +2050,9 @@ static inline char *getSeverity(msg_t * const pM)
 }
 
 
-static inline char *getSeverityStr(msg_t * const pM)
+static const char *getSeverityStr(msg_t * const pM)
 {
-	char *name = NULL;
+	const char *name = NULL;
 
 	if(pM == NULL)
 		return "";
@@ -1943,9 +2066,9 @@ static inline char *getSeverityStr(msg_t * const pM)
 	return name;
 }
 
-static inline char *getFacility(msg_t * const pM)
+static const char *getFacility(msg_t * const pM)
 {
-	char *name = NULL;
+	const char *name = NULL;
 
 	if(pM == NULL)
 		return "";
@@ -1959,9 +2082,9 @@ static inline char *getFacility(msg_t * const pM)
 	return name;
 }
 
-static inline char *getFacilityStr(msg_t * const pM)
+static const char *getFacilityStr(msg_t * const pM)
 {
-        char *name = NULL;
+        const char *name = NULL;
 
         if(pM == NULL)
                 return "";
@@ -2040,7 +2163,7 @@ rsRetVal MsgSetPROCID(msg_t *__restrict__ const pMsg, const char* pszPROCID)
 	}
 	/* if we reach this point, we have the object */
 	CHKiRet(rsCStrSetSzStr(pMsg->pCSPROCID, (uchar*) pszPROCID));
-	CHKiRet(cstrFinalize(pMsg->pCSPROCID));
+	cstrFinalize(pMsg->pCSPROCID);
 
 finalize_it:
 	RETiRet;
@@ -2051,7 +2174,7 @@ finalize_it:
  * This must be called WITHOUT the message lock being held.
  * rgerhards, 2009-06-26
  */
-static inline void preparePROCID(msg_t * const pM, sbool bLockMutex)
+static void preparePROCID(msg_t * const pM, sbool bLockMutex)
 {
 	if(pM->pCSPROCID == NULL) {
 		if(bLockMutex == LOCK_MUTEX)
@@ -2068,7 +2191,7 @@ static inline void preparePROCID(msg_t * const pM, sbool bLockMutex)
 #if 0
 /* rgerhards, 2005-11-24
  */
-static inline int getPROCIDLen(msg_t *pM, sbool bLockMutex)
+static int getPROCIDLen(msg_t *pM, sbool bLockMutex)
 {
 	assert(pM != NULL);
 	preparePROCID(pM, bLockMutex);
@@ -2118,7 +2241,7 @@ finalize_it:
 /* Return state of last parser. If it had success, "OK" is returned, else
  * "FAIL". All from the constant pool.
  */
-static inline char *getParseSuccess(msg_t * const pM)
+static const char *getParseSuccess(msg_t * const pM)
 {
 	return (pM->bParseSuccess) ? "OK" : "FAIL";
 }
@@ -2126,7 +2249,7 @@ static inline char *getParseSuccess(msg_t * const pM)
 
 /* al, 2011-07-26: LockMsg to avoid race conditions
  */
-static inline char *getMSGID(msg_t * const pM)
+static const char *getMSGID(msg_t * const pM)
 {
 	if (pM->pCSMSGID == NULL) {
 		return "-"; 
@@ -2229,7 +2352,7 @@ msgGetJSONMESG(msg_t *__restrict__ const pMsg)
 	json_object_object_add(json, "uuid", jval);
 #endif
 
-	json_object_object_add(json, "$!", pMsg->json);
+	json_object_object_add(json, "$!", json_object_get(pMsg->json));
 
 	pRes = (uchar*) strdup(json_object_get_string(json));
 	json_object_put(json);
@@ -2281,7 +2404,8 @@ void MsgSetTAG(msg_t *__restrict__ const pMsg, const uchar* pszBuf, const size_t
  * if there is a TAG and, if not, if it can emulate it.
  * rgerhards, 2005-11-24
  */
-static inline void tryEmulateTAG(msg_t * const pM, sbool bLockMutex)
+static void
+tryEmulateTAG(msg_t * const pM, sbool bLockMutex)
 {
 	size_t lenTAG;
 	uchar bufTAG[CONF_TAG_MAXSIZE];
@@ -2348,7 +2472,7 @@ int getHOSTNAMELen(msg_t * const pM)
 }
 
 
-char *getHOSTNAME(msg_t * const pM)
+const char *getHOSTNAME(msg_t * const pM)
 {
 	if(pM == NULL)
 		return "";
@@ -2462,7 +2586,7 @@ static void tryEmulateAPPNAME(msg_t * const pM)
  * This must be called WITHOUT the message lock being held.
  * rgerhards, 2009-06-26
  */
-static inline void prepareAPPNAME(msg_t * const pM, sbool bLockMutex)
+static void prepareAPPNAME(msg_t * const pM, sbool bLockMutex)
 {
 	if(pM->pCSAPPNAME == NULL) {
 		if(bLockMutex == LOCK_MUTEX)
@@ -2845,7 +2969,6 @@ getJSONPropVal(msg_t * const pMsg, msgPropDescr_t *pProp, uchar **pRes, rs_size_
 	struct json_object *jroot;
 	struct json_object *parent;
 	struct json_object *field;
-	pthread_mutex_t *mut = NULL;
 	DEFiRet;
 
 	if(*pbMustBeFreed)
@@ -2854,22 +2977,20 @@ getJSONPropVal(msg_t * const pMsg, msgPropDescr_t *pProp, uchar **pRes, rs_size_
 
 	if(pProp->id == PROP_CEE) {
 		jroot = pMsg->json;
-		mut = &pMsg->mut_json;
+		MsgLock(pMsg);
 	} else if(pProp->id == PROP_LOCAL_VAR) {
 		jroot = pMsg->localvars;
-		mut = &pMsg->mut_localvars;
+		MsgLock(pMsg);
 	} else if(pProp->id == PROP_GLOBAL_VAR) {
-		mut = &glblVars_lock;
 		jroot = global_var_root;
+		pthread_mutex_lock(&glblVars_lock);
 	} else {
 		DBGPRINTF("msgGetJSONPropVal; invalid property id %d\n",
 			  pProp->id);
 		ABORT_FINALIZE(RS_RET_NOT_FOUND);
 	}
-	if(mut != NULL)
-		pthread_mutex_lock(mut);
 
-	if(jroot == NULL) goto finalize_it;
+	if(jroot == NULL) FINALIZE;
 
 	if(!strcmp((char*)pProp->name, "!")) {
 		field = jroot;
@@ -2886,8 +3007,10 @@ getJSONPropVal(msg_t * const pMsg, msgPropDescr_t *pProp, uchar **pRes, rs_size_
 	}
 
 finalize_it:
-	if(mut != NULL)
-		pthread_mutex_unlock(mut);
+	if(pProp->id == PROP_GLOBAL_VAR)
+		pthread_mutex_unlock(&glblVars_lock);
+	else
+		MsgUnlock(pMsg);
 	if(*pRes == NULL) {
 		/* could not find any value, so set it to empty */
 		*pRes = (unsigned char*)"";
@@ -2915,27 +3038,24 @@ msgGetJSONPropJSONorString(msg_t * const pMsg, msgPropDescr_t *pProp, struct jso
 	struct json_object *jroot;
 	uchar *leaf;
 	struct json_object *parent;
-	pthread_mutex_t *mut = NULL;
 	DEFiRet;
 
 	*pjson = NULL, *pcstr = NULL;
 
 	if(pProp->id == PROP_CEE) {
 		jroot = pMsg->json;
-		mut = &pMsg->mut_json;
+		MsgLock(pMsg);
 	} else if(pProp->id == PROP_LOCAL_VAR) {
 		jroot = pMsg->localvars;
-		mut = &pMsg->mut_json;
+		MsgLock(pMsg);
 	} else if(pProp->id == PROP_GLOBAL_VAR) {
-		mut = &glblVars_lock;
 		jroot = global_var_root;
+		pthread_mutex_lock(&glblVars_lock);
 	} else {
-		DBGPRINTF("msgGetJSONPropJSON; invalid property id %d\n",
+		DBGPRINTF("msgGetJSONPropJSONorString; invalid property id %d\n",
 			  pProp->id);
 		ABORT_FINALIZE(RS_RET_NOT_FOUND);
 	}
-	if(mut != NULL)
-		pthread_mutex_lock(mut);
 
 	if(!strcmp((char*)pProp->name, "!")) {
 		*pjson = jroot;
@@ -2960,8 +3080,10 @@ finalize_it:
 	/* we need a deep copy, as another thread may modify the object */
 	if(*pjson != NULL)
 		*pjson = jsonDeepCopy(*pjson);
-	if(mut != NULL)
-		pthread_mutex_unlock(mut);
+	if(pProp->id == PROP_GLOBAL_VAR)
+		pthread_mutex_unlock(&glblVars_lock);
+	else
+		MsgUnlock(pMsg);
 	RETiRet;
 }
 
@@ -2974,27 +3096,24 @@ msgGetJSONPropJSON(msg_t * const pMsg, msgPropDescr_t *pProp, struct json_object
 	struct json_object *jroot;
 	uchar *leaf;
 	struct json_object *parent;
-	pthread_mutex_t *mut = NULL;
 	DEFiRet;
 
 	*pjson = NULL;
 
 	if(pProp->id == PROP_CEE) {
 		jroot = pMsg->json;
-		mut = &pMsg->mut_json;
+		MsgLock(pMsg);
 	} else if(pProp->id == PROP_LOCAL_VAR) {
 		jroot = pMsg->localvars;
-		mut = &pMsg->mut_json;
+		MsgLock(pMsg);
 	} else if(pProp->id == PROP_GLOBAL_VAR) {
-		mut = &glblVars_lock;
 		jroot = global_var_root;
+		pthread_mutex_lock(&glblVars_lock);
 	} else {
 		DBGPRINTF("msgGetJSONPropJSON; invalid property id %d\n",
 			  pProp->id);
 		ABORT_FINALIZE(RS_RET_NOT_FOUND);
 	}
-	if(mut != NULL)
-		pthread_mutex_lock(mut);
 
 	if(!strcmp((char*)pProp->name, "!")) {
 		*pjson = jroot;
@@ -3010,8 +3129,10 @@ finalize_it:
 	/* we need a deep copy, as another thread may modify the object */
 	if(*pjson != NULL)
 		*pjson = jsonDeepCopy(*pjson);
-	if(mut != NULL)
-		pthread_mutex_unlock(mut);
+	if(pProp->id == PROP_GLOBAL_VAR)
+		pthread_mutex_unlock(&glblVars_lock);
+	else
+		MsgUnlock(pMsg);
 	RETiRet;
 }
 
@@ -3135,7 +3256,7 @@ jsonEncode(uchar **ppRes, unsigned short *pbMustBeFreed, int *pBufLen, int escap
 	DEFiRet;
 
 	pSrc = *ppRes;
-	buflen = (*pBufLen == -1) ? ustrlen(pSrc) : *pBufLen;
+	buflen = (*pBufLen == -1) ? (int) ustrlen(pSrc) : *pBufLen;
 	CHKiRet(jsonAddVal(pSrc, buflen, &dst, escapeAll));
 
 	if(dst != NULL) {
@@ -3173,7 +3294,7 @@ jsonField(struct templateEntry *pTpe, uchar **ppRes, unsigned short *pbMustBeFre
 	DEFiRet;
 
 	pSrc = *ppRes;
-	buflen = (*pBufLen == -1) ? ustrlen(pSrc) : *pBufLen;
+	buflen = (*pBufLen == -1) ? (int) ustrlen(pSrc) : *pBufLen;
 	/* we hope we have only few escapes... */
 	dst = es_newStr(buflen+pTpe->lenFieldName+15);
 	es_addChar(&dst, '"');
@@ -3247,6 +3368,7 @@ uchar *MsgGetProp(msg_t *__restrict__ const pMsg, struct templateEntry *__restri
 	int iLen;
 	short iOffs;
 	enum tplFormatTypes datefmt;
+	int bDateInUTC;
 
 	BEGINfunc
 	assert(pMsg != NULL);
@@ -3266,11 +3388,18 @@ uchar *MsgGetProp(msg_t *__restrict__ const pMsg, struct templateEntry *__restri
 			bufLen = getMSGLen(pMsg);
 			break;
 		case PROP_TIMESTAMP:
-			if (pTpe != NULL)
+			if(pTpe != NULL) {
 				datefmt = pTpe->data.field.eDateFormat;
-			else
+				bDateInUTC = pTpe->data.field.options.bDateInUTC;
+			} else {
 				datefmt = tplFmtDefault;
-			pRes = (uchar*)getTimeReported(pMsg, datefmt);
+				bDateInUTC = 0;
+			}
+			if(bDateInUTC) {
+				pRes = (uchar*)getTimeUTC(&pMsg->tTIMESTAMP, datefmt, pbMustBeFreed);
+			} else {
+				pRes = (uchar*)getTimeReported(pMsg, datefmt);
+			}
 			break;
 		case PROP_HOSTNAME:
 			pRes = (uchar*)getHOSTNAME(pMsg);
@@ -3320,11 +3449,18 @@ uchar *MsgGetProp(msg_t *__restrict__ const pMsg, struct templateEntry *__restri
 			pRes = (uchar*)getSeverityStr(pMsg);
 			break;
 		case PROP_TIMEGENERATED:
-			if (pTpe != NULL)
+			if(pTpe != NULL) {
 				datefmt = pTpe->data.field.eDateFormat;
-			else
+				bDateInUTC = pTpe->data.field.options.bDateInUTC;
+			} else {
 				datefmt = tplFmtDefault;
-			pRes = (uchar*)getTimeGenerated(pMsg, datefmt);
+				bDateInUTC = 0;
+			}
+			if(bDateInUTC) {
+				pRes = (uchar*)getTimeUTC(&pMsg->tRcvdAt, datefmt, pbMustBeFreed);
+			} else {
+				pRes = (uchar*)getTimeGenerated(pMsg, datefmt);
+			}
 			break;
 		case PROP_PROGRAMNAME:
 			pRes = getProgramName(pMsg, LOCK_MUTEX);
@@ -3495,8 +3631,7 @@ uchar *MsgGetProp(msg_t *__restrict__ const pMsg, struct templateEntry *__restri
 				*pbMustBeFreed = 0;
 			} else {
 				const char *jstr;
-				pthread_mutex_lock(&pMsg->mut_json);
-#ifdef HAVE_JSON_OBJECT_TO_JSON_STRING_EXT
+				MsgLock(pMsg);
 				int jflag = 0;
 				if(pProp->id == PROP_CEE_ALL_JSON) {
 					jflag = JSON_C_TO_STRING_SPACED;
@@ -3504,10 +3639,7 @@ uchar *MsgGetProp(msg_t *__restrict__ const pMsg, struct templateEntry *__restri
 					jflag = JSON_C_TO_STRING_PLAIN;
 				}
 				jstr = json_object_to_json_string_ext(pMsg->json, jflag);
-#else
-				jstr = json_object_to_json_string(pMsg->json);
-#endif
-				pthread_mutex_unlock(&pMsg->mut_json);
+				MsgUnlock(pMsg);
 				if(jstr == NULL) {
 					RET_OUT_OF_MEMORY;
 				}
@@ -3588,7 +3720,7 @@ uchar *MsgGetProp(msg_t *__restrict__ const pMsg, struct templateEntry *__restri
 
 	/* If we did not receive a template pointer, we are already done... */
 	if(pTpe == NULL || !pTpe->bComplexProcessing) {
-		*pPropLen = (bufLen == -1) ? ustrlen(pRes) : bufLen;
+		*pPropLen = (bufLen == -1) ? (int) ustrlen(pRes) : bufLen;
 		return pRes;
 	}
 	
@@ -3804,7 +3936,15 @@ uchar *MsgGetProp(msg_t *__restrict__ const pMsg, struct templateEntry *__restri
 			if(iTo > 0)
 				--iTo;
 		}
-		if(iFrom == 0 && iTo >= bufLen && pTpe->data.field.options.bFixedWidth == 0) {
+		if(iFrom >= bufLen) {
+			DBGPRINTF("msgGetProp: iFrom %d >= buflen %d, returning empty string\n",
+				iFrom, bufLen);
+			if(*pbMustBeFreed == 1)
+				free(pRes);
+			pRes = (uchar*) "";
+			*pbMustBeFreed = 0;
+			bufLen = 0;
+		} else if(iFrom == 0 && iTo >= bufLen && pTpe->data.field.options.bFixedWidth == 0) {
 			/* in this case, the requested string is a superset of what we already have,
 			 * so there is no need to do any processing. This is a frequent case for size-limited
 			 * fields like TAG in the default forwarding template (so it is a useful optimization
@@ -4144,6 +4284,65 @@ uchar *MsgGetProp(msg_t *__restrict__ const pMsg, struct templateEntry *__restri
 		}
 	}
 
+	/* Now everything is squased as much as possible and more or less ready to
+	 * go. This is the perfect place to compress any remaining spaces, if so
+	 * instructed by the user/config.
+	 */
+	if(pTpe->data.field.options.bCompressSP) {
+		int needCompress = 0;
+		int hadSP = 0;
+		uchar *pB;
+		if(*pbMustBeFreed == 0) {
+			for(pB = pRes ; *pB && needCompress == 0 ; ++pB) {
+				if(*pB == ' ') {
+					if(hadSP) {
+						uchar *const tmp = ustrdup(pRes);
+						if(tmp == NULL)
+							/* better not compress than
+							 * loose message. */
+							break;
+						*pbMustBeFreed = 1;
+						pRes = tmp;
+						needCompress = 1;
+					} else {
+						hadSP = 1;
+					}
+				}
+			}
+		} else {
+			/* If we can modify the buffer in any case, we
+			 * do NOT check if we actually need to compress,
+			 * but "just do it" - that's the quickest way
+			 * to get it done.
+			 */
+			needCompress = 1;
+		}
+		if(needCompress) {
+			hadSP = 0;
+			uchar *pDst = pRes;
+			int needCopy = 0;
+			for(pB = pRes ; *pB ; ++pB) {
+				if(*pB == ' ') {
+					if(hadSP) {
+						needCopy = 1;
+					}  else {
+						hadSP = 1;
+						if(needCopy)
+							*pDst = *pB;
+						++pDst;
+					}
+				} else {
+					hadSP = 0;
+					if(needCopy)
+						*pDst = *pB;
+					++pDst;
+				}
+			}
+			*pDst = '\0';
+			bufLen = pDst - pRes;
+		}
+	}
+
 	/* finally, we need to check if the property should be formatted in CSV or JSON.
 	 * For CSV we use RFC 4180, and always use double quotes. As of this writing,
 	 * this should be the last action carried out on the property, but in the
@@ -4189,7 +4388,7 @@ uchar *MsgGetProp(msg_t *__restrict__ const pMsg, struct templateEntry *__restri
 		jsonField(pTpe, &pRes, pbMustBeFreed, &bufLen, RSFALSE);
 	}
 
-	*pPropLen = (bufLen == -1) ? ustrlen(pRes) : bufLen;
+	*pPropLen = (bufLen == -1) ? (int) ustrlen(pRes) : bufLen;
 
 	ENDfunc
 	return(pRes);
@@ -4292,11 +4491,7 @@ MsgSetPropsViaJSON(msg_t *__restrict__ const pMsg, const uchar *__restrict__ con
 
 			err = tokener->err;
 			if(err != json_tokener_continue)
-#				if HAVE_JSON_TOKENER_ERROR_DESC
-					errMsg = json_tokener_error_desc(err);
-#				else
-					errMsg = json_tokener_errors[err];
-#				endif
+				errMsg = json_tokener_error_desc(err);
 			else
 				errMsg = "Unterminated input";
 		} else if(!json_object_is_type(json, json_type_object))
@@ -4310,8 +4505,12 @@ MsgSetPropsViaJSON(msg_t *__restrict__ const pMsg, const uchar *__restrict__ con
 		ABORT_FINALIZE(RS_RET_JSON_PARSE_ERR);
 	}
  
-	json_object_object_foreach(json, name, val) {
-		msgSetPropViaJSON(pMsg, name, val, 0);
+	struct json_object_iterator it = json_object_iter_begin(json);
+	struct json_object_iterator itEnd = json_object_iter_end(json);
+	while (!json_object_iter_equal(&it, &itEnd)) {
+		msgSetPropViaJSON(pMsg, json_object_iter_peek_name(&it),
+			json_object_iter_peek_value(&it), 0);
+		json_object_iter_next(&it);
 	}
 	json_object_put(json);
 
@@ -4367,7 +4566,7 @@ static json_bool jsonVarExtract(struct json_object* root, const char *key, struc
         if (errno == 0 && array_idx_num_end_discovered == array_idx_end) {
             memcpy(namebuf, key, array_idx_start - key);
             namebuf[array_idx_start - key] = '\0';
-            json_bool found_obj = RS_json_object_object_get_ex(root, namebuf, &arr);
+            json_bool found_obj = json_object_object_get_ex(root, namebuf, &arr);
             if (found_obj && json_object_is_type(arr, json_type_array)) {
                 int len = json_object_array_length(arr);
                 if (len > idx) {
@@ -4378,7 +4577,7 @@ static json_bool jsonVarExtract(struct json_object* root, const char *key, struc
             }
         }
     }
-    return RS_json_object_object_get_ex(root, key, value);
+    return json_object_object_get_ex(root, key, value);
 }
 
 
@@ -4438,11 +4637,13 @@ jsonMerge(struct json_object *existing, struct json_object *json)
 {
 	/* TODO: check & handle duplicate names */
 	DEFiRet;
-	struct json_object_iter it;
 
-	json_object_object_foreachC(json, it) {
-		json_object_object_add(existing, it.key,
-			json_object_get(it.val));
+	struct json_object_iterator it = json_object_iter_begin(json);
+	struct json_object_iterator itEnd = json_object_iter_end(json);
+	while (!json_object_iter_equal(&it, &itEnd)) {
+		json_object_object_add(existing, json_object_iter_peek_name(&it),
+			json_object_get(json_object_iter_peek_value(&it)));
+		json_object_iter_next(&it);
 	}
 	/* note: json-c does ref counting. We added all descandants refcounts
 	 * in the loop above. So when we now free(_put) the root object, only
@@ -4488,28 +4689,26 @@ msgAddJSON(msg_t * const pM, uchar *name, struct json_object *json, int force_re
 	struct json_object *parent, *leafnode;
 	struct json_object *given = NULL;
 	uchar *leaf;
-	pthread_mutex_t *mut = NULL;
 	DEFiRet;
 
 	if(name[0] == '!') {
 		pjroot = &pM->json;
-		mut = &pM->mut_json;
+		MsgLock(pM);
 	} else if(name[0] == '.') {
 		pjroot = &pM->localvars;
-		mut = &pM->mut_localvars;
+		MsgLock(pM);
 	} else if (name[0] == '/') { /* globl var */
 		pjroot = &global_var_root;
-		mut = &glblVars_lock;
 		if (sharedReference) {
 			given = json;
 			json = jsonDeepCopy(json);
 			json_object_put(given);
 		}
+		pthread_mutex_lock(&glblVars_lock);
 	} else {
 		DBGPRINTF("Passed name %s is unknown kind of variable (It is not CEE, Local or Global variable).", name);
 		ABORT_FINALIZE(RS_RET_INVLD_SETOP);
 	}
-	pthread_mutex_lock(mut);
 
 	if(name[1] == '\0') { /* full tree? */
 		if(*pjroot == NULL)
@@ -4560,8 +4759,10 @@ msgAddJSON(msg_t * const pM, uchar *name, struct json_object *json, int force_re
 	}
 
 finalize_it:
-	if(mut != NULL)
-		pthread_mutex_unlock(mut);
+	if(name[0] == '/')
+		pthread_mutex_unlock(&glblVars_lock);
+	else
+		MsgUnlock(pM);
 	RETiRet;
 }
 
@@ -4572,24 +4773,22 @@ msgDelJSON(msg_t * const pM, uchar *name)
 	struct json_object **jroot;
 	struct json_object *parent, *leafnode;
 	uchar *leaf;
-	pthread_mutex_t *mut = NULL;
 	DEFiRet;
 
 	if(name[0] == '!') {
 		jroot = &pM->json;
-		mut = &pM->mut_json;
+		MsgLock(pM);
 	} else if(name[0] == '.') {
 		jroot = &pM->localvars;
-		mut = &pM->mut_localvars;
+		MsgLock(pM);
 	} else if (name[0] == '/') { /* globl var */
 		jroot = &global_var_root;
-		mut = &glblVars_lock;
+		pthread_mutex_lock(&glblVars_lock);
 	} else {
 		DBGPRINTF("Passed name %s is unknown kind of variable (It is not CEE, "
 			  "Local or Global variable).", name);
 		ABORT_FINALIZE(RS_RET_INVLD_SETOP);
 	}
-	pthread_mutex_lock(mut);
 
 	if(*jroot == NULL) {
 		DBGPRINTF("msgDelJSONVar; jroot empty in unset for property %s\n",
@@ -4621,8 +4820,10 @@ msgDelJSON(msg_t * const pM, uchar *name)
 	}
 
 finalize_it:
-	if(mut != NULL)
-		pthread_mutex_unlock(mut);
+	if(name[0] == '/')
+		pthread_mutex_unlock(&glblVars_lock);
+	else
+		MsgUnlock(pM);
 	RETiRet;
 }
 
@@ -4656,7 +4857,6 @@ static struct json_object *
 jsonDeepCopy(struct json_object *src)
 {
 	struct json_object *dst = NULL, *json;
-	struct json_object_iter it;
 	int arrayLen, i;
 
 	if(src == NULL) goto done;
@@ -4669,20 +4869,19 @@ jsonDeepCopy(struct json_object *src)
 		dst = json_object_new_double(json_object_get_double(src));
 		break;
 	case json_type_int:
-#ifdef HAVE_JSON_OBJECT_NEW_INT64
 		dst = json_object_new_int64(json_object_get_int64(src));
-#else /* HAVE_JSON_OBJECT_NEW_INT64 */
-		dst = json_object_new_int(json_object_get_int(src));
-#endif /* HAVE_JSON_OBJECT_NEW_INT64 */
 		break;
 	case json_type_string:
 		dst = json_object_new_string(json_object_get_string(src));
 		break;
 	case json_type_object:
 		dst = json_object_new_object();
-		json_object_object_foreachC(src, it) {
-			json = jsonDeepCopy(it.val);
-			json_object_object_add(dst, it.key, json);
+		struct json_object_iterator it = json_object_iter_begin(src);
+		struct json_object_iterator itEnd = json_object_iter_end(src);
+		while (!json_object_iter_equal(&it, &itEnd)) {
+			json = jsonDeepCopy(json_object_iter_peek_value(&it));
+			json_object_object_add(dst, json_object_iter_peek_name(&it), json);
+			json_object_iter_next(&it);
 		}
 		break;
 	case json_type_array:
@@ -4694,6 +4893,7 @@ jsonDeepCopy(struct json_object *src)
 			json_object_array_add(dst, json);
 		}
 		break;
+	case json_type_null:
 	default:DBGPRINTF("jsonDeepCopy(): error unknown type %d\n",
 			 json_object_get_type(src));
 		dst = NULL;
@@ -4716,11 +4916,7 @@ msgSetJSONFromVar(msg_t * const pMsg, uchar *varname, struct var *v, int force_r
 		free(cstr);
 		break;
 	case 'N':/* number (integer) */
-#ifdef HAVE_JSON_OBJECT_NEW_INT64
 		json = json_object_new_int64(v->d.n);
-#else /* HAVE_JSON_OBJECT_NEW_INT64 */
-		json = json_object_new_int((int) v->d.n);
-#endif /* HAVE_JSON_OBJECT_NEW_INT64 */
 		break;
 	case 'J':/* native JSON */
 		json = jsonDeepCopy(v->d.json);
@@ -4800,7 +4996,7 @@ msgPropDescrDestruct(msgPropDescr_t *pProp)
 
 
 /* dummy */
-rsRetVal msgQueryInterface(void) { return RS_RET_NOT_IMPLEMENTED; }
+static rsRetVal msgQueryInterface(void) { return RS_RET_NOT_IMPLEMENTED; }
 
 /* Initialize the message class. Must be called as the very first method
  * before anything else is called inside this class.
@@ -4818,7 +5014,7 @@ BEGINObjClassInit(msg, 1, OBJ_IS_CORE_MODULE)
 	/* set our own handlers */
 	OBJSetMethodHandler(objMethod_SERIALIZE, MsgSerialize);
 	/* some more inits */
-#	if HAVE_MALLOC_TRIM
+#	ifdef HAVE_MALLOC_TRIM
 	INIT_ATOMIC_HELPER_MUT(mutTrimCtr);
 #	endif
 ENDObjClassInit(msg)

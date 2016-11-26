@@ -9,7 +9,7 @@
  * Please note that the original syslogd.c source was under BSD license
  * at the time of the rsyslog fork from sysklogd.
  *
- * Copyright 2008-2012 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2008-2016 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
@@ -96,7 +96,7 @@ cstr_t *pDfltProgNameCmp = NULL;
 
 
 /* process a $ModLoad config line.  */
-rsRetVal
+static rsRetVal
 doModLoad(uchar **pp, __attribute__((unused)) void* pVal)
 {
 	DEFiRet;
@@ -133,7 +133,7 @@ finalize_it:
  * getSubString(), but I was not brave enough to fix the former as
  * it has many other callers... -- rgerhards, 2013-05-27
  */
-static inline void
+static void
 ltrim(char *src)
 {
 	char *dst = src;
@@ -154,7 +154,7 @@ ltrim(char *src)
  * rgerhards 2005-06-21: previously only for templates, now 
  *    generalized.
  */
-rsRetVal
+static rsRetVal
 doNameLine(uchar **pp, void* pVal)
 {
 	DEFiRet;
@@ -214,7 +214,7 @@ finalize_it:
  * extended configuration parameters.
  * 2004-11-17 rgerhards
  */
-rsRetVal
+static rsRetVal
 cfsysline(uchar *p)
 {
 	DEFiRet;
@@ -293,7 +293,7 @@ rsRetVal cflineParseTemplateName(uchar** pp, omodStringRequest_t *pOMSR, int iEn
 			CHKiRet(cstrAppendChar(pStrB, *p));
 			++p;
 		}
-		CHKiRet(cstrFinalize(pStrB));
+		cstrFinalize(pStrB);
 		CHKiRet(cstrConvSzStrAndDestruct(&pStrB, &tplName, 0));
 	}
 

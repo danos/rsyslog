@@ -21,7 +21,7 @@
  * File begun on 2007-12-21 by RGerhards (extracted from syslogd.c[which was
  * licensed under BSD at the time of the rsyslog fork])
  *
- * Copyright 2007-2015 Adiscon GmbH.
+ * Copyright 2007-2016 Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
@@ -75,6 +75,7 @@
 #include "ratelimit.h"
 #include "unicode-helper.h"
 
+#pragma GCC diagnostic ignored "-Wswitch-enum"
 
 MODULE_TYPE_LIB
 MODULE_TYPE_NOKEEP
@@ -122,7 +123,7 @@ static int wrkrRunning;
 /* add new listener port to listener port list
  * rgerhards, 2009-05-21
  */
-static inline rsRetVal
+static rsRetVal
 addNewLstnPort(tcpsrv_t *pThis, uchar *pszPort, int bSuppOctetFram, uchar *pszAddr)
 {
 	tcpLstnPortList_t *pEntry;
@@ -319,6 +320,7 @@ static void deinit_tcp_listener(tcpsrv_t *pThis)
 		free(pEntry->pszPort);
 		prop.Destruct(&pEntry->pInputName);
 		ratelimitDestruct(pEntry->ratelimiter);
+		statsobj.Destruct(&(pEntry->stats));
 		pDel = pEntry;
 		pEntry = pEntry->pNext;
 		free(pDel);
@@ -359,7 +361,7 @@ finalize_it:
 /* Initialize TCP listener socket for a single port
  * rgerhards, 2009-05-21
  */
-static inline rsRetVal
+static rsRetVal
 initTCPListener(tcpsrv_t *pThis, tcpLstnPortList_t *pPortEntry)
 {
 	DEFiRet;
@@ -538,7 +540,7 @@ RunCancelCleanup(void *arg)
 /* helper to close a session. Takes status of poll vs. select into consideration.
  * rgerhards, 2009-11-25
  */
-static inline rsRetVal
+static rsRetVal
 closeSess(tcpsrv_t *pThis, tcps_sess_t **ppSess, nspoll_t *pPoll) {
 	DEFiRet;
 	if(pPoll != NULL) {
@@ -611,7 +613,7 @@ finalize_it:
 
 /* process a single workset item
  */
-static inline rsRetVal
+static rsRetVal
 processWorksetItem(tcpsrv_t *pThis, nspoll_t *pPoll, int idx, void *pUsr)
 {
 	tcps_sess_t *pNewSess = NULL;
@@ -746,7 +748,7 @@ finalize_it:
  * that does not support epoll().
  */
 #pragma GCC diagnostic ignored "-Wempty-body"
-static inline rsRetVal
+static rsRetVal
 RunSelect(tcpsrv_t *pThis, nsd_epworkset_t workset[], size_t sizeWorkset)
 {
 	DEFiRet;

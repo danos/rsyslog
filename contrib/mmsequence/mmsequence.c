@@ -161,8 +161,8 @@ setInstParamDefaults(instanceData *pData)
 	pData->valueFrom = 0;
 	pData->valueTo = INT_MAX;
 	pData->step = 1;
-	pData->pszKey = "";
-	pData->pszVar = JSON_VAR_NAME;
+	pData->pszKey = (char*)"";
+	pData->pszVar = (char*)JSON_VAR_NAME;
 }
 
 BEGINnewActInst
@@ -312,15 +312,15 @@ getCounter(struct hashtable *ht, char *str, int initial) {
 }
 
 
-BEGINdoAction
-	msg_t *pMsg;
+BEGINdoAction_NoStrings
+	msg_t **ppMsg = (msg_t **) pMsgData;
+	msg_t *pMsg = ppMsg[0];
 	struct json_object *json;
 	int val = 0;
 	int *pCounter;
 	instanceData *pData;
 CODESTARTdoAction
 	pData = pWrkrData->pData;
-	pMsg = (msg_t*) ppString[0];
 
 	switch(pData->mode) {
 	case mmSequenceRandom:

@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.0.2.  */
+/* A Bison parser, made by GNU Bison 3.0.4.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2013 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -66,29 +66,30 @@ extern int yydebug;
     PROPFILT = 276,
     BSD_TAG_SELECTOR = 277,
     BSD_HOST_SELECTOR = 278,
-    IF = 279,
-    THEN = 280,
-    ELSE = 281,
-    FOREACH = 282,
-    ITERATOR_ASSIGNMENT = 283,
-    DO = 284,
-    OR = 285,
-    AND = 286,
-    NOT = 287,
-    VAR = 288,
-    STRING = 289,
-    NUMBER = 290,
-    CMP_EQ = 291,
-    CMP_NE = 292,
-    CMP_LE = 293,
-    CMP_GE = 294,
-    CMP_LT = 295,
-    CMP_GT = 296,
-    CMP_CONTAINS = 297,
-    CMP_CONTAINSI = 298,
-    CMP_STARTSWITH = 299,
-    CMP_STARTSWITHI = 300,
-    UMINUS = 301
+    RELOAD_LOOKUP_TABLE_PROCEDURE = 279,
+    IF = 280,
+    THEN = 281,
+    ELSE = 282,
+    FOREACH = 283,
+    ITERATOR_ASSIGNMENT = 284,
+    DO = 285,
+    OR = 286,
+    AND = 287,
+    NOT = 288,
+    VAR = 289,
+    STRING = 290,
+    NUMBER = 291,
+    CMP_EQ = 292,
+    CMP_NE = 293,
+    CMP_LE = 294,
+    CMP_GE = 295,
+    CMP_LT = 296,
+    CMP_GT = 297,
+    CMP_CONTAINS = 298,
+    CMP_CONTAINSI = 299,
+    CMP_STARTSWITH = 300,
+    CMP_STARTSWITHI = 301,
+    UMINUS = 302
   };
 #endif
 /* Tokens.  */
@@ -113,36 +114,37 @@ extern int yydebug;
 #define PROPFILT 276
 #define BSD_TAG_SELECTOR 277
 #define BSD_HOST_SELECTOR 278
-#define IF 279
-#define THEN 280
-#define ELSE 281
-#define FOREACH 282
-#define ITERATOR_ASSIGNMENT 283
-#define DO 284
-#define OR 285
-#define AND 286
-#define NOT 287
-#define VAR 288
-#define STRING 289
-#define NUMBER 290
-#define CMP_EQ 291
-#define CMP_NE 292
-#define CMP_LE 293
-#define CMP_GE 294
-#define CMP_LT 295
-#define CMP_GT 296
-#define CMP_CONTAINS 297
-#define CMP_CONTAINSI 298
-#define CMP_STARTSWITH 299
-#define CMP_STARTSWITHI 300
-#define UMINUS 301
+#define RELOAD_LOOKUP_TABLE_PROCEDURE 279
+#define IF 280
+#define THEN 281
+#define ELSE 282
+#define FOREACH 283
+#define ITERATOR_ASSIGNMENT 284
+#define DO 285
+#define OR 286
+#define AND 287
+#define NOT 288
+#define VAR 289
+#define STRING 290
+#define NUMBER 291
+#define CMP_EQ 292
+#define CMP_NE 293
+#define CMP_LE 294
+#define CMP_GE 295
+#define CMP_LT 296
+#define CMP_GT 297
+#define CMP_CONTAINS 298
+#define CMP_CONTAINSI 299
+#define CMP_STARTSWITH 300
+#define CMP_STARTSWITHI 301
+#define UMINUS 302
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef union YYSTYPE YYSTYPE;
+
 union YYSTYPE
 {
-#line 43 "grammar.y" /* yacc.c:1909  */
+#line 51 "grammar.y" /* yacc.c:1909  */
 
 	char *s;
 	long long n;
@@ -158,8 +160,10 @@ union YYSTYPE
 	struct cnffparamlst *fparams;
 	struct cnfitr *itr;
 
-#line 162 "grammar.h" /* yacc.c:1909  */
+#line 164 "grammar.h" /* yacc.c:1909  */
 };
+
+typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
 #endif

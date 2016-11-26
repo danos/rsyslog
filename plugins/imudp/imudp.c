@@ -4,7 +4,7 @@
  * NOTE: read comments in module-template.h to understand how this file
  *       works!
  *
- * Copyright 2007-2015 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2007-2016 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
@@ -34,7 +34,7 @@
 #include <sys/socket.h>
 #include <pthread.h>
 #include <signal.h>
-#if HAVE_SYS_EPOLL_H
+#ifdef HAVE_SYS_EPOLL_H
 #	include <sys/epoll.h>
 #endif
 #ifdef HAVE_SCHED_H
@@ -116,6 +116,10 @@ struct instanceConf_s {
 	int ratelimitInterval;
 	int ratelimitBurst;
 	int rcvbuf;			/* 0 means: do not set, keep OS default */
+	/*  0 means:  IP_FREEBIND is disabled
+	1 means:  IP_FREEBIND enabled + warning disabled
+	1+ means: IP+FREEBIND enabled + warning enabled */
+	int ipfreebind;
 	struct instanceConf_s *next;
 	sbool bAppendPortToInpname;
 };
@@ -179,6 +183,7 @@ static struct cnfparamdescr inppdescr[] = {
 	{ "ratelimit.interval", eCmdHdlrInt, 0 },
 	{ "ratelimit.burst", eCmdHdlrInt, 0 },
 	{ "rcvbufsize", eCmdHdlrSize, 0 },
+	{ "ipfreebind", eCmdHdlrInt, 0 },
 	{ "ruleset", eCmdHdlrString, 0 }
 };
 static struct cnfparamblk inppblk =
@@ -209,6 +214,7 @@ createInstance(instanceConf_t **pinst)
 	inst->ratelimitBurst = 10000; /* arbitrary high limit */
 	inst->ratelimitInterval = 0; /* off */
 	inst->rcvbuf = 0;
+	inst->ipfreebind = IPFREEBIND_ENABLED_WITH_LOG;
 	inst->dfltTZ = NULL;
 
 	/* node created, let's add to config */
@@ -258,7 +264,7 @@ finalize_it:
  * the instance config description, tries to bind the socket and, if that
  * succeeds, adds it to the list of existing listen sockets.
  */
-static inline rsRetVal
+static rsRetVal
 addListner(instanceConf_t *inst)
 {
 	DEFiRet;
@@ -285,7 +291,7 @@ addListner(instanceConf_t *inst)
 
 	DBGPRINTF("Trying to open syslog UDP ports at %s:%s.\n", bindName, inst->pszBindPort);
 
-	newSocks = net.create_udp_socket(bindAddr, port, 1, inst->rcvbuf);
+	newSocks = net.create_udp_socket(bindAddr, port, 1, inst->rcvbuf, inst->ipfreebind);
 	if(newSocks != NULL) {
 		/* we now need to add the new sockets to the existing set */
 		/* ready to copy */
@@ -373,7 +379,7 @@ std_checkRuleset_genErrMsg(__attribute__((unused)) modConfData_t *modConf, insta
 /* This function processes received data. It provides unified handling
  * in cases where recvmmsg() is available and not.
  */
-static inline rsRetVal
+static rsRetVal
 processPacket(struct lstn_s *lstn, struct sockaddr_storage *frominetPrev, int *pbIsPermitted,
 	uchar *rcvBuf, ssize_t lenRcvBuf, struct syslogTime *stTime, time_t ttGenTime,
 	struct sockaddr_storage *frominet, socklen_t socklen, multi_submit_t *multiSub)
@@ -454,7 +460,7 @@ finalize_it:
  * an appropriate version is compiled (as such we need to maintain both!).
  */
 #ifdef HAVE_RECVMMSG
-static inline rsRetVal
+static rsRetVal
 processSocket(struct wrkrInfo_s *pWrkr, struct lstn_s *lstn, struct sockaddr_storage *frominetPrev, int *pbIsPermitted)
 {
 	DEFiRet;
@@ -539,7 +545,7 @@ finalize_it:
  * matter where the actual loss occurs - it is always random, because we depend
  * on scheduling order. -- rgerhards, 2008-10-02
  */
-static inline rsRetVal
+static rsRetVal
 processSocket(struct wrkrInfo_s *pWrkr, struct lstn_s *lstn, struct sockaddr_storage *frominetPrev, int *pbIsPermitted)
 {
 	int iNbrTimeUsed;
@@ -600,7 +606,7 @@ finalize_it:
 /* check configured scheduling priority.
  * Precondition: iSchedPolicy must have been set
  */
-static inline rsRetVal
+static rsRetVal
 checkSchedulingPriority(modConfData_t *modConf)
 {
     	DEFiRet;
@@ -617,9 +623,8 @@ checkSchedulingPriority(modConfData_t *modConf)
 			modConf->pszSchedPolicy);
 		ABORT_FINALIZE(RS_RET_VALIDATION_RUN);
 	}
-#endif
-
 finalize_it:
+#endif
 	RETiRet;
 }
 
@@ -711,9 +716,9 @@ setSchedParams(modConfData_t *modConf)
 	if(err != 0) {
 		errmsg.LogError(err, NO_ERRCODE, "imudp: pthread_setschedparam() failed - ignoring");
 	}
+finalize_it:
 #	endif
 
-finalize_it:
 	RETiRet;
 }
 
@@ -725,7 +730,8 @@ finalize_it:
  */
 #if defined(HAVE_EPOLL_CREATE1) || defined(HAVE_EPOLL_CREATE)
 #define NUM_EPOLL_EVENTS 10
-rsRetVal rcvMainLoop(struct wrkrInfo_s *pWrkr)
+static rsRetVal
+rcvMainLoop(struct wrkrInfo_s *const __restrict__ pWrkr)
 {
 	DEFiRet;
 	int nfds;
@@ -813,7 +819,8 @@ finalize_it:
 }
 #else /* #if HAVE_EPOLL_CREATE1 */
 /* this is the code for the select() interface */
-rsRetVal rcvMainLoop(thrdInfo_t *pWrkr)
+static rsRetVal
+rcvMainLoop(struct wrkrInfo_s *const __restrict__ pWrkr)
 {
 	DEFiRet;
 	int maxfds;
@@ -840,7 +847,7 @@ rsRetVal rcvMainLoop(thrdInfo_t *pWrkr)
 		for(lstn = lcnfRoot ; lstn != NULL ; lstn = lstn->next) {
 			if (lstn->sock != -1) {
 				if(Debug)
-					net.debugListenInfo(lstn->sock, "UDP");
+					net.debugListenInfo(lstn->sock, (char*)"UDP");
 				FD_SET(lstn->sock, &readfds);
 				if(lstn->sock>maxfds) maxfds=lstn->sock;
 			}
@@ -872,7 +879,7 @@ rsRetVal rcvMainLoop(thrdInfo_t *pWrkr)
 #endif /* #if HAVE_EPOLL_CREATE1 */
 
 
-static inline rsRetVal
+static rsRetVal
 createListner(es_str_t *port, struct cnfparamvals *pvals)
 {
 	instanceConf_t *inst;
@@ -933,6 +940,8 @@ createListner(es_str_t *port, struct cnfparamvals *pvals)
 			inst->ratelimitInterval = (int) pvals[i].val.d.n;
 		} else if(!strcmp(inppblk.descr[i].name, "rcvbufsize")) {
 			inst->rcvbuf = (int) pvals[i].val.d.n;
+		} else if(!strcmp(inppblk.descr[i].name, "ipfreebind")) {
+			inst->ipfreebind = (int) pvals[i].val.d.n;
 		} else {
 			dbgprintf("imudp: program error, non-handled "
 			  "param '%s'\n", inppblk.descr[i].name);
@@ -1142,13 +1151,13 @@ static void *
 wrkr(void *myself)
 {
 	struct wrkrInfo_s *pWrkr = (struct wrkrInfo_s*) myself;
-#	if HAVE_PRCTL && defined PR_SET_NAME
+#	if defined(HAVE_PRCTL) && defined(PR_SET_NAME)
 	uchar *pszDbgHdr;
 #	endif
 	uchar thrdName[32];
 
 	snprintf((char*)thrdName, sizeof(thrdName), "imudp(w%d)", pWrkr->id);
-#	if HAVE_PRCTL && defined PR_SET_NAME
+#	if defined(HAVE_PRCTL) && defined(PR_SET_NAME)
 	/* set thread name - we ignore if the call fails, has no harsh consequences... */
 	if(prctl(PR_SET_NAME, thrdName, 0, 0, 0) != 0) {
 		DBGPRINTF("prctl failed, not setting thread name for '%s'\n", thrdName);

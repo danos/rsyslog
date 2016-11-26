@@ -1,3 +1,59 @@
+rsyslog (8.23.0-2) unstable; urgency=medium
+
+  * Fix empty-hostname.sh test and change support for empty hostname
+    (Closes: #844914)
+
+ -- Michael Biebl <biebl@debian.org>  Thu, 24 Nov 2016 11:33:43 +0100
+
+rsyslog (8.23.0-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Rebase patches.
+  * Bump Build-Depends on libfastjson-dev to (>= 0.99.3).
+  * Use the new default-mysql-* metapackages.
+  * Remove logging rules for news.{crit,err,notice} (INN).
+
+ -- Michael Biebl <biebl@debian.org>  Fri, 18 Nov 2016 07:43:24 +0100
+
+rsyslog (8.22.0-2) unstable; urgency=medium
+
+  * Bump debhelper compat level to 10.
+
+ -- Michael Biebl <biebl@debian.org>  Sun, 16 Oct 2016 01:13:12 +0200
+
+rsyslog (8.22.0-1) unstable; urgency=medium
+
+  [ Michael Biebl ]
+  * New upstream release.
+
+  [ Matt Zahorik ]
+  * Enable hiredis output plugin (Closes: #833535)
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 04 Oct 2016 21:07:21 +0200
+
+rsyslog (8.21.0-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Rebase patches.
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 23 Aug 2016 18:49:35 +0200
+
+rsyslog (8.20.0-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Rebase patches.
+  * Bump Standards-Version to 3.9.8.
+  * Switch from libjson-c-dev to libfastjson-dev.
+  * Bump Build-Depends on librelp-dev to (>= 1.2.12) as per configure.ac.
+  * Bump Build-Depends on liblognorm-dev to (>= 2.0.0) to ensure we have a
+    version which was built against libfastjson.
+  * Add Build-Depends on procps. The test suite requires the ps utility.
+  * Use dh-exec to install arch specific modules.
+  * Bump debhelper compatibility level to 9.
+  * Install module libraries into multiarch paths.
+
+ -- Michael Biebl <biebl@debian.org>  Fri, 12 Aug 2016 22:46:32 +0200
+
 rsyslog (8.16.0-1~bpo8+1) jessie-backports; urgency=medium
 
   * Rebuild for jessie-backports.

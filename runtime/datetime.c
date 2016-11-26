@@ -5,7 +5,7 @@
  * in a useful manner. It is still undecided if all functions will continue
  * to stay here or some will be moved into parser modules (once we have them).
  *
- * Copyright 2008-2015 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2008-2016 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -89,7 +89,7 @@ static const time_t yearInSecs[] = {
 /** 
  * Convert struct timeval to syslog_time
  */
-void
+static void
 timeval2syslogTime(struct timeval *tp, struct syslogTime *t, const int inUTC)
 {
 	struct tm *tm;
@@ -116,7 +116,7 @@ timeval2syslogTime(struct timeval *tp, struct syslogTime *t, const int inUTC)
 		t->OffsetMode = '+';
 		lBias = 0;
 	} else {
-#		if __sun
+#		if defined(__sun)
 			/* Solaris uses a different method of exporting the time zone.
 			 * It is UTC - localtime, which is the opposite sign of mins east of GMT.
 			 */
@@ -183,7 +183,7 @@ static void getCurrTime(struct syslogTime *t, time_t *ttSeconds, const int inUTC
  * this testing. So I created that function as a replacement.
  * rgerhards, 2009-11-12
  */
-static time_t
+time_t
 getTime(time_t *ttSeconds)
 {
 	struct timeval tp;
@@ -438,8 +438,8 @@ ParseTIMESTAMP3164(struct syslogTime *pTime, uchar** ppszTS, int *pLenStr,
 	int secfracPrecision;
 	char tzstring[16];
 	char OffsetMode = '\0';	/* UTC offset: \0 -> indicate no update */
-	char OffsetHour;	/* UTC offset in hours */
-	int OffsetMinute;	/* UTC offset in minutes */
+	char OffsetHour = 0;	/* UTC offset in hours */
+	int OffsetMinute = 0;	/* UTC offset in minutes */
 	/* end variables to temporarily hold time information while we parse */
 	int lenStr;
 	uchar *pszTS;
@@ -782,7 +782,8 @@ applyDfltTZ(struct syslogTime *pTime, char *tz)
  * returns the size of the timestamp written in bytes (without
  * the string terminator). If 0 is returend, an error occured.
  */
-int formatTimestampToMySQL(struct syslogTime *ts, char* pBuf)
+static int
+formatTimestampToMySQL(struct syslogTime *ts, char* pBuf)
 {
 	/* currently we do not consider localtime/utc. This may later be
 	 * added. If so, I recommend using a property replacer option
@@ -812,7 +813,8 @@ int formatTimestampToMySQL(struct syslogTime *ts, char* pBuf)
 
 }
 
-int formatTimestampToPgSQL(struct syslogTime *ts, char *pBuf)
+static int
+formatTimestampToPgSQL(struct syslogTime *ts, char *pBuf)
 {
 	/* see note in formatTimestampToMySQL, applies here as well */
 	assert(ts != NULL);
@@ -851,7 +853,8 @@ int formatTimestampToPgSQL(struct syslogTime *ts, char *pBuf)
  * The buffer must be at least 7 bytes large.
  * rgerhards, 2008-06-06
  */
-int formatTimestampSecFrac(struct syslogTime *ts, char* pBuf)
+static int
+formatTimestampSecFrac(struct syslogTime *ts, char* pBuf)
 {
 	int iBuf;
 	int power;
@@ -889,7 +892,8 @@ int formatTimestampSecFrac(struct syslogTime *ts, char* pBuf)
  * returns the size of the timestamp written in bytes (without
  * the string terminator). If 0 is returend, an error occured.
  */
-int formatTimestamp3339(struct syslogTime *ts, char* pBuf)
+static int
+formatTimestamp3339(struct syslogTime *ts, char* pBuf)
 {
 	int iBuf;
 	int power;
@@ -969,9 +973,11 @@ int formatTimestamp3339(struct syslogTime *ts, char* pBuf)
  * day character if day < 10. syslog-ng seems to do that, and some
  * parsing scripts (in migration cases) rely on that.
  */
-int formatTimestamp3164(struct syslogTime *ts, char* pBuf, int bBuggyDay)
+static int
+formatTimestamp3164(struct syslogTime *ts, char* pBuf, int bBuggyDay)
 {
-	static char* monthNames[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+	static const char* monthNames[12] =
+				      { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
 					"Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 	int iDay;
 	assert(ts != NULL);
@@ -1000,12 +1006,36 @@ int formatTimestamp3164(struct syslogTime *ts, char* pBuf, int bBuggyDay)
 
 /**
  * convert syslog timestamp to time_t
+ * Note: it would be better to use something similar to mktime() here.
+ * Unfortunately, mktime() semantics are problematic: first of all, it
+ * works on local time, on the machine's time zone. In syslog, we have
+ * to deal with multiple time zones at once, so we cannot plainly rely
+ * on the local zone, and so we cannot rely on mktime(). One solution would
+ * be to refactor all time-related functions so that they are all guarded 
+ * by a mutex to ensure TZ consistency (which would also enable us to
+ * change the TZ at will for specific function calls). But that would
+ * potentially mean a lot of overhead.
+ * Also, mktime() has some side effects, at least setting of tzname. With
+ * a refactoring as described above that should probably not be a problem,
+ * but would also need more work. For some more thoughts on this topic,
+ * have a look here:
+ * http://stackoverflow.com/questions/18355101/is-standard-c-mktime-thread-safe-on-linux
+ * In conclusion, we keep our own code for generating the unix timestamp.
+ * rgerhards, 2016-03-02
  */
-time_t syslogTime2time_t(struct syslogTime *ts)
+static time_t
+syslogTime2time_t(const struct syslogTime *ts)
 {
 	long MonthInDays, NumberOfYears, NumberOfDays;
 	int utcOffset;
 	time_t TimeInUnixFormat;
+
+	if(ts->year < 1970 || ts->year > 2100) {
+		TimeInUnixFormat = 0;
+		errmsg.LogError(0, RS_RET_ERR, "syslogTime2time_t: invalid year %d "
+			"in timestamp - returning 1970-01-01 instead", ts->year);
+		goto done;
+	}
 
 	/* Counting how many Days have passed since the 01.01 of the
 	 * selected Year (Month level), according to the selected Month*/
@@ -1054,6 +1084,11 @@ time_t syslogTime2time_t(struct syslogTime *ts)
 			MonthInDays = 0;	/* any value fits ;) */
 			break;
 	}	
+	/* adjust for leap years */
+	if((ts->year % 100 != 0 && ts->year % 4 == 0) || (ts->year == 2000)) {
+		if(ts->month > 2)
+			MonthInDays++;
+	}
 
 
 	/*	1) Counting how many Years have passed since 1970
@@ -1064,7 +1099,7 @@ time_t syslogTime2time_t(struct syslogTime *ts)
 
 	NumberOfYears = ts->year - yearInSec_startYear - 1;
 	NumberOfDays = MonthInDays + ts->day - 1;
-	TimeInUnixFormat = yearInSecs[NumberOfYears] + NumberOfDays * 86400;
+	TimeInUnixFormat = (yearInSecs[NumberOfYears] + 1) + NumberOfDays * 86400;
 
 	/*Add Hours, minutes and seconds */
 	TimeInUnixFormat += ts->hour*60*60;
@@ -1075,6 +1110,7 @@ time_t syslogTime2time_t(struct syslogTime *ts)
 	if(ts->OffsetMode == '+')
 		utcOffset *= -1; /* if timestamp is ahead, we need to "go back" to UTC */
 	TimeInUnixFormat += utcOffset;
+done:
 	return TimeInUnixFormat;
 }
 
@@ -1089,7 +1125,8 @@ time_t syslogTime2time_t(struct syslogTime *ts)
  * Important: pBuf must point to a buffer of at least 11 bytes.
  * rgerhards, 2012-03-29
  */
-int formatTimestampUnix(struct syslogTime *ts, char *pBuf)
+static int
+formatTimestampUnix(struct syslogTime *ts, char *pBuf)
 {
 	snprintf(pBuf, 11, "%u", (unsigned) syslogTime2time_t(ts));
 	return 11;
@@ -1130,6 +1167,13 @@ int getOrdinal(struct syslogTime *ts)
 	int utcOffset;
 	time_t seconds_into_year;
 
+	if(ts->year < 1970 || ts->year > 2100) {
+		yday = 0;
+		errmsg.LogError(0, RS_RET_ERR, "getOrdinal: invalid year %d "
+			"in timestamp - returning 1970-01-01 instead", ts->year);
+		goto done;
+	}
+
 	thistime = syslogTime2time_t(ts);
 
 	previousyears = yearInSecs[ts->year - yearInSec_startYear - 1];
@@ -1145,6 +1189,7 @@ int getOrdinal(struct syslogTime *ts)
 
 	/* divide by seconds in a day and truncate to int */
 	yday = seconds_into_year / 86400;
+done:
 	return yday;
 }
 
@@ -1184,6 +1229,16 @@ int getWeek(struct syslogTime *ts)
 		++weekNum;
 	}
 	return weekNum;
+}
+
+void
+timeConvertToUTC(const struct syslogTime *const __restrict__ local,
+	struct syslogTime *const __restrict__ utc)
+{
+	struct timeval tp;
+	tp.tv_sec = syslogTime2time_t(local);
+	tp.tv_usec = local->secfrac;
+	timeval2syslogTime(&tp, utc, 1);
 }
 
 /* queryInterface function

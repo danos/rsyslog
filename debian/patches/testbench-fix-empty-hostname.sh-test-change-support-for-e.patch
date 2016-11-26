@@ -1,0 +1,76 @@
+From: Rainer Gerhards <rgerhards@adiscon.com>
+Date: Mon, 21 Nov 2016 15:42:46 +0100
+Subject: testbench: fix empty-hostname.sh test & change support for empty
+ hostname
+
+If gethostname() returned "", we used "localhost" as mock-up hostname.
+However, this caused problems depending on how the local system name was
+actually configured.
+
+We have changed the mock-up hostname to "localhost-empty-hostname" now
+to clearly indicate the problem. Also, we make sure that we do no
+accidently try to resolve the mock-up hostname.
+
+closes https://github.com/rsyslog/rsyslog/issues/1268
+
+(cherry picked from commit 5de8b4ee5cb5b9b45456a6b49712a0fc10674ccf)
+---
+ runtime/net.c           | 9 ++++++---
+ tests/empty-hostname.sh | 4 ++--
+ 2 files changed, 8 insertions(+), 5 deletions(-)
+
+diff --git a/runtime/net.c b/runtime/net.c
+index f4675b5..4cd8e69 100644
+--- a/runtime/net.c
++++ b/runtime/net.c
+@@ -1140,28 +1140,31 @@ cvthname(struct sockaddr_storage *f, prop_t **localName, prop_t **fqdn, prop_t *
+  * normalized to lower case. The hostname is kept in mixed case for historic
+  * reasons.
+  */
++#define EMPTY_HOSTNAME_REPLACEMENT "localhost-empty-hostname"
+ static rsRetVal
+ getLocalHostname(uchar **ppName)
+ {
+ 	DEFiRet;
+ 	char hnbuf[8192];
+ 	uchar *fqdn = NULL;
++	int empty_hostname = 1;
+ 
+ 	if(gethostname(hnbuf, sizeof(hnbuf)) != 0) {
+-		strcpy(hnbuf, "localhost");
++		strcpy(hnbuf, EMPTY_HOSTNAME_REPLACEMENT);
+ 	} else {
+ 		/* now guard against empty hostname
+ 		 * see https://github.com/rsyslog/rsyslog/issues/1040
+ 		 */
+ 		if(hnbuf[0] == '\0') {
+-			strcpy(hnbuf, "localhost");
++			strcpy(hnbuf, EMPTY_HOSTNAME_REPLACEMENT);
+ 		} else {
++			empty_hostname = 0;
+ 			hnbuf[sizeof(hnbuf)-1] = '\0'; /* be on the safe side... */
+ 		}
+ 	}
+ 
+ 	char *dot = strstr(hnbuf, ".");
+-	if(dot == NULL) {
++	if(!empty_hostname && dot == NULL) {
+ 		/* we need to (try) to find the real name via resolver */
+ 		struct hostent *hent = gethostbyname((char*)hnbuf);
+ 		if(hent) {
+diff --git a/tests/empty-hostname.sh b/tests/empty-hostname.sh
+index 10f2d40..1f0fd58 100755
+--- a/tests/empty-hostname.sh
++++ b/tests/empty-hostname.sh
+@@ -11,9 +11,9 @@ export RSYSLOG_PRELOAD=.libs/liboverride_gethostname.so
+ . $srcdir/diag.sh shutdown-when-empty # shut down rsyslogd when done processing messages
+ . $srcdir/diag.sh wait-shutdown    # we need to wait until rsyslogd is finished!
+ 
+-grep " localhost " < rsyslog.out.log
++grep " localhost-empty-hostname " < rsyslog.out.log
+ if [ ! $? -eq 0 ]; then
+-  echo "expected hostname \"localhost\" not found in logs, rsyslog.out.log is:"
++  echo "expected hostname \"localhost-empty-hostname\" not found in logs, rsyslog.out.log is:"
+   cat rsyslog.out.log
+   . $srcdir/diag.sh error-exit 1
+ fi;

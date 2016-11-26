@@ -7,7 +7,7 @@
  * \date    2003-09-09
  *          Coding begun.
  *
- * Copyright 2003-2008 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2003-2016 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -333,8 +333,10 @@ void skipWhiteSpace(uchar **pp)
  * to use as few space as possible.
  * rgerhards, 2008-01-03
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
 rsRetVal genFileName(uchar **ppName, uchar *pDirName, size_t lenDirName, uchar *pFName,
-		     size_t lenFName, long lNum, int lNumDigits)
+		     size_t lenFName, int64_t lNum, int lNumDigits)
 {
 	DEFiRet;
 	uchar *pName;
@@ -349,10 +351,10 @@ rsRetVal genFileName(uchar **ppName, uchar *pDirName, size_t lenDirName, uchar *
 		lenBuf = 0;
 	} else {
 		if(lNumDigits > 0) {
-			snprintf(szFmtBuf, sizeof(szFmtBuf), ".%%0%dld", lNumDigits);
+			snprintf(szFmtBuf, sizeof(szFmtBuf), ".%%0%d" PRId64, lNumDigits);
 			lenBuf = snprintf((char*)szBuf, sizeof(szBuf), szFmtBuf, lNum);
 		} else
-			lenBuf = snprintf((char*)szBuf, sizeof(szBuf), ".%ld", lNum);
+			lenBuf = snprintf((char*)szBuf, sizeof(szBuf), ".%" PRId64, lNum);
 	}
 
 	lenName = lenDirName + 1 + lenFName + lenBuf + 1; /* last +1 for \0 char! */
@@ -376,6 +378,7 @@ rsRetVal genFileName(uchar **ppName, uchar *pDirName, size_t lenDirName, uchar *
 finalize_it:
 	RETiRet;
 }
+#pragma GCC diagnostic pop
 
 /* get the number of digits required to represent a given number. We use an
  * iterative approach as we do not like to draw in the floating point
@@ -426,6 +429,26 @@ timeoutComp(struct timespec *pt, long iTimeout)
 	}
 	ENDfunc
 	return RS_RET_OK; /* so far, this is static... */
+}
+
+long long
+currentTimeMills(void)
+{
+#	if _POSIX_TIMERS > 0
+	struct timespec tm;
+#   else
+	struct timeval tv;
+#	endif
+
+#	if _POSIX_TIMERS > 0
+	clock_gettime(CLOCK_REALTIME, &tm);
+#	else
+	gettimeofday(&tv, NULL);
+	tm.tv_sec = tv.tv_sec;
+	tm.tv_nsec = tv.tv_usec * 1000;
+#	endif
+
+	return ((long long) tm.tv_sec) * 1000 + (tm.tv_nsec / 1000000);
 }
 
 
@@ -657,14 +680,16 @@ containsGlobWildcard(char *str)
 	return 0;
 }
 
-void seedRandomNumber() {
+void seedRandomNumber(void)
+{
 	struct timespec t;
 	timeoutComp(&t, 0);
 	long long x = t.tv_sec * 3 + t.tv_nsec * 2;
 	srandom((unsigned int) x);
 }
 
-long int randomNumber() {
+long int randomNumber(void)
+{
 	return random();
 }
 

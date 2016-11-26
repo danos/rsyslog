@@ -17,7 +17,7 @@
  * pipes. These have been moved to ompipe, to reduced the entanglement
  * between the two different functionalities. -- rgerhards
  *
- * Copyright 2007-2015 Adiscon GmbH.
+ * Copyright 2007-2016 Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
@@ -288,7 +288,7 @@ static struct cnfparamblk actpblk =
 /* this function gets the default template. It coordinates action between
  * old-style and new-style configuration parts.
  */
-static inline uchar*
+static uchar*
 getDfltTpl(void)
 {
 	if(loadModConf != NULL && loadModConf->tplName != NULL)
@@ -344,7 +344,7 @@ ENDdbgPrintInstInfo
  * is we do not permit this directive after the v2 config system has been used to set
  * the parameter.
  */
-rsRetVal
+static rsRetVal
 setLegacyDfltTpl(void __attribute__((unused)) *pVal, uchar* newVal)
 {
 	DEFiRet;
@@ -365,7 +365,7 @@ finalize_it:
 /* set the dynaFile cache size. Does some limit checking.
  * rgerhards, 2007-07-31
  */
-rsRetVal setDynaFileCacheSize(void __attribute__((unused)) *pVal, int iNewVal)
+static rsRetVal setDynaFileCacheSize(void __attribute__((unused)) *pVal, int iNewVal)
 {
 	DEFiRet;
 
@@ -494,7 +494,7 @@ finalize_it:
  * relevant files. Part of Shutdown and HUP processing.
  * rgerhards, 2008-10-23
  */
-static inline void
+static void
 dynaFileFreeCacheEntries(instanceData *__restrict__ const pData)
 {
 	register int i;
@@ -556,6 +556,7 @@ static rsRetVal
 prepareFile(instanceData *__restrict__ const pData, const uchar *__restrict__ const newFileName)
 {
 	int fd;
+	char errStr[1024]; /* buffer for strerr() */
 	DEFiRet;
 
 	pData->pStrm = NULL;
@@ -569,6 +570,10 @@ prepareFile(instanceData *__restrict__ const pData, const uchar *__restrict__ co
 			if(makeFileParentDirs(newFileName, ustrlen(newFileName),
 			     pData->fDirCreateMode, pData->dirUID,
 			     pData->dirGID, pData->bFailOnChown) != 0) {
+				rs_strerror_r(errno, errStr, sizeof(errStr));
+				errmsg.LogError(0, RS_RET_ERR, "omfile: creating parent "
+					"directories for file  '%s' failed: %s",
+					errStr, newFileName);
 			     	ABORT_FINALIZE(RS_RET_ERR); /* we give up */
 			}
 		}
@@ -582,11 +587,13 @@ prepareFile(instanceData *__restrict__ const pData, const uchar *__restrict__ co
 			if(pData->fileUID != (uid_t)-1 || pData->fileGID != (gid_t) -1) {
 				/* we need to set owner/group */
 				if(fchown(fd, pData->fileUID, pData->fileGID) != 0) {
+					rs_strerror_r(errno, errStr, sizeof(errStr));
+					errmsg.LogError(0, RS_RET_FILE_CHOWN_ERROR,
+						"omfile: chown for file '%s' failed: %s",
+						errStr, newFileName);
 					if(pData->bFailOnChown) {
-						int eSave = errno;
 						close(fd);
-						fd = -1;
-						errno = eSave;
+						ABORT_FINALIZE(RS_RET_ERR); /* we give up */
 					}
 					/* we will silently ignore the chown() failure
 					 * if configured to do so.
@@ -654,7 +661,7 @@ finalize_it:
  * be written.
  * This is a helper to writeFile(). rgerhards, 2007-07-03
  */
-static inline rsRetVal
+static rsRetVal
 prepareDynFile(instanceData *__restrict__ const pData, const uchar *__restrict__ const newFileName)
 {
 	uint64 ctOldest; /* "timestamp" of oldest element */
@@ -902,7 +909,7 @@ finalize_it:
 ENDsetModCnf
 
 /* This function checks dynafile cache for janitor action */
-static inline void
+static void
 janitorChkDynaFiles(instanceData *__restrict__ const pData)
 {
 	int i;
@@ -926,7 +933,7 @@ janitorChkDynaFiles(instanceData *__restrict__ const pData)
 }
 
 /* callback for the janitor. This cleans out files (if so configured) */
-void
+static void
 janitorCB(void *pUsr)
 {
 	instanceData *__restrict__ const pData = (instanceData *) pUsr;
@@ -994,6 +1001,8 @@ CODESTARTfreeInstance
 		dynaFileFreeCache(pData);
 	} else if(pData->pStrm != NULL)
 		closeFile(pData);
+	if(pData->stats != NULL)
+		statsobj.Destruct(&(pData->stats));
 	if(pData->useSigprov) {
 		pData->sigprov.Destruct(&pData->sigprovData);
 		obj.ReleaseObj(__FILE__, pData->sigprovNameFull+2, pData->sigprovNameFull,
@@ -1048,11 +1057,14 @@ CODESTARTcommitTransaction
 	}
 
 finalize_it:
+	if (pData->bDynamicName &&
+	    (iRet == RS_RET_FILE_OPEN_ERROR || iRet == RS_RET_FILE_NOT_FOUND) )
+		iRet = RS_RET_OK;
 	pthread_mutex_unlock(&pData->mutWrite);
 ENDcommitTransaction
 
 
-static inline void
+static void
 setInstParamDefaults(instanceData *__restrict__ const pData)
 {
 	pData->fname = NULL;
@@ -1121,7 +1133,7 @@ finalize_it:
 	RETiRet;
 }
 
-static inline void
+static void
 initSigprov(instanceData *__restrict__ const pData, struct nvlst *lst)
 {
 	uchar szDrvrName[1024];
@@ -1163,7 +1175,7 @@ initSigprov(instanceData *__restrict__ const pData, struct nvlst *lst)
 done:	return;
 }
 
-static inline rsRetVal
+static rsRetVal
 initCryprov(instanceData *__restrict__ const pData, struct nvlst *lst)
 {
 	uchar szDrvrName[1024];

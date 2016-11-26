@@ -1,6 +1,6 @@
 /* This is a tool for processing rsyslog encrypted log files.
  * 
- * Copyright 2013 Adiscon GmbH
+ * Copyright 2013-2016 Adiscon GmbH
  *
  * This file is part of rsyslog.
  *
@@ -51,6 +51,16 @@ static unsigned cry_keylen = 0;
 static int cry_algo = GCRY_CIPHER_AES128;
 static int cry_mode = GCRY_CIPHER_MODE_CBC;
 static int optionForce = 0;
+
+/* We use some common code which expects rsyslog runtime to be
+ * present, most importantly for debug output. As a stand-alone
+ * tool, we do not really have this. So we do some dummy defines
+ * in order to satisfy the needs of the common code.
+ */
+int Debug = 0;
+void dbgprintf(const char *fmt __attribute__((unused)), ...) {};
+void srSleep(int a __attribute__((unused)), int b __attribute__((unused))); /* prototype (avoid compiler warning) */
+void srSleep(int a __attribute__((unused)), int b __attribute__((unused))) {}; /* this is not really needed by any of our code */
 
 /* rectype/value must be EIF_MAX_*_LEN+1 long!
  * returns 0 on success or something else on error/EOF
@@ -146,7 +156,7 @@ done:	return r;
 static int
 eiGetEND(FILE *eifp, off64_t *offs)
 {
-	char rectype[EIF_MAX_RECTYPE_LEN+1];
+	char rectype[EIF_MAX_RECTYPE_LEN+1] = "";
 	char value[EIF_MAX_VALUE_LEN+1];
 	int r;
 
@@ -210,7 +220,7 @@ initCrypt(FILE *eifp)
 done: return r;
 }
 
-static inline void
+static void
 removePadding(char *buf, size_t *plen)
 {
 	unsigned len = (unsigned) *plen;
@@ -276,7 +286,7 @@ doDecrypt(FILE *logfp, FILE *eifp, FILE *outfp)
 {
 	off64_t blkEnd;
 	off64_t currOffs = 0;
-	int r;
+	int r = 1;
 	int fd;
         struct stat buf;
 
@@ -301,7 +311,7 @@ done:	return r;
 }
 
 static void
-decrypt(char *name)
+decrypt(const char *name)
 {
 	FILE *logfp = NULL, *eifp = NULL;
 	int r = 0;
@@ -347,6 +357,10 @@ write_keyfile(char *fn)
 	fmode = O_WRONLY|O_CREAT;
 	if(!optionForce)
 		fmode |= O_EXCL;
+	if(fn == NULL) {
+		fprintf(stderr, "program error: keyfile is NULL");
+		exit(1);
+	}
 	if((fd = open(fn, fmode, S_IRUSR)) == -1) {
 		fprintf(stderr, "error opening keyfile ");
 		perror(fn);
@@ -392,7 +406,7 @@ getRandomKey(void)
 
 
 static void
-setKey()
+setKey(void)
 {
 	if(randomKeyLen != -1)
 		getRandomKey();

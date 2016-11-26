@@ -7,18 +7,18 @@
  *
  * Module begun 2008-04-16 by Rainer Gerhards
  *
- * Copyright 2008-2015 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2008-2016 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -37,6 +37,7 @@
 #include <ctype.h>
 #include <assert.h>
 #include <stdint.h>
+#include <errno.h>
 
 #include "rsyslog.h"
 #include "obj.h"
@@ -49,7 +50,9 @@
 #include "action.h"
 #include "parserif.h"
 #include "rainerscript.h"
+#include "srUtils.h"
 #include "net.h"
+#include "rsconf.h"
 
 /* some defaults */
 #ifndef DFLT_NETSTRM_DRVR
@@ -72,9 +75,9 @@ stdlog_channel_t stdlog_hdl = NULL;	/* handle to be used for stdlog */
 #endif
 
 static struct cnfobj *mainqCnfObj = NULL;/* main queue object, to be used later in startup sequence */
-int bProcessInternalMessages = 1;	/* Should rsyslog itself process internal messages?
+int bProcessInternalMessages = 0;	/* Should rsyslog itself process internal messages?
 					 * 1 - yes
-					 * 0 - send them to libstdlog (e.g. to push to journal)
+					 * 0 - send them to libstdlog (e.g. to push to journal) or syslog()
 					 */
 static uchar *pszWorkDir = NULL;
 #ifdef HAVE_LIBLOGGING_STDLOG
@@ -84,7 +87,7 @@ static int bOptimizeUniProc = 1;	/* enable uniprocessor optimizations */
 static int bParseHOSTNAMEandTAG = 1;	/* parser modification (based on startup params!) */
 static int bPreserveFQDN = 0;		/* should FQDNs always be preserved? */
 static int iMaxLine = 8096;		/* maximum length of a syslog message */
-static int iGnuTLSLoglevel = 0;		
+static int iGnuTLSLoglevel = 0;
 static int iDefPFFamily = PF_UNSPEC;     /* protocol family (IPv4, IPv6 or both) */
 static int bDropMalPTRMsgs = 0;/* Drop messages which have malicious PTR records during DNS lookup */
 static int option_DisallowWarning = 1;	/* complain if message from disallowed sender is received */
@@ -111,6 +114,11 @@ static int bEscape8BitChars = 0; /* escape characters > 127 on reception: 0 - no
 static int bEscapeTab = 1; /* escape tab control character when doing CC escapes: 0 - no, 1 - yes */
 static int bParserEscapeCCCStyle = 0; /* escape control characters in c style: 0 - no, 1 - yes */
 short janitorInterval = 10; /* interval (in minutes) at which the janitor runs */
+int glblReportNewSenders = 0;
+int glblReportGoneAwaySenders = 0;
+int glblSenderStatsTimeout = 12 * 60 * 60; /* 12 hr timeout for senders */
+int glblSenderKeepTrack = 0;  /* keep track of known senders? */
+int glblUnloadModules = 1;
 
 pid_t glbl_ourpid;
 #ifndef HAVE_ATOMIC_BUILTINS
@@ -133,6 +141,7 @@ static struct cnfparamdescr cnfparamdescr[] = {
 	{ "debug.onshutdown", eCmdHdlrBinary, 0 },
 	{ "debug.logfile", eCmdHdlrString, 0 },
 	{ "debug.gnutls", eCmdHdlrPositiveInt, 0 },
+	{ "debug.unloadmodules", eCmdHdlrBinary, 0 },
 	{ "defaultnetstreamdrivercafile", eCmdHdlrString, 0 },
 	{ "defaultnetstreamdriverkeyfile", eCmdHdlrString, 0 },
         { "defaultnetstreamdrivercertfile", eCmdHdlrString, 0 },
@@ -150,11 +159,17 @@ static struct cnfparamdescr cnfparamdescr[] = {
 	{ "parser.parsehostnameandtag", eCmdHdlrBinary, 0 },
 	{ "stdlog.channelspec", eCmdHdlrString, 0 },
 	{ "janitor.interval", eCmdHdlrPositiveInt, 0 },
+	{ "senders.reportnew", eCmdHdlrBinary, 0 },
+	{ "senders.reportgoneaway", eCmdHdlrBinary, 0 },
+	{ "senders.timeoutafter", eCmdHdlrPositiveInt, 0 },
+	{ "senders.keeptrack", eCmdHdlrBinary, 0 },
+	{ "privdrop.group.keepsupplemental", eCmdHdlrBinary, 0 },
 	{ "net.ipprotocol", eCmdHdlrGetWord, 0 },
 	{ "net.acladdhostnameonfail", eCmdHdlrBinary, 0 },
 	{ "net.aclresolvehostname", eCmdHdlrBinary, 0 },
 	{ "net.enabledns", eCmdHdlrBinary, 0 },
 	{ "net.permitACLwarning", eCmdHdlrBinary, 0 },
+	{ "environment", eCmdHdlrArray, 0 },
 	{ "processinternalmessages", eCmdHdlrBinary, 0 }
 };
 static struct cnfparamblk paramblk =
@@ -260,7 +275,7 @@ static void SetGlobalInputTermination(void)
  * ok to call. Most importantly, the IP address must not already have 
  * been set. -- rgerhards, 2012-03-21
  */
-static inline rsRetVal
+static rsRetVal
 storeLocalHostIPIF(uchar *myIP)
 {
 	DEFiRet;
@@ -820,7 +835,7 @@ displayTzinfos(void)
  * This is currently not needed as used only during
  * initialization.
  */
-static inline rsRetVal
+static rsRetVal
 addTimezoneInfo(uchar *tzid, char offsMode, int8_t offsHour, int8_t offsMin)
 {
 	DEFiRet;
@@ -937,6 +952,11 @@ glblProcessCnf(struct cnfobj *o)
 	int i;
 
 	cnfparamvals = nvlstGetParams(o->nvlst, &paramblk, cnfparamvals);
+	if(cnfparamvals == NULL) {
+		errmsg.LogError(0, RS_RET_MISSING_CNFPARAMS, "error processing global "
+				"config parameters [global(...)]");
+		goto done;
+	}
 	if(Debug) {
 		dbgprintf("glbl param blk after glblProcessCnf:\n");
 		cnfparamsPrint(&paramblk, cnfparamvals);
@@ -951,21 +971,12 @@ glblProcessCnf(struct cnfobj *o)
 			continue;
 		if(!strcmp(paramblk.descr[i].name, "processinternalmessages")) {
 			bProcessInternalMessages = (int) cnfparamvals[i].val.d.n;
-#ifndef HAVE_LIBLOGGING_STDLOG
-			if(bProcessInternalMessages != 1) {
-				bProcessInternalMessages = 1;
-				errmsg.LogError(0, RS_RET_ERR, "rsyslog wasn't "
-					"compiled with liblogging-stdlog support. "
-					"The 'ProcessInternalMessages' parameter "
-					"is ignored.\n");
-			}
-#endif
 		} else if(!strcmp(paramblk.descr[i].name, "stdlog.channelspec")) {
 #ifndef HAVE_LIBLOGGING_STDLOG
 			errmsg.LogError(0, RS_RET_ERR, "rsyslog wasn't "
 				"compiled with liblogging-stdlog support. "
 				"The 'stdlog.channelspec' parameter "
-				"is ignored.\n");
+				"is ignored. Note: the syslog API is used instead.\n");
 #else
 			stdlog_chanspec = (uchar*)
 				es_str2cstr(cnfparamvals[i].val.d.estr, NULL);
@@ -974,6 +985,7 @@ glblProcessCnf(struct cnfobj *o)
 #endif
 		}
 	}
+done:	return;
 }
 
 /* Set mainq parameters. Note that when this is not called, we'll use the
@@ -994,7 +1006,7 @@ glblProcessMainQCnf(struct cnfobj *o)
  * also used to do some final checks.
  */
 void
-glblDestructMainqCnfObj()
+glblDestructMainqCnfObj(void)
 {
 	/* Only destruct if not NULL! */
 	if (mainqCnfObj != NULL) {
@@ -1012,6 +1024,47 @@ qs_arrcmp_tzinfo(const void *s1, const void *s2)
 {
 	return strcmp(((tzinfo_t*)s1)->id, ((tzinfo_t*)s2)->id);
 }
+
+/* set an environment variable */
+static rsRetVal
+do_setenv(const char *const var)
+{
+	char varname[128];
+	const char *val = var;
+	size_t i;
+	DEFiRet;
+
+	for(i = 0 ; *val != '=' ; ++i, ++val) {
+		if(i == sizeof(varname)-i) {
+			parser_errmsg("environment variable name too long "
+				"[max %zd chars] or malformed entry: '%s'",
+				sizeof(varname)-1, var);
+			ABORT_FINALIZE(RS_RET_ERR_SETENV);
+		}
+		if(*val == '\0') {
+			parser_errmsg("environment variable entry is missing "
+				"equal sign (for value): '%s'", var);
+			ABORT_FINALIZE(RS_RET_ERR_SETENV);
+		}
+		varname[i] = *val;
+	}
+	varname[i] = '\0';
+	++val;
+	DBGPRINTF("do_setenv, var '%s', val '%s'\n", varname, val);
+
+	if(setenv(varname, val, 1) != 0) {
+		char errStr[1024];
+		rs_strerror_r(errno, errStr, sizeof(errStr));
+		parser_errmsg("error setting environment variable "
+			"'%s' to '%s': %s", varname, val, errStr);
+		ABORT_FINALIZE(RS_RET_ERR_SETENV);
+	}
+
+
+finalize_it:
+	RETiRet;
+}
+
 
 /* This processes the "regular" parameters which are to be set after the
  * config has been fully loaded.
@@ -1071,6 +1124,8 @@ glblDoneLoadCnf(void)
 			errmsg.LogError(0, RS_RET_OK, "debug: onShutdown set to %d", glblDebugOnShutdown);
 		} else if(!strcmp(paramblk.descr[i].name, "debug.gnutls")) {
 			iGnuTLSLoglevel = (int) cnfparamvals[i].val.d.n;
+		} else if(!strcmp(paramblk.descr[i].name, "debug.unloadmodules")) {
+			glblUnloadModules = (int) cnfparamvals[i].val.d.n;
 		} else if(!strcmp(paramblk.descr[i].name, "parser.controlcharacterescapeprefix")) {
 			cCCEscapeChar = (uchar) *es_str2cstr(cnfparamvals[i].val.d.estr, NULL);
 		} else if(!strcmp(paramblk.descr[i].name, "parser.droptrailinglfonreception")) {
@@ -1110,6 +1165,16 @@ glblDoneLoadCnf(void)
 					"parameter '%s' -- ignored", proto);
 			}
 			free(proto);
+		} else if(!strcmp(paramblk.descr[i].name, "senders.reportnew")) {
+		        glblReportNewSenders = (int) cnfparamvals[i].val.d.n;
+		} else if(!strcmp(paramblk.descr[i].name, "senders.reportgoneaway")) {
+		        glblReportGoneAwaySenders = (int) cnfparamvals[i].val.d.n;
+		} else if(!strcmp(paramblk.descr[i].name, "senders.timeoutafter")) {
+		        glblSenderStatsTimeout = (int) cnfparamvals[i].val.d.n;
+		} else if(!strcmp(paramblk.descr[i].name, "senders.keeptrack")) {
+		        glblSenderKeepTrack = (int) cnfparamvals[i].val.d.n;
+		} else if(!strcmp(paramblk.descr[i].name, "privdrop.group.keepsupplemental")) {
+		        loadConf->globals.gidDropPrivKeepSupplemental = (int) cnfparamvals[i].val.d.n;
 		} else if(!strcmp(paramblk.descr[i].name, "net.acladdhostnameonfail")) {
 		        *(net.pACLAddHostnameOnFail) = (int) cnfparamvals[i].val.d.n;
 		} else if(!strcmp(paramblk.descr[i].name, "net.aclresolvehostname")) {
@@ -1118,6 +1183,13 @@ glblDoneLoadCnf(void)
 		        setDisableDNS(!((int) cnfparamvals[i].val.d.n));
 		} else if(!strcmp(paramblk.descr[i].name, "net.permitwarning")) {
 		        setOption_DisallowWarning(!((int) cnfparamvals[i].val.d.n));
+		} else if(!strcmp(paramblk.descr[i].name, "environment")) {
+			for(int j = 0 ; j <  cnfparamvals[i].val.d.ar->nmemb ; ++j) {
+				char *const var =
+					es_str2cstr(cnfparamvals[i].val.d.ar->arr[j], NULL);
+				do_setenv(var);
+				free(var);
+			}
 		} else {
 			dbgprintf("glblDoneLoadCnf: program error, non-handled "
 			  "param '%s'\n", paramblk.descr[i].name);

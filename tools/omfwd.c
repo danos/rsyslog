@@ -4,7 +4,7 @@
  * NOTE: read comments in module-template.h to understand how this file
  *       works!
  *
- * Copyright 2007-2015 Adiscon GmbH.
+ * Copyright 2007-2016 Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
@@ -213,7 +213,7 @@ static rsRetVal doZipFinish(wrkrInstanceData_t *);
 /* this function gets the default template. It coordinates action between
  * old-style and new-style configuration parts.
  */
-static inline uchar*
+static uchar*
 getDfltTpl(void)
 {
 	if(loadModConf != NULL && loadModConf->tplName != NULL)
@@ -275,7 +275,7 @@ pWrkrData->bIsConnected = 0; // TODO: remove this variable altogether
  * the worst case, some duplication occurs, but we do not
  * loose data.
  */
-static inline void
+static void
 DestructTCPInstanceData(wrkrInstanceData_t *pWrkrData)
 {
 	doZipFinish(pWrkrData);
@@ -744,7 +744,6 @@ static rsRetVal doTryResume(wrkrInstanceData_t *pWrkrData)
 	pData = pWrkrData->pData;
 
 	/* The remote address is not yet known and needs to be obtained */
-	dbgprintf(" %s\n", pData->target);
 	if(pData->protocol == FORW_UDP) {
 		memset(&hints, 0, sizeof(hints));
 		/* port must be numeric, because config file syntax requires this */
@@ -760,13 +759,14 @@ static rsRetVal doTryResume(wrkrInstanceData_t *pWrkrData)
 		pWrkrData->f_addr = res;
 		pWrkrData->bIsConnected = 1;
 		if(pWrkrData->pSockArray == NULL) {
-			pWrkrData->pSockArray = net.create_udp_socket((uchar*)pData->target, NULL, 0, 0);
+			pWrkrData->pSockArray = net.create_udp_socket((uchar*)pData->target, NULL, 0, 0, 0);
 		}
 	} else {
 		CHKiRet(TCPSendInit((void*)pWrkrData));
 	}
 
 finalize_it:
+	DBGPRINTF("omfwd: doTryResume %s iRet %d\n", pWrkrData->pData->target, iRet);
 	if(iRet != RS_RET_OK) {
 		if(pWrkrData->f_addr != NULL) {
 			freeaddrinfo(pWrkrData->f_addr);
@@ -931,7 +931,7 @@ finalize_it:
 }
 
 
-static inline void
+static void
 setInstParamDefaults(instanceData *pData)
 {
 	pData->tplName = NULL;
@@ -1023,11 +1023,11 @@ CODESTARTnewActInst
 			pData->iRebindInterval = (int) pvals[i].val.d.n;
 		} else if(!strcmp(actpblk.descr[i].name, "keepalive")) {
 			pData->bKeepAlive = (int) pvals[i].val.d.n;
-		} else if(!strcmp(actpblk.descr[i].name, "keepaliveprobes")) {
+		} else if(!strcmp(actpblk.descr[i].name, "keepalive.probes")) {
 			pData->iKeepAliveProbes = (int) pvals[i].val.d.n;
-		} else if(!strcmp(actpblk.descr[i].name, "keepaliveintvl")) {
+		} else if(!strcmp(actpblk.descr[i].name, "keepalive.interval")) {
 			pData->iKeepAliveIntvl = (int) pvals[i].val.d.n;
-		} else if(!strcmp(actpblk.descr[i].name, "keepalivetime")) {
+		} else if(!strcmp(actpblk.descr[i].name, "keepalive.time")) {
 			pData->iKeepAliveTime = (int) pvals[i].val.d.n;
 		} else if(!strcmp(actpblk.descr[i].name, "streamdriver")) {
 			pData->pszStrmDrvr = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
@@ -1102,8 +1102,9 @@ CODESTARTnewActInst
 			}
 			free(cstr);
 		} else {
-			DBGPRINTF("omfwd: program error, non-handled "
-			  "param '%s'\n", actpblk.descr[i].name);
+			errmsg.LogError(0, RS_RET_INTERNAL_ERROR,
+				"omfwd: program error, non-handled parameter '%s'\n",
+				actpblk.descr[i].name);
 		}
 	}
 
@@ -1288,11 +1289,6 @@ CODE_STD_STRING_REQUESTparseSelectorAct(1)
 	if(pData->protocol == FORW_TCP) {
 		pData->bResendLastOnRecon = cs.bResendLastOnRecon;
 		pData->iStrmDrvrMode = cs.iStrmDrvrMode;
-		if(cs.pszStrmDrvr != NULL)
-			CHKmalloc(pData->pszStrmDrvr = (uchar*)strdup((char*)cs.pszStrmDrvr));
-		if(cs.pszStrmDrvrAuthMode != NULL)
-			CHKmalloc(pData->pszStrmDrvrAuthMode =
-				     (uchar*)strdup((char*)cs.pszStrmDrvrAuthMode));
 		if(cs.pPermPeers != NULL) {
 			pData->pPermPeers = cs.pPermPeers;
 			cs.pPermPeers = NULL;

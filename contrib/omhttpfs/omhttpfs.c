@@ -188,7 +188,7 @@ httpfs_init_curl(wrkrInstanceData_t *pWrkrData, instanceData *pData)
  * @return rsRetVal
  */
 static rsRetVal
-httpfs_build_url(wrkrInstanceData_t *pWrkrData, char* op, es_str_t** url_buf)
+httpfs_build_url(wrkrInstanceData_t *pWrkrData, const char* op, es_str_t** url_buf)
 {
     *url_buf = es_newStr(HTTPFS_URL_BUFFER_LENGTH);
 
@@ -198,30 +198,30 @@ httpfs_build_url(wrkrInstanceData_t *pWrkrData, char* op, es_str_t** url_buf)
         es_addBuf(url_buf, "http://", sizeof("http://")-1);
     }
 
-    // host
+    /* host */
     es_addBuf(url_buf, (char* )pWrkrData->pData->host, strlen((char*)pWrkrData->pData->host));
 
-    // port
+    /* port */
     es_addChar(url_buf, ':');
     char portBuf[6];
     snprintf(portBuf, sizeof(portBuf), "%d", pWrkrData->pData->port);
     es_addBuf(url_buf, portBuf, strlen(portBuf));
 
-    // prefix
+    /* prefix */
     es_addBuf(url_buf, HTTPFS_URL_PREFIX_V1, sizeof(HTTPFS_URL_PREFIX_V1)-1);
 
-    // path
+    /* path */
     if (pWrkrData->file[0] != '/') {
         es_addChar(url_buf, '/');
     }
     es_addBuf(url_buf, (char* )pWrkrData->file, strlen((char* )pWrkrData->file));
 
-    // queries
-    // user
+    /* queries */
+    /* user */
     es_addBuf(url_buf, "?user.name=", sizeof("?user.name=")-1);
     es_addBuf(url_buf, (char* )pWrkrData->pData->user, strlen((char* )pWrkrData->pData->user));
 
-    // extra parameters
+    /* extra parameters */
     es_addBuf(url_buf, op, strlen(op));
 
     return RS_RET_OK;
@@ -234,7 +234,7 @@ httpfs_build_url(wrkrInstanceData_t *pWrkrData, char* op, es_str_t** url_buf)
  * @param char* op
  * @return void
  */
-void httpfs_set_url(wrkrInstanceData_t *pWrkrData, char* op)
+static void httpfs_set_url(wrkrInstanceData_t *pWrkrData, const char* op)
 {
     es_str_t* url;
     char* url_cstr;
@@ -250,7 +250,7 @@ void httpfs_set_url(wrkrInstanceData_t *pWrkrData, char* op)
  * @param CURL* curl
  * @return void
  */
-void httpfs_curl_set_put(CURL* curl)
+static void httpfs_curl_set_put(CURL* curl)
 {
     curl_easy_setopt(curl, CURLOPT_HTTPGET, 0L);
     curl_easy_setopt(curl, CURLOPT_NOBODY, 0L);
@@ -261,28 +261,12 @@ void httpfs_curl_set_put(CURL* curl)
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
 }
 /**
- * Set http method to GET
- *
- * @param CURL* curl
- * @return void
- */
-void httpfs_curl_set_get(CURL* curl)
-{
-    curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
-    curl_easy_setopt(curl, CURLOPT_NOBODY, 0L);
-    curl_easy_setopt(curl, CURLOPT_POST, 0L);
-    curl_easy_setopt(curl, CURLOPT_PUT, 0L);
-    curl_easy_setopt(curl, CURLOPT_UPLOAD, 0L);
-
-    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
-}
-/**
  * Set http method to POST
  *
  * @param CURL* curl
  * @return void
  */
-void httpfs_curl_set_post(CURL* curl)
+static void httpfs_curl_set_post(CURL* curl)
 {
     curl_easy_setopt(curl, CURLOPT_HTTPGET, 0L);
     curl_easy_setopt(curl, CURLOPT_NOBODY, 0L);
@@ -301,7 +285,7 @@ void httpfs_curl_set_post(CURL* curl)
  * @param ...
  * @return struct curl_slist* 
  */
-struct curl_slist* 
+static struct curl_slist* 
 httpfs_curl_add_header(struct curl_slist* headers, int hdr_count, ...)
 {
     const char* hdr;
@@ -313,7 +297,7 @@ httpfs_curl_add_header(struct curl_slist* headers, int hdr_count, ...)
 
         if (hdr != NULL
                 && hdr[0] != 0) {
-            // non-empty string
+            /* non-empty string */
             headers = curl_slist_append(headers, hdr);
         } else {
             break;
@@ -323,8 +307,6 @@ httpfs_curl_add_header(struct curl_slist* headers, int hdr_count, ...)
 
     headers = curl_slist_append(headers, "Expect:");
     headers = curl_slist_append(headers, "Transfer-Encoding:");
-
-    //char* host_header = "Host: ";
 
     return headers;
 }
@@ -408,18 +390,6 @@ httpfs_curl_result_callback(void *contents, size_t size, size_t nmemb, void *use
     }
 
 /**
- * convert integer permission to string
- *
- * @param int     permission
- * @param char*   perm_string
- * @return int
- */
-int httpfs_permission_to_string(int permission, char* perm_string)
-{
-    return sprintf(perm_string, "%04o", permission);
-}
-
-/**
  * Parse remote exception json string
  *
  * @param char* buf
@@ -445,7 +415,7 @@ httpfs_parse_exception(char* buf, int length, httpfs_json_remote_exception* jre)
 		ABORT_FINALIZE(RS_RET_JSON_PARSE_ERR);
     }
 
-    if (!RS_json_object_object_get_ex(json, "RemoteException", &json)) {
+    if (!json_object_object_get_ex(json, "RemoteException", &json)) {
 	ABORT_FINALIZE(RS_RET_JSON_PARSE_ERR);
     }
 
@@ -456,17 +426,17 @@ httpfs_parse_exception(char* buf, int length, httpfs_json_remote_exception* jre)
     const char *str;
     size_t len;
 
-    RS_json_object_object_get_ex(json, "javaClassName", &jobj);
+    json_object_object_get_ex(json, "javaClassName", &jobj);
     str = json_object_get_string(jobj);
     len = strlen(str);
     strncpy(jre->class, str, len);
 
-    RS_json_object_object_get_ex(json, "exception", &jobj);
+    json_object_object_get_ex(json, "exception", &jobj);
     str = json_object_get_string(jobj);
     len = strlen(str);
     strncpy(jre->exception, str, len);
 
-    RS_json_object_object_get_ex(json, "message", &jobj);
+    json_object_object_get_ex(json, "message", &jobj);
     str = json_object_get_string(jobj);
     len = strlen(str);
     strncpy(jre->message, str, len);
@@ -480,45 +450,6 @@ finalize_it:
 }	
 
 
-#if 0
-/**
- * Make a new directory
- * op=MKDIR
- *
- * @param wrkrInstanceData_t *pWrkrData
- * @return rsRetVal
- */
-static rsRetVal
-httpfs_mkdir(wrkrInstanceData_t *pWrkrData)
-{
-    /* 
-    curl -b /tmp/c.tmp -c /tmp/c.tmp 'http://172.16.3.20:14000/webhdfs/v1/tmp/a/a/a/a?user.name=hdfs&recursive=true&op=mkdirs' -X PUT
-    */
-    httpfs_curl_set_put(pWrkrData->curl);
-HTTPFS_CURL_VARS_INIT
-
-    httpfs_set_url(pWrkrData, "&op=mkdirs");
-
-    headers = httpfs_curl_add_header(headers, 0);
-    curl_easy_setopt(pWrkrData->curl, CURLOPT_HTTPHEADER, headers);
-
-    int success = 0;
-
-HTTPFS_CURL_EXEC
-
-    if (response_code == 200) {
-        //&& !strncmp(result->buf, HTTPFS_JSON_BOOLEAN_TRUE, strlen(HTTPFS_JSON_BOOLEAN_TRUE))) {
-        success = 1;
-    }
-
-HTTPFS_CURL_VARS_RELEASE
-    if (success) {
-        return RS_RET_OK;
-    } else {
-        return RS_RET_FALSE;
-    }
-}
-#endif
 
 /**
  * Create a file
@@ -618,46 +549,6 @@ HTTPFS_CURL_VARS_RELEASE
     }
 }
 
-#if 0
-/**
- * Get file content
- * op=OPEN
- *
- * @param wrkrInstanceData_t *pWrkrData
- * @return rsRetVal
- */
-static rsRetVal
-httpfs_get_file(wrkrInstanceData_t *pWrkrData)
-{
-    httpfs_curl_set_get(pWrkrData->curl);
-
-HTTPFS_CURL_VARS_INIT
-
-    httpfs_set_url(pWrkrData, "&op=open");
-
-    headers = httpfs_curl_add_header(headers, 0);
-    curl_easy_setopt(pWrkrData->curl, CURLOPT_HTTPHEADER, headers);
-
-HTTPFS_CURL_EXEC
-
-    int success = 0;
-    if (response_code == 200) {
-        success = 1;
-    } else if (response_code == 404) {
-        /* TODO: 404 ? */
-
-    }
-
-    /* TODO: not success? */
-
-HTTPFS_CURL_VARS_RELEASE
-    if (success) {
-        return RS_RET_OK;
-    } else {
-        return RS_RET_FALSE;
-    }
-}
-#endif
 
 /**
  * httpfs log 
@@ -830,7 +721,7 @@ ENDdoAction
  * @param instanceData *pData
  * @return void
  */
-static inline void
+static void
 setInstParamDefaults(instanceData *pData)
 {
     pData->host = (uchar*) strdup(OMHTTPFS_DEFAULT_HOST);
@@ -880,6 +771,15 @@ CODESTARTnewActInst
         } else {
             DBGPRINTF("omhttpfs: program error, non-handled param '%s'\n", actpblk.descr[i].name);
         }
+    }
+    if(pData->file == NULL) {
+	/* Note: this is primarily to make clang static analyzer happy, as we
+	 * request via pblk that file is a mandatory parameter. However, this is
+	 * also a guard against something going really wrong...
+	 */
+        errmsg.LogError(0, RS_RET_INTERNAL_ERROR, "omhttpfs: file is not set "
+		"[this should not be possible]\n");
+	ABORT_FINALIZE(RS_RET_INTERNAL_ERROR);
     }
     if(pData->user == NULL || pData->user[0] == '\0') {
         pData->user = ustrdup((uchar*) OMHTTPFS_DEFAULT_USER);
@@ -959,5 +859,3 @@ CODEmodInit_QueryRegCFSLineHdlr
     DBGPRINTF("omhttpfs version %s is initializing\n", OMHTTPFS_VERSION);
 
 ENDmodInit
-
-

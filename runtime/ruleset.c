@@ -94,6 +94,8 @@ scriptIterateAllActions(struct cnfstmt *root, rsRetVal (*pFunc)(void*, void*), v
 		switch(stmt->nodetype) {
 		case S_NOP:
 		case S_STOP:
+		case S_SET:
+		case S_UNSET:
 		case S_CALL:/* call does not need to do anything - done in called ruleset! */
 			break;
 		case S_ACT:
@@ -108,7 +110,7 @@ scriptIterateAllActions(struct cnfstmt *root, rsRetVal (*pFunc)(void*, void*), v
 				scriptIterateAllActions(stmt->d.s_if.t_else,
 							pFunc, pParam);
 			break;
-        case S_FOREACH:
+		case S_FOREACH:
 			if(stmt->d.s_foreach.body != NULL)
 				scriptIterateAllActions(stmt->d.s_foreach.body,
                                         pFunc, pParam);
@@ -179,13 +181,10 @@ DEFFUNC_llExecFunc(doActivateRulesetQueues)
 }
 /* activate all ruleset queues */
 rsRetVal
-activateRulesetQueues()
+activateRulesetQueues(void)
 {
-	DEFiRet;
-
 	llExecFunc(&(runConf->rulesets.llRulesets), doActivateRulesetQueues, NULL);
-
-	RETiRet;
+	return RS_RET_OK;
 }
 
 
@@ -269,28 +268,92 @@ finalize_it:
 }
 
 static rsRetVal
-execForeach(struct cnfstmt *stmt, msg_t *pMsg, wti_t *pWti)
-{
-	json_object *arr = NULL;
+invokeForeachBodyWith(struct cnfstmt *stmt, json_object *o, msg_t *pMsg, wti_t *pWti) {
+	struct var v;
+	v.datatype = 'J';
+	v.d.json = o;
 	DEFiRet;
-	arr = cnfexprEvalCollection(stmt->d.s_foreach.iter->collection, pMsg);
-	if (arr == NULL || !json_object_is_type(arr, json_type_array)) {
-		DBGPRINTF("foreach loop skipped, as object to iterate upon is either empty or not an array\n");
-		FINALIZE;
-	}
+	CHKiRet(msgSetJSONFromVar(pMsg, (uchar*)stmt->d.s_foreach.iter->var, &v, 1));
+	CHKiRet(scriptExec(stmt->d.s_foreach.body, pMsg, pWti));
+finalize_it:
+	RETiRet;
+}
+
+static rsRetVal
+callForeachArray(struct cnfstmt *stmt, json_object *arr, msg_t *pMsg, wti_t *pWti) {
+	DEFiRet;
 	int len = json_object_array_length(arr);
 	json_object *curr;
 	for (int i = 0; i < len; i++) {
 		curr = json_object_array_get_idx(arr, i);
-		struct var v;
-		v.d.json = curr;
-		v.datatype = 'J';
-		CHKiRet(msgSetJSONFromVar(pMsg, (uchar*)stmt->d.s_foreach.iter->var, &v, 1));
-		CHKiRet(scriptExec(stmt->d.s_foreach.body, pMsg, pWti));
+		CHKiRet(invokeForeachBodyWith(stmt, curr, pMsg, pWti));
+	}
+finalize_it:
+	RETiRet;
+}
+
+
+static rsRetVal
+callForeachObject(struct cnfstmt *stmt, json_object *arr, msg_t *pMsg, wti_t *pWti) {
+	json_object *entry = NULL;
+	json_object *key = NULL;
+	const char **keys = NULL;
+	DEFiRet;
+
+	int len = json_object_object_length(arr);
+	CHKmalloc(keys = calloc(len, sizeof(char*)));
+	const char **curr_key = keys;
+	struct json_object_iterator it = json_object_iter_begin(arr);
+	struct json_object_iterator itEnd = json_object_iter_end(arr);
+	while (!json_object_iter_equal(&it, &itEnd)) {
+		*curr_key = json_object_iter_peek_name(&it);
+		curr_key++;
+		json_object_iter_next(&it);
+	}
+	json_object *curr = NULL;
+	CHKmalloc(entry = json_object_new_object());
+	for (int i = 0; i < len; i++) {
+		if (json_object_object_get_ex(arr, keys[i], &curr)) {
+			CHKmalloc(key = json_object_new_string(keys[i]));
+			json_object_object_add(entry, "key", key);
+			key = NULL;
+			json_object_object_add(entry, "value", json_object_get(curr));
+			CHKiRet(invokeForeachBodyWith(stmt, entry, pMsg, pWti));
+		}
+	}
+finalize_it:
+	if (keys != NULL) free(keys);
+	if (entry != NULL) json_object_put(entry);
+	if (key != NULL) json_object_put(key);
+	
+	RETiRet;
+}
+
+static rsRetVal
+execForeach(struct cnfstmt *stmt, msg_t *pMsg, wti_t *pWti)
+{
+	json_object *arr = NULL;
+	DEFiRet;
+
+	/* arr can either be an array or an associative-array (obj) */
+	arr = cnfexprEvalCollection(stmt->d.s_foreach.iter->collection, pMsg);
+	
+	if (arr == NULL) {
+		DBGPRINTF("foreach loop skipped, as object to iterate upon is empty\n");
+		FINALIZE;
+	} else if (json_object_is_type(arr, json_type_array)) {
+		CHKiRet(callForeachArray(stmt, arr, pMsg, pWti));
+	} else if (json_object_is_type(arr, json_type_object)) {
+		CHKiRet(callForeachObject(stmt, arr, pMsg, pWti));
+	} else {
+		DBGPRINTF("foreach loop skipped, as object to iterate upon is not an array\n");
+		FINALIZE;
 	}
 	CHKiRet(msgDelJSON(pMsg, (uchar*)stmt->d.s_foreach.iter->var));
+
 finalize_it:
 	if (arr != NULL) json_object_put(arr);
+
 	RETiRet;
 }
 
@@ -364,6 +427,7 @@ evalPROPFILT(struct cnfstmt *stmt, msg_t *pMsg)
 				  (unsigned char*) pszPropVal, 1, &stmt->d.s_propfilt.regex_cache) == RS_RET_OK)
 			bRet = 1;
 		break;
+	case FIOP_NOP:
 	default:
 		/* here, it handles NOP (for performance reasons) */
 		assert(stmt->d.s_propfilt.operation == FIOP_NOP);
@@ -424,6 +488,24 @@ finalize_it:
 	RETiRet;
 }
 
+static rsRetVal
+execReloadLookupTable(struct cnfstmt *stmt) {
+	lookup_ref_t *t;
+	DEFiRet;
+	t = stmt->d.s_reload_lookup_table.table;
+	if (t == NULL) {
+		ABORT_FINALIZE(RS_RET_NONE);
+	}
+	
+	CHKiRet(lookupReload(t, stmt->d.s_reload_lookup_table.stub_value));
+	/* Note that reload dispatched above is performed asynchronously,
+	   on a different thread. So rsRetVal it returns means it was triggered
+	   successfully, and not that it was reloaded successfully. */
+	
+finalize_it:
+	RETiRet;
+}
+
 /* The rainerscript execution engine. It is debatable if that would be better
  * contained in grammer/rainerscript.c, HOWEVER, that file focusses primarily
  * on the parsing and object creation part. So as an actual executor, it is
@@ -475,6 +557,9 @@ scriptExec(struct cnfstmt *root, msg_t *pMsg, wti_t *pWti)
 		case S_PROPFILT:
 			CHKiRet(execPROPFILT(stmt, pMsg, pWti));
 			break;
+        case S_RELOAD_LOOKUP_TABLE:
+			CHKiRet(execReloadLookupTable(stmt));
+			break;
 		default:
 			dbgprintf("error: unknown stmt type %u during exec\n",
 				(unsigned) stmt->nodetype);
@@ -495,6 +580,7 @@ processBatch(batch_t *pBatch, wti_t *pWti)
 	int i;
 	msg_t *pMsg;
 	ruleset_t *pRuleset;
+	rsRetVal localRet;
 	DEFiRet;
 
 	DBGPRINTF("processBATCH: batch of %d elements must be processed\n", pBatch->nElem);
@@ -506,15 +592,19 @@ processBatch(batch_t *pBatch, wti_t *pWti)
 		pMsg = pBatch->pElem[i].pMsg;
 		DBGPRINTF("processBATCH: next msg %d: %.128s\n", i, pMsg->pszRawMsg);
 		pRuleset = (pMsg->pRuleset == NULL) ? ourConf->rulesets.pDflt : pMsg->pRuleset;
-		scriptExec(pRuleset->root, pMsg, pWti);
-		// TODO: think if we need a return state of scriptExec - most probably
-		// the answer is "no", as we need to process the batch in any case!
-		// TODO: we must refactor this!  flag messages as committed
-		batchSetElemState(pBatch, i, BATCH_STATE_COMM);
+		localRet = scriptExec(pRuleset->root, pMsg, pWti);
+		/* the most important case here is that processing may be aborted
+		 * due to pbShutdownImmediate, in which case we MUST NOT flag this
+		 * message as committed. If we would do so, the message would
+		 * potentially be lost.
+		 */
+		if(localRet == RS_RET_OK)
+			batchSetElemState(pBatch, i, BATCH_STATE_COMM);
 	}
 
 	/* commit phase */
-	dbgprintf("END batch execution phase, entering to commit phase\n");
+	DBGPRINTF("END batch execution phase, entering to commit phase "
+		"[processed %d of %d messages]\n", i, batchNumMsgs(pBatch));
 	actionCommitAllDirect(pWti);
 
 	DBGPRINTF("processBATCH: batch of %d elements has been processed\n", pBatch->nElem);
@@ -739,7 +829,7 @@ debugPrintAll(rsconf_t *conf)
 	RETiRet;
 }
 
-static inline void
+static void
 rulesetOptimize(ruleset_t *pRuleset)
 {
 	if(Debug) {
@@ -781,7 +871,7 @@ rulesetOptimizeAll(rsconf_t *conf)
  * considered acceptable for the time being.
  * rgerhards, 2009-10-27
  */
-static inline rsRetVal
+static rsRetVal
 doRulesetCreateQueue(rsconf_t *conf, int *pNewVal)
 {
 	uchar *rsname;
