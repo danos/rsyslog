@@ -1,3 +1,11 @@
+rsyslog (8.23.0-2~bpo8+1) jessie-backports; urgency=medium
+
+  * Rebuild for jessie-backports.
+  * Revert "Enable CZMQ plugins".
+  * Revert "Use the new default-mysql-* metapackages".
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 30 Nov 2016 13:08:33 +0100
+
 rsyslog (8.23.0-2) unstable; urgency=medium
 
   * Fix empty-hostname.sh test and change support for empty hostname
