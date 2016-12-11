@@ -16,11 +16,6 @@ set -e
 
 case "$1" in
     configure)
-	# /run transition (Bug: #633036)
-	if dpkg --compare-versions "$2" lt "5.8.2-2"; then
-		rm -f /lib/init/rw/sendsigs.omit.d/rsyslog
-	fi
-
 	# Fix permissions of the spool/work directory (Bug: #693099)
 	chmod 700 /var/spool/rsyslog
 
