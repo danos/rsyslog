@@ -2,7 +2,35 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([rsyslog],[8.23.0],[rsyslog@lists.adiscon.com])
+AC_INIT([rsyslog],[8.24.0],[rsyslog@lists.adiscon.com])
+
+# AIXPORT START: Detect the underlying OS
+unamestr=$(uname)
+AM_CONDITIONAL([AIX], [test x$unamestr = xAIX])
+# AIXPORT END
+
+# AIXPORT START : Set the required variables for AIX config script
+if test "$unamestr" = "AIX"; then
+	export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/lib/pkgconfig"
+	LIBS="-lbsd -lsrc"
+	CPPFLAGS="-D_THREAD_SAFE -D_BSD43 -D_AIX"
+	CFLAGS="-D_AIX"
+	LDFLAGS="-qcpluscmt -brtl -bexpall -bE:strippedsymbols.exp "
+	LIBESTR_LIBS="-L/usr/lib/ -lestr"
+	LIBESTR_CFLAGS="-I/usr/include"
+	LIBLOGGING_STDLOG_LIBS="-L/usr/lib/ -llogging-stdlog"
+	LIBLOGGING_STDLOG_CFLAGS="-I/usr/include"
+	GNUTLS_LIBS="-L/usr/lib/ -lgnutls"
+	GNUTLS_CFLAGS="-I/usr/include"
+	RELP_LIBS="-L/usr/lib/ -lrelp"
+	RELP_CFLAGS="-I/usr/include"
+	CC="xlc_r"
+	AC_PREFIX_DEFAULT(/usr)
+	export  ac_cv_func_malloc_0_nonnull=yes
+	export ac_cv_func_realloc_0_nonnull=yes
+fi
+# AIXPORT END
+
 AM_INIT_AUTOMAKE([subdir-objects])
 
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
@@ -19,6 +47,11 @@ AC_PROG_YACC
 AC_PROG_CC
 AC_PROG_CC_C99
 AC_DISABLE_STATIC
+# AIXPORT START: enable dlopen
+if test "$unamestr" = "AIX"; then
+	AC_LIBTOOL_DLOPEN
+fi
+# AIXPORT end
 AC_PROG_LIBTOOL
 AC_CANONICAL_HOST
 
@@ -77,6 +110,12 @@ case "${host}" in
     LIBUUID_LIBS=${LIBUUID_LIBS:=-luuid}
     AC_SUBST(SOL_LIBS)
   ;;
+# AIXPORT START
+  *-*-aix*)
+    os_type="aix"
+    AC_DEFINE([OS_AIX], [1], [Indicator for a AIX OS])
+  ;;
+# AIXPORT END
 esac
 
 # Running from git source?
@@ -288,10 +327,14 @@ AC_CHECK_HEADERS(
         [
           AC_DEFINE([USE_PTHREADS], [1], [Multithreading support enabled.])
           PTHREADS_LIBS="-lpthread"
- 	  case "${os_type}" in
- 	  solaris) PTHREADS_CFLAGS="-pthreads" ;;
- 	  *)       PTHREADS_CFLAGS="-pthread" ;;
- 	  esac
+          if test "$unamestr" = "AIX"; then
+                  PTHREADS_CFLAGS="-lpthreads" 
+          else
+                  case "${os_type}" in
+                  solaris) PTHREADS_CFLAGS="-pthreads" ;;
+                  *)       PTHREADS_CFLAGS="-pthread" ;;
+                  esac
+          fi
           AC_SUBST(PTHREADS_LIBS)
           AC_SUBST(PTHREADS_CFLAGS)
         ],
@@ -1054,6 +1097,19 @@ AC_ARG_ENABLE(mmanon,
 AM_CONDITIONAL(ENABLE_MMANON, test x$enable_mmanon = xyes)
 
 
+# mmrm1stspace
+AC_ARG_ENABLE(mmrm1stspace,
+        [AS_HELP_STRING([--enable-mmrm1stspace],[Enable building mmrm1stspace support @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_mmrm1stspace="yes" ;;
+          no) enable_mmrm1stspace="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-mmrm1stspace) ;;
+         esac],
+        [enable_mmrm1stspace=no]
+)
+AM_CONDITIONAL(ENABLE_MMRM1STSPACE, test x$enable_mmrm1stspace = xyes)
+
+
 # mmutf8fix
 AC_ARG_ENABLE(mmutf8fix,
         [AS_HELP_STRING([--enable-mmutf8fix],[Enable building mmutf8fix support @<:@default=no@:>@])],
@@ -1091,6 +1147,25 @@ AC_ARG_ENABLE(mmsequence,
         [enable_mmsequence=no]
 )
 AM_CONDITIONAL(ENABLE_MMSEQUENCE, test x$enable_mmsequence = xyes)
+
+
+
+# mmdblookup
+AC_ARG_ENABLE(mmdblookup,
+        [AS_HELP_STRING([--enable-mmdblookup],[Enable mmdb lookup helper @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_mmdblookup="yes" ;;
+          no) enable_mmdblookup="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-mmdblookup) ;;
+         esac],
+        [enable_mmdblookup=no]
+)
+if test "x$enable_mmdblookup"; then
+        #PKG_CHECK_MODULES(LIBMAXMINDDB, libmaxminddb)
+        AC_CHECK_HEADERS([maxminddb.h])
+fi
+AM_CONDITIONAL(ENABLE_MMDBLOOKUP, test x$enable_mmdblookup = xyes)
+
 
 
 # mmfields
@@ -1431,6 +1506,19 @@ AC_ARG_ENABLE(pmciscoios,
         [enable_pmciscoios=no]
 )
 AM_CONDITIONAL(ENABLE_PMCISCOIOS, test x$enable_pmciscoios = xyes)
+
+
+# settings for pmnull
+AC_ARG_ENABLE(pmnull,
+        [AS_HELP_STRING([--enable-pmnull],[Compiles null parser module @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_pmnull="yes" ;;
+          no) enable_pmnull="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-pmnull) ;;
+         esac],
+        [enable_pmnull=no]
+)
+AM_CONDITIONAL(ENABLE_PMNULL, test x$enable_pmnull = xyes)
 
 
 # settings for pmaixforwardedfrom
@@ -1866,6 +1954,7 @@ AC_CONFIG_FILES([Makefile \
 		plugins/omstdout/Makefile \
 		plugins/omjournal/Makefile \
 		plugins/pmciscoios/Makefile \
+		plugins/pmnull/Makefile \
 		plugins/omruleset/Makefile \
 		plugins/omuxsock/Makefile \
 		plugins/imfile/Makefile \
@@ -1888,6 +1977,7 @@ AC_CONFIG_FILES([Makefile \
 		plugins/mmjsonparse/Makefile \
 		plugins/mmaudit/Makefile \
 		plugins/mmanon/Makefile \
+		plugins/mmrm1stspace/Makefile \
 		plugins/mmutf8fix/Makefile \
 		plugins/mmfields/Makefile \
 		plugins/mmpstrucdata/Makefile \
@@ -1895,7 +1985,7 @@ AC_CONFIG_FILES([Makefile \
 		plugins/mmsnmptrapd/Makefile \
 		plugins/pmlastmsg/Makefile \
 		contrib/pmsnare/Makefile \
-    contrib/pmpanngfw/Makefile \
+		contrib/pmpanngfw/Makefile \
 		contrib/pmaixforwardedfrom/Makefile \
 		contrib/omhiredis/Makefile \
 		contrib/omrabbitmq/Makefile \
@@ -1907,6 +1997,7 @@ AC_CONFIG_FILES([Makefile \
 		contrib/imzmq3/Makefile \
 		contrib/imczmq/Makefile \
 		contrib/mmsequence/Makefile \
+		contrib/mmdblookup/Makefile \
 		contrib/mmrfc5424addhmac/Makefile \
 		contrib/pmcisconames/Makefile \
 		contrib/omhttpfs/Makefile \
@@ -1930,6 +2021,7 @@ echo "    Log file signing support:                 $enable_guardtime"
 echo "    Log file signing support via KSI:         $enable_gt_ksi"
 echo "    Log file encryption support:              $enable_libgcrypt"
 echo "    anonymization support enabled:            $enable_mmanon"
+echo "    mmrm1stspace module enabled:              $enable_mmrm1stspace"
 echo "    message counting support enabled:         $enable_mmcount"
 echo "    mmfields enabled:                         $enable_mmfields"
 echo "    liblogging-stdlog support enabled:        $enable_liblogging_stdlog"
@@ -1968,6 +2060,7 @@ echo "---{ parser modules }---"
 echo "    pmlastmsg module will be compiled:        $enable_pmlastmsg"
 echo "    pmcisconames module will be compiled:     $enable_pmcisconames"
 echo "    pmciscoios module will be compiled:       $enable_pmciscoios"
+echo "    pmnull module will be compiled:           $enable_pmnull"
 echo "    pmaixforwardedfrom module w.be compiled:  $enable_pmaixforwardedfrom"
 echo "    pmsnare module will be compiled:          $enable_pmsnare"
 echo "    pmpanngfw module will be compiled:        $enable_pmpanngfw"
@@ -1982,6 +2075,7 @@ echo "    mmutf8fix enabled:                        $enable_mmutf8fix"
 echo "    mmrfc5424addhmac enabled:                 $enable_mmrfc5424addhmac"
 echo "    mmpstrucdata enabled:                     $enable_mmpstrucdata"
 echo "    mmsequence enabled:                       $enable_mmsequence"
+echo "    mmdblookup enabled:                       $enable_mmdblookup"
 echo
 echo "---{ database support }---"
 echo "    MySql support enabled:                    $enable_mysql"

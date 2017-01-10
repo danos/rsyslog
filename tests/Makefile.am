@@ -184,6 +184,9 @@ TESTS +=  \
 	rscript_prifilt.sh \
 	rscript_optimizer1.sh \
 	rscript_ruleset_call.sh \
+	rscript_ruleset_call_indirect-basic.sh \
+	rscript_ruleset_call_indirect-var.sh \
+	rscript_ruleset_call_indirect-invld.sh \
 	rscript_set_modify.sh \
 	rscript_unaffected_reset.sh \
 	rscript_replace_complex.sh \
@@ -415,6 +418,17 @@ TESTS +=  \
 endif
 endif
 
+if ENABLE_MMRM1STSPACE
+TESTS +=  \
+	mmrm1stspace-basic.sh
+endif
+
+if ENABLE_PMNULL
+TESTS +=  \
+	pmnull-basic.sh \
+	pmnull-withparams.sh
+endif
+
 if ENABLE_MMNORMALIZE
 TESTS += msgvar-concurrency-array.sh \
 	msgvar-concurrency-array-event.tags.sh
@@ -458,6 +472,11 @@ TESTS +=  \
 	json_null.sh \
 	json_var_cmpr.sh \
 	json_var_case.sh
+endif
+
+if ENABLE_MMDBLOOKUP
+TESTS += \
+    mmdb.sh
 endif
 
 if ENABLE_GNUTLS
@@ -800,6 +819,9 @@ EXTRA_DIST= \
 	timereported-utc.sh \
 	timereported-utc-legacy.sh \
 	timereported-utc-vg.sh \
+	mmrm1stspace-basic.sh \
+	pmnull-basic.sh \
+	pmnull-withparams.sh \
 	rawmsg-after-pri.sh \
 	testsuites/rawmsg-after-pri.conf \
 	rs_optimizer_pri.sh \
@@ -810,6 +832,9 @@ EXTRA_DIST= \
 	testsuites/rscript_optimizer1.conf \
 	rscript_ruleset_call.sh \
 	testsuites/rscript_ruleset_call.conf \
+	rscript_ruleset_call_indirect-basic.sh \
+	rscript_ruleset_call_indirect-var.sh \
+	rscript_ruleset_call_indirect-invld.sh \
 	cee_simple.sh \
 	testsuites/cee_simple.conf \
 	cee_diskqueue.sh \
@@ -820,6 +845,9 @@ EXTRA_DIST= \
 	testsuites/mmjsonparse_simple.conf \
 	mmjsonparse_cim.sh \
 	testsuites/mmjsonparse_cim.conf \
+	mmdb.sh \
+	test.mmdb \
+	testsuites/mmdb.conf \
 	incltest.sh \
 	testsuites/incltest.conf \
 	incltest_dir.sh \

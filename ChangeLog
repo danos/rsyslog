@@ -1,4 +1,85 @@
 ------------------------------------------------------------------------------
+Version 8.24.0 [v8-stable] 2017-01-10
+- rsyslog now builds on AIX
+  see also: https://github.com/rsyslog/rsyslog/pull/1247
+  Thanks to github user purnimam1 and the team at IBM
+  Note: the rsyslog project has no AIX platform to ensure that future versions
+  will remain buildable on AIX. If you would like to contribute ressources,
+  please contact the rsyslog team.
+- mmdblookup: new maxminddb lookup message modify plugin
+  Thanks to 饶琛琳 (github user chenryn) for the contribution
+- mmrm1stspace: new module; removes first space in MSG if present
+- KSI signature provider: file permissions can now be specified
+  This happens via parameters equal to those used by omfile itself.
+  Note that KSI files can have different permissions/owner than the log
+  files themself.
+  Thanks to Allan Park for the patch.
+- omzmq: new features
+  Thanks to Brian Knox for the patch.
+- change: when the hostname is empty, we now use "localhost-empty-hostname"
+  In 8.23.0, "localhost" was used in this case, but that could be misleading.
+  The new name makes the error condition (gethostname() should always return
+  a non-empty name) more obvious.
+- omelasticsearch: remove "asyncrepl" config parameter
+  The _bulk index endpoint on ElasticSearch 5.0 no longer
+  ignores the ?replication=async query parameter. It was deprecated
+  since 1.5 and silently ignored in 2.x but passing it to a 5.x
+  instance breaks omeleastisearch with a 400 response.
+  closes https://github.com/rsyslog/rsyslog/issues/1250
+- omfwd: Add support for bind-to-device (see below on same for imudp)
+- imudp: Add support for bind-to-device
+  Add support for bind-to-device option to omfwd and imudp modules.
+  Configured using device="name". Only new syntax format is supported.
+  e.g.,
+  input(type="imudp" port=["10514"] device="eth0" name="udp")
+  Action(type="omfwd" Target="192.168.1.23" Port="10514" Device="eth0")
+  see also https://github.com/rsyslog/rsyslog/pull/1261
+  Thanks to David Ahern for the patch.
+- imudp: limit rcvbufsize parameter to max 1GiB
+- rainerscript: implement new "call_indirect" statement
+- bugfix imjournal: make state file handling more robust
+  There is a bug in rsyslog which is caused by not very atomic writes of
+  imjournal statefile. It's hardly reproducible but there is a way.
+  fscanf error appears only when rsyslog reads an empty statefile which
+  causes that imjournal is stopped so no logging from journal is
+  performed. When the statefile contains random bytes error appears
+  again but from journal and imjournal is stopped too.
+  In this patch Rsyslog writes imjournal statefile more atomically and
+  secure. Reading the statefile is more robust and doesn't affect
+  imjournal module so when corrupted statefile is read imjournal
+  ignores statefile, continues with logging and it doesn't stop. Logger
+  can be used as a test if it's logging or not.
+  Patch introduces a new option with both old and new config format
+  "IgnoreNonValidStateFile" which is "on" by default and it can turn
+  off ignorance of non valid statefile.
+  Thanks to github user tomassykora for the patch.
+- bugfix core: lookup table reload was not properly integrated
+  The opcode was not handled, what lead to misleading messages
+  in debug log. Since we run debug builds more strictly, it also
+  causes an assertion to trigger, thus aborting the test
+- bugfix core: potential dealock on shutdown
+  could happen when rsyslog was started and quickly shut down OR when
+  co-incidently a new thread was spawend "with bad timing" around the time
+  of shutdown.
+  See also https://github.com/rsyslog/rsyslog/pull/1274
+  Thanks to github user tomassykora for the final patch and Rado Sroka for
+  the analysis and an initial patch.
+- bugfix ommongodb: did not work in v8 due to invalid indirection
+  Thanks to Benoit Dolez for the patch.
+- bugfix ommongodb: fix tryResume handling
+  To make tryResume working, the connection to mongodb need to be closed.
+  Thus close it on "insert error".
+  Thanks to Benoit Dolez for the patch.
+- bugfix omfwd: retry processing was not done correctly, could stall
+  see also https://github.com/rsyslog/rsyslog/pull/1261
+  Thanks to David Ahern for the patch.
+- bugfix imuxsock: segfault non shutdown when $OmitLocalLogging is on
+  Imuxsock tries to close socket on index 0 which ends with segfault.
+  Thanks to Tomas Sykora for the patch.
+- testbench:
+  * empty-hostname test did not work correctly
+  * improve debugging by better output
+------------------------------------------------------------------------------
 Version 8.23.0 [v8-stable] 2016-11-15
 - NEW BUILD REQUIREMENT: libfastjson 0.99.3
   This was introduced in 8.20.0 as a suggestion and has now become a hard

@@ -105,52 +105,55 @@ sbin_PROGRAMS =
 @ENABLE_OMSTDOUT_TRUE@am__append_12 = plugins/omstdout
 @ENABLE_PMCISCONAMES_TRUE@am__append_13 = contrib/pmcisconames
 @ENABLE_PMCISCOIOS_TRUE@am__append_14 = plugins/pmciscoios
-@ENABLE_PMAIXFORWARDEDFROM_TRUE@am__append_15 = contrib/pmaixforwardedfrom
-@ENABLE_PMSNARE_TRUE@am__append_16 = contrib/pmsnare
-@ENABLE_PMPANNGFW_TRUE@am__append_17 = contrib/pmpanngfw
-@ENABLE_PMLASTMSG_TRUE@am__append_18 = plugins/pmlastmsg
-@ENABLE_OMRULESET_TRUE@am__append_19 = plugins/omruleset
-@ENABLE_OMUDPSPOOF_TRUE@am__append_20 = plugins/omudpspoof
-@ENABLE_OMMONGODB_TRUE@am__append_21 = plugins/ommongodb
-@ENABLE_OMHIREDIS_TRUE@am__append_22 = contrib/omhiredis
-@ENABLE_OMZMQ3_TRUE@am__append_23 = contrib/omzmq3
-@ENABLE_OMCZMQ_TRUE@am__append_24 = contrib/omczmq
-@ENABLE_OMRABBITMQ_TRUE@am__append_25 = contrib/omrabbitmq
-@ENABLE_IMZMQ3_TRUE@am__append_26 = contrib/imzmq3
-@ENABLE_IMCZMQ_TRUE@am__append_27 = contrib/imczmq
-@ENABLE_OMUXSOCK_TRUE@am__append_28 = plugins/omuxsock
-@ENABLE_OMHDFS_TRUE@am__append_29 = plugins/omhdfs
-@ENABLE_OMJOURNAL_TRUE@am__append_30 = plugins/omjournal
-@ENABLE_IMJOURNAL_TRUE@am__append_31 = plugins/imjournal
-@ENABLE_ELASTICSEARCH_TRUE@am__append_32 = plugins/omelasticsearch
-@ENABLE_MMSNMPTRAPD_TRUE@am__append_33 = plugins/mmsnmptrapd
-@ENABLE_IMFILE_TRUE@am__append_34 = plugins/imfile
-@ENABLE_IMPTCP_TRUE@am__append_35 = plugins/imptcp
-@ENABLE_IMDIAG_TRUE@am__append_36 = plugins/imdiag
-@ENABLE_MAIL_TRUE@am__append_37 = plugins/ommail
-@ENABLE_OMKAFKA_TRUE@am__append_38 = plugins/omkafka
-@ENABLE_OMPROG_TRUE@am__append_39 = plugins/omprog
-@ENABLE_RFC3195_TRUE@am__append_40 = plugins/im3195
-@ENABLE_MMNORMALIZE_TRUE@am__append_41 = plugins/mmnormalize
-@ENABLE_MMJSONPARSE_TRUE@am__append_42 = plugins/mmjsonparse
-@ENABLE_MMGROK_TRUE@am__append_43 = contrib/mmgrok
-@ENABLE_MMAUDIT_TRUE@am__append_44 = plugins/mmaudit
-@ENABLE_MMANON_TRUE@am__append_45 = plugins/mmanon
-@ENABLE_MMUTF8FIX_TRUE@am__append_46 = plugins/mmutf8fix
-@ENABLE_MMCOUNT_TRUE@am__append_47 = contrib/mmcount
-@ENABLE_MMSEQUENCE_TRUE@am__append_48 = contrib/mmsequence
-@ENABLE_MMFIELDS_TRUE@am__append_49 = plugins/mmfields
-@ENABLE_MMPSTRUCDATA_TRUE@am__append_50 = plugins/mmpstrucdata
-@ENABLE_MMRFC5424ADDHMAC_TRUE@am__append_51 = contrib/mmrfc5424addhmac
+@ENABLE_PMNULL_TRUE@am__append_15 = plugins/pmnull
+@ENABLE_PMAIXFORWARDEDFROM_TRUE@am__append_16 = contrib/pmaixforwardedfrom
+@ENABLE_PMSNARE_TRUE@am__append_17 = contrib/pmsnare
+@ENABLE_PMPANNGFW_TRUE@am__append_18 = contrib/pmpanngfw
+@ENABLE_PMLASTMSG_TRUE@am__append_19 = plugins/pmlastmsg
+@ENABLE_OMRULESET_TRUE@am__append_20 = plugins/omruleset
+@ENABLE_OMUDPSPOOF_TRUE@am__append_21 = plugins/omudpspoof
+@ENABLE_OMMONGODB_TRUE@am__append_22 = plugins/ommongodb
+@ENABLE_OMHIREDIS_TRUE@am__append_23 = contrib/omhiredis
+@ENABLE_OMZMQ3_TRUE@am__append_24 = contrib/omzmq3
+@ENABLE_OMCZMQ_TRUE@am__append_25 = contrib/omczmq
+@ENABLE_OMRABBITMQ_TRUE@am__append_26 = contrib/omrabbitmq
+@ENABLE_IMZMQ3_TRUE@am__append_27 = contrib/imzmq3
+@ENABLE_IMCZMQ_TRUE@am__append_28 = contrib/imczmq
+@ENABLE_OMUXSOCK_TRUE@am__append_29 = plugins/omuxsock
+@ENABLE_OMHDFS_TRUE@am__append_30 = plugins/omhdfs
+@ENABLE_OMJOURNAL_TRUE@am__append_31 = plugins/omjournal
+@ENABLE_IMJOURNAL_TRUE@am__append_32 = plugins/imjournal
+@ENABLE_ELASTICSEARCH_TRUE@am__append_33 = plugins/omelasticsearch
+@ENABLE_MMSNMPTRAPD_TRUE@am__append_34 = plugins/mmsnmptrapd
+@ENABLE_IMFILE_TRUE@am__append_35 = plugins/imfile
+@ENABLE_IMPTCP_TRUE@am__append_36 = plugins/imptcp
+@ENABLE_IMDIAG_TRUE@am__append_37 = plugins/imdiag
+@ENABLE_MAIL_TRUE@am__append_38 = plugins/ommail
+@ENABLE_OMKAFKA_TRUE@am__append_39 = plugins/omkafka
+@ENABLE_OMPROG_TRUE@am__append_40 = plugins/omprog
+@ENABLE_RFC3195_TRUE@am__append_41 = plugins/im3195
+@ENABLE_MMNORMALIZE_TRUE@am__append_42 = plugins/mmnormalize
+@ENABLE_MMJSONPARSE_TRUE@am__append_43 = plugins/mmjsonparse
+@ENABLE_MMGROK_TRUE@am__append_44 = contrib/mmgrok
+@ENABLE_MMAUDIT_TRUE@am__append_45 = plugins/mmaudit
+@ENABLE_MMANON_TRUE@am__append_46 = plugins/mmanon
+@ENABLE_MMRM1STSPACE_TRUE@am__append_47 = plugins/mmrm1stspace
+@ENABLE_MMUTF8FIX_TRUE@am__append_48 = plugins/mmutf8fix
+@ENABLE_MMCOUNT_TRUE@am__append_49 = contrib/mmcount
+@ENABLE_MMSEQUENCE_TRUE@am__append_50 = contrib/mmsequence
+@ENABLE_MMDBLOOKUP_TRUE@am__append_51 = contrib/mmdblookup
+@ENABLE_MMFIELDS_TRUE@am__append_52 = plugins/mmfields
+@ENABLE_MMPSTRUCDATA_TRUE@am__append_53 = plugins/mmpstrucdata
+@ENABLE_MMRFC5424ADDHMAC_TRUE@am__append_54 = contrib/mmrfc5424addhmac
 
 # omhttpfs
-@ENABLE_OMHTTPFS_TRUE@am__append_52 = contrib/omhttpfs
+@ENABLE_OMHTTPFS_TRUE@am__append_55 = contrib/omhttpfs
 
 # omamqp1
-@ENABLE_OMAMQP1_TRUE@am__append_53 = contrib/omamqp1
+@ENABLE_OMAMQP1_TRUE@am__append_56 = contrib/omamqp1
 
 # omtcl
-@ENABLE_OMTCL_TRUE@am__append_54 = contrib/omtcl
+@ENABLE_OMTCL_TRUE@am__append_57 = contrib/omtcl
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_check_define.m4 \
@@ -264,19 +267,20 @@ DIST_SUBDIRS = compat runtime grammar . plugins/immark \
 	plugins/imgssapi plugins/omrelp plugins/imrelp plugins/ommysql \
 	plugins/omlibdbi plugins/ompgsql plugins/omsnmp \
 	plugins/omstdout contrib/pmcisconames plugins/pmciscoios \
-	contrib/pmaixforwardedfrom contrib/pmsnare contrib/pmpanngfw \
-	plugins/pmlastmsg plugins/omruleset plugins/omudpspoof \
-	plugins/ommongodb contrib/omhiredis contrib/omzmq3 \
-	contrib/omczmq contrib/omrabbitmq contrib/imzmq3 \
-	contrib/imczmq plugins/omuxsock plugins/omhdfs \
+	plugins/pmnull contrib/pmaixforwardedfrom contrib/pmsnare \
+	contrib/pmpanngfw plugins/pmlastmsg plugins/omruleset \
+	plugins/omudpspoof plugins/ommongodb contrib/omhiredis \
+	contrib/omzmq3 contrib/omczmq contrib/omrabbitmq \
+	contrib/imzmq3 contrib/imczmq plugins/omuxsock plugins/omhdfs \
 	plugins/omjournal plugins/imjournal plugins/omelasticsearch \
 	plugins/mmsnmptrapd plugins/imfile plugins/imptcp \
 	plugins/imdiag plugins/ommail plugins/omkafka plugins/omprog \
 	plugins/im3195 plugins/mmnormalize plugins/mmjsonparse \
 	contrib/mmgrok plugins/mmaudit plugins/mmanon \
-	plugins/mmutf8fix contrib/mmcount contrib/mmsequence \
-	plugins/mmfields plugins/mmpstrucdata contrib/mmrfc5424addhmac \
-	contrib/omhttpfs contrib/omamqp1 contrib/omtcl tests
+	plugins/mmrm1stspace plugins/mmutf8fix contrib/mmcount \
+	contrib/mmsequence contrib/mmdblookup plugins/mmfields \
+	plugins/mmpstrucdata contrib/mmrfc5424addhmac contrib/omhttpfs \
+	contrib/omamqp1 contrib/omtcl tests
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in AUTHORS \
 	COPYING COPYING.LESSER ChangeLog INSTALL NEWS README compile \
 	config.guess config.sub depcomp install-sh ltmain.sh missing \
@@ -582,7 +586,8 @@ SUBDIRS = compat runtime grammar . plugins/immark plugins/imuxsock \
 	$(am__append_45) $(am__append_46) $(am__append_47) \
 	$(am__append_48) $(am__append_49) $(am__append_50) \
 	$(am__append_51) $(am__append_52) $(am__append_53) \
-	$(am__append_54) tests
+	$(am__append_54) $(am__append_55) $(am__append_56) \
+	$(am__append_57) tests
 
 # make sure "make distcheck" tries to build all modules. This means that
 # a developer must always have an environment where every supporting library

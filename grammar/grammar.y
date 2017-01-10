@@ -27,12 +27,14 @@
  * limitations under the License.
  */
 %{
+#if !defined(_AIX)
 /* shut off warnings that we can't change anyhow */
 #pragma GCC diagnostic ignored "-Wpragmas"
 #pragma GCC diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma GCC diagnostic ignored "-Wredundant-decls"
 #pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
 #pragma GCC diagnostic ignored "-Wswitch-default"
+#endif
 
 #include "config.h"
 #include <stdio.h>
@@ -79,6 +81,7 @@ extern int yyerror(const char*);
 %token UNSET
 %token CONTINUE
 %token <cnfstmt> CALL
+%token <cnfstmt> CALL_INDIRECT
 %token <s> LEGACY_ACTION
 %token <s> LEGACY_RULESET
 %token <s> PRIFILT
@@ -193,6 +196,9 @@ s_act:	  BEGIN_ACTION nvlst ENDOBJ	{ $$ = cnfstmtNewAct($2); }
 	| LEGACY_ACTION			{ $$ = cnfstmtNewLegaAct($1); }
 	| STOP				{ $$ = cnfstmtNew(S_STOP); }
 	| CALL NAME			{ $$ = cnfstmtNewCall($2); }
+	| CALL_INDIRECT expr ';'	{ $$ = cnfstmtNew(S_CALL_INDIRECT);
+					  $$->d.s_call_ind.expr = $2;
+					}
 	| CONTINUE			{ $$ = cnfstmtNewContinue(); }
 expr:	  expr AND expr			{ $$ = cnfexprNew(AND, $1, $3); }
 	| expr OR expr			{ $$ = cnfexprNew(OR, $1, $3); }
