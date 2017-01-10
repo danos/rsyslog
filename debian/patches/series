@@ -1,3 +1,2 @@
 Don-t-create-a-database.patch
 Don-t-explicitly-link-tcpflood-against-lgcrypt.patch
-testbench-fix-empty-hostname.sh-test-change-support-for-e.patch
