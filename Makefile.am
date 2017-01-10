@@ -95,6 +95,10 @@ if ENABLE_PMCISCOIOS
 SUBDIRS += plugins/pmciscoios
 endif
 
+if ENABLE_PMNULL
+SUBDIRS += plugins/pmnull
+endif
+
 if ENABLE_PMAIXFORWARDEDFROM
 SUBDIRS += contrib/pmaixforwardedfrom
 endif
@@ -219,6 +223,10 @@ if ENABLE_MMANON
 SUBDIRS += plugins/mmanon
 endif
 
+if ENABLE_MMRM1STSPACE
+SUBDIRS += plugins/mmrm1stspace
+endif
+
 if ENABLE_MMUTF8FIX
 SUBDIRS += plugins/mmutf8fix
 endif
@@ -230,6 +238,11 @@ endif
 if ENABLE_MMSEQUENCE
 SUBDIRS += contrib/mmsequence
 endif
+
+if ENABLE_MMDBLOOKUP
+SUBDIRS += contrib/mmdblookup
+endif
+
 
 if ENABLE_MMFIELDS
 SUBDIRS += plugins/mmfields

@@ -88,6 +88,7 @@ static rsRetVal NotImplementedDummy(void) { return RS_RET_NOT_IMPLEMENTED; }
  */
 BEGINobjConstruct(wtp) /* be sure to specify the object type also in END macro! */
 	pthread_mutex_init(&pThis->mutWtp, NULL);
+	pthread_cond_init(&pThis->condThrdInitDone, NULL);
 	pthread_cond_init(&pThis->condThrdTrm, NULL);
 	pthread_attr_init(&pThis->attrThrd);
 	/* Set thread scheduling policy to default */
@@ -156,6 +157,7 @@ CODESTARTobjDestruct(wtp)
 
 	/* actual destruction */
 	pthread_cond_destroy(&pThis->condThrdTrm);
+	pthread_cond_destroy(&pThis->condThrdInitDone);
 	pthread_mutex_destroy(&pThis->mutWtp);
 	pthread_attr_destroy(&pThis->attrThrd);
 	DESTROY_ATOMIC_HELPER_MUT(pThis->mutCurNumWrkThrd);
@@ -215,7 +217,9 @@ finalize_it:
 }
 
 
+#if !defined(_AIX)
 #pragma GCC diagnostic ignored "-Wempty-body"
+#endif
 /* Send a shutdown command to all workers and see if they terminate.
  * A timeout may be specified. This function may also be called with
  * the current number of workers being 0, in which case it does not
@@ -268,7 +272,9 @@ wtpShutdownAll(wtp_t *pThis, wtpState_t tShutdownCmd, struct timespec *ptTimeout
 	
 	RETiRet;
 }
+#if !defined(_AIX)
 #pragma GCC diagnostic warning "-Wempty-body"
+#endif
 
 
 /* Unconditionally cancel all running worker threads.
@@ -349,7 +355,9 @@ wtpWrkrExecCancelCleanup(void *arg)
  * wti worker.
  * rgerhards, 2008-01-21
  */
+#if !defined(_AIX)
 #pragma GCC diagnostic ignored "-Wempty-body"
+#endif 
 static void *
 wtpWorker(void *arg) /* the arg is actually a wti object, even though we are in wtp! */
 {
@@ -375,6 +383,13 @@ wtpWorker(void *arg) /* the arg is actually a wti object, even though we are in 
 	sigaddset(&sigSet, SIGTTIN);
 	pthread_sigmask(SIG_UNBLOCK, &sigSet, NULL);
 
+#ifdef _AIX /*AIXPORT unblock SIGSEGV so that the process core dumps on segmentation fault */
+	sigemptyset(&sigSet);
+	sigaddset(&sigSet, SIGSEGV);
+	pthread_sigmask(SIG_UNBLOCK, &sigSet, NULL);
+#endif /*AIXPORT*/
+
+
 #	if defined(HAVE_PRCTL) && defined(PR_SET_NAME)
 	/* set thread name - we ignore if the call fails, has no harsh consequences... */
 	pszDbgHdr = wtpGetDbgHdr(pThis);
@@ -386,6 +401,12 @@ wtpWorker(void *arg) /* the arg is actually a wti object, even though we are in 
 #	endif
 
 	pthread_cleanup_push(wtpWrkrExecCancelCleanup, pWti);
+
+        /* let the parent know we're done with initialization */
+        d_pthread_mutex_lock(&pThis->mutWtp);
+        pthread_cond_broadcast(&pThis->condThrdInitDone);
+        d_pthread_mutex_unlock(&pThis->mutWtp);
+
 	wtiWorker(pWti);
 	pthread_cleanup_pop(0);
 	wtpWrkrExecCleanup(pWti);
@@ -398,7 +419,9 @@ wtpWorker(void *arg) /* the arg is actually a wti object, even though we are in 
 	pthread_cond_broadcast(&pThis->condThrdTrm); /* activate anyone waiting on thread shutdown */
 	pthread_exit(0);
 }
+#if !defined(_AIX)
 #pragma GCC diagnostic warning "-Wempty-body"
+#endif
 
 
 /* start a new worker */
@@ -436,6 +459,11 @@ wtpStartWrkr(wtp_t *pThis)
 	DBGPRINTF("%s: started with state %d, num workers now %d\n",
 		  wtpGetDbgHdr(pThis), iState,
 		  ATOMIC_FETCH_32BIT(&pThis->iCurNumWrkThrd, &pThis->mutCurNumWrkThrd));
+
+        /* wait for the new thread to initialize its signal mask and
+         * cancelation cleanup handler before proceeding
+         */
+        d_pthread_cond_wait(&pThis->condThrdInitDone, &pThis->mutWtp);
 
 finalize_it:
 	d_pthread_mutex_unlock(&pThis->mutWtp);

@@ -100,6 +100,7 @@ static time_t ttLastDiscard = 0;	/* timestamp when a message from a non-permitte
 /* config vars for legacy config system */
 static struct configSettings_s {
 	uchar *pszBindAddr;		/* IP to bind socket to */
+	char  *pszBindDevice;		/* Device to bind socket to */
 	uchar *pszSchedPolicy;		/* scheduling policy string */
 	uchar *pszBindRuleset;		/* name of Ruleset to bind to */
 	int iSchedPrio;			/* scheduling priority */
@@ -108,6 +109,7 @@ static struct configSettings_s {
 
 struct instanceConf_s {
 	uchar *pszBindAddr;		/* IP to bind socket to */
+	char  *pszBindDevice;		/* Device to bind socket to */
 	uchar *pszBindPort;		/* Port to bind socket to */
 	uchar *pszBindRuleset;		/* name of ruleset to bind to */
 	uchar *inputname;
@@ -180,6 +182,7 @@ static struct cnfparamdescr inppdescr[] = {
 	{ "name", eCmdHdlrGetWord, 0 },
 	{ "name.appendport", eCmdHdlrBinary, 0 },
 	{ "address", eCmdHdlrString, 0 },
+	{ "device", eCmdHdlrString, 0 },
 	{ "ratelimit.interval", eCmdHdlrInt, 0 },
 	{ "ratelimit.burst", eCmdHdlrInt, 0 },
 	{ "rcvbufsize", eCmdHdlrSize, 0 },
@@ -193,6 +196,7 @@ static struct cnfparamblk inppblk =
 	};
 
 #include "im-helper.h" /* must be included AFTER the type definitions! */
+
 
 /* create input instance, set default parameters, and
  * add it to the list of instances.
@@ -208,6 +212,7 @@ createInstance(instanceConf_t **pinst)
 
 	inst->pszBindPort = NULL;
 	inst->pszBindAddr = NULL;
+	inst->pszBindDevice = NULL;
 	inst->pszBindRuleset = NULL;
 	inst->inputname = NULL;
 	inst->bAppendPortToInpname = 0;
@@ -247,6 +252,11 @@ static rsRetVal addInstance(void __attribute__((unused)) *pVal, uchar *pNewVal)
 		inst->pszBindAddr = NULL;
 	} else {
 		CHKmalloc(inst->pszBindAddr = ustrdup(cs.pszBindAddr));
+	}
+	if((cs.pszBindDevice == NULL) || (cs.pszBindDevice[0] == '\0')) {
+		inst->pszBindDevice= NULL;
+	} else {
+		CHKmalloc(inst->pszBindDevice = strdup(cs.pszBindDevice));
 	}
 	if((cs.pszBindRuleset == NULL) || (cs.pszBindRuleset[0] == '\0')) {
 		inst->pszBindRuleset = NULL;
@@ -291,7 +301,7 @@ addListner(instanceConf_t *inst)
 
 	DBGPRINTF("Trying to open syslog UDP ports at %s:%s.\n", bindName, inst->pszBindPort);
 
-	newSocks = net.create_udp_socket(bindAddr, port, 1, inst->rcvbuf, inst->ipfreebind);
+	newSocks = net.create_udp_socket(bindAddr, port, 1, inst->rcvbuf, inst->ipfreebind, inst->pszBindDevice);
 	if(newSocks != NULL) {
 		/* we now need to add the new sockets to the existing set */
 		/* ready to copy */
@@ -385,7 +395,7 @@ processPacket(struct lstn_s *lstn, struct sockaddr_storage *frominetPrev, int *p
 	struct sockaddr_storage *frominet, socklen_t socklen, multi_submit_t *multiSub)
 {
 	DEFiRet;
-	msg_t *pMsg = NULL;
+	smsg_t *pMsg = NULL;
 
 	if(lenRcvBuf == 0)
 		FINALIZE; /* this looks a bit strange, but practice shows it happens... */
@@ -470,7 +480,7 @@ processSocket(struct wrkrInfo_s *pWrkr, struct lstn_s *lstn, struct sockaddr_sto
 		 * requery below on first loop iteration */
 	struct syslogTime stTime;
 	char errStr[1024];
-	msg_t *pMsgs[CONF_NUM_MULTISUB];
+	smsg_t *pMsgs[CONF_NUM_MULTISUB];
 	multi_submit_t multiSub;
 	int nelem;
 	int i;
@@ -554,7 +564,7 @@ processSocket(struct wrkrInfo_s *pWrkr, struct lstn_s *lstn, struct sockaddr_sto
 	ssize_t lenRcvBuf;
 	struct sockaddr_storage frominet;
 	multi_submit_t multiSub;
-	msg_t *pMsgs[CONF_NUM_MULTISUB];
+	smsg_t *pMsgs[CONF_NUM_MULTISUB];
 	char errStr[1024];
 	struct msghdr mh;
 	struct iovec iov[1];
@@ -932,6 +942,8 @@ createListner(es_str_t *port, struct cnfparamvals *pvals)
 			inst->dfltTZ = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
 		} else if(!strcmp(inppblk.descr[i].name, "address")) {
 			inst->pszBindAddr = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
+		} else if(!strcmp(inppblk.descr[i].name, "device")) {
+			inst->pszBindDevice = (char*)es_str2cstr(pvals[i].val.d.estr, NULL);
 		} else if(!strcmp(inppblk.descr[i].name, "ruleset")) {
 			inst->pszBindRuleset = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
 		} else if(!strcmp(inppblk.descr[i].name, "ratelimit.burst")) {
@@ -939,7 +951,14 @@ createListner(es_str_t *port, struct cnfparamvals *pvals)
 		} else if(!strcmp(inppblk.descr[i].name, "ratelimit.interval")) {
 			inst->ratelimitInterval = (int) pvals[i].val.d.n;
 		} else if(!strcmp(inppblk.descr[i].name, "rcvbufsize")) {
-			inst->rcvbuf = (int) pvals[i].val.d.n;
+			const uint64_t val = pvals[i].val.d.n;
+			if(val > 1024 * 1024 * 1024) {
+				errmsg.LogError(0, RS_RET_MISSING_CNFPARAMS,
+					"imudp: rcvbufsize maximum is 1 GiB, using "
+					"default instead");
+			} else {
+				inst->rcvbuf = (int) val;
+			}
 		} else if(!strcmp(inppblk.descr[i].name, "ipfreebind")) {
 			inst->ipfreebind = (int) pvals[i].val.d.n;
 		} else {
@@ -995,6 +1014,7 @@ CODESTARTbeginCnfLoad
 	cs.pszBindRuleset = NULL;
 	cs.pszSchedPolicy = NULL;
 	cs.pszBindAddr = NULL;
+	cs.pszBindDevice = NULL;
 	cs.iSchedPrio = SCHED_PRIO_UNSET;
 	cs.iTimeRequery = TIME_REQUERY_DFLT;
 ENDbeginCnfLoad
@@ -1072,6 +1092,7 @@ finalize_it:
 	free(cs.pszBindRuleset);
 	free(cs.pszSchedPolicy);
 	free(cs.pszBindAddr);
+	free(cs.pszBindDevice);
 ENDendCnfLoad
 
 
@@ -1138,6 +1159,7 @@ CODESTARTfreeCnf
 	for(inst = pModConf->root ; inst != NULL ; ) {
 		free(inst->pszBindPort);
 		free(inst->pszBindAddr);
+		free(inst->pszBindDevice);
 		free(inst->inputname);
 		free(inst->dfltTZ);
 		del = inst;
@@ -1295,6 +1317,8 @@ static rsRetVal resetConfigVariables(uchar __attribute__((unused)) *pp, void __a
 {
 	free(cs.pszBindAddr);
 	cs.pszBindAddr = NULL;
+	free(cs.pszBindDevice);
+	cs.pszBindDevice = NULL;
 	free(cs.pszSchedPolicy);
 	cs.pszSchedPolicy = NULL;
 	free(cs.pszBindRuleset);

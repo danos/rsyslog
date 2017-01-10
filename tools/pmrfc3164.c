@@ -42,7 +42,8 @@
 #include "parser.h"
 #include "datetime.h"
 #include "unicode-helper.h"
-
+#ifdef _AIX
+#endif
 MODULE_TYPE_PARSER
 MODULE_TYPE_NOKEEP
 PARSER_NAME("rsyslog.rfc3164")
@@ -101,6 +102,7 @@ createInstance(instanceConf_t **pinst)
 	inst->bDetectYearAfterTimestamp = 0;
 	inst->bPermitSquareBracketsInHostname = 0;
 	inst->bPermitSlashesInHostname = 0;
+	bParseHOSTNAMEandTAG=glbl.GetParseHOSTNAMEandTAG();
 	*pinst = inst;
 finalize_it:
 	RETiRet;

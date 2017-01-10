@@ -263,7 +263,7 @@ i10pow(int exp)
  * backward compatibility, which we consider pretty important).
  */
 static bson *
-getDefaultBSON(msg_t *pMsg)
+getDefaultBSON(smsg_t *pMsg)
 {
 	bson *doc = NULL;
 	uchar *procid; short unsigned procid_free; rs_size_t procid_len;
@@ -513,9 +513,9 @@ CODESTARTdoAction
 	}
 
 	if(pData->tplName == NULL) {
-		doc = getDefaultBSON((msg_t*)pMsgData);
+		doc = getDefaultBSON(*(smsg_t**)pMsgData);
 	} else {
-		doc = BSONFromJSONObject((struct json_object *)pMsgData);
+		doc = BSONFromJSONObject(*(struct json_object **)pMsgData);
 	}
 	if(doc == NULL) {
 		dbgprintf("ommongodb: error creating BSON doc\n");
@@ -527,6 +527,8 @@ CODESTARTdoAction
 	} else {
 		dbgprintf("ommongodb: insert error\n");
 		reportMongoError(pData);
+		/* close on insert error to permit resume */
+		closeMongoDB(pData);
 		ABORT_FINALIZE(RS_RET_SUSPENDED);
 	}
 

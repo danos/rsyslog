@@ -32,7 +32,9 @@
 #include "config.h"
 #include "rsyslog.h"
 #include "srUtils.h"
+#if !defined(_AIX)
 #pragma GCC diagnostic ignored "-Wsign-compare"
+#endif
 }
 
 %{
@@ -100,9 +102,10 @@ extern int yydebug;
 /* somehow, I need these prototype even though the headers are 
  * included. I guess that's some autotools magic I don't understand...
  */
-#if !defined(__FreeBSD__)
+#if !defined(__FreeBSD__) && !defined(_AIX)
 int fileno(FILE *stream);
 #endif
+
 
 %}
 
@@ -193,6 +196,7 @@ int fileno(FILE *stream);
 "stop"				{ return STOP; }
 "else"				{ return ELSE; }
 "call"				{ BEGIN INCALL; return CALL; }
+"call_indirect"			{ BEGIN EXPR; return CALL_INDIRECT; }
 "set"				{ BEGIN EXPR; return SET; }
 "reset"				{ BEGIN EXPR; return RESET; }
 "unset"				{ BEGIN EXPR; return UNSET; }

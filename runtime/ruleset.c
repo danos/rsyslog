@@ -11,7 +11,7 @@
  *
  * Module begun 2009-06-10 by Rainer Gerhards
  *
- * Copyright 2009-2015 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2009-2016 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -51,6 +51,7 @@
 #include "wti.h"
 #include "dirty.h" /* for main ruleset queue creation */
 
+
 /* static data */
 DEFobjStaticHelpers
 DEFobjCurrIf(errmsg)
@@ -69,7 +70,7 @@ static struct cnfparamblk rspblk =
 
 /* forward definitions */
 static rsRetVal processBatch(batch_t *pBatch, wti_t *pWti);
-static rsRetVal scriptExec(struct cnfstmt *root, msg_t *pMsg, wti_t *pWti);
+static rsRetVal scriptExec(struct cnfstmt *root, smsg_t *pMsg, wti_t *pWti);
 
 
 /* ---------- linked-list key handling functions (ruleset) ---------- */
@@ -96,6 +97,7 @@ scriptIterateAllActions(struct cnfstmt *root, rsRetVal (*pFunc)(void*, void*), v
 		case S_STOP:
 		case S_SET:
 		case S_UNSET:
+		case S_CALL_INDIRECT:
 		case S_CALL:/* call does not need to do anything - done in called ruleset! */
 			break;
 		case S_ACT:
@@ -127,9 +129,16 @@ scriptIterateAllActions(struct cnfstmt *root, rsRetVal (*pFunc)(void*, void*), v
 			scriptIterateAllActions(stmt->d.s_propfilt.t_then,
 						pFunc, pParam);
 			break;
+		case S_RELOAD_LOOKUP_TABLE: /* this is a NOP */
+			break;
 		default:
 			dbgprintf("error: unknown stmt type %u during iterateAll\n",
 				(unsigned) stmt->nodetype);
+			#ifndef NDEBUG
+				fprintf(stderr, "error: unknown stmt type %u during iterateAll\n",
+					(unsigned) stmt->nodetype);
+			#endif
+			assert(0); /* abort under debugging */
 			break;
 		}
 	}
@@ -189,7 +198,7 @@ activateRulesetQueues(void)
 
 
 static rsRetVal
-execAct(struct cnfstmt *stmt, msg_t *pMsg, wti_t *pWti)
+execAct(struct cnfstmt *stmt, smsg_t *pMsg, wti_t *pWti)
 {
 	DEFiRet;
 	if(stmt->d.act->bDisabled) {
@@ -210,9 +219,9 @@ finalize_it:
 }
 
 static rsRetVal
-execSet(struct cnfstmt *stmt, msg_t *pMsg)
+execSet(struct cnfstmt *stmt, smsg_t *pMsg)
 {
-	struct var result;
+	struct svar result;
 	DEFiRet;
 	cnfexprEval(stmt->d.s_set.expr, &result, pMsg);
 	msgSetJSONFromVar(pMsg, stmt->d.s_set.varname, &result, stmt->d.s_set.force_reset);
@@ -221,7 +230,7 @@ execSet(struct cnfstmt *stmt, msg_t *pMsg)
 }
 
 static rsRetVal
-execUnset(struct cnfstmt *stmt, msg_t *pMsg)
+execUnset(struct cnfstmt *stmt, smsg_t *pMsg)
 {
 	DEFiRet;
 	msgDelJSON(pMsg, stmt->d.s_unset.varname);
@@ -229,13 +238,55 @@ execUnset(struct cnfstmt *stmt, msg_t *pMsg)
 }
 
 static rsRetVal
-execCall(struct cnfstmt *stmt, msg_t *pMsg, wti_t *pWti)
+execCallIndirect(struct cnfstmt *const __restrict__ stmt,
+	smsg_t *pMsg,
+	wti_t *const __restrict__ pWti)
+{
+	ruleset_t *pRuleset;
+	struct svar result;
+	int bMustFree; /* dummy parameter */
+	DEFiRet;
+
+	assert(stmt->d.s_call_ind.expr != NULL);
+
+	cnfexprEval(stmt->d.s_call_ind.expr, &result, pMsg);
+	uchar *const rsName = (uchar*) var2CString(&result, &bMustFree);
+	const rsRetVal localRet = rulesetGetRuleset(loadConf, &pRuleset, rsName);
+	if(localRet != RS_RET_OK) {
+		/* in that case, we accept that a NOP will "survive" */
+		errmsg.LogError(0, RS_RET_RULESET_NOT_FOUND, "error: CALL_INDIRECT: "
+			"ruleset '%s' cannot be found, treating as NOP\n", rsName);
+		FINALIZE;
+	}
+	DBGPRINTF("CALL_INDIRECT obtained ruleset ptr %p for ruleset '%s' [hasQueue:%d]\n",
+		  pRuleset, rsName, rulesetHasQueue(pRuleset));
+	if(rulesetHasQueue(pRuleset)) {
+		CHKmalloc(pMsg = MsgDup((smsg_t*) pMsg));
+		DBGPRINTF("CALL_INDIRECT: forwarding message to async ruleset %p\n",
+			  pRuleset->pQueue);
+		MsgSetFlowControlType(pMsg, eFLOWCTL_NO_DELAY);
+		MsgSetRuleset(pMsg, pRuleset);
+		/* Note: we intentionally use submitMsg2() here, as we process messages
+		 * that were already run through the rate-limiter.
+		 */
+		submitMsg2(pMsg);
+	} else {
+		CHKiRet(scriptExec(pRuleset->root, pMsg, pWti));
+	}
+finalize_it:
+	varDelete(&result);
+	free(rsName);
+	RETiRet;
+}
+
+static rsRetVal
+execCall(struct cnfstmt *stmt, smsg_t *pMsg, wti_t *pWti)
 {
 	DEFiRet;
 	if(stmt->d.s_call.ruleset == NULL) {
 		CHKiRet(scriptExec(stmt->d.s_call.stmt, pMsg, pWti));
 	} else {
-		CHKmalloc(pMsg = MsgDup((msg_t*) pMsg));
+		CHKmalloc(pMsg = MsgDup((smsg_t*) pMsg));
 		DBGPRINTF("CALL: forwarding message to async ruleset %p\n",
 			  stmt->d.s_call.ruleset->pQueue);
 		MsgSetFlowControlType(pMsg, eFLOWCTL_NO_DELAY);
@@ -250,7 +301,7 @@ finalize_it:
 }
 
 static rsRetVal
-execIf(struct cnfstmt *stmt, msg_t *pMsg, wti_t *pWti)
+execIf(struct cnfstmt *stmt, smsg_t *pMsg, wti_t *pWti)
 {
 	sbool bRet;
 	DEFiRet;
@@ -268,8 +319,8 @@ finalize_it:
 }
 
 static rsRetVal
-invokeForeachBodyWith(struct cnfstmt *stmt, json_object *o, msg_t *pMsg, wti_t *pWti) {
-	struct var v;
+invokeForeachBodyWith(struct cnfstmt *stmt, json_object *o, smsg_t *pMsg, wti_t *pWti) {
+	struct svar v;
 	v.datatype = 'J';
 	v.d.json = o;
 	DEFiRet;
@@ -280,7 +331,7 @@ finalize_it:
 }
 
 static rsRetVal
-callForeachArray(struct cnfstmt *stmt, json_object *arr, msg_t *pMsg, wti_t *pWti) {
+callForeachArray(struct cnfstmt *stmt, json_object *arr, smsg_t *pMsg, wti_t *pWti) {
 	DEFiRet;
 	int len = json_object_array_length(arr);
 	json_object *curr;
@@ -294,7 +345,7 @@ finalize_it:
 
 
 static rsRetVal
-callForeachObject(struct cnfstmt *stmt, json_object *arr, msg_t *pMsg, wti_t *pWti) {
+callForeachObject(struct cnfstmt *stmt, json_object *arr, smsg_t *pMsg, wti_t *pWti) {
 	json_object *entry = NULL;
 	json_object *key = NULL;
 	const char **keys = NULL;
@@ -330,7 +381,7 @@ finalize_it:
 }
 
 static rsRetVal
-execForeach(struct cnfstmt *stmt, msg_t *pMsg, wti_t *pWti)
+execForeach(struct cnfstmt *stmt, smsg_t *pMsg, wti_t *pWti)
 {
 	json_object *arr = NULL;
 	DEFiRet;
@@ -358,7 +409,7 @@ finalize_it:
 }
 
 static rsRetVal
-execPRIFILT(struct cnfstmt *stmt, msg_t *pMsg, wti_t *pWti)
+execPRIFILT(struct cnfstmt *stmt, smsg_t *pMsg, wti_t *pWti)
 {
 	int bRet;
 	DEFiRet;
@@ -384,7 +435,7 @@ finalize_it:
 
 /* helper to execPROPFILT(), as the evaluation itself is quite lengthy */
 static int
-evalPROPFILT(struct cnfstmt *stmt, msg_t *pMsg)
+evalPROPFILT(struct cnfstmt *stmt, smsg_t *pMsg)
 {
 	unsigned short pbMustBeFreed;
 	uchar *pszPropVal;
@@ -475,7 +526,7 @@ done:
 }
 
 static rsRetVal
-execPROPFILT(struct cnfstmt *stmt, msg_t *pMsg, wti_t *pWti)
+execPROPFILT(struct cnfstmt *stmt, smsg_t *pMsg, wti_t *pWti)
 {
 	sbool bRet;
 	DEFiRet;
@@ -513,7 +564,7 @@ finalize_it:
  * rgerhards, 2012-09-04
  */
 static rsRetVal
-scriptExec(struct cnfstmt *root, msg_t *pMsg, wti_t *pWti)
+scriptExec(struct cnfstmt *root, smsg_t *pMsg, wti_t *pWti)
 {
 	struct cnfstmt *stmt;
 	DEFiRet;
@@ -544,6 +595,9 @@ scriptExec(struct cnfstmt *root, msg_t *pMsg, wti_t *pWti)
 			break;
 		case S_CALL:
 			CHKiRet(execCall(stmt, pMsg, pWti));
+			break;
+		case S_CALL_INDIRECT:
+			CHKiRet(execCallIndirect(stmt, pMsg, pWti));
 			break;
 		case S_IF:
 			CHKiRet(execIf(stmt, pMsg, pWti));
@@ -578,7 +632,7 @@ static rsRetVal
 processBatch(batch_t *pBatch, wti_t *pWti)
 {
 	int i;
-	msg_t *pMsg;
+	smsg_t *pMsg;
 	ruleset_t *pRuleset;
 	rsRetVal localRet;
 	DEFiRet;
@@ -617,7 +671,7 @@ processBatch(batch_t *pBatch, wti_t *pWti)
  * rgerhards, 2009-11-04
  */
 static parserList_t*
-GetParserList(rsconf_t *conf, msg_t *pMsg)
+GetParserList(rsconf_t *conf, smsg_t *pMsg)
 {
 	return (pMsg->pRuleset == NULL) ? conf->rulesets.pDflt->pParserLst : pMsg->pRuleset->pParserLst;
 }
