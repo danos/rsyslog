@@ -1,3 +1,9 @@
+rsyslog (8.24.0-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 10 Jan 2017 22:52:53 +0100
+
 rsyslog (8.23.0-2) unstable; urgency=medium
 
   * Fix empty-hostname.sh test and change support for empty hostname
