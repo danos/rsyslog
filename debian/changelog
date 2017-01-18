@@ -1,8 +1,20 @@
-rsyslog (8.24.0-1) UNRELEASED; urgency=medium
+rsyslog (8.24.0-1) unstable; urgency=medium
 
+  [ Michael Biebl ]
   * New upstream release.
+  * Rebase patches.
+  * Add Depends on init-system-helpers (>= 1.47~) to rsyslog.
+    This ensures we have a version of invoke-rc.d that supports try-restart.
 
- -- Michael Biebl <biebl@debian.org>  Tue, 10 Jan 2017 22:52:53 +0100
+  [ Ondřej Nový ]
+  * Trigger restart on configuration changes.
+    Register a dpkg trigger on /etc/rsyslog.d that calls restart on
+    configuration changes. (Closes: #791337)
+  * Update dpkg trigger to use try-restart.
+    Add try-restart action to SysV initscript for that, systemd supports
+    this natively.
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 18 Jan 2017 23:14:38 +0100
 
 rsyslog (8.23.0-2) unstable; urgency=medium
 
