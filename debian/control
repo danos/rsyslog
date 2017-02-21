@@ -26,8 +26,8 @@ Build-Depends: debhelper (>= 10),
                bison,
                procps <!nocheck>
 Standards-Version: 3.9.8
-Vcs-Git: git://anonscm.debian.org/collab-maint/rsyslog.git
-Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/rsyslog.git
+Vcs-Git: https://anonscm.debian.org/git/collab-maint/rsyslog.git
+Vcs-Browser: https://anonscm.debian.org/git/collab-maint/rsyslog.git
 Homepage: http://www.rsyslog.com/
 
 Package: rsyslog
