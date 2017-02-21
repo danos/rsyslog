@@ -80,7 +80,8 @@ DEFobjCurrIf(zlibw)
 
 /* forward definitions */
 static rsRetVal strmFlushInternal(strm_t *pThis, int bFlushZip);
-static rsRetVal strmWrite(strm_t *__restrict__ const pThis, const uchar *__restrict__ const pBuf, const size_t lenBuf);
+static rsRetVal strmWrite(strm_t *__restrict__ const pThis, const uchar *__restrict__ const pBuf,
+	const size_t lenBuf);
 static rsRetVal strmCloseFile(strm_t *pThis);
 static void *asyncWriterThread(void *pPtr);
 static rsRetVal doZipWrite(strm_t *pThis, uchar *pBuf, size_t lenBuf, int bFlush);
@@ -659,9 +660,9 @@ strmDebugOutBuf(const strm_t *const pThis)
 	int strtIdx = pThis->iBufPtr - 50;
 	if(strtIdx < 0)
 		strtIdx = 0;
-	DBGOPRINT((obj_t*) pThis, "strmRead index %zd, max %zd, buf '%.*s'\n",
-		pThis->iBufPtr, pThis->iBufPtrMax, (int) pThis->iBufPtrMax - strtIdx,
-		pThis->pIOBuf+strtIdx);
+	DBGOPRINT((obj_t*) pThis, "strmRead ungetc %d, index %zd, max %zd, buf '%.*s', CURR: '%.*s'\n",
+		pThis->iUngetC, pThis->iBufPtr, pThis->iBufPtrMax, (int) pThis->iBufPtrMax - strtIdx,
+		pThis->pIOBuf+strtIdx, (int) (pThis->iBufPtrMax - pThis->iBufPtr), pThis->pIOBuf+pThis->iBufPtr);
 }
 
 /* logically "read" a character from a file. What actually happens is that
@@ -1153,7 +1154,10 @@ tryTTYRecover(strm_t *pThis, int err)
 #ifndef __FreeBSD__
 	if(err == ERR_TTYHUP) {
 #else
-	if(err == ERR_TTYHUP || err == ENXIO) {
+	/* Try to reopen our file descriptor even on errno 6, FreeBSD bug 200429
+	 * Also try on errno 5, FreeBSD bug 211033
+	 */
+	if(err == ERR_TTYHUP || err == ENXIO || err == EIO) {
 #endif /* __FreeBSD__ */
 		close(pThis->fd);
 		CHKiRet(doPhysOpen(pThis));
@@ -1850,7 +1854,9 @@ strmWrite(strm_t *__restrict__ const pThis, const uchar *__restrict__ const pBuf
 	ASSERT(pThis != NULL);
 	ASSERT(pBuf != NULL);
 
-	/* DEV DEBUG ONLY DBGPRINTF("strmWrite(%p[%s], '%65.65s', %ld);, disabled %d, sizelim %ld, size %lld\n", pThis, pThis->pszCurrFName, pBuf,(long) lenBuf, pThis->bDisabled, (long) pThis->iSizeLimit, (long long) pThis->iCurrOffs); */
+/* DEV DEBUG ONLY DBGPRINTF("strmWrite(%p[%s], '%65.65s', %ld);,
+disabled %d, sizelim %ld, size %lld\n", pThis, pThis->pszCurrFName, pBuf,(long) lenBuf,
+pThis->bDisabled, (long) pThis->iSizeLimit, (long long) pThis->iCurrOffs); */
 	if(pThis->bDisabled)
 		ABORT_FINALIZE(RS_RET_STREAM_DISABLED);
 

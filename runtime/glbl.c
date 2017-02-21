@@ -7,7 +7,7 @@
  *
  * Module begun 2008-04-16 by Rainer Gerhards
  *
- * Copyright 2008-2016 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2008-2017 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -99,8 +99,10 @@ static uchar *LocalHostName = NULL;/* our hostname  - read-only after startup, e
 static uchar *LocalHostNameOverride = NULL;/* user-overridden hostname - read-only after startup */
 static uchar *LocalFQDNName = NULL;/* our hostname as FQDN - read-only after startup, except HUP */
 static uchar *LocalDomain = NULL;/* our local domain name  - read-only after startup, except HUP */
-static char **StripDomains = NULL;/* these domains may be stripped before writing logs  - r/o after s.u., never touched by init */
-static char **LocalHosts = NULL;/* these hosts are logged with their hostname  - read-only after startup, never touched by init */
+static char **StripDomains = NULL;
+/* these domains may be stripped before writing logs  - r/o after s.u., never touched by init */
+static char **LocalHosts = NULL;
+/* these hosts are logged with their hostname  - read-only after startup, never touched by init */
 static uchar *pszDfltNetstrmDrvr = NULL; /* module name of default netstream driver */
 static uchar *pszDfltNetstrmDrvrCAF = NULL; /* default CA file for the netstrm driver */
 static uchar *pszDfltNetstrmDrvrKeyFile = NULL; /* default key file for the netstrm driver (server) */
@@ -119,6 +121,7 @@ int glblReportGoneAwaySenders = 0;
 int glblSenderStatsTimeout = 12 * 60 * 60; /* 12 hr timeout for senders */
 int glblSenderKeepTrack = 0;  /* keep track of known senders? */
 int glblUnloadModules = 1;
+int bPermitSlashInProgramname = 0;
 
 pid_t glbl_ourpid;
 #ifndef HAVE_ATOMIC_BUILTINS
@@ -157,6 +160,7 @@ static struct cnfparamdescr cnfparamdescr[] = {
 	{ "parser.escapecontrolcharactertab", eCmdHdlrBinary, 0},
 	{ "parser.escapecontrolcharacterscstyle", eCmdHdlrBinary, 0 },
 	{ "parser.parsehostnameandtag", eCmdHdlrBinary, 0 },
+	{ "parser.permitslashinprogramname", eCmdHdlrBinary, 0 },
 	{ "stdlog.channelspec", eCmdHdlrString, 0 },
 	{ "janitor.interval", eCmdHdlrPositiveInt, 0 },
 	{ "senders.reportnew", eCmdHdlrBinary, 0 },
@@ -243,9 +247,12 @@ SIMP_PROP(FdSetSize, iFdSetSize, int)
 #endif
 
 SIMP_PROP_SET(DfltNetstrmDrvr, pszDfltNetstrmDrvr, uchar*) /* TODO: use custom function which frees existing value */
-SIMP_PROP_SET(DfltNetstrmDrvrCAF, pszDfltNetstrmDrvrCAF, uchar*) /* TODO: use custom function which frees existing value */
-SIMP_PROP_SET(DfltNetstrmDrvrKeyFile, pszDfltNetstrmDrvrKeyFile, uchar*) /* TODO: use custom function which frees existing value */
-SIMP_PROP_SET(DfltNetstrmDrvrCertFile, pszDfltNetstrmDrvrCertFile, uchar*) /* TODO: use custom function which frees existing value */
+SIMP_PROP_SET(DfltNetstrmDrvrCAF, pszDfltNetstrmDrvrCAF, uchar*)
+/* TODO: use custom function which frees existing value */
+SIMP_PROP_SET(DfltNetstrmDrvrKeyFile, pszDfltNetstrmDrvrKeyFile, uchar*)
+/* TODO: use custom function which frees existing value */
+SIMP_PROP_SET(DfltNetstrmDrvrCertFile, pszDfltNetstrmDrvrCertFile, uchar*)
+/* TODO: use custom function which frees existing value */
 
 #undef SIMP_PROP
 #undef SIMP_PROP_SET
@@ -1142,6 +1149,8 @@ glblDoneLoadCnf(void)
 			bParserEscapeCCCStyle = (int) cnfparamvals[i].val.d.n;
 		} else if(!strcmp(paramblk.descr[i].name, "parser.parsehostnameandtag")) {
 			bParseHOSTNAMEandTAG = (int) cnfparamvals[i].val.d.n;
+		} else if(!strcmp(paramblk.descr[i].name, "parser.permitslashinprogramname")) {
+			bPermitSlashInProgramname = (int) cnfparamvals[i].val.d.n;
 		} else if(!strcmp(paramblk.descr[i].name, "debug.logfile")) {
 			if(pszAltDbgFileName == NULL) {
 				pszAltDbgFileName = es_str2cstr(cnfparamvals[i].val.d.estr, NULL);
@@ -1218,26 +1227,37 @@ BEGINAbstractObjClassInit(glbl, 1, OBJ_IS_CORE_MODULE) /* class, version */
 	CHKiRet(regCfSysLineHdlr((uchar *)"debugfile", 0, eCmdHdlrGetWord, setDebugFile, NULL, NULL));
 	CHKiRet(regCfSysLineHdlr((uchar *)"debuglevel", 0, eCmdHdlrInt, setDebugLevel, NULL, NULL));
 	CHKiRet(regCfSysLineHdlr((uchar *)"workdirectory", 0, eCmdHdlrGetWord, setWorkDir, NULL, NULL));
-	CHKiRet(regCfSysLineHdlr((uchar *)"dropmsgswithmaliciousdnsptrrecords", 0, eCmdHdlrBinary, NULL, &bDropMalPTRMsgs, NULL));
-	CHKiRet(regCfSysLineHdlr((uchar *)"defaultnetstreamdriver", 0, eCmdHdlrGetWord, NULL, &pszDfltNetstrmDrvr, NULL));
-	CHKiRet(regCfSysLineHdlr((uchar *)"defaultnetstreamdrivercafile", 0, eCmdHdlrGetWord, NULL, &pszDfltNetstrmDrvrCAF, NULL));
-	CHKiRet(regCfSysLineHdlr((uchar *)"defaultnetstreamdriverkeyfile", 0, eCmdHdlrGetWord, NULL, &pszDfltNetstrmDrvrKeyFile, NULL));
-	CHKiRet(regCfSysLineHdlr((uchar *)"defaultnetstreamdrivercertfile", 0, eCmdHdlrGetWord, NULL, &pszDfltNetstrmDrvrCertFile, NULL));
+	CHKiRet(regCfSysLineHdlr((uchar *)"dropmsgswithmaliciousdnsptrrecords", 0, eCmdHdlrBinary, NULL,
+	&bDropMalPTRMsgs, NULL));
+	CHKiRet(regCfSysLineHdlr((uchar *)"defaultnetstreamdriver", 0, eCmdHdlrGetWord, NULL, &pszDfltNetstrmDrvr,
+	NULL));
+	CHKiRet(regCfSysLineHdlr((uchar *)"defaultnetstreamdrivercafile", 0, eCmdHdlrGetWord, NULL,
+	&pszDfltNetstrmDrvrCAF, NULL));
+	CHKiRet(regCfSysLineHdlr((uchar *)"defaultnetstreamdriverkeyfile", 0, eCmdHdlrGetWord, NULL,
+	&pszDfltNetstrmDrvrKeyFile, NULL));
+	CHKiRet(regCfSysLineHdlr((uchar *)"defaultnetstreamdrivercertfile", 0, eCmdHdlrGetWord, NULL,
+	&pszDfltNetstrmDrvrCertFile, NULL));
 	CHKiRet(regCfSysLineHdlr((uchar *)"localhostname", 0, eCmdHdlrGetWord, NULL, &LocalHostNameOverride, NULL));
 	CHKiRet(regCfSysLineHdlr((uchar *)"localhostipif", 0, eCmdHdlrGetWord, setLocalHostIPIF, NULL, NULL));
-	CHKiRet(regCfSysLineHdlr((uchar *)"optimizeforuniprocessor", 0, eCmdHdlrBinary, NULL, &bOptimizeUniProc, NULL));
+	CHKiRet(regCfSysLineHdlr((uchar *)"optimizeforuniprocessor", 0, eCmdHdlrBinary, NULL,
+	&bOptimizeUniProc, NULL));
 	CHKiRet(regCfSysLineHdlr((uchar *)"preservefqdn", 0, eCmdHdlrBinary, NULL, &bPreserveFQDN, NULL));
 	CHKiRet(regCfSysLineHdlr((uchar *)"maxmessagesize", 0, eCmdHdlrSize, legacySetMaxMessageSize, NULL, NULL));
 
 	/* Deprecated parser config options */
-	CHKiRet(regCfSysLineHdlr((uchar *)"controlcharacterescapeprefix", 0, eCmdHdlrGetChar, NULL, &cCCEscapeChar, NULL));
-	CHKiRet(regCfSysLineHdlr((uchar *)"droptrailinglfonreception", 0, eCmdHdlrBinary, NULL, &bDropTrailingLF, NULL));
-	CHKiRet(regCfSysLineHdlr((uchar *)"escapecontrolcharactersonreceive", 0, eCmdHdlrBinary, NULL, &bEscapeCCOnRcv, NULL));
+	CHKiRet(regCfSysLineHdlr((uchar *)"controlcharacterescapeprefix", 0, eCmdHdlrGetChar, NULL,
+	&cCCEscapeChar, NULL));
+	CHKiRet(regCfSysLineHdlr((uchar *)"droptrailinglfonreception", 0, eCmdHdlrBinary, NULL,
+	&bDropTrailingLF, NULL));
+	CHKiRet(regCfSysLineHdlr((uchar *)"escapecontrolcharactersonreceive", 0, eCmdHdlrBinary, NULL,
+	&bEscapeCCOnRcv, NULL));
 	CHKiRet(regCfSysLineHdlr((uchar *)"spacelfonreceive", 0, eCmdHdlrBinary, NULL, &bSpaceLFOnRcv, NULL));
-	CHKiRet(regCfSysLineHdlr((uchar *)"escape8bitcharactersonreceive", 0, eCmdHdlrBinary, NULL, &bEscape8BitChars, NULL));
+	CHKiRet(regCfSysLineHdlr((uchar *)"escape8bitcharactersonreceive", 0, eCmdHdlrBinary, NULL,
+	&bEscape8BitChars, NULL));
 	CHKiRet(regCfSysLineHdlr((uchar *)"escapecontrolcharactertab", 0, eCmdHdlrBinary, NULL, &bEscapeTab, NULL));
 
-	CHKiRet(regCfSysLineHdlr((uchar *)"resetconfigvariables", 1, eCmdHdlrCustomHandler, resetConfigVariables, NULL, NULL));
+	CHKiRet(regCfSysLineHdlr((uchar *)"resetconfigvariables", 1, eCmdHdlrCustomHandler,
+	resetConfigVariables, NULL, NULL));
 
 	INIT_ATOMIC_HELPER_MUT(mutTerminateInputs);
 ENDObjClassInit(glbl)
