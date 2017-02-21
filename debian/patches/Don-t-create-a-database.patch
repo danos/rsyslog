@@ -10,7 +10,7 @@ care of creating the database for us.
  2 files changed, 2 insertions(+), 6 deletions(-)
 
 diff --git a/plugins/ommysql/createDB.sql b/plugins/ommysql/createDB.sql
-index 211cfb0e2..1dc6f5c37 100644
+index 211cfb0..1dc6f5c 100644
 --- a/plugins/ommysql/createDB.sql
 +++ b/plugins/ommysql/createDB.sql
 @@ -1,6 +1,4 @@
@@ -31,7 +31,7 @@ index 211cfb0e2..1dc6f5c37 100644
          ID int unsigned not null auto_increment primary key,
          SystemEventID int NULL ,
 diff --git a/plugins/ompgsql/createDB.sql b/plugins/ompgsql/createDB.sql
-index 0c0f7e13a..5dab0ddaa 100644
+index 0c0f7e1..5dab0dd 100644
 --- a/plugins/ompgsql/createDB.sql
 +++ b/plugins/ompgsql/createDB.sql
 @@ -1,5 +1,3 @@
