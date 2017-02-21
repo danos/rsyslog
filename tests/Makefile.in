@@ -98,7 +98,8 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	minitcpsrv$(EXEEXT) \
 @ENABLE_TESTBENCH_TRUE@	omrelp_dflt_port$(EXEEXT) \
 @ENABLE_TESTBENCH_TRUE@	mangle_qi$(EXEEXT)
-@ENABLE_TESTBENCH_TRUE@TESTS = empty-hostname.sh \
+@ENABLE_TESTBENCH_TRUE@TESTS = empty-hostname.sh prop-programname.sh \
+@ENABLE_TESTBENCH_TRUE@	prop-programname-with-slashes.sh \
 @ENABLE_TESTBENCH_TRUE@	hostname-with-slash-pmrfc5424.sh \
 @ENABLE_TESTBENCH_TRUE@	hostname-with-slash-pmrfc3164.sh \
 @ENABLE_TESTBENCH_TRUE@	hostname-with-slash-dflt-invld.sh \
@@ -149,7 +150,8 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	imtcp-NUL-rawmsg.sh imtcp-multiport.sh \
 @ENABLE_TESTBENCH_TRUE@	imtcp_incomplete_frame_at_end.sh \
 @ENABLE_TESTBENCH_TRUE@	daqueue-persist.sh daqueue-invld-qi.sh \
-@ENABLE_TESTBENCH_TRUE@	daqueue-dirty-shutdown.sh diskqueue.sh \
+@ENABLE_TESTBENCH_TRUE@	daqueue-dirty-shutdown.sh \
+@ENABLE_TESTBENCH_TRUE@	diskq-rfc5424.sh diskqueue.sh \
 @ENABLE_TESTBENCH_TRUE@	diskqueue-fsync.sh rulesetmultiqueue.sh \
 @ENABLE_TESTBENCH_TRUE@	rulesetmultiqueue-v6.sh manytcp.sh \
 @ENABLE_TESTBENCH_TRUE@	rsf_getenv.sh imtcp_conndrop.sh \
@@ -209,14 +211,15 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	failover-rptd.sh failover-no-rptd.sh \
 @ENABLE_TESTBENCH_TRUE@	failover-no-basic.sh \
 @ENABLE_TESTBENCH_TRUE@	rcvr_fail_restore.sh \
-@ENABLE_TESTBENCH_TRUE@	rscript_contains.sh rscript_field.sh \
-@ENABLE_TESTBENCH_TRUE@	rscript_stop.sh rscript_stop2.sh \
-@ENABLE_TESTBENCH_TRUE@	rscript_prifilt.sh \
+@ENABLE_TESTBENCH_TRUE@	rscript_contains.sh rscript_ipv42num.sh \
+@ENABLE_TESTBENCH_TRUE@	rscript_field.sh rscript_stop.sh \
+@ENABLE_TESTBENCH_TRUE@	rscript_stop2.sh rscript_prifilt.sh \
 @ENABLE_TESTBENCH_TRUE@	rscript_optimizer1.sh \
 @ENABLE_TESTBENCH_TRUE@	rscript_ruleset_call.sh \
 @ENABLE_TESTBENCH_TRUE@	rscript_ruleset_call_indirect-basic.sh \
 @ENABLE_TESTBENCH_TRUE@	rscript_ruleset_call_indirect-var.sh \
 @ENABLE_TESTBENCH_TRUE@	rscript_ruleset_call_indirect-invld.sh \
+@ENABLE_TESTBENCH_TRUE@	rscript_set_unset_invalid_var.sh \
 @ENABLE_TESTBENCH_TRUE@	rscript_set_modify.sh \
 @ENABLE_TESTBENCH_TRUE@	rscript_unaffected_reset.sh \
 @ENABLE_TESTBENCH_TRUE@	rscript_replace_complex.sh \
@@ -228,7 +231,7 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	rscript_gt_var.sh rscript_le.sh \
 @ENABLE_TESTBENCH_TRUE@	rscript_le_var.sh rscript_lt.sh \
 @ENABLE_TESTBENCH_TRUE@	rscript_lt_var.sh rscript_ne.sh \
-@ENABLE_TESTBENCH_TRUE@	rscript_ne_var.sh \
+@ENABLE_TESTBENCH_TRUE@	rscript_ne_var.sh rscript_num2ipv4.sh \
 @ENABLE_TESTBENCH_TRUE@	empty-prop-comparison.sh \
 @ENABLE_TESTBENCH_TRUE@	rs_optimizer_pri.sh cee_simple.sh \
 @ENABLE_TESTBENCH_TRUE@	cee_diskqueue.sh incltest.sh \
@@ -267,6 +270,7 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	$(am__append_41) $(am__append_42) \
 @ENABLE_TESTBENCH_TRUE@	$(am__append_43) $(am__append_44)
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_1 = \
+@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	rscript_set_memleak-vg.sh \
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	discard-rptdmsg-vg.sh \
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	discard-allmark-vg.sh \
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	failover-basic-vg.sh \
@@ -529,7 +533,11 @@ host_triplet = @host@
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-endregex-timeout-polling.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-endregex-timeout.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-endregex-timeout-none.sh \
-@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-persist-state-1.sh
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-persist-state-1.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-wildcards.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-wildcards-dirs.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-wildcards-dirs2.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-wildcards-dirs-multi.sh
 
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_43 = \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-basic-vg.sh \
@@ -1230,12 +1238,14 @@ EXTRA_DIST = \
 	fieldtest.sh \
 	rsf_getenv.sh \
 	testsuites/rsf_getenv.conf \
+	diskq-rfc5424.sh \
 	diskqueue.sh \
 	testsuites/diskqueue.conf \
 	arrayqueue.sh \
 	testsuites/arrayqueue.conf \
 	rscript_contains.sh \
 	testsuites/rscript_contains.conf \
+	rscript_ipv42num.sh \
 	rscript_field.sh \
 	rscript_field-vg.sh \
 	testsuites/rscript_field.conf \
@@ -1264,11 +1274,14 @@ EXTRA_DIST = \
 	rscript_ne.sh \
 	testsuites/rscript_ne.conf \
 	rscript_ne_var.sh \
+	rscript_num2ipv4.sh \
 	testsuites/rscript_ne_var.conf \
 	rscript_eq.sh \
 	testsuites/rscript_eq.conf \
 	rscript_eq_var.sh \
 	testsuites/rscript_eq_var.conf \
+	rscript_set_memleak-vg.sh \
+	rscript_set_unset_invalid_var.sh \
 	rscript_set_modify.sh \
 	testsuites/rscript_set_modify.conf \
 	testsuites/rscript_unaffected_reset.conf \
@@ -1293,6 +1306,8 @@ EXTRA_DIST = \
 	prop-all-json-concurrency.sh \
 	testsuites/prop-all-json-concurrency.conf \
 	global_vars.sh \
+	prop-programname.sh \
+	prop-programname-with-slashes.sh \
 	testsuites/global_vars.conf \
 	rfc5424parser.sh \
 	testsuites/rfc5424parser.conf \
@@ -1382,6 +1397,7 @@ EXTRA_DIST = \
 	mmjsonparse_cim.sh \
 	testsuites/mmjsonparse_cim.conf \
 	mmdb.sh \
+	mmdb.rb \
 	test.mmdb \
 	testsuites/mmdb.conf \
 	incltest.sh \
@@ -1645,6 +1661,13 @@ EXTRA_DIST = \
 	imfile-endregex-timeout-none.sh \
 	imfile-persist-state-1.sh \
 	imfile-truncate.sh \
+	imfile-wildcards.sh \
+	imfile-wildcards-dirs.sh \
+	imfile-wildcards-dirs2.sh \
+	imfile-wildcards-dirs-multi.sh \
+	testsuites/imfile-wildcards.conf \
+	testsuites/imfile-wildcards-dirs.conf \
+	testsuites/imfile-wildcards-dirs-multi.conf \
 	dynfile_invld_async.sh \
 	dynfile_invld_sync.sh \
 	dynfile_cachemiss.sh \
@@ -2382,6 +2405,20 @@ empty-hostname.sh.log: empty-hostname.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+prop-programname.sh.log: prop-programname.sh
+	@p='prop-programname.sh'; \
+	b='prop-programname.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+prop-programname-with-slashes.sh.log: prop-programname-with-slashes.sh
+	@p='prop-programname-with-slashes.sh'; \
+	b='prop-programname-with-slashes.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 hostname-with-slash-pmrfc5424.sh.log: hostname-with-slash-pmrfc5424.sh
 	@p='hostname-with-slash-pmrfc5424.sh'; \
 	b='hostname-with-slash-pmrfc5424.sh'; \
@@ -2889,6 +2926,13 @@ daqueue-invld-qi.sh.log: daqueue-invld-qi.sh
 daqueue-dirty-shutdown.sh.log: daqueue-dirty-shutdown.sh
 	@p='daqueue-dirty-shutdown.sh'; \
 	b='daqueue-dirty-shutdown.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+diskq-rfc5424.sh.log: diskq-rfc5424.sh
+	@p='diskq-rfc5424.sh'; \
+	b='diskq-rfc5424.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -3467,6 +3511,13 @@ rscript_contains.sh.log: rscript_contains.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+rscript_ipv42num.sh.log: rscript_ipv42num.sh
+	@p='rscript_ipv42num.sh'; \
+	b='rscript_ipv42num.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 rscript_field.sh.log: rscript_field.sh
 	@p='rscript_field.sh'; \
 	b='rscript_field.sh'; \
@@ -3526,6 +3577,13 @@ rscript_ruleset_call_indirect-var.sh.log: rscript_ruleset_call_indirect-var.sh
 rscript_ruleset_call_indirect-invld.sh.log: rscript_ruleset_call_indirect-invld.sh
 	@p='rscript_ruleset_call_indirect-invld.sh'; \
 	b='rscript_ruleset_call_indirect-invld.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+rscript_set_unset_invalid_var.sh.log: rscript_set_unset_invalid_var.sh
+	@p='rscript_set_unset_invalid_var.sh'; \
+	b='rscript_set_unset_invalid_var.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -3663,6 +3721,13 @@ rscript_ne_var.sh.log: rscript_ne_var.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+rscript_num2ipv4.sh.log: rscript_num2ipv4.sh
+	@p='rscript_num2ipv4.sh'; \
+	b='rscript_num2ipv4.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 empty-prop-comparison.sh.log: empty-prop-comparison.sh
 	@p='empty-prop-comparison.sh'; \
 	b='empty-prop-comparison.sh'; \
@@ -3785,6 +3850,13 @@ lookup_table_rscript_reload_without_stub.sh.log: lookup_table_rscript_reload_wit
 multiple_lookup_tables.sh.log: multiple_lookup_tables.sh
 	@p='multiple_lookup_tables.sh'; \
 	b='multiple_lookup_tables.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+rscript_set_memleak-vg.sh.log: rscript_set_memleak-vg.sh
+	@p='rscript_set_memleak-vg.sh'; \
+	b='rscript_set_memleak-vg.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -5031,6 +5103,34 @@ imfile-endregex-timeout-none.sh.log: imfile-endregex-timeout-none.sh
 imfile-persist-state-1.sh.log: imfile-persist-state-1.sh
 	@p='imfile-persist-state-1.sh'; \
 	b='imfile-persist-state-1.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imfile-wildcards.sh.log: imfile-wildcards.sh
+	@p='imfile-wildcards.sh'; \
+	b='imfile-wildcards.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imfile-wildcards-dirs.sh.log: imfile-wildcards-dirs.sh
+	@p='imfile-wildcards-dirs.sh'; \
+	b='imfile-wildcards-dirs.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imfile-wildcards-dirs2.sh.log: imfile-wildcards-dirs2.sh
+	@p='imfile-wildcards-dirs2.sh'; \
+	b='imfile-wildcards-dirs2.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imfile-wildcards-dirs-multi.sh.log: imfile-wildcards-dirs-multi.sh
+	@p='imfile-wildcards-dirs-multi.sh'; \
+	b='imfile-wildcards-dirs-multi.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

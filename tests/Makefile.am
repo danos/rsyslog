@@ -22,6 +22,8 @@ TESTS = $(TESTRUNS)
 
 TESTS +=  \
 	empty-hostname.sh \
+	prop-programname.sh \
+	prop-programname-with-slashes.sh \
 	hostname-with-slash-pmrfc5424.sh \
 	hostname-with-slash-pmrfc3164.sh \
 	hostname-with-slash-dflt-invld.sh \
@@ -95,6 +97,7 @@ TESTS +=  \
 	daqueue-persist.sh \
 	daqueue-invld-qi.sh \
 	daqueue-dirty-shutdown.sh \
+	diskq-rfc5424.sh \
 	diskqueue.sh \
 	diskqueue-fsync.sh \
 	rulesetmultiqueue.sh \
@@ -178,6 +181,7 @@ TESTS +=  \
 	failover-no-basic.sh \
 	rcvr_fail_restore.sh \
 	rscript_contains.sh \
+	rscript_ipv42num.sh \
 	rscript_field.sh \
 	rscript_stop.sh \
 	rscript_stop2.sh \
@@ -187,6 +191,7 @@ TESTS +=  \
 	rscript_ruleset_call_indirect-basic.sh \
 	rscript_ruleset_call_indirect-var.sh \
 	rscript_ruleset_call_indirect-invld.sh \
+	rscript_set_unset_invalid_var.sh \
 	rscript_set_modify.sh \
 	rscript_unaffected_reset.sh \
 	rscript_replace_complex.sh \
@@ -206,6 +211,7 @@ TESTS +=  \
 	rscript_lt_var.sh \
 	rscript_ne.sh \
 	rscript_ne_var.sh \
+	rscript_num2ipv4.sh \
 	empty-prop-comparison.sh \
 	rs_optimizer_pri.sh \
 	cee_simple.sh \
@@ -227,6 +233,7 @@ TESTS +=  \
 
 if HAVE_VALGRIND
 TESTS +=  \
+	rscript_set_memleak-vg.sh \
 	discard-rptdmsg-vg.sh \
 	discard-allmark-vg.sh \
 	failover-basic-vg.sh \
@@ -558,7 +565,11 @@ TESTS += \
 	imfile-endregex-timeout-polling.sh \
 	imfile-endregex-timeout.sh \
 	imfile-endregex-timeout-none.sh \
-	imfile-persist-state-1.sh
+	imfile-persist-state-1.sh \
+	imfile-wildcards.sh \
+	imfile-wildcards-dirs.sh \
+	imfile-wildcards-dirs2.sh \
+	imfile-wildcards-dirs-multi.sh
 if HAVE_VALGRIND
 TESTS += \
 	imfile-basic-vg.sh \
@@ -694,12 +705,14 @@ EXTRA_DIST= \
 	fieldtest.sh \
 	rsf_getenv.sh \
 	testsuites/rsf_getenv.conf \
+	diskq-rfc5424.sh \
 	diskqueue.sh \
 	testsuites/diskqueue.conf \
 	arrayqueue.sh \
 	testsuites/arrayqueue.conf \
 	rscript_contains.sh \
 	testsuites/rscript_contains.conf \
+	rscript_ipv42num.sh \
 	rscript_field.sh \
 	rscript_field-vg.sh \
 	testsuites/rscript_field.conf \
@@ -728,11 +741,14 @@ EXTRA_DIST= \
 	rscript_ne.sh \
 	testsuites/rscript_ne.conf \
 	rscript_ne_var.sh \
+	rscript_num2ipv4.sh \
 	testsuites/rscript_ne_var.conf \
 	rscript_eq.sh \
 	testsuites/rscript_eq.conf \
 	rscript_eq_var.sh \
 	testsuites/rscript_eq_var.conf \
+	rscript_set_memleak-vg.sh \
+	rscript_set_unset_invalid_var.sh \
 	rscript_set_modify.sh \
 	testsuites/rscript_set_modify.conf \
 	testsuites/rscript_unaffected_reset.conf \
@@ -757,6 +773,8 @@ EXTRA_DIST= \
 	prop-all-json-concurrency.sh \
 	testsuites/prop-all-json-concurrency.conf \
 	global_vars.sh \
+	prop-programname.sh \
+	prop-programname-with-slashes.sh \
 	testsuites/global_vars.conf \
 	rfc5424parser.sh \
 	testsuites/rfc5424parser.conf \
@@ -846,6 +864,7 @@ EXTRA_DIST= \
 	mmjsonparse_cim.sh \
 	testsuites/mmjsonparse_cim.conf \
 	mmdb.sh \
+	mmdb.rb \
 	test.mmdb \
 	testsuites/mmdb.conf \
 	incltest.sh \
@@ -1109,6 +1128,13 @@ EXTRA_DIST= \
 	imfile-endregex-timeout-none.sh \
 	imfile-persist-state-1.sh \
 	imfile-truncate.sh \
+	imfile-wildcards.sh \
+	imfile-wildcards-dirs.sh \
+	imfile-wildcards-dirs2.sh \
+	imfile-wildcards-dirs-multi.sh \
+	testsuites/imfile-wildcards.conf \
+	testsuites/imfile-wildcards-dirs.conf \
+	testsuites/imfile-wildcards-dirs-multi.conf \
 	dynfile_invld_async.sh \
 	dynfile_invld_sync.sh \
 	dynfile_cachemiss.sh \
