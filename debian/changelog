@@ -1,3 +1,11 @@
+rsyslog (8.25.0-1) experimental; urgency=medium
+
+  * New upstream release
+  * Update Vcs-* following the latest recommendation
+  * Rebase patches
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 21 Feb 2017 18:08:16 +0100
+
 rsyslog (8.24.0-1) unstable; urgency=medium
 
   [ Michael Biebl ]
