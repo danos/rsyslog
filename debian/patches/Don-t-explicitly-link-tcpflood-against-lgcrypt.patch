@@ -2,20 +2,20 @@ From: Michael Biebl <biebl@debian.org>
 Date: Tue, 10 Mar 2015 22:55:22 +0100
 Subject: Don't explicitly link tcpflood against -lgcrypt
 
-While oder GnuTLS versions do use gcrypt, we rely on GnuTLS to pull that
-library dependency in.
+While older GnuTLS versions do use gcrypt, newer version no longer do.
+We rely on GnuTLS to pull that library dependency in.
 ---
  tests/Makefile.am | 3 ---
  1 file changed, 3 deletions(-)
 
 diff --git a/tests/Makefile.am b/tests/Makefile.am
-index d20ac37..a7596e1 100644
+index 1d29580..19a002d 100644
 --- a/tests/Makefile.am
 +++ b/tests/Makefile.am
-@@ -1440,9 +1440,6 @@ uxsockrcvr_LDADD = $(SOL_LIBS)
- tcpflood_SOURCES = tcpflood.c
- tcpflood_CPPFLAGS = $(PTHREADS_CFLAGS) $(GNUTLS_CFLAGS) $(RELP_CFLAGS)
- tcpflood_LDADD = $(SOL_LIBS) $(PTHREADS_LIBS) $(GNUTLS_LIBS) $(RELP_LIBS)
+@@ -1519,9 +1519,6 @@ tcpflood_SOURCES = tcpflood.c
+ tcpflood_CFLAGS = $(PTHREADS_CFLAGS) $(RELP_CFLAGS) $(GNUTLS_CFLAGS)
+ tcpflood_CPPFLAGS = $(PTHREADS_CFLAGS) $(RELP_CFLAGS) $(GNUTLS_CFLAGS)
+ tcpflood_LDADD = $(SOL_LIBS) $(PTHREADS_LIBS) $(RELP_LIBS) $(GNUTLS_LIBS)
 -if ENABLE_GNUTLS
 -tcpflood_LDADD += -lgcrypt
 -endif
