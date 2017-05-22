@@ -11,7 +11,7 @@ Build-Depends: debhelper (>= 10),
                libpq-dev,
                libmongo-client-dev (>= 0.1.4),
                libcurl4-gnutls-dev,
-               librdkafka-dev,
+               librdkafka-dev (>= 0.9.1),
                libkrb5-dev,
                libgnutls28-dev,
                librelp-dev (>= 1.2.12),
@@ -119,10 +119,10 @@ Priority: extra
 Depends: ${shlibs:Depends},
          ${misc:Depends},
          rsyslog (= ${binary:Version}),
-Description: Kafka output plugin for rsyslog
- This plugin allows rsyslog to write syslog messages to Apache Kafka, a
- distributed and scalable message broker offering strong durability and
- fault-tolerance guarantees.
+Description: Apache Kafka support for rsyslog
+ These plugins allow rsyslog to send and receive syslog messages via Apache
+ Kafka, a distributed and scalable message broker offering strong durability
+ and fault-tolerance guarantees.
 
 Package: rsyslog-gssapi
 Architecture: any
