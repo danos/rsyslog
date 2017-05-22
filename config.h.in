@@ -24,9 +24,6 @@
 /* Define to 1 if you have the `alarm' function. */
 #undef HAVE_ALARM
 
-/* Define to 1 if you have the <arpa/inet.h> header file. */
-#undef HAVE_ARPA_INET_H
-
 /* Define to 1 if you have the <arpa/nameser.h> header file. */
 #undef HAVE_ARPA_NAMESER_H
 
@@ -132,6 +129,9 @@
 /* Define to 1 if you have the <libgen.h> header file. */
 #undef HAVE_LIBGEN_H
 
+/* Define to 1 if you have the `ksi' library (-lksi). */
+#undef HAVE_LIBKSI
+
 /* Define to 1 if liblogging-stdlog is available. */
 #undef HAVE_LIBLOGGING_STDLOG
 
@@ -224,6 +224,9 @@
 
 /* Define to 1 if you have the <semaphore.h> header file. */
 #undef HAVE_SEMAPHORE_H
+
+/* Define if setns exists. */
+#undef HAVE_SETNS
 
 /* Define to 1 if you have the `setsid' function. */
 #undef HAVE_SETSID
@@ -390,6 +393,9 @@
 /* Indicator for a AIX OS */
 #undef OS_AIX
 
+/* Indicator for APPLE OS */
+#undef OS_APPLE
+
 /* Indicator for a BSD OS */
 #undef OS_BSD
 
@@ -464,9 +470,6 @@
 
 /* Define if you want to enable libuuid support */
 #undef USE_LIBUUID
-
-/* Multithreading support enabled. */
-#undef USE_PTHREADS
 
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE

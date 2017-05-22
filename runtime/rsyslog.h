@@ -480,7 +480,6 @@ operation not carried out */
 	RS_RET_FILE_ALREADY_IN_TABLE = -2431,/**< in imfile: table already contains to be added file */
 	RS_RET_ERR_DROP_PRIV = -2432,/**< error droping privileges */
 	RS_RET_FILE_OPEN_ERROR = -2433, /**< error other than "not found" occured during open() */
-	RS_RET_FILE_CHOWN_ERROR = -2434, /**< error during chown() */
 	RS_RET_RENAME_TMP_QI_ERROR = -2435, /**< renaming temporary .qi file failed */
 	RS_RET_ERR_SETENV = -2436, /**< error setting an environment variable */
 	RS_RET_DIR_CHOWN_ERROR = -2437, /**< error during chown() */
@@ -645,6 +644,7 @@ extern uchar *glblModPath; /* module load path */
 extern void (*glblErrLogger)(const int, const int, const uchar*);
 
 /* some runtime prototypes */
+void processImInternal(void);
 rsRetVal rsrtInit(const char **ppErrObj, obj_if_t *pObjIF);
 rsRetVal rsrtExit(void);
 int rsrtIsInit(void);
@@ -658,7 +658,11 @@ void dfltErrLogger(const int, const int, const uchar *errMsg);
  * a dummy variable. This requires review of where in code empty structs
  * are already defined. -- rgerhards, 2010-07-26
  */
+#ifdef OS_SOLARIS
+#define EMPTY_STRUCT  int remove_me_when_first_real_member_is_added;
+#else
 #define EMPTY_STRUCT
+#endif
 
 /* TODO: remove this -- this is only for transition of the config system */
 extern rsconf_t *ourConf; /* defined by syslogd.c, a hack for functions that do not

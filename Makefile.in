@@ -129,31 +129,32 @@ sbin_PROGRAMS =
 @ENABLE_IMPTCP_TRUE@am__append_36 = plugins/imptcp
 @ENABLE_IMDIAG_TRUE@am__append_37 = plugins/imdiag
 @ENABLE_MAIL_TRUE@am__append_38 = plugins/ommail
-@ENABLE_OMKAFKA_TRUE@am__append_39 = plugins/omkafka
-@ENABLE_OMPROG_TRUE@am__append_40 = plugins/omprog
-@ENABLE_RFC3195_TRUE@am__append_41 = plugins/im3195
-@ENABLE_MMNORMALIZE_TRUE@am__append_42 = plugins/mmnormalize
-@ENABLE_MMJSONPARSE_TRUE@am__append_43 = plugins/mmjsonparse
-@ENABLE_MMGROK_TRUE@am__append_44 = contrib/mmgrok
-@ENABLE_MMAUDIT_TRUE@am__append_45 = plugins/mmaudit
-@ENABLE_MMANON_TRUE@am__append_46 = plugins/mmanon
-@ENABLE_MMRM1STSPACE_TRUE@am__append_47 = plugins/mmrm1stspace
-@ENABLE_MMUTF8FIX_TRUE@am__append_48 = plugins/mmutf8fix
-@ENABLE_MMCOUNT_TRUE@am__append_49 = contrib/mmcount
-@ENABLE_MMSEQUENCE_TRUE@am__append_50 = contrib/mmsequence
-@ENABLE_MMDBLOOKUP_TRUE@am__append_51 = contrib/mmdblookup
-@ENABLE_MMFIELDS_TRUE@am__append_52 = plugins/mmfields
-@ENABLE_MMPSTRUCDATA_TRUE@am__append_53 = plugins/mmpstrucdata
-@ENABLE_MMRFC5424ADDHMAC_TRUE@am__append_54 = contrib/mmrfc5424addhmac
+@ENABLE_OMKAFKA_TRUE@am__append_39 = plugins/omkafka 
+@ENABLE_IMKAFKA_TRUE@am__append_40 = plugins/imkafka
+@ENABLE_OMPROG_TRUE@am__append_41 = plugins/omprog
+@ENABLE_RFC3195_TRUE@am__append_42 = plugins/im3195
+@ENABLE_MMNORMALIZE_TRUE@am__append_43 = plugins/mmnormalize
+@ENABLE_MMJSONPARSE_TRUE@am__append_44 = plugins/mmjsonparse
+@ENABLE_MMGROK_TRUE@am__append_45 = contrib/mmgrok
+@ENABLE_MMAUDIT_TRUE@am__append_46 = plugins/mmaudit
+@ENABLE_MMANON_TRUE@am__append_47 = plugins/mmanon
+@ENABLE_MMRM1STSPACE_TRUE@am__append_48 = plugins/mmrm1stspace
+@ENABLE_MMUTF8FIX_TRUE@am__append_49 = plugins/mmutf8fix
+@ENABLE_MMCOUNT_TRUE@am__append_50 = contrib/mmcount
+@ENABLE_MMSEQUENCE_TRUE@am__append_51 = contrib/mmsequence
+@ENABLE_MMDBLOOKUP_TRUE@am__append_52 = contrib/mmdblookup
+@ENABLE_MMFIELDS_TRUE@am__append_53 = plugins/mmfields
+@ENABLE_MMPSTRUCDATA_TRUE@am__append_54 = plugins/mmpstrucdata
+@ENABLE_MMRFC5424ADDHMAC_TRUE@am__append_55 = contrib/mmrfc5424addhmac
 
 # omhttpfs
-@ENABLE_OMHTTPFS_TRUE@am__append_55 = contrib/omhttpfs
+@ENABLE_OMHTTPFS_TRUE@am__append_56 = contrib/omhttpfs
 
 # omamqp1
-@ENABLE_OMAMQP1_TRUE@am__append_56 = contrib/omamqp1
+@ENABLE_OMAMQP1_TRUE@am__append_57 = contrib/omamqp1
 
 # omtcl
-@ENABLE_OMTCL_TRUE@am__append_57 = contrib/omtcl
+@ENABLE_OMTCL_TRUE@am__append_58 = contrib/omtcl
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_check_define.m4 \
@@ -274,17 +275,16 @@ DIST_SUBDIRS = compat runtime grammar . plugins/immark \
 	contrib/imzmq3 contrib/imczmq plugins/omuxsock plugins/omhdfs \
 	plugins/omjournal plugins/imjournal plugins/omelasticsearch \
 	plugins/mmsnmptrapd plugins/imfile plugins/imptcp \
-	plugins/imdiag plugins/ommail plugins/omkafka plugins/omprog \
-	plugins/im3195 plugins/mmnormalize plugins/mmjsonparse \
-	contrib/mmgrok plugins/mmaudit plugins/mmanon \
-	plugins/mmrm1stspace plugins/mmutf8fix contrib/mmcount \
-	contrib/mmsequence contrib/mmdblookup plugins/mmfields \
-	plugins/mmpstrucdata contrib/mmrfc5424addhmac contrib/omhttpfs \
-	contrib/omamqp1 contrib/omtcl tests
+	plugins/imdiag plugins/ommail plugins/omkafka plugins/imkafka \
+	plugins/omprog plugins/im3195 plugins/mmnormalize \
+	plugins/mmjsonparse contrib/mmgrok plugins/mmaudit \
+	plugins/mmanon plugins/mmrm1stspace plugins/mmutf8fix \
+	contrib/mmcount contrib/mmsequence contrib/mmdblookup \
+	plugins/mmfields plugins/mmpstrucdata contrib/mmrfc5424addhmac \
+	contrib/omhttpfs contrib/omamqp1 contrib/omtcl tests
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in AUTHORS \
 	COPYING COPYING.LESSER ChangeLog INSTALL NEWS README compile \
-	config.guess config.sub depcomp install-sh ltmain.sh missing \
-	ylwrap
+	config.guess config.sub install-sh ltmain.sh missing ylwrap
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -375,6 +375,7 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+IP = @IP@
 JAVA = @JAVA@
 JAVAC = @JAVAC@
 JSON_C_CFLAGS = @JSON_C_CFLAGS@
@@ -587,7 +588,7 @@ SUBDIRS = compat runtime grammar . plugins/immark plugins/imuxsock \
 	$(am__append_48) $(am__append_49) $(am__append_50) \
 	$(am__append_51) $(am__append_52) $(am__append_53) \
 	$(am__append_54) $(am__append_55) $(am__append_56) \
-	$(am__append_57) tests
+	$(am__append_57) $(am__append_58) tests
 
 # make sure "make distcheck" tries to build all modules. This means that
 # a developer must always have an environment where every supporting library

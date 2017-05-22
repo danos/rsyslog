@@ -332,6 +332,7 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+IP = @IP@
 JAVA = @JAVA@
 JAVAC = @JAVAC@
 JSON_C_CFLAGS = @JSON_C_CFLAGS@
@@ -534,10 +535,22 @@ rsyslogd_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_CFLAGS
 rsyslogd_LDADD = ../grammar/libgrammar.la ../runtime/librsyslog.la \
 	../compat/compat.la $(ZLIB_LIBS) $(PTHREADS_LIBS) $(RSRT_LIBS) \
 	$(SOL_LIBS) $(LIBUUID_LIBS) $(am__append_1)
-@AIX_FALSE@rsyslogd_LDFLAGS = -export-dynamic \
-@AIX_FALSE@	-Wl,--whole-archive,$(top_builddir)/runtime/.libs/librsyslog.a,--no-whole-archive
-
 @AIX_TRUE@rsyslogd_LDFLAGS = -export-dynamic 
+#endif
+@OS_APPLE_TRUE@rsyslogd_LDFLAGS = -export-dynamic \
+@OS_APPLE_TRUE@	-Wl,$(top_builddir)/runtime/.libs/librsyslog.a
+
+
+# if you know how to do an "if AIX os OS_APPLE" or an elseif chain, let me now!
+#rsyslogd_LDFLAGS = -export-dynamic \
+#	-Wl,$(top_builddir)/runtime/.libs/librsyslog.a
+#if OS_LINUX
+rsyslogd_LDFLAGS = -export-dynamic \
+	#-Wl,--whole-archive,$(top_builddir)/runtime/.libs/librsyslog.a,--no-whole-archive
+
+#else
+#rsyslogd_LDFLAGS = -export-dynamic \
+#	#-Wl,--whole-archive,$(top_builddir)/runtime/.libs/librsyslog.a,--no-whole-archive
 EXTRA_DIST = $(man_MANS) rsgtutil.rst rscryutil.rst recover_qi.pl \
 	$(am__append_7) $(am__append_13) $(am__append_17)
 @ENABLE_DIAGTOOLS_TRUE@rsyslog_diag_hostname_SOURCES = gethostn.c

@@ -106,7 +106,8 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 am__DEPENDENCIES_1 =
 compat_la_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_compat_la_OBJECTS = compat_la-getifaddrs.lo compat_la-strndup.lo
+am_compat_la_OBJECTS = compat_la-getifaddrs.lo compat_la-strndup.lo \
+	compat_la-solaris_elf_fix.lo
 compat_la_OBJECTS = $(am_compat_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -225,6 +226,7 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+IP = @IP@
 JAVA = @JAVA@
 JAVAC = @JAVAC@
 JSON_C_CFLAGS = @JSON_C_CFLAGS@
@@ -385,7 +387,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = compat.la
-compat_la_SOURCES = getifaddrs.c ifaddrs.h strndup.c
+compat_la_SOURCES = getifaddrs.c ifaddrs.h strndup.c solaris_elf_fix.c
 compat_la_CPPFLAGS = -I$(top_srcdir) $(PTHREADS_CFLAGS) $(RSRT_CFLAGS)
 compat_la_LDFLAGS = -module -avoid-version
 compat_la_LIBADD = $(IMUDP_LIBS)
@@ -444,6 +446,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compat_la-getifaddrs.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compat_la-solaris_elf_fix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compat_la-strndup.Plo@am__quote@
 
 .c.o:
@@ -483,6 +486,13 @@ compat_la-strndup.lo: strndup.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='strndup.c' object='compat_la-strndup.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(compat_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o compat_la-strndup.lo `test -f 'strndup.c' || echo '$(srcdir)/'`strndup.c
+
+compat_la-solaris_elf_fix.lo: solaris_elf_fix.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(compat_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT compat_la-solaris_elf_fix.lo -MD -MP -MF $(DEPDIR)/compat_la-solaris_elf_fix.Tpo -c -o compat_la-solaris_elf_fix.lo `test -f 'solaris_elf_fix.c' || echo '$(srcdir)/'`solaris_elf_fix.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/compat_la-solaris_elf_fix.Tpo $(DEPDIR)/compat_la-solaris_elf_fix.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='solaris_elf_fix.c' object='compat_la-solaris_elf_fix.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(compat_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o compat_la-solaris_elf_fix.lo `test -f 'solaris_elf_fix.c' || echo '$(srcdir)/'`solaris_elf_fix.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
