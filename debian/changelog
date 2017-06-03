@@ -1,3 +1,12 @@
+rsyslog (8.27.0-1) experimental; urgency=medium
+
+  * New upstream version 8.27.0
+  * Rebase patches
+  * Bump Build-Depends on liblognorm-dev to (>= 2.0.3)
+  * Enable imkafka input plugin
+
+ -- Michael Biebl <biebl@debian.org>  Sat, 03 Jun 2017 22:18:39 +0200
+
 rsyslog (8.25.0-1) experimental; urgency=medium
 
   * New upstream release
