@@ -1,3 +1,9 @@
+rsyslog (8.27.0-3) unstable; urgency=medium
+
+  * Change PID file to use /run/rsyslog.pid instead of /var/run/rsyslog.pid
+
+ -- Michael Biebl <biebl@debian.org>  Mon, 19 Jun 2017 00:46:43 +0200
+
 rsyslog (8.27.0-2) unstable; urgency=medium
 
   * Upload to unstable
