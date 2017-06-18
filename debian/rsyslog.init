@@ -23,7 +23,7 @@ NAME=rsyslog
 
 RSYSLOGD=rsyslogd
 DAEMON=/usr/sbin/rsyslogd
-PIDFILE=/var/run/rsyslogd.pid
+PIDFILE=/run/rsyslogd.pid
 
 SCRIPTNAME=/etc/init.d/$NAME
 
