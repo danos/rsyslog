@@ -3,7 +3,7 @@
 include /usr/share/dpkg/architecture.mk
 
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
-export DEB_CPPFLAGS_MAINT_APPEND = -DPATH_PIDFILE=\"/run/rsyslog.pid\"
+export DEB_CPPFLAGS_MAINT_APPEND = -DPATH_PIDFILE=\"/run/rsyslogd.pid\"
 
 %:
 	dh $@
