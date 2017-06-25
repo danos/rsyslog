@@ -1,3 +1,13 @@
+rsyslog (8.27.0-4) unstable; urgency=medium
+
+  * Fix PID file to actually be /run/rsyslogd.pid (Closes: #865276)
+  * Don't rely on SysV init script in logrotate config.
+    Add a small helper to send SIGHUP to rsyslogd to close open log files.
+    Use systemctl directly if systemd is the active PID 1. Keep the SysV
+    init script as fallback only.
+
+ -- Michael Biebl <biebl@debian.org>  Sun, 25 Jun 2017 18:27:04 +0200
+
 rsyslog (8.27.0-3) unstable; urgency=medium
 
   * Change PID file to use /run/rsyslog.pid instead of /var/run/rsyslog.pid
