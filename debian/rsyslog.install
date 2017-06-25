@@ -1,5 +1,6 @@
 #!/usr/bin/dh-exec
 debian/rsyslog.conf  etc/
+debian/rsyslog-rotate usr/lib/rsyslog/
 usr/sbin/
 usr/share/man/
 usr/lib/*/rsyslog/imfile.so
