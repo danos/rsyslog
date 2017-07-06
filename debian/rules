@@ -44,6 +44,7 @@ override_dh_auto_configure:
 		--enable-mmutf8fix \
 		--enable-mmpstrucdata \
 		--enable-mmsequence \
+		--enable-mmfields \
 		--enable-imczmq \
 		--enable-omczmq \
 		--enable-omhiredis \
