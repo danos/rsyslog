@@ -129,9 +129,6 @@
 /* Define to 1 if you have the <libgen.h> header file. */
 #undef HAVE_LIBGEN_H
 
-/* Define to 1 if you have the `ksi' library (-lksi). */
-#undef HAVE_LIBKSI
-
 /* Define to 1 if liblogging-stdlog is available. */
 #undef HAVE_LIBLOGGING_STDLOG
 

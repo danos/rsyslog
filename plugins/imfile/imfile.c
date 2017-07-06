@@ -38,6 +38,7 @@
 #include <fnmatch.h>
 #ifdef HAVE_SYS_INOTIFY_H
 #include <sys/inotify.h>
+#include <linux/types.h>
 #endif
 #ifdef HAVE_SYS_STAT_H
 #	include <sys/stat.h>
@@ -124,6 +125,8 @@ typedef struct lstn_s {
 	sbool hasWildcard;
 	uint8_t readMode;	/* which mode to use in ReadMulteLine call? */
 	uchar *startRegex;	/* regex that signifies end of message (NULL if unset) */
+	sbool discardTruncatedMsg;
+	sbool msgDiscardingError;
 	regex_t end_preg;	/* compiled version of startRegex */
 	uchar *prevLineSegment;	/* previous line segment (in regex mode) */
 	sbool escapeLF;	/* escape LF inside the MSG content? */
@@ -135,6 +138,10 @@ typedef struct lstn_s {
 	ruleset_t *pRuleset;	/* ruleset to bind listener to (use system default if unspecified) */
 	ratelimit_t *ratelimiter;
 	multi_submit_t multiSub;
+#ifdef HAVE_INOTIFY_INIT
+	uchar* movedfrom_statefile;
+	__u32 movedfrom_cookie;
+#endif
 } lstn_t;
 
 static struct configSettings_s {
@@ -166,6 +173,8 @@ struct instanceConf_s {
 	sbool bRMStateOnDel;
 	uint8_t readMode;
 	uchar *startRegex;
+	sbool discardTruncatedMsg;
+	sbool msgDiscardingError;
 	sbool escapeLF;
 	sbool reopenOnTruncate;
 	sbool addCeeTag;
@@ -291,6 +300,8 @@ static struct cnfparamdescr inppdescr[] = {
 	{ "ruleset", eCmdHdlrString, 0 },
 	{ "readmode", eCmdHdlrInt, 0 },
 	{ "startmsg.regex", eCmdHdlrString, 0 },
+	{ "discardtruncatedmsg", eCmdHdlrBinary, 0 },
+	{ "msgdiscardingerror", eCmdHdlrBinary, 0 },
 	{ "escapelf", eCmdHdlrBinary, 0 },
 	{ "reopenontruncate", eCmdHdlrBinary, 0 },
 	{ "maxlinesatonce", eCmdHdlrInt, 0 },
@@ -494,11 +505,17 @@ getFullStateFileName(uchar* pszstatefile, uchar* pszout, int ilenout)
 static uchar *
 getStateFileName(lstn_t *const __restrict__ pLstn,
 	 	 uchar *const __restrict__ buf,
-		 const size_t lenbuf)
+		 const size_t lenbuf,
+		 uchar *pszFileName)
 {
 	uchar *ret;
-	if(pLstn->pszStateFile == NULL) {
-		snprintf((char*)buf, lenbuf - 1, "imfile-state:%s", pLstn->pszFileName);
+
+	/* Use pszFileName parameter if set */
+	pszFileName = pszFileName == NULL ? pLstn->pszFileName : pszFileName;
+
+	DBGPRINTF("imfile: getStateFileName for '%s'\n", pszFileName);
+	if(pLstn == NULL || pLstn->pszStateFile == NULL) {
+		snprintf((char*)buf, lenbuf - 1, "imfile-state:%s", pszFileName);
 		buf[lenbuf-1] = '\0'; /* be on the safe side... */
 		uchar *p = buf;
 		for( ; *p ; ++p) {
@@ -569,7 +586,7 @@ openFileWithStateFile(lstn_t *const __restrict__ pLstn)
 	struct stat stat_buf;
 	uchar statefile[MAXFNAME];
 
-	uchar *const statefn = getStateFileName(pLstn, statefile, sizeof(statefile));
+	uchar *const statefn = getStateFileName(pLstn, statefile, sizeof(statefile), NULL);
 	DBGPRINTF("imfile: trying to open state for '%s', state file '%s'\n",
 		  pLstn->pszFileName, statefn);
 
@@ -605,13 +622,20 @@ openFileWithStateFile(lstn_t *const __restrict__ pLstn)
 		  "configured base name '%s'\n", pLstn->pStrm->pszFName,
 		  pLstn->pszFileName);
 	if(ustrcmp(pLstn->pStrm->pszFName, pLstn->pszFileName)) {
-		errmsg.LogError(0, RS_RET_STATEFILE_WRONG_FNAME, "imfile: state file '%s' "
-				"contains file name '%s', but is used for file '%s'. State "
-				"file deleted, starting from begin of file.",
-				pszSFNam, pLstn->pStrm->pszFName, pLstn->pszFileName);
+		if (pLstn->masterLstn != NULL) {
+			/* StateFile was migrated from a filemove.
+				We need to correct the stream Filename and continue */
+			pLstn->pStrm->pszFName = (uchar*) strdup((char*)pLstn->pszFileName);
+			DBGPRINTF("imfile: statefile was migrated from a file rename for '%s'\n", pLstn->pszFileName);
+		} else {
+			errmsg.LogError(0, RS_RET_STATEFILE_WRONG_FNAME, "imfile: state file '%s' "
+					"contains file name '%s', but is used for file '%s'. State "
+					"file deleted, starting from begin of file.",
+					pszSFNam, pLstn->pStrm->pszFName, pLstn->pszFileName);
 
-		unlink((char*)pszSFNam);
-		ABORT_FINALIZE(RS_RET_STATEFILE_WRONG_FNAME);
+			unlink((char*)pszSFNam);
+			ABORT_FINALIZE(RS_RET_STATEFILE_WRONG_FNAME);
+		}
 	}
 
 	strm.CheckFileChange(pLstn->pStrm);
@@ -657,11 +681,11 @@ openFileWithoutStateFile(lstn_t *const __restrict__ pLstn)
 			CHKiRet(strm.SeekCurrOffs(pLstn->pStrm));
 		}
 	}
-	strmSetReadTimeout(pLstn->pStrm, pLstn->readTimeout);
 
 finalize_it:
 	RETiRet;
 }
+
 /* try to open a file. This involves checking if there is a status file and,
  * if so, reading it in. Processing continues from the last know location.
  */
@@ -677,6 +701,7 @@ openFile(lstn_t *const __restrict__ pLstn)
 	DBGPRINTF("imfile: breopenOnTruncate %d for '%s'\n",
 		pLstn->reopenOnTruncate, pLstn->pszFileName);
 	CHKiRet(strm.SetbReopenOnTruncate(pLstn->pStrm, pLstn->reopenOnTruncate));
+	strmSetReadTimeout(pLstn->pStrm, pLstn->readTimeout);
 
 finalize_it:
 	RETiRet;
@@ -722,7 +747,7 @@ pollFile(lstn_t *pLstn, int *pbHadFileData)
 		if(pLstn->startRegex == NULL) {
 			CHKiRet(strm.ReadLine(pLstn->pStrm, &pCStr, pLstn->readMode, pLstn->escapeLF, pLstn->trimLineOverBytes));
 		} else {
-			CHKiRet(strmReadMultiLine(pLstn->pStrm, &pCStr, &pLstn->end_preg, pLstn->escapeLF));
+			CHKiRet(strmReadMultiLine(pLstn->pStrm, &pCStr, &pLstn->end_preg, pLstn->escapeLF, pLstn->discardTruncatedMsg, pLstn->msgDiscardingError));
 		}
 		++nProcessed;
 		if(pbHadFileData != NULL)
@@ -774,6 +799,8 @@ createInstance(instanceConf_t **pinst)
 	inst->iPersistStateInterval = 0;
 	inst->readMode = 0;
 	inst->startRegex = NULL;
+	inst->discardTruncatedMsg = 0;
+	inst->msgDiscardingError = 1;
 	inst->bRMStateOnDel = 1;
 	inst->escapeLF = 1;
 	inst->reopenOnTruncate = 0;
@@ -998,7 +1025,10 @@ lstnDel(lstn_t *pLstn)
 	free(pLstn->pszBaseName);
 	if(pLstn->startRegex != NULL)
 		regfree(&pLstn->end_preg);
-
+#ifdef HAVE_INOTIFY_INIT
+	if (pLstn->movedfrom_statefile != NULL)
+		free(pLstn->movedfrom_statefile);
+#endif
 	if(pLstn == runModConf->pRootLstn)
 		runModConf->pRootLstn = pLstn->next;
 	if(pLstn == runModConf->pTailLstn)
@@ -1058,11 +1088,17 @@ addListner(instanceConf_t *inst)
 	pThis->iPersistStateInterval = inst->iPersistStateInterval;
 	pThis->readMode = inst->readMode;
 	pThis->startRegex = inst->startRegex; /* no strdup, as it is read-only */
-	if(pThis->startRegex != NULL)
-		if(regcomp(&pThis->end_preg, (char*)pThis->startRegex, REG_EXTENDED)) {
-			DBGPRINTF("imfile: error regex compile\n");
+	if(pThis->startRegex != NULL) {
+		const int errcode = regcomp(&pThis->end_preg, (char*)pThis->startRegex, REG_EXTENDED);
+		if(errcode != 0) {
+			char errbuff[512];
+			regerror(errcode, &pThis->end_preg, errbuff, sizeof(errbuff));
+			LogError(0, NO_ERRCODE, "imfile: %s\n", errbuff);
 			ABORT_FINALIZE(RS_RET_ERR);
 		}
+	}
+	pThis->discardTruncatedMsg = inst->discardTruncatedMsg;
+	pThis->msgDiscardingError = inst->msgDiscardingError;
 	pThis->bRMStateOnDel = inst->bRMStateOnDel;
 	pThis->escapeLF = inst->escapeLF;
 	pThis->reopenOnTruncate = inst->reopenOnTruncate;
@@ -1077,6 +1113,11 @@ addListner(instanceConf_t *inst)
 	pThis->pStrm = NULL;
 	pThis->prevLineSegment = NULL;
 	pThis->masterLstn = NULL; /* we *are* a master! */
+#ifdef HAVE_INOTIFY_INIT
+	/* Init Moved Files variables (Used for MOVED_TO/MOVED_FROM)*/
+	pThis->movedfrom_statefile = NULL;
+	pThis->movedfrom_cookie = 0;
+#endif
 finalize_it:
 	RETiRet;
 }
@@ -1122,6 +1163,10 @@ CODESTARTnewInpInst
 			inst->readMode = (sbool) pvals[i].val.d.n;
 		} else if(!strcmp(inppblk.descr[i].name, "startmsg.regex")) {
 			inst->startRegex = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
+		} else if(!strcmp(inppblk.descr[i].name, "discardtruncatedmsg")) {
+			inst->discardTruncatedMsg = (sbool) pvals[i].val.d.n;
+		} else if(!strcmp(inppblk.descr[i].name, "msgdiscardingerror")) {
+			inst->msgDiscardingError = (sbool) pvals[i].val.d.n;
 		} else if(!strcmp(inppblk.descr[i].name, "deletestateonfiledelete")) {
 			inst->bRMStateOnDel = (sbool) pvals[i].val.d.n;
 		} else if(!strcmp(inppblk.descr[i].name, "addmetadata")) {
@@ -1663,7 +1708,7 @@ in_setupDirWatch(const int dirIdx)
 	int dirnamelen = 0;
 	char* psztmp;
 
-	wd = inotify_add_watch(ino_fd, (char*)dirs[dirIdx].dirName, IN_CREATE|IN_DELETE|IN_MOVED_FROM);
+	wd = inotify_add_watch(ino_fd, (char*)dirs[dirIdx].dirName, IN_CREATE|IN_DELETE|IN_MOVED_FROM|IN_MOVED_TO);
 	if(wd < 0) {
 		/* check for wildcard in directoryname, if last character is a wildcard we remove it and try again! */
 		dirnamelen = ustrlen(dirs[dirIdx].dirName);
@@ -1692,7 +1737,7 @@ in_setupDirWatch(const int dirIdx)
 			}
 
 			/* Try to add inotify watch again */
-			wd = inotify_add_watch(ino_fd, dirnametrunc, IN_CREATE|IN_DELETE|IN_MOVED_FROM);
+			wd = inotify_add_watch(ino_fd, dirnametrunc, IN_CREATE|IN_DELETE|IN_MOVED_FROM|IN_MOVED_TO);
 			if(wd < 0) {
 				DBGPRINTF("imfile: in_setupDirWatch: Found wildcard in directory '%s', "
 					"could not create dir watch for '%s' with error %d\n",
@@ -1798,6 +1843,8 @@ lstnDup(lstn_t **ppExisting, uchar *const __restrict__ newname, uchar *const __r
 			DBGPRINTF("imfile: error regex compile\n");
 			ABORT_FINALIZE(RS_RET_ERR);
 		}
+	pThis->discardTruncatedMsg = existing->discardTruncatedMsg;
+	pThis->msgDiscardingError = existing->msgDiscardingError;
 	pThis->bRMStateOnDel = existing->bRMStateOnDel;
 	pThis->hasWildcard = existing->hasWildcard;
 	pThis->escapeLF = existing->escapeLF;
@@ -1812,6 +1859,10 @@ lstnDup(lstn_t **ppExisting, uchar *const __restrict__ newname, uchar *const __r
 	pThis->pStrm = NULL;
 	pThis->prevLineSegment = NULL;
 	pThis->masterLstn = existing;
+#ifdef HAVE_INOTIFY_INIT
+	pThis->movedfrom_statefile = NULL;
+	pThis->movedfrom_cookie = 0;
+#endif
 	*ppExisting = pThis;
 finalize_it:
 	RETiRet;
@@ -2015,7 +2066,7 @@ done:	return;
  * with the same name may already be in processing.
  */
 static void
-in_removeFile(const int dirIdx, lstn_t *const __restrict__ pLstn)
+in_removeFile(const int dirIdx, lstn_t *const __restrict__ pLstn, const sbool bRemoveStateFile)
 {
 	uchar statefile[MAXFNAME];
 	uchar toDel[MAXFNAME];
@@ -2025,8 +2076,9 @@ in_removeFile(const int dirIdx, lstn_t *const __restrict__ pLstn)
 
 	DBGPRINTF("imfile: remove listener '%s', dirIdx %d\n",
 			pLstn->pszFileName, dirIdx);
-	if(pLstn->bRMStateOnDel) {
-		statefn = getStateFileName(pLstn, statefile, sizeof(statefile));
+	if(		bRemoveStateFile == TRUE &&
+			pLstn->bRMStateOnDel) {
+		statefn = getStateFileName(pLstn, statefile, sizeof(statefile), NULL);
 		/* Get full path and file name */
 		getFullStateFileName(statefn, toDel, sizeof(toDel));
 		bDoRMState = 1;
@@ -2081,6 +2133,9 @@ in_handleDirEventFileCREATE(struct inotify_event *ev, const int dirIdx)
 	lstn_t *pLstn = NULL;
 	int ftIdx;
 	char fullfn[MAXFNAME];
+	uchar statefile_new[MAXFNAME];
+	uchar statefilefull_old[MAXFNAME];
+	uchar statefilefull_new[MAXFNAME];
 	uchar* pszDir = NULL;
 	int dirIdxFinal = dirIdx;
 	ftIdx = fileTableSearch(&dirs[dirIdxFinal].active, (uchar*)ev->name);
@@ -2138,6 +2193,40 @@ in_handleDirEventFileCREATE(struct inotify_event *ev, const int dirIdx)
 	if (pLstn != NULL)	{
 		DBGPRINTF("imfile: file '%s' associated with dir '%s' (Idx=%d)\n",
 			ev->name, (pszDir == NULL) ? dirs[dirIdxFinal].dirName : pszDir, dirIdxFinal);
+
+		/* We need to check if we have a preexisting statefile and move it*/
+		if(ev->mask & IN_MOVED_TO) {
+			if (pLstn->movedfrom_statefile != NULL && pLstn->movedfrom_cookie == ev->cookie) {
+				/* We need to prepar fullfn before we can generate statefilename */
+				snprintf(fullfn, MAXFNAME, "%s/%s", (pszDir == NULL) ? dirs[dirIdxFinal].dirName : pszDir, (uchar*)ev->name);
+				getStateFileName(NULL, statefile_new, sizeof(statefile_new), (uchar*)fullfn);
+				getFullStateFileName(statefile_new, statefilefull_new, sizeof(statefilefull_new));
+				getFullStateFileName(pLstn->movedfrom_statefile, statefilefull_old, sizeof(statefilefull_old));
+
+				DBGPRINTF("imfile: old statefile '%s' needs to be moved to '%s' first!\n",
+				statefilefull_old, statefilefull_new);
+
+//				openStateFileAndMigrate(pLstn, &statefilefull_old[0], &statefilefull_new[0]);
+				if(rename((char*) &statefilefull_old, (char*) &statefilefull_new) != 0) {
+					char errStr[1024];
+					rs_strerror_r(errno, errStr, sizeof(errStr));
+					errmsg.LogError(0, RS_RET_ERR, "imfile: could not rename statefile "
+						"'%s' into '%s' with error: %s", statefilefull_old, statefilefull_new, errStr);
+				} else {
+					DBGPRINTF("imfile: statefile '%s' renamed into '%s'\n", statefilefull_old, statefilefull_new);
+				}
+
+				/* Free statefile memory */
+				free(pLstn->movedfrom_statefile);
+				pLstn->movedfrom_statefile = NULL;
+				pLstn->movedfrom_cookie = 0;
+			} else {
+					DBGPRINTF("imfile: IN_MOVED_TO either unknown cookie '%d' we expected '%d' or missing statefile '%s'\n",
+						pLstn->movedfrom_cookie, ev->cookie, pLstn->movedfrom_statefile);
+			}
+		}
+
+		/* Setup a watch now for new file*/
 		in_setupFileWatchDynamic(pLstn, (uchar*)ev->name, (pszDir == NULL) ? NULL : (uchar*)fullfn);
 	}
 done:	return;
@@ -2160,7 +2249,7 @@ in_handleDirEventFileDELETE(struct inotify_event *const ev, const int dirIdx)
 	}
 	DBGPRINTF("imfile: imfile delete processing for '%s'\n",
 		dirs[dirIdx].active.listeners[ftIdx].pLstn->pszFileName);
-	in_removeFile(dirIdx, dirs[dirIdx].active.listeners[ftIdx].pLstn);
+	in_removeFile(dirIdx, dirs[dirIdx].active.listeners[ftIdx].pLstn, TRUE);
 done:	return;
 }
 
@@ -2201,18 +2290,6 @@ in_handleDirEventDirDELETE(struct inotify_event *const ev, const int dirIdx)
 	} else {
 		DBGPRINTF("imfile: in_handleDirEventDirDELETE ERROR could not found '%s' in dirs table!\n", fulldn);
 	}
-
-/*
-	const int ftIdx = fileTableSearch(&dirs[dirIdx].active, (uchar*)ev->name);
-	if(ftIdx == -1) {
-		DBGPRINTF("imfile: deleted file '%s' not active in dir '%s'\n",
-			ev->name, dirs[dirIdx].dirName);
-		goto done;
-	}
-	DBGPRINTF("imfile: imfile delete processing for '%s'\n",
-	          dirs[dirIdx].active.listeners[ftIdx].pLstn->pszFileName);
-	in_removeFile(dirIdx, dirs[dirIdx].active.listeners[ftIdx].pLstn);
-*/
 }
 
 static void
@@ -2220,7 +2297,7 @@ in_handleDirEvent(struct inotify_event *const ev, const int dirIdx)
 {
 	DBGPRINTF("imfile: in_handleDirEvent dir event for (Idx %d)%s (mask %x)\n", dirIdx, dirs[dirIdx].dirName, ev->mask);
 	if((ev->mask & IN_CREATE)) {
-		if((ev->mask & IN_ISDIR))
+		if((ev->mask & IN_ISDIR) || (ev->mask & IN_MOVED_TO)) /* VERIFY: does IN_MOVED_TO make sense here ? */
 			in_handleDirEventDirCREATE(ev, dirIdx); /* Create new Dir */
 		else
 			in_handleDirEventFileCREATE(ev, dirIdx); /* Create new File */
@@ -2229,6 +2306,11 @@ in_handleDirEvent(struct inotify_event *const ev, const int dirIdx)
 			in_handleDirEventDirDELETE(ev, dirIdx);		/* Create new Dir */
 		else
 			in_handleDirEventFileDELETE(ev, dirIdx);	/* Delete File from dir filetable */
+	} else if((ev->mask & IN_MOVED_TO)) {
+		if((ev->mask & IN_ISDIR))
+			in_handleDirEventDirCREATE(ev, dirIdx); /* Create new Dir */
+		else
+			in_handleDirEventFileCREATE(ev, dirIdx); /* Create new File */
 	} else {
 		DBGPRINTF("imfile: got non-expected inotify event:\n");
 		in_dbg_showEv(ev);
@@ -2255,6 +2337,7 @@ in_processEvent(struct inotify_event *ev)
 	int iRet;
 	int ftIdx;
 	int wd;
+	uchar statefile[MAXFNAME];
 
 	if(ev->mask & IN_IGNORED) {
 		goto done;
@@ -2278,7 +2361,13 @@ in_processEvent(struct inotify_event *ev)
 					DBGPRINTF("imfile: inotify_rm_watch successfully removed file from watch "
 						"(ftIdx=%d, wd=%d, name=%s)\n", ftIdx, wd, ev->name);
 				}
-				in_removeFile(etry->dirIdx, pLstn);
+
+				/* Store statefile name for later MOVED_TO event along with COOKIE */
+				pLstn->masterLstn->movedfrom_statefile = (uchar*) strdup((char*) getStateFileName(pLstn, statefile, sizeof(statefile), NULL) );
+				pLstn->masterLstn->movedfrom_cookie = ev->cookie;
+
+				/* do NOT remove statefile in this case!*/
+				in_removeFile(etry->dirIdx, pLstn, FALSE);
 				DBGPRINTF("imfile: IN_MOVED_FROM Event file removed file (wd=%d, name=%s)\n", wd, ev->name);
 			}
 		}
@@ -2445,7 +2534,7 @@ persistStrmState(lstn_t *pLstn)
 	size_t lenDir;
 	uchar statefile[MAXFNAME];
 
-	uchar *const statefn = getStateFileName(pLstn, statefile, sizeof(statefile));
+	uchar *const statefn = getStateFileName(pLstn, statefile, sizeof(statefile), NULL);
 	DBGPRINTF("imfile: persisting state for '%s' to file '%s'\n",
 		  pLstn->pszFileName, statefn);
 	CHKiRet(strm.Construct(&psSF));

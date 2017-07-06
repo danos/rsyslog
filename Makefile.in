@@ -142,7 +142,7 @@ sbin_PROGRAMS =
 @ENABLE_MMUTF8FIX_TRUE@am__append_49 = plugins/mmutf8fix
 @ENABLE_MMCOUNT_TRUE@am__append_50 = contrib/mmcount
 @ENABLE_MMSEQUENCE_TRUE@am__append_51 = contrib/mmsequence
-@ENABLE_MMDBLOOKUP_TRUE@am__append_52 = contrib/mmdblookup
+@ENABLE_MMDBLOOKUP_TRUE@am__append_52 = plugins/mmdblookup
 @ENABLE_MMFIELDS_TRUE@am__append_53 = plugins/mmfields
 @ENABLE_MMPSTRUCDATA_TRUE@am__append_54 = plugins/mmpstrucdata
 @ENABLE_MMRFC5424ADDHMAC_TRUE@am__append_55 = contrib/mmrfc5424addhmac
@@ -279,7 +279,7 @@ DIST_SUBDIRS = compat runtime grammar . plugins/immark \
 	plugins/omprog plugins/im3195 plugins/mmnormalize \
 	plugins/mmjsonparse contrib/mmgrok plugins/mmaudit \
 	plugins/mmanon plugins/mmrm1stspace plugins/mmutf8fix \
-	contrib/mmcount contrib/mmsequence contrib/mmdblookup \
+	contrib/mmcount contrib/mmsequence plugins/mmdblookup \
 	plugins/mmfields plugins/mmpstrucdata contrib/mmrfc5424addhmac \
 	contrib/omhttpfs contrib/omamqp1 contrib/omtcl tests
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in AUTHORS \
@@ -365,6 +365,8 @@ GREP = @GREP@
 GSS_LIBS = @GSS_LIBS@
 GT_KSI_CFLAGS = @GT_KSI_CFLAGS@
 GT_KSI_LIBS = @GT_KSI_LIBS@
+GT_KSI_LS12_CFLAGS = @GT_KSI_LS12_CFLAGS@
+GT_KSI_LS12_LIBS = @GT_KSI_LS12_LIBS@
 GUARDTIME_CFLAGS = @GUARDTIME_CFLAGS@
 GUARDTIME_LIBS = @GUARDTIME_LIBS@
 HIREDIS_CFLAGS = @HIREDIS_CFLAGS@
@@ -378,8 +380,6 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 IP = @IP@
 JAVA = @JAVA@
 JAVAC = @JAVAC@
-JSON_C_CFLAGS = @JSON_C_CFLAGS@
-JSON_C_LIBS = @JSON_C_LIBS@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
 LEX = @LEX@
@@ -389,6 +389,8 @@ LIBDBI_CFLAGS = @LIBDBI_CFLAGS@
 LIBDBI_LIBS = @LIBDBI_LIBS@
 LIBESTR_CFLAGS = @LIBESTR_CFLAGS@
 LIBESTR_LIBS = @LIBESTR_LIBS@
+LIBFASTJSON_CFLAGS = @LIBFASTJSON_CFLAGS@
+LIBFASTJSON_LIBS = @LIBFASTJSON_LIBS@
 LIBGCRYPT_CFLAGS = @LIBGCRYPT_CFLAGS@
 LIBGCRYPT_CONFIG = @LIBGCRYPT_CONFIG@
 LIBGCRYPT_LIBS = @LIBGCRYPT_LIBS@
@@ -398,6 +400,8 @@ LIBLOGGING_STDLOG_CFLAGS = @LIBLOGGING_STDLOG_CFLAGS@
 LIBLOGGING_STDLOG_LIBS = @LIBLOGGING_STDLOG_LIBS@
 LIBLOGNORM_CFLAGS = @LIBLOGNORM_CFLAGS@
 LIBLOGNORM_LIBS = @LIBLOGNORM_LIBS@
+LIBLZ4_CFLAGS = @LIBLZ4_CFLAGS@
+LIBLZ4_LIBS = @LIBLZ4_LIBS@
 LIBM = @LIBM@
 LIBMONGO_CLIENT_CFLAGS = @LIBMONGO_CLIENT_CFLAGS@
 LIBMONGO_CLIENT_LIBS = @LIBMONGO_CLIENT_LIBS@
