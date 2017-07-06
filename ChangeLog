@@ -1,4 +1,91 @@
 ------------------------------------------------------------------------------
+Version 8.28.0 [v8-stable] 2017-06-27
+- NEW BUILD REQUIREMENT: librelp 1.2.14 (to build relp components)
+  This was necessary because imrelp requires an API introduced in 1.2.14.
+- omfwd: add parameter "tcp_frameDelimiter"
+- omkafka: large refactor of kafka subsystem
+  This offers improvements and greatly increases reliablity.
+  Closes https://github.com/rsyslog/rsyslog/issues/1559
+  Closes https://github.com/rsyslog/rsyslog/issues/1584
+  Closes https://github.com/rsyslog/rsyslog/issues/1515
+  Closes https://github.com/rsyslog/rsyslog/issues/1052
+  May fix https://github.com/rsyslog/rsyslog/issues/1230
+- imfile: improved handling of atomically renamed file (w/ wildcards)
+  if a file is atomically renamed, the state file is also being renamed,
+  so processing continues as if the original name were kept.
+  see also: https://github.com/rsyslog/rsyslog/issues/1417
+- imfile: add capability to truncate oversize messages or split into multiple
+  also in this case an error message is emitted. Both of these actions are
+  configurable. This also solves memory issues when an endregex does not
+  match for prolonged time. In that case, large parts of the file were
+  previously buffered, which could cause big problems in case e.g. the
+  endregex was simply wrong and never matched. For the later, see also
+  https://github.com/rsyslog/rsyslog/issues/1552
+- mmdblookup
+  * upgraded from "contrib" to "fully supported" state
+  * refactored and simplified code
+  * added ability to specify custom names for extracted fields
+  * added ability to spehttp://www.landesrecht-bw.de/jportal/portal/t/6el/page/bsbawueprod.psml/action/portlets.jw.MainAction?p1=0&eventSubmit_doNavigate=searchInSubtreeTOC&showdoccase=1&doc.hl=0&doc.id=jlr-UmwVwGBWrahmen&doc.part=R&toc.poskey=#focuspointcify container name for extracted fields
+  * bugfix: fixed multiple memory leaks
+- imptcp: add new parameter "flowControl"
+- imrelp: add "maxDataSize" config parameter
+  Thanks to Nathan Brown for the patch.
+- multiple modules: gtls: improve error if certificate file can't be opened
+- omsnare: allow different tab escapes
+  Thanks to Shane P. Lawrence for the patch.
+- omelasticsearch: converted to use libfastjson instead of json-c
+  json-c was used for historical purposes, and it's source included
+  within the rsyslog source tree. We now use libfastjson inside all
+  components.
+- imjournal: _PID fallback
+  * added fallback for _PID proprety when SYSLOG_PID is not available
+  * introduced new option "usepid" which sets which property should
+    rsyslog use, it has 3 states system|syslog|both, default is both
+  * deprecated "usepidfromsystem" option, still can be used
+    and override the "usepid"
+  * it is possible to revert previous default with usepid="syslog"
+  Thanks to Radovan Sroka for the patch
+- multiple modules: add better error messages when regcomp is failing
+- omhiredis: fix build warnings
+  Thanks to Brian Knox for the fix.
+- imfile bugfix: files mv-ed in into directory were not handled
+  Thanks to Zachary M. Zhao for the patch.
+  see also https://github.com/rsyslog/rsyslog/issues/1588
+- omprog bugfix: execve() incorrectly called
+  this caused failures on some but not all platforms
+  Thanks to 張君天(Chun-Tien Chang) and Matthew Seaman for the patch.
+- imfile bugfix: multiline timeout did not work if state file exists
+  The timeout feature for multiline reads does not correctly work for
+  files for which a state file existed. This is usually the case for files
+  that had been processed by a previous run and that still exist on the
+  new start. For all other files, especially those monitored by a
+  wildcard and newly created after the rsyslog start, timeout worked as
+  expected.
+  closes https://github.com/rsyslog/rsyslog/issues/1445
+- lmsig_ksi-ls12 bugfix: build problems on some platforms
+- core bugfix: invalid object type assertion
+  This lead to aborts due to failing assertion. Note that this could only
+  happen during debugging runs which includes runtime instrumentation,
+  something that never should be done in a stable production build.
+  So this did not affect ordinary users, only developers in with
+  deep debugging settings.
+- regression fix: local hostname was not always detected properly...
+  ... on early start (w/o network). Introduced in 8.27.0.
+  Thanks to github user jvymazal for the patch and whissi for
+  reporting and helping with the analysis.
+- bugfix: format security issues in zmq3 modules
+  see also: https://github.com/rsyslog/rsyslog/pull/1565
+  Thanks to Thomas D. (whissi) for the patch.
+- bugfix build system: add libksi only to those binaries that need it
+  Thanks to Allan Park for the patch.
+- bugfix KSI ls12 components: invalid tree height calculation
+  Thanks to Allan Park for the patch.
+- testbench/CI enhancements
+  * re-enable and add kafka tests
+    Kafka tests were disabled in 8.27.0 (a regression from imkafka).
+  * better testbench coverage for mmdblookup
+  * lmsig_ksi-ls12 is now being built at least on Centos7
+------------------------------------------------------------------------------
 Version 8.27.0 [v8-stable] 2017-05-16
 - imkafka: add module
 - imptcp enhancements:
@@ -61,7 +148,7 @@ Version 8.27.0 [v8-stable] 2017-05-16
   name is configured in rsyslog.conf AND the local system configuration
   also is set to an empty hostname.
   Thanks to github user jvymazal for the patch.
-- bugfix core: on shutdown, stderr was written to, even if alrady closed
+- bugfix core: on shutdown, stderr was written to, even if already closed
   This lead to messages going to whatever was associated with file
   descriptor two.
   Thanks to Allan Park for the patch.

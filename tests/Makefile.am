@@ -331,8 +331,11 @@ if ENABLE_OMKAFKA
 if ENABLE_IMKAFKA
 if ENABLE_KAFKA_TESTS
 TESTS += \
-	sndrcv_kafka.sh \
-	sndrcv_kafka_multi.sh
+	sndrcv_kafka.sh 
+# Tests below need to be stable first!
+#	sndrcv_kafka_multi.sh
+#	sndrcv_kafka_fail.sh
+#	sndrcv_kafka_failresume.sh
 endif
 endif
 endif
@@ -521,7 +524,14 @@ endif
 
 if ENABLE_MMDBLOOKUP
 TESTS += \
-    mmdb.sh
+    mmdb.sh \
+    mmdb-container.sh \
+    mmdb-container-empty.sh
+if HAVE_VALGRIND
+TESTS += \
+    mmdb-vg.sh \
+    mmdb-multilevel-vg.sh
+endif
 endif
 
 if ENABLE_GNUTLS
@@ -547,10 +557,13 @@ endif
 
 if ENABLE_RELP
 TESTS += sndrcv_relp.sh \
-         sndrcv_relp_tls.sh \
          sndrcv_relp_dflt_pt.sh \
 	 imrelp-basic.sh \
 	 imrelp-manyconn.sh
+if ENABLE_GNUTLS
+TESTS += \
+         sndrcv_relp_tls.sh
+endif
 endif
 
 if ENABLE_OMUDPSPOOF
@@ -583,6 +596,11 @@ TESTS += \
 	omruleset-queue.sh
 endif
 
+if ENABLE_PMSNARE
+TESTS += \
+	pmsnare.sh
+endif
+
 if ENABLE_EXTENDED_TESTS
 # random.sh is temporarily disabled as it needs some work
 # to rsyslog core to complete in reasonable time
@@ -592,6 +610,8 @@ endif
 if ENABLE_IMFILE
 TESTS += \
 	imfile-basic.sh \
+	imfile-discard-truncated-line.sh \
+	imfile-truncate-line.sh \
 	imfile-file-not-found-error.sh \
 	imfile-fileNotFoundError-parameter.sh \
 	imfile-error-not-repeated.sh \
@@ -606,11 +626,14 @@ TESTS += \
 	imfile-endregex-timeout-polling.sh \
 	imfile-endregex-timeout.sh \
 	imfile-endregex-timeout-none.sh \
+	imfile-endregex-timeout-with-shutdown.sh \
+	imfile-endregex-timeout-with-shutdown-polling.sh \
 	imfile-persist-state-1.sh \
 	imfile-wildcards.sh \
 	imfile-wildcards-dirs.sh \
 	imfile-wildcards-dirs2.sh \
-	imfile-wildcards-dirs-multi.sh
+	imfile-wildcards-dirs-multi.sh \
+	imfile-rename.sh
 if HAVE_VALGRIND
 TESTS += \
 	imfile-basic-vg.sh \
@@ -932,7 +955,10 @@ EXTRA_DIST= \
 	mmdb.sh \
 	mmdb.rb \
 	test.mmdb \
-	testsuites/mmdb.conf \
+	mmdb-vg.sh \
+	mmdb-container.sh \
+	mmdb-container-empty.sh \
+	mmdb-multilevel-vg.sh \
 	incltest.sh \
 	testsuites/incltest.conf \
 	incltest_dir.sh \
@@ -1193,6 +1219,8 @@ EXTRA_DIST= \
 	imfile-endregex-vg.sh \
 	testsuites/imfile-endregex.conf \
 	imfile-basic.sh \
+	imfile-discard-truncated-line.sh \
+	imfile-truncate-line.sh \
 	imfile-file-not-found-error.sh \
 	imfile-fileNotFoundError-parameter.sh \
 	imfile-error-not-repeated.sh \
@@ -1202,13 +1230,17 @@ EXTRA_DIST= \
 	imfile-endregex-timeout-polling.sh \
 	imfile-endregex-timeout.sh \
 	imfile-endregex-timeout-none.sh \
+	imfile-endregex-timeout-with-shutdown.sh \
+	imfile-endregex-timeout-with-shutdown-polling.sh \
 	imfile-persist-state-1.sh \
 	imfile-truncate.sh \
 	imfile-wildcards.sh \
 	imfile-wildcards-dirs.sh \
 	imfile-wildcards-dirs2.sh \
 	imfile-wildcards-dirs-multi.sh \
+	imfile-rename.sh \
 	testsuites/imfile-wildcards.conf \
+	testsuites/imfile-wildcards-simple.conf \
 	testsuites/imfile-wildcards-dirs.conf \
 	testsuites/imfile-wildcards-dirs-multi.conf \
 	dynfile_invld_async.sh \
@@ -1311,12 +1343,22 @@ EXTRA_DIST= \
 	mysql-actq-mt-withpause.sh \
 	mysql-actq-mt-withpause-vg.sh \
 	testsuites/mysql-actq-mt.conf \
+	sndrcv_kafka.sh \
+	sndrcv_kafka_multi.sh \
+	sndrcv_kafka_fail.sh \
+	sndrcv_kafka_failresume.sh \
+	testsuites/sndrcv_kafka_rcvr.conf \
+	testsuites/sndrcv_kafka_sender.conf \
+	testsuites/sndrcv_kafka_multi_rcvr.conf \
+	testsuites/sndrcv_kafka_multi_sender.conf \
 	testsuites/kafka-server.properties \
+	testsuites/kafka-server.dep_wrk1.properties \
+	testsuites/kafka-server.dep_wrk2.properties \
+	testsuites/kafka-server.dep_wrk3.properties \
 	testsuites/zoo.cfg \
-	omkafka_static.sh \
-	testsuites/omkafka_static.conf \
-	omkafka_multiple.sh \
-	testsuites/omkafka_multiple.conf \
+	testsuites/zoo.dep_wrk1.cfg \
+	testsuites/zoo.dep_wrk2.cfg \
+	testsuites/zoo.dep_wrk3.cfg \
 	mmpstrucdata.sh \
 	mmpstrucdata-vg.sh \
 	testsuites/mmpstrucdata.conf \
@@ -1480,6 +1522,7 @@ EXTRA_DIST= \
 	imptcp_nonProcessingPoller.sh \
 	imptcp_veryLargeOctateCountedMessages.sh \
 	testsuites/imptcp_nonProcessingPoller.conf \
+	libmaxmindb.supp \
 	travis/trusty.supp \
 	json_var_case.sh \
 	testsuites/json_var_case.conf \
@@ -1504,8 +1547,21 @@ EXTRA_DIST= \
 	testsuites/sndrcv_tls_anon_sender.conf \
 	testsuites/sndrcv_tls_anon_rcvr.conf \
 	omtcl.sh \
-	omtcl.tcl
-
+	omtcl.tcl \
+	pmsnare.sh \
+	testsuites/pmsnare_default.conf \
+	testsuites/pmsnare_ccoff.conf \
+	testsuites/pmsnare_ccdefault.conf \
+	testsuites/pmsnare_cccstyle.conf \
+	testsuites/pmsnare_ccbackslash.conf \
+	testsuites/pmsnare_modoverride.conf \
+	testsuites/sample.pmsnare_default \
+	testsuites/sample.pmsnare_ccoff \
+	testsuites/sample.pmsnare_ccdefault \
+	testsuites/sample.pmsnare_cccstyle \
+	testsuites/sample.pmsnare_ccbackslash \
+	testsuites/sample.pmsnare_modoverride
+	
 ourtail_SOURCES = ourtail.c
 msleep_SOURCES = msleep.c
 omrelp_dflt_port_SOURCES = omrelp_dflt_port.c
@@ -1554,4 +1610,3 @@ nettester_LDADD = $(SOL_LIBS)
 #rscript_CPPFLAGS =  -I$(top_srcdir) $(PTHREADS_CFLAGS) $(RSRT_CFLAGS)
 #rscript_LDADD = $(RSRT_LIBS) $(ZLIB_LIBS) $(PTHREADS_LIBS) $(SOL_LIBS)
 #rscript_LDFLAGS = -export-dynamic
-

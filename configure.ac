@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([rsyslog],[8.27.0],[rsyslog@lists.adiscon.com])
+AC_INIT([rsyslog],[8.28.0],[rsyslog@lists.adiscon.com])
 
 # AIXPORT START: Detect the underlying OS
 unamestr=$(uname)
@@ -74,7 +74,8 @@ PKG_PROG_PKG_CONFIG
 
 # modules we require
 PKG_CHECK_MODULES(LIBESTR, libestr >= 0.1.9)
-PKG_CHECK_MODULES([JSON_C], [libfastjson >= 0.99.3],,)
+
+PKG_CHECK_MODULES([LIBFASTJSON], [libfastjson >= 0.99.3],,)
 
 AC_DEFINE_UNQUOTED([PLATFORM_ID], ["${host}"], [platform id for display purposes])
 # we don't mind if we don't have the lsb_release utility. But if we have, it's
@@ -923,7 +924,7 @@ if test "x$enable_rsyslogrt" = "xyes"; then
   RSRT_LIBS1="\$(top_builddir)/runtime/librsyslog.la"
 fi
 AM_CONDITIONAL(ENABLE_RSYSLOGRT, test x$enable_rsyslogrt = xyes)
-RSRT_CFLAGS="\$(RSRT_CFLAGS1) \$(LIBESTR_CFLAGS) \$(JSON_C_CFLAGS)"
+RSRT_CFLAGS="\$(RSRT_CFLAGS1) \$(LIBESTR_CFLAGS) \$(LIBFASTJSON_CFLAGS)"
 if test "$GCC" = "yes"; then
   RSRT_CFLAGS="$RSRT_CFLAGS -W -Wall -Wformat-security -Wshadow -Wcast-align -Wpointer-arith -Wmissing-format-attribute"
   if $CC -Werror=implicit-function-declaration -x c -c /dev/null -o /dev/null 2>/dev/null; then
@@ -937,7 +938,7 @@ if test "$GCC" = "yes"; then
   fi
 fi
 RSRT_CFLAGS="$RSRT_CFLAGS $WARN_CFLAGS"
-RSRT_LIBS="\$(RSRT_LIBS1) \$(LIBESTR_LIBS) \$(JSON_C_LIBS)"
+RSRT_LIBS="\$(RSRT_LIBS1) \$(LIBESTR_LIBS) \$(LIBFASTJSON_LIBS)"
 AC_SUBST(RSRT_CFLAGS1)
 AC_SUBST(RSRT_LIBS1)
 AC_SUBST(RSRT_CFLAGS)
@@ -1248,7 +1249,7 @@ AC_ARG_ENABLE(relp,
         [enable_relp=no]
 )
 if test "x$enable_relp" = "xyes"; then
-	PKG_CHECK_MODULES(RELP, relp >= 1.2.12)
+	PKG_CHECK_MODULES(RELP, relp >= 1.2.14)
 	AC_DEFINE([ENABLE_RELP], [1], [Indicator that RELP is present])
 fi
 AM_CONDITIONAL(ENABLE_RELP, test x$enable_relp = xyes)
@@ -1305,8 +1306,7 @@ AC_ARG_ENABLE(ksi-ls12,
         [enable_ksi_ls12=no]
 )
 if test "x$enable_ksi_ls12" = "xyes"; then
-	PKG_CHECK_MODULES(GT_KSI, libksi >= 3.13.0)
-	AC_CHECK_LIB([ksi], [KSI_Signature_signAggregatedWithPolicy], [], [AC_MSG_FAILURE([Could not find libksi])])
+	PKG_CHECK_MODULES(GT_KSI_LS12, libksi >= 3.13.0)
 fi
 AM_CONDITIONAL(ENABLE_KSI_LS12, test x$enable_ksi_ls12 = xyes)
 
@@ -1693,9 +1693,47 @@ AC_ARG_ENABLE(kafka_tests,
 )
 AM_CONDITIONAL(ENABLE_KAFKA_TESTS, test x$enable_kafka_tests = xyes)
 
+AC_ARG_ENABLE(kafka_static,
+        [AS_HELP_STRING([--enable-kafka-static],[Enable static library linking for Kafka modules. Removes dependency for rdkafka.so. @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_kafka_static="yes" ;;
+          no) enable_kafka_static="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-kafka-static) ;;
+         esac],
+        [enable_kafka_static=no]
+)
+AM_CONDITIONAL(ENABLE_KAFKA_STATIC, test x$enable_kafka_static = xyes)
+
 # omkafka works with older library
 if test "x$enable_omkafka" = "xyes"; then
-	PKG_CHECK_MODULES([LIBRDKAFKA], [librdkafka],, [
+	PKG_CHECK_MODULES([LIBRDKAFKA], [rdkafka],, [
+		PKG_CHECK_MODULES([LIBRDKAFKA], [librdkafka],, [
+			AC_CHECK_LIB([rdkafka], [rd_kafka_produce], [
+				AC_MSG_WARN([librdkafka is missing but library present, using -lrdkafka])
+				LIBRDKAFKA_LIBS=-lrdkafka
+			], [
+				AC_MSG_ERROR([could not find rdkafka library])
+			])
+		])
+	])
+	AC_CHECK_HEADERS([librdkafka/rdkafka.h])
+
+	# Add additional dependencies if statically linking rdkafka
+	if test "x$enable_kafka_static" = "xyes"; then
+		PKG_CHECK_MODULES([LIBLZ4], [liblz4],, [
+			AC_CHECK_LIB([lz4], [LZ4_compress], [
+				AC_MSG_WARN([liblz4 is missing but library present, using -llz4])
+				LIBRDKAFKA_LIBS=-llz4
+			], [
+				AC_MSG_ERROR([could not find liblz4 library])
+			])
+		])
+	fi
+fi
+
+# imkafka needs newer library
+if test "x$enable_imkafka" = "xyes"; then
+	PKG_CHECK_MODULES([LIBRDKAFKA], [rdkafka >= 0.9.1],, [
 		AC_CHECK_LIB([rdkafka], [rd_kafka_produce], [
 			AC_MSG_WARN([librdkafka is missing but library present, using -lrdkafka])
 			LIBRDKAFKA_LIBS=-lrdkafka
@@ -1704,18 +1742,18 @@ if test "x$enable_omkafka" = "xyes"; then
 		])
 	])
 	AC_CHECK_HEADERS([librdkafka/rdkafka.h])
-fi
 
-# imkafka needs newer library
-if test "x$enable_imkafka" = "xyes"; then
-	PKG_CHECK_MODULES(LIBRDKAFKA, rdkafka >= 0.9.1)
-	AC_CHECK_LIB([rdkafka], [rd_kafka_produce], [
-		AC_MSG_WARN([librdkafka is missing but library present, using -lrdkafka])
-		LIBRDKAFKA_LIBS=-lrdkafka
-	], [
-		AC_MSG_ERROR([could not find rdkafka library])
-	])
-	AC_CHECK_HEADERS([librdkafka/rdkafka.h])
+	# Add additional dependencies if statically linking rdkafka
+	if test "x$enable_kafka_static" = "xyes"; then
+		PKG_CHECK_MODULES([LIBLZ4], [liblz4],, [
+			AC_CHECK_LIB([lz4], [LZ4_compress], [
+				AC_MSG_WARN([liblz4 is missing but library present, using -llz4])
+				LIBRDKAFKA_LIBS=-llz4
+			], [
+				AC_MSG_ERROR([could not find liblz4 library])
+			])
+		])
+	fi
 fi
 
 if test "x$enable_omkafka" = "xyes" && test "x$enable_imkafka" = "xyes"; then
@@ -2063,6 +2101,7 @@ AC_CONFIG_FILES([Makefile \
 		plugins/omelasticsearch/Makefile \
 		plugins/mmsnmptrapd/Makefile \
 		plugins/pmlastmsg/Makefile \
+		plugins/mmdblookup/Makefile \
 		contrib/pmsnare/Makefile \
 		contrib/pmpanngfw/Makefile \
 		contrib/pmaixforwardedfrom/Makefile \
@@ -2076,7 +2115,6 @@ AC_CONFIG_FILES([Makefile \
 		contrib/imzmq3/Makefile \
 		contrib/imczmq/Makefile \
 		contrib/mmsequence/Makefile \
-		contrib/mmdblookup/Makefile \
 		contrib/mmrfc5424addhmac/Makefile \
 		contrib/pmcisconames/Makefile \
 		contrib/omhttpfs/Makefile \
@@ -2105,6 +2143,7 @@ echo "    mmrm1stspace module enabled:              $enable_mmrm1stspace"
 echo "    message counting support enabled:         $enable_mmcount"
 echo "    mmfields enabled:                         $enable_mmfields"
 echo "    liblogging-stdlog support enabled:        $enable_liblogging_stdlog"
+echo "    kafka static linking enabled:             $enable_kafka_static"
 echo
 echo "---{ input plugins }---"
 echo "    Klog functionality enabled:               $enable_klog ($os_type)"

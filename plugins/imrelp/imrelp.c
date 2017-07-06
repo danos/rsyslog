@@ -48,6 +48,7 @@
 #include "ruleset.h"
 #include "glbl.h"
 #include "statsobj.h"
+#include "srUtils.h"
 
 MODULE_TYPE_INPUT
 MODULE_TYPE_NOKEEP
@@ -86,6 +87,7 @@ struct instanceConf_s {
 	sbool bEnableTLS;
 	sbool bEnableTLSZip;
 	int dhBits;
+	size_t maxDataSize;
 	uchar *pristring;		/* GnuTLS priority string (NULL if not to be provided) */
 	uchar *authmode;		/* TLS auth mode */
 	uchar *caCertFile;
@@ -142,6 +144,7 @@ static struct cnfparamdescr inppdescr[] = {
 	{ "keepalive.probes", eCmdHdlrInt, 0 },
 	{ "keepalive.time", eCmdHdlrInt, 0 },
 	{ "keepalive.interval", eCmdHdlrInt, 0 },
+	{ "maxdatasize", eCmdHdlrSize, 0 },
 	{ "tls", eCmdHdlrBinary, 0 },
 	{ "tls.permittedpeer", eCmdHdlrArray, 0 },
 	{ "tls.authmode", eCmdHdlrString, 0 },
@@ -256,6 +259,7 @@ createInstance(instanceConf_t **pinst)
 	inst->caCertFile = NULL;
 	inst->myCertFile = NULL;
 	inst->myPrivKeyFile = NULL;
+	inst->maxDataSize = glbl.GetMaxLine();
 
 	/* node created, let's add to config */
 	if(loadModConf->tail == NULL) {
@@ -337,6 +341,7 @@ addListner(modConfData_t __attribute__((unused)) *modConf, instanceConf_t *inst)
 
 	CHKiRet(relpEngineListnerConstruct(pRelpEngine, &pSrv));
 	CHKiRet(relpSrvSetLstnPort(pSrv, inst->pszBindPort));
+	CHKiRet(relpSrvSetMaxDataSize(pSrv, inst->maxDataSize));
 	inst->pszInputName = ustrdup((inst->pszInputName == NULL) ?  UCHAR_CONSTANT("imrelp") : inst->pszInputName);
 	CHKiRet(prop.Construct(&inst->pInputName));
 	CHKiRet(prop.SetString(inst->pInputName, inst->pszInputName, ustrlen(inst->pszInputName)));
@@ -432,6 +437,7 @@ BEGINnewInpInst
 	struct cnfparamvals *pvals;
 	instanceConf_t *inst;
 	int i,j;
+	FILE *fp;
 CODESTARTnewInpInst
 	DBGPRINTF("newInpInst (imrelp)\n");
 
@@ -455,6 +461,8 @@ CODESTARTnewInpInst
 			inst->pszInputName = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
 		} else if(!strcmp(inppblk.descr[i].name, "ruleset")) {
 			inst->pszBindRuleset = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
+		} else if(!strcmp(inppblk.descr[i].name, "maxdatasize")) {
+			inst->maxDataSize = (size_t) pvals[i].val.d.n;
 		} else if(!strcmp(inppblk.descr[i].name, "keepalive")) {
 			inst->bKeepAlive = (sbool) pvals[i].val.d.n;
 		} else if(!strcmp(inppblk.descr[i].name, "keepalive.probes")) {
@@ -475,10 +483,37 @@ CODESTARTnewInpInst
 			inst->bEnableTLSZip = (unsigned) pvals[i].val.d.n;
 		} else if(!strcmp(inppblk.descr[i].name, "tls.cacert")) {
 			inst->caCertFile = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
+			fp = fopen((const char*)inst->caCertFile, "r");
+			if(fp == NULL) {
+				char errStr[1024];
+				rs_strerror_r(errno, errStr, sizeof(errStr));
+				errmsg.LogError(0, RS_RET_NO_FILE_ACCESS,
+				"error: certificate file %s couldn't be accessed: %s\n",
+				inst->caCertFile, errStr);
+			}
+			fclose(fp);
 		} else if(!strcmp(inppblk.descr[i].name, "tls.mycert")) {
 			inst->myCertFile = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
+			fp = fopen((const char*)inst->myCertFile, "r");
+			if(fp == NULL) {
+				char errStr[1024];
+				rs_strerror_r(errno, errStr, sizeof(errStr));
+				errmsg.LogError(0, RS_RET_NO_FILE_ACCESS,
+				"error: certificate file %s couldn't be accessed: %s\n",
+				inst->myCertFile, errStr);
+			}
+			fclose(fp);
 		} else if(!strcmp(inppblk.descr[i].name, "tls.myprivkey")) {
 			inst->myPrivKeyFile = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
+			fp = fopen((const char*)inst->myPrivKeyFile, "r");
+			if(fp == NULL) {
+				char errStr[1024];
+				rs_strerror_r(errno, errStr, sizeof(errStr));
+				errmsg.LogError(0, RS_RET_NO_FILE_ACCESS,
+				"error: certificate file %s couldn't be accessed: %s\n",
+				inst->myPrivKeyFile, errStr);
+			}
+			fclose(fp);
 		} else if(!strcmp(inppblk.descr[i].name, "tls.permittedpeer")) {
 			inst->permittedPeers.nmemb = pvals[i].val.d.ar->nmemb;
 			CHKmalloc(inst->permittedPeers.name =
