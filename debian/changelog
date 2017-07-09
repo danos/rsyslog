@@ -1,3 +1,16 @@
+rsyslog (8.28.0-1) unstable; urgency=medium
+
+  * New upstream version 8.28.0
+  * Bump Build-Depends on librelp-dev to (>= 1.2.14) as per configure.ac
+  * Drop versioned Build-Depends on dpkg-dev (>= 1.17.14)
+    No longer required as even jessie ships a newer version.
+  * Bump Standards-Version to 4.0.0
+  * Enable mmfields module (Closes: #852269)
+  * Enable but do not install omstdout module.
+    This module is required to successfully run the test suite.
+
+ -- Michael Biebl <biebl@debian.org>  Sun, 09 Jul 2017 23:52:51 +0200
+
 rsyslog (8.27.0-4) unstable; urgency=medium
 
   * Fix PID file to actually be /run/rsyslogd.pid (Closes: #865276)
