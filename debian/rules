@@ -36,6 +36,7 @@ override_dh_auto_configure:
 		--enable-pmcisconames \
 		--enable-pmlastmsg \
 		--enable-pmsnare \
+		--enable-omstdout \
 		--enable-omprog \
 		--enable-omuxsock \
 		--enable-mmanon \
