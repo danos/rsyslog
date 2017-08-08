@@ -1,3 +1,10 @@
+rsyslog (8.29.0-1) unstable; urgency=medium
+
+  * New upstream version 8.29.0
+  * Rebase patches
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 08 Aug 2017 21:35:12 +0200
+
 rsyslog (8.28.0-1) unstable; urgency=medium
 
   * New upstream version 8.28.0
