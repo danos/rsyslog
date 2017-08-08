@@ -1,4 +1,172 @@
 ------------------------------------------------------------------------------
+Version 8.29.0 [v8-stable] 2017-08-08
+- imptcp: add experimental parameter "multiline"
+  This enables a heuristic to support multiline messages on raw tcp syslog
+  connections.
+- imptcp: framing-related error messages now also indicate remote peer
+  This is the case e.g. for oversize messages.
+- imtcp: framing-related error messages now also indicate remote peer
+  This is the case e.g. for oversize messages.
+- imptcp: add session statistics conunter
+    - session.opened
+    - session.openfailed
+    - session.closed
+- imtcp: add ability to specify GnuTLS priority string
+  This permits to set cipher details on a very low level.
+- impstats: add new ressoure counter "openfiles"
+- pmnormalize: new parser module
+  Parser module that uses liblognorm to parse incoming messages.
+- core/queue: provide informational messages on thread startup and shutdown
+  This provides better insight into operational state of rsyslog and is useful
+  in monitoring system health. Note that this causes the emission of messages
+  not previously seen. They are of syslog.informational priority.
+- omfwd/udp: improve error reporting, depricate maxerrormessages parameter
+  Generally improved udp-related error messages (e.g. they now contain the
+  socket number, which makes it easier to related them to errors reported by
+  net.c subsystem).
+  We also depricated (removed) the "maxerrormessages" configuration parameters.
+  It provided some very rough rate-limiting capabilities and was introduced
+  before we had native rate-limiters. The default was that only the first 5
+  error messages were actually reported. For long-running instances, that
+  meant that in many cases no errors were ever reported. We now use the default
+  internal message rate limter, which works far better and ensures that also
+  long-running instances will be able to emit error messages after prolonged
+  runtime. In contrast, this also means that users will see more error
+  messages from rsyslog, but that should actually improve the end user
+  experience.
+- core: add parameters debug.file and debug.whitelist
+  allows to generate debug log output only of specific files
+  Background information available at:
+  https://www.linkedin.com/pulse/improving-rsyslog-debug-output-jan-gerhards
+- core/net.c: improve UDP socket creation error messages
+- omfwd/udp: add "udp.sendbuf" parameter
+- core: make rsyslog internal message rate-limiter configurable
+  New parameters "internalmsg.ratelimit.interval" and "internalmsg.ratelimit.burst"
+  have been added.
+- omelasticsearch bugfixes and changed ES5 API support:
+  * avoid 404 during health check
+    Omleasticsearch responds differently to HTTP HEAD and GET requests and
+    returns correct state only on GET requests. This patch works around
+    that ES bug and always does a GET request even when technically a HEAD
+    request would be sufficient.
+  * avoid ES5 warnings while sending json
+    ES5 is generating warnings when sending json without the proper header:
+    $ curl -i -H "Content-Type: text/json" -XGET 'http://elasticsearch5:9200/' \
+      -d '{}\n'
+    HTTP/1.1 200 OK
+    Warning: 299 Elasticsearch-5.4.3-eed30a8 "Content type detection for rest
+    requests is deprecated. Specify the content type using the [Content-Type]
+    header." "Wed, 26 Jul 2017 14:33:28 GMT"
+    no issue on previous version.
+    Now, the header is set as application/json. It works for all versions
+    (tested on ES2 and ES5) we also handle the bulkmode where it should be
+    set to application/x-ndjson
+    closes https://github.com/rsyslog/rsyslog/issues/1546
+  * bugfix for memomry leak while writing error file
+  Thanks to William Dauchy for providing the patches
+- imfile bugfix: wildcard detection issue on path wildcards
+  Wildcards mode was not properly detected when wildcards
+  were only used in a directory name on startup.
+  This caused imfile not to create a propper dynamic filewatch.
+  closes: https://github.com/rsyslog/rsyslog/issues/1672
+- omfwd bugfix: always give reason for suspension
+  In many cases, no error message were emitted when omfwd
+  went into action suspension, which was confusing for end
+  users. This patch enables explicit error messages in all
+  those cases.
+  closes https://github.com/rsyslog/rsyslog/issues/782
+- omfwd bugfix: configured compression level was not properly used
+  Thanks to Harshvardhan Shrivastava for the patch.
+- imptcp bugfix: potential socket leak on session shutdown
+  imptcp first tries to remove a to-be-shut-down socket from the
+  epoll set, and errors out if that does not work. In that case, the
+  underlying socket will be leaked.
+  This patch refactors the code; most importantly, it is not necessary
+  to remove the socket from the epoll set, as this happens automatically
+  on close. As such, we simply remove that part of the code, which
+  also removes the root cause of the socket leak.
+- omfwd/omudpspoof bugfix: switch udp client sockets to nonblocking mode
+  On very busy systems, we see "udp send error 11" inside the logs, and the requesting
+  action is being suspended (and later resumed). During the suspension period (in
+  default configuration), messages are lost. Error 11 translates to EAGAIN and the
+  cause of this problem is that the system is running out of UDP buffer space. This
+  can happen on very busy systems (with busy networks).
+  It is not an error per se. Doing a short wait will resolve the issue. The real root
+  cause of the issue is that omfwd uses a nonblocking socket for sending. If it were
+  blocking, the OS would block until the situation is resolved. The need for a
+  non-blocking sockets is a purely historical one. In the days of single-threaded
+  processing (pre v3), everything needed to be done by multiplexing, and blocking was
+  not permitted. Since then, the engine has dramatically changed. Actions now run on
+  their own thread(s). As such, there is no longer a hard need to use non-blocking i/o
+  for sending data. Many other output plugins also do blocking wait (e.g. omelasticsearch).
+  As such, the real root cause of the trouble is unnecessarily using non-blocking mode,
+  and consequently the right solution is to change that.
+  Note that using blocking i/o might change some timeing inside rsyslog, especially
+  during shutdown. So theoretical there is regression potential in that area. However,
+  the core is designed to handle that situation (e.g. there is special shutdown code to
+  handle the blocking case), so this does not stand against the "proper" solution.
+  This patch applies the change on the rsyslog core level, within net.c. The only
+  users of the changed functionality are omfwd and omudpspoof. Imudp is unaffected as
+  it requests server sockets.
+  Note that according to the sendto() man page, there is a second cause for the EAGAIN
+  error, this is when the system temporarily runs out of emphermeral ports. It is not
+  100% clear if this can also happen in the blocking case. However, if so, we can argue
+  this is a case where we really want the default retry logic. So for the time being,
+  it is appropriate to not handle EAGAIN in a special case any longer.
+  closes https://github.com/rsyslog/rsyslog/issues/1665
+- imklog: fix permitnonkernelfacility not working
+- impstats bugfix: impstats does not handle HUP
+  If the parameter "log.file" is specified, impstats writes its own
+  log file. However, HUP is not handled for this file, which makes
+  the functionality unusable with log rotation. It is also counter-
+  intuitive for users.
+  This patch enables correct HUP processing. As a sideline, it also
+  introduces a generic HUP processing framework for non-action type
+  of loadable modules.
+  closes https://github.com/rsyslog/rsyslog/issues/1662
+  closes https://github.com/rsyslog/rsyslog/issues/1663
+- core bugfix: segfault after configuration errors
+- core/queue bugfixes:
+  * Fix behaviour of PersistStateInterval
+    If PersistStateInterval=1, then each log line read should cause the state file
+    to be updated, but this was not happening because nRecords was being post-increment.
+    Thanks to Anthony Howe for the patch.
+  * potential problem during deserialization
+    if queue object deserialization fails, invalid memory blocks might be
+    free'ed.
+    For more information see https://github.com/rsyslog/rsyslog/pull/1647
+    Thanks to Derek Smith for the patch.
+- core bugfix: messsage garbled after message modification
+  The MsgDup() function will return a garbled message object under these
+  conditions: The message was originally created with message length equal or
+  larger to CONF_RAWMSG_BUFSIZE. This makes rsyslog store the message in
+  dynamically allocated buffer space. Then, a component reduces the message
+  size to a size lower than CONGF_RAWMSG_BUFSIZE. A frequent sample is the
+  parser removing a known-bad LF at the end of the messages. Then, MsgDup is
+  executed. It checks the message size and finds that it is below
+  CONF_RAWMSG_BUFSIZE, which make it copy the msg object internal buffer
+  instead of the dynamically allocated one. That buffer was not written to in
+  the first place, so unitialized data is copied. Note that no segfault can
+  happen, as the copied location was properly allocated, just not used in
+  this processing flow. In the end result, the new message object contains
+  garbage data. Whenever the new object is used (e.g. in a async ruleset or
+  action) that garbage will be used. Whenever the old object is accessed,
+  correct data will be used. Both types of access can happen inside the
+  same processing flow, which makes the problem appear to be random.
+  closes https://github.com/rsyslog/rsyslog/issues/1658
+- lmsig_ksi: removed pre-KSI_LS12 components
+  As of GuardTime, the provider, these no longer work due to backend
+  changes. The lmsig_ksi_ls12 module shall be used instead. This is
+  available since 8.27.0.
+- testbench bugfix: hang in tests if omstdout is not present
+  Many tests depend on omstdout. Given the fact that omstdout
+  is really only useful for the testbench (at least that's the intent),
+  we now require --enable-omstdout if --enable-testbench is given.
+  The alternative would have been to disable all those tests that
+  need it, which would have lead to considerable less testbench
+  coverage.
+  closes https://github.com/rsyslog/rsyslog/issues/1649
+------------------------------------------------------------------------------
 Version 8.28.0 [v8-stable] 2017-06-27
 - NEW BUILD REQUIREMENT: librelp 1.2.14 (to build relp components)
   This was necessary because imrelp requires an API introduced in 1.2.14.

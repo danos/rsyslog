@@ -52,7 +52,6 @@
 
 /* static data */
 DEFobjStaticHelpers
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(netstrms)
 
 
@@ -280,6 +279,16 @@ SetKeepAliveIntvl(netstrm_t *pThis, int keepAliveIntvl)
 	RETiRet;
 }
 
+/* gnutls priority string */
+static rsRetVal
+SetGnutlsPriorityString(netstrm_t *pThis, uchar *gnutlsPriorityString)
+{
+	DEFiRet;
+	ISOBJ_TYPE_assert(pThis, netstrm);
+	iRet = pThis->Drvr.SetGnutlsPriorityString(pThis->pDrvrData, gnutlsPriorityString);
+	RETiRet;
+}
+
 /* check connection - slim wrapper for NSD driver function */
 static rsRetVal
 CheckConnection(netstrm_t *pThis)
@@ -387,6 +396,7 @@ CODESTARTobjQueryInterface(netstrm)
 	pIf->SetKeepAliveProbes = SetKeepAliveProbes;
 	pIf->SetKeepAliveTime = SetKeepAliveTime;
 	pIf->SetKeepAliveIntvl = SetKeepAliveIntvl;
+	pIf->SetGnutlsPriorityString = SetGnutlsPriorityString;
 finalize_it:
 ENDobjQueryInterface(netstrm)
 
@@ -396,7 +406,6 @@ ENDobjQueryInterface(netstrm)
 BEGINObjClassExit(netstrm, OBJ_IS_LOADABLE_MODULE) /* CHANGE class also in END MACRO! */
 CODESTARTObjClassExit(netstrm)
 	/* release objects we no longer need */
-	objRelease(errmsg, CORE_COMPONENT);
 	objRelease(netstrms, DONT_LOAD_LIB);
 ENDObjClassExit(netstrm)
 
@@ -407,7 +416,6 @@ ENDObjClassExit(netstrm)
  */
 BEGINAbstractObjClassInit(netstrm, 1, OBJ_IS_CORE_MODULE) /* class, version */
 	/* request objects we use */
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 
 	/* set our own handlers */
 ENDObjClassInit(netstrm)

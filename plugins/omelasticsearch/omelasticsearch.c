@@ -690,7 +690,8 @@ finalize_it:
  * check the status of response from ES
  */
 static int checkReplyStatus(fjson_object* ok) {
-	return (ok == NULL || !fjson_object_is_type(ok, fjson_type_int) || fjson_object_get_int(ok) < 0 || fjson_object_get_int(ok) > 299);
+	return (ok == NULL || !fjson_object_is_type(ok, fjson_type_int) || fjson_object_get_int(ok) < 0 ||
+		fjson_object_get_int(ok) > 299);
 }
 
 /*
@@ -1038,7 +1039,7 @@ writeDataError(wrkrInstanceData_t *pWrkrData, instanceData *pData, fjson_object 
 			DBGPRINTF("omelasticsearch: error creating file content.\n");
 			ABORT_FINALIZE(RS_RET_ERR);
 		}
-		rendered = (char*)fjson_object_to_json_string(ctx.errRoot);
+		rendered = strdup((char*)fjson_object_to_json_string(ctx.errRoot));
 	}
 
 
@@ -1068,6 +1069,7 @@ writeDataError(wrkrInstanceData_t *pWrkrData, instanceData *pData, fjson_object 
 finalize_it:
 	if(bMutLocked)
 		pthread_mutex_unlock(&pData->mutErrFile);
+	free(rendered);
 	fjson_object_put(ctx.errRoot);
 	RETiRet;
 }
@@ -1296,7 +1298,6 @@ static void
 curlCheckConnSetup(CURL *handle, HEADER *header, long timeout, sbool allowUnsignedCerts)
 {
 	curl_easy_setopt(handle, CURLOPT_HTTPHEADER, header);
-	curl_easy_setopt(handle, CURLOPT_NOBODY, TRUE);
 	curl_easy_setopt(handle, CURLOPT_TIMEOUT_MS, timeout);
 	curl_easy_setopt(handle, CURLOPT_NOSIGNAL, TRUE);
 
@@ -1321,10 +1322,17 @@ curlPostSetup(CURL *handle, HEADER *header, uchar* authBuf)
 	}
 }
 
+#define CONTENT_JSON "Content-Type: application/json; charset=utf-8"
+#define CONTENT_JSON_BULK "Content-Type: application/x-ndjson; charset=utf-8"
+
 static rsRetVal
 curlSetup(wrkrInstanceData_t *pWrkrData, instanceData *pData)
 {
-	pWrkrData->curlHeader = curl_slist_append(NULL, "Content-Type: text/json; charset=utf-8");
+	if (pData->bulkmode) {
+		pWrkrData->curlHeader = curl_slist_append(NULL, CONTENT_JSON_BULK);
+	} else {
+		pWrkrData->curlHeader = curl_slist_append(NULL, CONTENT_JSON);
+	}
 	pWrkrData->curlPostHandle = curl_easy_init();
 	if (pWrkrData->curlPostHandle == NULL) {
 		return RS_RET_OBJ_CREATION_FAILED;

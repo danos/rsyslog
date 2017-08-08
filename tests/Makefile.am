@@ -12,6 +12,16 @@ liboverride_gethostname_la_SOURCES = override_gethostname.c
 liboverride_gethostname_la_CFLAGS =
 liboverride_gethostname_la_LDFLAGS = -avoid-version -shared
 
+pkglib_LTLIBRARIES += liboverride_gethostname_nonfqdn.la
+liboverride_gethostname_nonfqdn_la_SOURCES = override_gethostname_nonfqdn.c
+liboverride_gethostname_nonfqdn_la_CFLAGS =
+liboverride_gethostname_nonfqdn_la_LDFLAGS = -avoid-version -shared
+
+pkglib_LTLIBRARIES += liboverride_getaddrinfo.la
+liboverride_getaddrinfo_la_SOURCES = override_getaddrinfo.c
+liboverride_getaddrinfo_la_CFLAGS =
+liboverride_getaddrinfo_la_LDFLAGS = -avoid-version -shared
+
 # TODO: reenable TESTRUNS = rt_init rscript
 check_PROGRAMS = $(TESTRUNS) ourtail nettester tcpflood chkseq msleep randomgen \
 	diagtalker uxsockrcvr syslog_caller inputfilegen minitcpsrv \
@@ -22,6 +32,7 @@ TESTS = $(TESTRUNS)
 
 TESTS +=  \
 	empty-hostname.sh \
+	hostname-getaddrinfo-fail.sh \
 	prop-programname.sh \
 	prop-programname-with-slashes.sh \
 	hostname-with-slash-pmrfc5424.sh \
@@ -97,6 +108,7 @@ TESTS +=  \
 	no-parser-errmsg.sh \
 	da-mainmsg-q.sh \
 	validation-run.sh \
+	msgdup.sh \
 	empty-ruleset.sh \
 	imtcp-discard-truncated-msg.sh \
 	imtcp-basic.sh \
@@ -182,6 +194,7 @@ TESTS +=  \
 	imuxsock_logger_root.sh \
 	imuxsock_traillf_root.sh \
 	imuxsock_ccmiddle_root.sh \
+	imklog_permitnonkernelfacility_root.sh \
 	discard-rptdmsg.sh \
 	discard-allmark.sh \
 	discard.sh \
@@ -278,25 +291,6 @@ TESTS +=  \
 	fac_local0-vg.sh
 endif # HAVE_VALGRIND
 
-if ENABLE_USERTOOLS
-if ENABLE_GT_KSI
-TESTS +=  \
-	ksi-verify-short.sh \
-	ksi-verify-long.sh \
-	ksi-verify-cnstr-short.sh \
-	ksi-verify-cnstr-long.sh \
-	ksi-extract-verify-short.sh \
-	ksi-extract-verify-long.sh 
-if HAVE_VALGRIND
-TESTS +=  \
-	ksi-verify-short-vg.sh \
-	ksi-verify-long-vg.sh \
-	ksi-extract-verify-short-vg.sh \
-	ksi-extract-verify-long-vg.sh 
-endif
-endif
-endif
-
 if ENABLE_OMJOURNAL
 TESTS +=  \
 	omjournal-abort-template.sh \
@@ -374,6 +368,7 @@ endif
 
 if ENABLE_IMPSTATS
 TESTS +=  \
+	impstats-hup.sh \
 	dynstats.sh \
 	dynstats_overflow.sh \
 	dynstats_reset.sh \
@@ -411,6 +406,7 @@ TESTS +=  \
 	imptcp_addtlframedelim.sh \
 	imptcp_conndrop.sh \
 	imptcp_no_octet_counted.sh \
+	imptcp_multi_line.sh \
 	imptcp_spframingfix.sh \
 	imptcp_nonProcessingPoller.sh \
 	imptcp_veryLargeOctateCountedMessages.sh \
@@ -463,6 +459,16 @@ if ENABLE_PMNULL
 TESTS +=  \
 	pmnull-basic.sh \
 	pmnull-withparams.sh
+endif
+
+if ENABLE_PMNORMALIZE
+TESTS +=  \
+	pmnormalize-basic.sh \
+	pmnormalize-rule.sh
+if HAVE_VALGRIND
+TESTS += \
+	pmnormalize-rule-vg.sh
+endif
 endif
 
 if ENABLE_MMNORMALIZE
@@ -538,6 +544,7 @@ if ENABLE_GNUTLS
 TESTS +=  \
 	imtcp_conndrop_tls.sh \
 	sndrcv_tls_anon.sh \
+	sndrcv_tls_priorityString.sh \
 	imtcp-tls-basic.sh \
 	sndrcv_tls_anon_rebind.sh
 if HAVE_VALGRIND
@@ -633,6 +640,7 @@ TESTS += \
 	imfile-wildcards-dirs.sh \
 	imfile-wildcards-dirs2.sh \
 	imfile-wildcards-dirs-multi.sh \
+	imfile-wildcards-dirs-multi2.sh \
 	imfile-rename.sh
 if HAVE_VALGRIND
 TESTS += \
@@ -656,6 +664,7 @@ test_files = testbench.h runtime-dummy.c
 EXTRA_DIST= \
 	internal-errmsg-memleak.sh \
 	empty-hostname.sh \
+	hostname-getaddrinfo-fail.sh \
 	hostname-with-slash-pmrfc5424.sh \
 	hostname-with-slash-pmrfc3164.sh \
 	pmrfc3164-msgFirstSpace.sh \
@@ -925,6 +934,11 @@ EXTRA_DIST= \
 	mmnormalize_processing_test2.sh \
 	mmnormalize_processing_test3.sh \
 	mmnormalize_processing_test4.sh \
+	pmnormalize-rule.sh \
+	pmnormalize-rule-vg.sh\
+	testsuites/pmnormalize-rule-vg.conf \
+	testsuites/pmnormalize_basic.rulebase \
+	pmnormalize-basic.sh \
 	rawmsg-after-pri.sh \
 	testsuites/rawmsg-after-pri.conf \
 	rs_optimizer_pri.sh \
@@ -994,6 +1008,7 @@ EXTRA_DIST= \
 	testsuites/da-mainmsg-q.conf \
 	diskqueue-fsync.sh \
 	testsuites/diskqueue-fsync.conf \
+	msgdup.sh \
 	empty-ruleset.sh \
 	testsuites/empty-ruleset.conf \
 	imtcp-discard-truncated-msg.sh \
@@ -1031,6 +1046,8 @@ EXTRA_DIST= \
 	imptcp_conndrop-vg.sh \
 	imptcp_conndrop.sh \
 	testsuites/imptcp_conndrop.conf \
+	imptcp_multi_line.sh \
+	testsuites/imptcp_multi_line.testdata \
 	imptcp_no_octet_counted.sh \
 	testsuites/imptcp_no_octet_counted.conf \
 	testsuites/no_octet_counted.testdata \
@@ -1238,11 +1255,13 @@ EXTRA_DIST= \
 	imfile-wildcards-dirs.sh \
 	imfile-wildcards-dirs2.sh \
 	imfile-wildcards-dirs-multi.sh \
+	imfile-wildcards-dirs-multi2.sh \
 	imfile-rename.sh \
 	testsuites/imfile-wildcards.conf \
 	testsuites/imfile-wildcards-simple.conf \
 	testsuites/imfile-wildcards-dirs.conf \
 	testsuites/imfile-wildcards-dirs-multi.conf \
+	testsuites/imfile-wildcards-dirs-multi2.conf \
 	dynfile_invld_async.sh \
 	dynfile_invld_sync.sh \
 	dynfile_cachemiss.sh \
@@ -1318,6 +1337,7 @@ EXTRA_DIST= \
 	imuxsock_ccmiddle.sh \
 	testsuites/imuxsock_ccmiddle.conf \
 	imuxsock_ccmiddle_root.sh \
+	imklog_permitnonkernelfacility_root.sh \
 	imuxsock_ccmiddle_syssock.sh \
 	testsuites/imuxsock_ccmiddle_root.conf \
 	testsuites/imuxsock_ccmiddle_syssock.conf \
@@ -1372,6 +1392,7 @@ EXTRA_DIST= \
 	dynstats_overflow-vg.sh \
 	dynstats_reset.sh \
 	dynstats_reset-vg.sh \
+	impstats-hup.sh \
 	dynstats.sh \
 	dynstats-vg.sh \
 	dynstats_prevent_premature_eviction.sh \
@@ -1527,18 +1548,6 @@ EXTRA_DIST= \
 	json_var_case.sh \
 	testsuites/json_var_case.conf \
 	cfg.sh \
-	testsuites/ksi-sample.log \
-	testsuites/ksi-sample.log.ksisig \
-	ksi-verify-short.sh \
-	ksi-verify-long.sh \
-	ksi-extract-verify-short.sh \
-	ksi-extract-verify-long.sh \
-	ksi-verify-cnstr-short.sh \
-	ksi-verify-cnstr-long.sh \
-	ksi-verify-short-vg.sh \
-	ksi-verify-long-vg.sh \
-	ksi-extract-verify-short-vg.sh \
-	ksi-extract-verify-long-vg.sh \
 	empty-prop-comparison.sh \
 	sndrcv_tls_anon_rebind.sh \
 	testsuites/sndrcv_tls_anon_rebind_sender.conf \
@@ -1546,6 +1555,9 @@ EXTRA_DIST= \
 	sndrcv_tls_anon.sh \
 	testsuites/sndrcv_tls_anon_sender.conf \
 	testsuites/sndrcv_tls_anon_rcvr.conf \
+	sndrcv_tls_priorityString.sh \
+	testsuites/sndrcv_tls_priorityString_sender.conf \
+	testsuites/sndrcv_tls_priorityString_rcvr.conf \
 	omtcl.sh \
 	omtcl.tcl \
 	pmsnare.sh \

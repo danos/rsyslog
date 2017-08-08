@@ -127,15 +127,9 @@ sbin_PROGRAMS =
 @ENABLE_GSSAPI_TRUE@am__append_8 = lmgssutil.la
 
 #
-# support library for guardtime KSI
-#
-@ENABLE_GT_KSI_TRUE@am__append_9 = librsksi.la
-@ENABLE_GT_KSI_TRUE@am__append_10 = lmsig_ksi.la
-
-#
 # support library for Guardtime KSI-LS12
 #
-@ENABLE_KSI_LS12_TRUE@am__append_11 = lmsig_ksi_ls12.la
+@ENABLE_KSI_LS12_TRUE@am__append_9 = lmsig_ksi_ls12.la
 subdir = runtime
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_check_define.m4 \
@@ -197,13 +191,6 @@ am__librsgt_la_SOURCES_DIST = librsgt.c librsgt_read.c librsgt.h \
 @ENABLE_GUARDTIME_TRUE@	librsgt_read.lo
 librsgt_la_OBJECTS = $(am_librsgt_la_OBJECTS)
 @ENABLE_GUARDTIME_TRUE@am_librsgt_la_rpath =
-librsksi_la_LIBADD =
-am__librsksi_la_SOURCES_DIST = librsksi.c librsksi_read.c librsksi.h \
-	librsgt_common.h
-@ENABLE_GT_KSI_TRUE@am_librsksi_la_OBJECTS = librsksi_la-librsksi.lo \
-@ENABLE_GT_KSI_TRUE@	librsksi_la-librsksi_read.lo
-librsksi_la_OBJECTS = $(am_librsksi_la_OBJECTS)
-@ENABLE_GT_KSI_TRUE@am_librsksi_la_rpath =
 am__DEPENDENCIES_1 =
 librsyslog_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
@@ -310,16 +297,6 @@ lmsig_gt_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(lmsig_gt_la_LDFLAGS) $(LDFLAGS) -o $@
 @ENABLE_GUARDTIME_TRUE@am_lmsig_gt_la_rpath = -rpath $(pkglibdir)
-@ENABLE_GT_KSI_TRUE@lmsig_ksi_la_DEPENDENCIES = librsksi.la \
-@ENABLE_GT_KSI_TRUE@	$(am__DEPENDENCIES_1)
-am__lmsig_ksi_la_SOURCES_DIST = lmsig_ksi.c lmsig_ksi.h
-@ENABLE_GT_KSI_TRUE@am_lmsig_ksi_la_OBJECTS =  \
-@ENABLE_GT_KSI_TRUE@	lmsig_ksi_la-lmsig_ksi.lo
-lmsig_ksi_la_OBJECTS = $(am_lmsig_ksi_la_OBJECTS)
-lmsig_ksi_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(lmsig_ksi_la_LDFLAGS) $(LDFLAGS) -o $@
-@ENABLE_GT_KSI_TRUE@am_lmsig_ksi_la_rpath = -rpath $(pkglibdir)
 lmsig_ksi_ls12_la_LIBADD =
 am__lmsig_ksi_ls12_la_SOURCES_DIST = lmsig_ksi-ls12.c lmsig_ksi-ls12.h \
 	lib_ksils12.c lib_ksils12.h lib_ksi_queue.c lib_ksi_queue.h
@@ -398,24 +375,22 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(libgcry_la_SOURCES) $(librsgt_la_SOURCES) \
-	$(librsksi_la_SOURCES) $(librsyslog_la_SOURCES) \
-	$(lmcry_gcry_la_SOURCES) $(lmgssutil_la_SOURCES) \
-	$(lmnet_la_SOURCES) $(lmnetstrms_la_SOURCES) \
-	$(lmnsd_gtls_la_SOURCES) $(lmnsd_ptcp_la_SOURCES) \
-	$(lmregexp_la_SOURCES) $(lmsig_gt_la_SOURCES) \
-	$(lmsig_ksi_la_SOURCES) $(lmsig_ksi_ls12_la_SOURCES) \
+	$(librsyslog_la_SOURCES) $(lmcry_gcry_la_SOURCES) \
+	$(lmgssutil_la_SOURCES) $(lmnet_la_SOURCES) \
+	$(lmnetstrms_la_SOURCES) $(lmnsd_gtls_la_SOURCES) \
+	$(lmnsd_ptcp_la_SOURCES) $(lmregexp_la_SOURCES) \
+	$(lmsig_gt_la_SOURCES) $(lmsig_ksi_ls12_la_SOURCES) \
 	$(lmstrmsrv_la_SOURCES) $(lmtcpclt_la_SOURCES) \
 	$(lmtcpsrv_la_SOURCES) $(lmzlibw_la_SOURCES)
 DIST_SOURCES = $(am__libgcry_la_SOURCES_DIST) \
-	$(am__librsgt_la_SOURCES_DIST) $(am__librsksi_la_SOURCES_DIST) \
-	$(librsyslog_la_SOURCES) $(am__lmcry_gcry_la_SOURCES_DIST) \
+	$(am__librsgt_la_SOURCES_DIST) $(librsyslog_la_SOURCES) \
+	$(am__lmcry_gcry_la_SOURCES_DIST) \
 	$(am__lmgssutil_la_SOURCES_DIST) $(am__lmnet_la_SOURCES_DIST) \
 	$(am__lmnetstrms_la_SOURCES_DIST) \
 	$(am__lmnsd_gtls_la_SOURCES_DIST) \
 	$(am__lmnsd_ptcp_la_SOURCES_DIST) \
 	$(am__lmregexp_la_SOURCES_DIST) \
 	$(am__lmsig_gt_la_SOURCES_DIST) \
-	$(am__lmsig_ksi_la_SOURCES_DIST) \
 	$(am__lmsig_ksi_ls12_la_SOURCES_DIST) \
 	$(am__lmstrmsrv_la_SOURCES_DIST) $(lmtcpclt_la_SOURCES) \
 	$(lmtcpsrv_la_SOURCES) $(lmzlibw_la_SOURCES)
@@ -481,8 +456,6 @@ GNUTLS_CFLAGS = @GNUTLS_CFLAGS@
 GNUTLS_LIBS = @GNUTLS_LIBS@
 GREP = @GREP@
 GSS_LIBS = @GSS_LIBS@
-GT_KSI_CFLAGS = @GT_KSI_CFLAGS@
-GT_KSI_LIBS = @GT_KSI_LIBS@
 GT_KSI_LS12_CFLAGS = @GT_KSI_LS12_CFLAGS@
 GT_KSI_LS12_LIBS = @GT_KSI_LS12_LIBS@
 GUARDTIME_CFLAGS = @GUARDTIME_CFLAGS@
@@ -658,16 +631,14 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 man_MANS = 
-noinst_LTLIBRARIES = librsyslog.la $(am__append_4) $(am__append_6) \
-	$(am__append_9)
+noinst_LTLIBRARIES = librsyslog.la $(am__append_4) $(am__append_6)
 
 #
 # zlib support
 # 
 pkglib_LTLIBRARIES = $(am__append_1) lmzlibw.la $(am__append_2) \
 	$(am__append_3) $(am__append_5) $(am__append_7) \
-	$(am__append_8) lmtcpsrv.la lmtcpclt.la $(am__append_10) \
-	$(am__append_11)
+	$(am__append_8) lmtcpsrv.la lmtcpclt.la $(am__append_9)
 #pkglib_LTLIBRARIES = librsyslog.la
 librsyslog_la_SOURCES = \
 	rsyslog.c \
@@ -872,12 +843,6 @@ lmtcpclt_la_SOURCES = \
 lmtcpclt_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_CFLAGS)
 lmtcpclt_la_LDFLAGS = -module -avoid-version $(LIBLOGGING_STDLOG_LIBS)
 lmtcpclt_la_LIBADD = 
-@ENABLE_GT_KSI_TRUE@librsksi_la_SOURCES = librsksi.c librsksi_read.c librsksi.h librsgt_common.h
-@ENABLE_GT_KSI_TRUE@librsksi_la_CPPFLAGS = $(RSRT_CFLAGS) $(GT_KSI_CFLAGS)
-@ENABLE_GT_KSI_TRUE@lmsig_ksi_la_SOURCES = lmsig_ksi.c lmsig_ksi.h
-@ENABLE_GT_KSI_TRUE@lmsig_ksi_la_CPPFLAGS = $(RSRT_CFLAGS) $(GT_KSI_CFLAGS)
-@ENABLE_GT_KSI_TRUE@lmsig_ksi_la_LDFLAGS = -module -avoid-version
-@ENABLE_GT_KSI_TRUE@lmsig_ksi_la_LIBADD = librsksi.la $(GT_KSI_LIBS)
 @ENABLE_KSI_LS12_TRUE@lmsig_ksi_ls12_la_SOURCES = lmsig_ksi-ls12.c lmsig_ksi-ls12.h lib_ksils12.c \
 @ENABLE_KSI_LS12_TRUE@			lib_ksils12.h lib_ksi_queue.c lib_ksi_queue.h
 
@@ -968,9 +933,6 @@ libgcry.la: $(libgcry_la_OBJECTS) $(libgcry_la_DEPENDENCIES) $(EXTRA_libgcry_la_
 
 librsgt.la: $(librsgt_la_OBJECTS) $(librsgt_la_DEPENDENCIES) $(EXTRA_librsgt_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK) $(am_librsgt_la_rpath) $(librsgt_la_OBJECTS) $(librsgt_la_LIBADD) $(LIBS)
-
-librsksi.la: $(librsksi_la_OBJECTS) $(librsksi_la_DEPENDENCIES) $(EXTRA_librsksi_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(LINK) $(am_librsksi_la_rpath) $(librsksi_la_OBJECTS) $(librsksi_la_LIBADD) $(LIBS)
 ../$(am__dirstamp):
 	@$(MKDIR_P) ..
 	@: > ../$(am__dirstamp)
@@ -1014,9 +976,6 @@ lmregexp.la: $(lmregexp_la_OBJECTS) $(lmregexp_la_DEPENDENCIES) $(EXTRA_lmregexp
 
 lmsig_gt.la: $(lmsig_gt_la_OBJECTS) $(lmsig_gt_la_DEPENDENCIES) $(EXTRA_lmsig_gt_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(lmsig_gt_la_LINK) $(am_lmsig_gt_la_rpath) $(lmsig_gt_la_OBJECTS) $(lmsig_gt_la_LIBADD) $(LIBS)
-
-lmsig_ksi.la: $(lmsig_ksi_la_OBJECTS) $(lmsig_ksi_la_DEPENDENCIES) $(EXTRA_lmsig_ksi_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(lmsig_ksi_la_LINK) $(am_lmsig_ksi_la_rpath) $(lmsig_ksi_la_OBJECTS) $(lmsig_ksi_la_LIBADD) $(LIBS)
 
 lmsig_ksi_ls12.la: $(lmsig_ksi_ls12_la_OBJECTS) $(lmsig_ksi_ls12_la_DEPENDENCIES) $(EXTRA_lmsig_ksi_ls12_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(lmsig_ksi_ls12_la_LINK) $(am_lmsig_ksi_ls12_la_rpath) $(lmsig_ksi_ls12_la_OBJECTS) $(lmsig_ksi_ls12_la_LIBADD) $(LIBS)
@@ -1099,8 +1058,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgcry_la-libgcry_common.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librsgt.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librsgt_read.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librsksi_la-librsksi.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librsksi_la-librsksi_read.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librsyslog_la-cfsysline.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librsyslog_la-conf.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librsyslog_la-datetime.Plo@am__quote@
@@ -1148,7 +1105,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmnsd_ptcp_la-nsdsel_ptcp.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmregexp_la-regexp.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmsig_gt_la-lmsig_gt.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmsig_ksi_la-lmsig_ksi.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmsig_ksi_ls12_la-lib_ksi_queue.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmsig_ksi_ls12_la-lib_ksils12.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmsig_ksi_ls12_la-lmsig_ksi-ls12.Plo@am__quote@
@@ -1196,20 +1152,6 @@ libgcry_la-libgcry_common.lo: libgcry_common.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='libgcry_common.c' object='libgcry_la-libgcry_common.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgcry_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libgcry_la-libgcry_common.lo `test -f 'libgcry_common.c' || echo '$(srcdir)/'`libgcry_common.c
-
-librsksi_la-librsksi.lo: librsksi.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librsksi_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT librsksi_la-librsksi.lo -MD -MP -MF $(DEPDIR)/librsksi_la-librsksi.Tpo -c -o librsksi_la-librsksi.lo `test -f 'librsksi.c' || echo '$(srcdir)/'`librsksi.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/librsksi_la-librsksi.Tpo $(DEPDIR)/librsksi_la-librsksi.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='librsksi.c' object='librsksi_la-librsksi.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librsksi_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o librsksi_la-librsksi.lo `test -f 'librsksi.c' || echo '$(srcdir)/'`librsksi.c
-
-librsksi_la-librsksi_read.lo: librsksi_read.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librsksi_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT librsksi_la-librsksi_read.lo -MD -MP -MF $(DEPDIR)/librsksi_la-librsksi_read.Tpo -c -o librsksi_la-librsksi_read.lo `test -f 'librsksi_read.c' || echo '$(srcdir)/'`librsksi_read.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/librsksi_la-librsksi_read.Tpo $(DEPDIR)/librsksi_la-librsksi_read.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='librsksi_read.c' object='librsksi_la-librsksi_read.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librsksi_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o librsksi_la-librsksi_read.lo `test -f 'librsksi_read.c' || echo '$(srcdir)/'`librsksi_read.c
 
 librsyslog_la-rsyslog.lo: rsyslog.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librsyslog_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT librsyslog_la-rsyslog.lo -MD -MP -MF $(DEPDIR)/librsyslog_la-rsyslog.Tpo -c -o librsyslog_la-rsyslog.lo `test -f 'rsyslog.c' || echo '$(srcdir)/'`rsyslog.c
@@ -1574,13 +1516,6 @@ lmsig_gt_la-lmsig_gt.lo: lmsig_gt.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lmsig_gt.c' object='lmsig_gt_la-lmsig_gt.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lmsig_gt_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lmsig_gt_la-lmsig_gt.lo `test -f 'lmsig_gt.c' || echo '$(srcdir)/'`lmsig_gt.c
-
-lmsig_ksi_la-lmsig_ksi.lo: lmsig_ksi.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lmsig_ksi_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lmsig_ksi_la-lmsig_ksi.lo -MD -MP -MF $(DEPDIR)/lmsig_ksi_la-lmsig_ksi.Tpo -c -o lmsig_ksi_la-lmsig_ksi.lo `test -f 'lmsig_ksi.c' || echo '$(srcdir)/'`lmsig_ksi.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lmsig_ksi_la-lmsig_ksi.Tpo $(DEPDIR)/lmsig_ksi_la-lmsig_ksi.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lmsig_ksi.c' object='lmsig_ksi_la-lmsig_ksi.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lmsig_ksi_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lmsig_ksi_la-lmsig_ksi.lo `test -f 'lmsig_ksi.c' || echo '$(srcdir)/'`lmsig_ksi.c
 
 lmsig_ksi_ls12_la-lmsig_ksi-ls12.lo: lmsig_ksi-ls12.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lmsig_ksi_ls12_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lmsig_ksi_ls12_la-lmsig_ksi-ls12.lo -MD -MP -MF $(DEPDIR)/lmsig_ksi_ls12_la-lmsig_ksi-ls12.Tpo -c -o lmsig_ksi_ls12_la-lmsig_ksi-ls12.lo `test -f 'lmsig_ksi-ls12.c' || echo '$(srcdir)/'`lmsig_ksi-ls12.c
