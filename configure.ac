@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([rsyslog],[8.28.0],[rsyslog@lists.adiscon.com])
+AC_INIT([rsyslog],[8.29.0],[rsyslog@lists.adiscon.com])
 
 # AIXPORT START: Detect the underlying OS
 unamestr=$(uname)
@@ -1278,22 +1278,6 @@ fi
 AM_CONDITIONAL(ENABLE_GUARDTIME, test x$enable_guardtime = xyes)
 
 
-# GuardTime KSI support
-AC_ARG_ENABLE(gt-ksi,
-        [AS_HELP_STRING([--enable-gt-ksi],[Enable log file signing support via GuardTime KSI @<:@default=no@:>@])],
-        [case "${enableval}" in
-         yes) enable_gt_ksi="yes" ;;
-          no) enable_gt_ksi="no" ;;
-           *) AC_MSG_ERROR(bad value ${enableval} for --enable-gt-ksi) ;;
-         esac],
-        [enable_gt_ksi=no]
-)
-if test "x$enable_gt_ksi" = "xyes"; then
-	PKG_CHECK_MODULES(GT_KSI, libksi >= 3.4.0.2)
-	PKG_CHECK_MODULES(GT_KSI, libksi < 3.5.0.0)
-fi
-AM_CONDITIONAL(ENABLE_GT_KSI, test x$enable_gt_ksi = xyes)
-
 
 # GuardTime KSI LOGSIG 12 support
 AC_ARG_ENABLE(ksi-ls12,
@@ -1361,13 +1345,6 @@ if test "x${IP}" = "xno"; then
 	AC_MSG_NOTICE([Will not check network namespace functionality as 'ip' (part of iproute2) is not available.])
 fi
 AM_CONDITIONAL(ENABLE_IP, test "x${IP}" = "xyes")
-
-AM_CONDITIONAL(ENABLE_TESTBENCH, test x$enable_testbench = xyes)
-if test "x$enable_testbench" = "xyes"; then
-	if test "x$enable_imdiag" != "xyes"; then
-		AC_MSG_ERROR("--enable-testbench requires --enable-imdiag")
-	fi
-fi
 
 
 # valgrind-testbench
@@ -1499,6 +1476,17 @@ AC_ARG_ENABLE(omstdout,
 )
 AM_CONDITIONAL(ENABLE_OMSTDOUT, test x$enable_omstdout = xyes)
 
+AM_CONDITIONAL(ENABLE_TESTBENCH, test x$enable_testbench = xyes)
+if test "x$enable_testbench" = "xyes"; then
+	if test "x$enable_imdiag" != "xyes"; then
+		AC_MSG_ERROR("--enable-testbench requires --enable-imdiag")
+	fi
+	if test "x$enable_omstdout" != "xyes"; then
+		AC_MSG_ERROR("--enable-testbench requires --enable-omstdout")
+	fi
+fi
+
+
 # settings for omjournal
 AC_ARG_ENABLE(omjournal,
         [AS_HELP_STRING([--enable-omjournal],[Compiles omjournal @<:@default=no@:>@])],
@@ -1567,6 +1555,19 @@ AC_ARG_ENABLE(pmnull,
         [enable_pmnull=no]
 )
 AM_CONDITIONAL(ENABLE_PMNULL, test x$enable_pmnull = xyes)
+
+
+# settings for pmnormalize
+AC_ARG_ENABLE(pmnormalize,
+        [AS_HELP_STRING([--enable-pmnormalize],[Compiles normalizer parser module @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_pmnormalize="yes" ;;
+          no) enable_pmnormalize="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-pmnormalize) ;;
+         esac],
+        [enable_pmnormalize=no]
+)
+AM_CONDITIONAL(ENABLE_PMNORMALIZE, test x$enable_pmnormalize = xyes)
 
 
 # settings for pmaixforwardedfrom
@@ -2071,6 +2072,7 @@ AC_CONFIG_FILES([Makefile \
 		plugins/omjournal/Makefile \
 		plugins/pmciscoios/Makefile \
 		plugins/pmnull/Makefile \
+		plugins/pmnormalize/Makefile \
 		plugins/omruleset/Makefile \
 		plugins/omuxsock/Makefile \
 		plugins/imfile/Makefile \
@@ -2135,7 +2137,6 @@ echo "    have to generate man pages:               $have_to_generate_man_pages"
 echo "    Unlimited select() support enabled:       $enable_unlimited_select"
 echo "    uuid support enabled:                     $enable_uuid"
 echo "    Log file signing support:                 $enable_guardtime"
-echo "    Log file signing support via KSI:         $enable_gt_ksi"
 echo "    Log file signing support via KSI LS12:    $enable_ksi_ls12"
 echo "    Log file encryption support:              $enable_libgcrypt"
 echo "    anonymization support enabled:            $enable_mmanon"
@@ -2181,6 +2182,7 @@ echo "    pmlastmsg module will be compiled:        $enable_pmlastmsg"
 echo "    pmcisconames module will be compiled:     $enable_pmcisconames"
 echo "    pmciscoios module will be compiled:       $enable_pmciscoios"
 echo "    pmnull module will be compiled:           $enable_pmnull"
+echo "    pmnormalize module will be compiled:      $enable_pmnormalize"
 echo "    pmaixforwardedfrom module w.be compiled:  $enable_pmaixforwardedfrom"
 echo "    pmsnare module will be compiled:          $enable_pmsnare"
 echo "    pmpanngfw module will be compiled:        $enable_pmpanngfw"

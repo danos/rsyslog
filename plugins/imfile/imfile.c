@@ -747,14 +747,15 @@ pollFile(lstn_t *pLstn, int *pbHadFileData)
 		if(pLstn->startRegex == NULL) {
 			CHKiRet(strm.ReadLine(pLstn->pStrm, &pCStr, pLstn->readMode, pLstn->escapeLF, pLstn->trimLineOverBytes));
 		} else {
-			CHKiRet(strmReadMultiLine(pLstn->pStrm, &pCStr, &pLstn->end_preg, pLstn->escapeLF, pLstn->discardTruncatedMsg, pLstn->msgDiscardingError));
+			CHKiRet(strmReadMultiLine(pLstn->pStrm, &pCStr, &pLstn->end_preg,
+				pLstn->escapeLF, pLstn->discardTruncatedMsg, pLstn->msgDiscardingError));
 		}
 		++nProcessed;
 		if(pbHadFileData != NULL)
 			*pbHadFileData = 1; /* this is just a flag, so set it and forget it */
 		CHKiRet(enqLine(pLstn, pCStr)); /* process line */
 		rsCStrDestruct(&pCStr); /* discard string (must be done by us!) */
-		if(pLstn->iPersistStateInterval > 0 && pLstn->nRecords++ >= pLstn->iPersistStateInterval) {
+		if(pLstn->iPersistStateInterval > 0 && ++pLstn->nRecords >= pLstn->iPersistStateInterval) {
 			persistStrmState(pLstn);
 			pLstn->nRecords = 0;
 		}
@@ -1052,6 +1053,9 @@ addListner(instanceConf_t *inst)
 	sbool hasWildcard;
 
 	hasWildcard = containsGlobWildcard((char*)inst->pszFileBaseName);
+	DBGPRINTF("imfile: addListner file '%s', wildcard detected: %s\n",
+		  inst->pszFileBaseName, (hasWildcard ? "TRUE" : "FALSE"));
+
 	if(hasWildcard) {
 		if(runModConf->opMode == OPMODE_POLLING) {
 			errmsg.LogError(0, RS_RET_IMFILE_WILDCARD,
@@ -1715,6 +1719,8 @@ in_setupDirWatch(const int dirIdx)
 		memcpy(dirnametrunc, dirs[dirIdx].dirName, dirnamelen); /* Copy mem */
 
 		hasWildcard = containsGlobWildcard(dirnametrunc);
+		DBGPRINTF("imfile: in_setupDirWatch dir '%s', wildcard detected: %s\n",
+			  dirnametrunc, (hasWildcard ? "TRUE" : "FALSE"));
 		if(hasWildcard) {
 			/* Set NULL Byte to FIRST wildcard occurrence */
 			psztmp = strchr(dirnametrunc, '*');
@@ -1927,11 +1933,15 @@ done:	return;
 static void
 in_setupFileWatchStatic(lstn_t *pLstn)
 {
+	sbool hasWildcard;
+
 	DBGPRINTF("imfile: adding file '%s' to configured table\n",
 		  pLstn->pszFileName);
 	dirsAddFile(pLstn, CONFIGURED_FILE);
 
-	if(pLstn->hasWildcard) {
+	/* perform wildcard check on static files manually */
+	hasWildcard = containsGlobWildcard((char*)pLstn->pszFileName);
+	if(hasWildcard) {
 		DBGPRINTF("imfile: file '%s' has wildcard, doing initial "
 			  "expansion\n", pLstn->pszFileName);
 		glob_t files;
@@ -2363,7 +2373,8 @@ in_processEvent(struct inotify_event *ev)
 				}
 
 				/* Store statefile name for later MOVED_TO event along with COOKIE */
-				pLstn->masterLstn->movedfrom_statefile = (uchar*) strdup((char*) getStateFileName(pLstn, statefile, sizeof(statefile), NULL) );
+				pLstn->masterLstn->movedfrom_statefile = (uchar*)strdup((char*) getStateFileName(pLstn,
+					statefile, sizeof(statefile), NULL) );
 				pLstn->masterLstn->movedfrom_cookie = ev->cookie;
 
 				/* do NOT remove statefile in this case!*/
