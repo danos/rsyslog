@@ -65,7 +65,7 @@ Description: reliable system and kernel logging daemon
 
 Package: rsyslog-mysql
 Architecture: any
-Priority: extra
+Priority: optional
 Depends: ${shlibs:Depends},
          ${misc:Depends},
          rsyslog (= ${binary:Version}),
@@ -78,7 +78,7 @@ Description: MySQL output plugin for rsyslog
 
 Package: rsyslog-pgsql
 Architecture: any
-Priority: extra
+Priority: optional
 Depends: ${shlibs:Depends},
          ${misc:Depends},
          rsyslog (= ${binary:Version}),
@@ -92,7 +92,7 @@ Description: PostgreSQL output plugin for rsyslog
 
 Package: rsyslog-mongodb
 Architecture: any
-Priority: extra
+Priority: optional
 Depends: ${shlibs:Depends},
          ${misc:Depends},
          rsyslog (= ${binary:Version}),
@@ -103,7 +103,7 @@ Description: MongoDB output plugin for rsyslog
 
 Package: rsyslog-elasticsearch
 Architecture: any
-Priority: extra
+Priority: optional
 Depends: ${shlibs:Depends},
          ${misc:Depends},
          rsyslog (= ${binary:Version}),
@@ -114,7 +114,7 @@ Description: Elasticsearch output plugin for rsyslog
 
 Package: rsyslog-kafka
 Architecture: any
-Priority: extra
+Priority: optional
 Depends: ${shlibs:Depends},
          ${misc:Depends},
          rsyslog (= ${binary:Version}),
@@ -125,7 +125,7 @@ Description: Apache Kafka support for rsyslog
 
 Package: rsyslog-gssapi
 Architecture: any
-Priority: extra
+Priority: optional
 Depends: ${shlibs:Depends},
          ${misc:Depends},
          rsyslog (= ${binary:Version})
@@ -137,7 +137,7 @@ Description: GSSAPI authentication and encryption support for rsyslog
 
 Package: rsyslog-gnutls
 Architecture: any
-Priority: extra
+Priority: optional
 Depends: ${shlibs:Depends},
          ${misc:Depends},
          rsyslog (= ${binary:Version})
@@ -148,7 +148,7 @@ Description: TLS protocol support for rsyslog
 
 Package: rsyslog-relp
 Architecture: any
-Priority: extra
+Priority: optional
 Depends: ${shlibs:Depends},
          ${misc:Depends},
          rsyslog (= ${binary:Version})
@@ -159,7 +159,7 @@ Description: RELP protocol support for rsyslog
 
 Package: rsyslog-czmq
 Architecture: any
-Priority: extra
+Priority: optional
 Depends: ${shlibs:Depends},
          ${misc:Depends},
          rsyslog (= ${binary:Version})
@@ -169,7 +169,7 @@ Description: ZeroMQ protocol support for rsyslog via CZMQ
 
 Package: rsyslog-hiredis
 Architecture: any
-Priority: extra
+Priority: optional
 Depends: ${shlibs:Depends},
          ${misc:Depends},
          rsyslog (= ${binary:Version})
