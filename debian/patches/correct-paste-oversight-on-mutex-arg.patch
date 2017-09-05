@@ -1,0 +1,35 @@
+From: Pete Nelson <pete.nelson@unitedlex.com>
+Date: Wed, 16 Aug 2017 17:19:33 -0400
+Subject: correct paste oversight on mutex arg
+
+Remove the 'pThis->' from the second argument to STATSCOUNTER_INC macro.
+This only affects architectures without atomic uint64 actions, like aarm64.
+Others do not use the mut argument, and it gets compiled out.
+
+(cherry picked from commit 2ea84c47b208214370034500f0aab19fe93cce7f)
+---
+ plugins/imptcp/imptcp.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/plugins/imptcp/imptcp.c b/plugins/imptcp/imptcp.c
+index c373c17..ab2a17e 100644
+--- a/plugins/imptcp/imptcp.c
++++ b/plugins/imptcp/imptcp.c
+@@ -828,7 +828,7 @@ AcceptConnReq(ptcplstn_t *pLstn, int *newSock, prop_t **peerName, prop_t **peerI
+ 		LogMsg(0, RS_RET_NO_ERRCODE, LOG_INFO, "imptcp: connection established with host: %s", propGetSzStr(*peerName));
+ 	}
+ 
+-	STATSCOUNTER_INC(pLstn->ctrSessOpen, pThis->pLstn->mutCtrSessOpen);
++	STATSCOUNTER_INC(pLstn->ctrSessOpen, pLstn->mutCtrSessOpen);
+ 	*newSock = iNewSock;
+ 
+ finalize_it:
+@@ -837,7 +837,7 @@ finalize_it:
+ 		if(iRet != RS_RET_NO_MORE_DATA && pLstn->pSrv->bEmitMsgOnOpen) {
+ 			LogError(0, NO_ERRCODE, "imptcp: connection could not be established with host: %s", propGetSzStr(*peerName));
+ 		}
+-		STATSCOUNTER_INC(pLstn->ctrSessOpenErr, pThis->pLstn->mutCtrSessOpenErr);
++		STATSCOUNTER_INC(pLstn->ctrSessOpenErr, pLstn->mutCtrSessOpenErr);
+ 		/* the close may be redundant, but that doesn't hurt... */
+ 		if(iNewSock != -1)
+ 			close(iNewSock);
