@@ -1,3 +1,12 @@
+rsyslog (8.29.0-2) unstable; urgency=medium
+
+  * Change priority of all extra packages to optional
+  * Bump Standards-Version to 4.0.1
+  * Cherry-pick upstream patch to fix build failures on platforms without
+    64-bit atomics (Closes: #872568)
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 05 Sep 2017 19:09:49 +0200
+
 rsyslog (8.29.0-1) unstable; urgency=medium
 
   * New upstream version 8.29.0
