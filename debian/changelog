@@ -1,3 +1,10 @@
+rsyslog (8.29.0-2~bpo9+1) stretch-backports; urgency=medium
+
+  * Rebuild for stretch-backports
+  * Switch debian-branch to stretch-backports
+
+ -- Michael Biebl <biebl@debian.org>  Mon, 09 Oct 2017 14:32:48 +0200
+
 rsyslog (8.29.0-2) unstable; urgency=medium
 
   * Change priority of all extra packages to optional
