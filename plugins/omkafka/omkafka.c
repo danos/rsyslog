@@ -941,6 +941,14 @@ finalize_it:
 		if (pData->rk != NULL) {
 			closeKafka(pData);
 		}
+
+		/* Parameter Error's cannot be resumed, so we need to disable the action */
+		if (iRet == RS_RET_PARAM_ERROR) {
+			iRet = RS_RET_DISABLE_ACTION;
+			errmsg.LogError(0, iRet,
+				"omkafka: action will be disabled due invalid kafka configuration parameters\n");
+		}
+
 	}
 	pthread_rwlock_unlock(&pData->rkLock);
 	RETiRet;
@@ -1071,7 +1079,7 @@ loadFailedMsgs(instanceData *const __restrict__ pData)
 	CHKiRet(strm.SetFName(pstrmFMSG, pData->failedMsgFile, ustrlen(pData->failedMsgFile)));
 	CHKiRet(strm.ConstructFinalize(pstrmFMSG));
 
-	while(strm.ReadLine(pstrmFMSG, &pCStr, 0, 0, 0) == RS_RET_OK) {
+	while(strm.ReadLine(pstrmFMSG, &pCStr, 0, 0, 0, NULL) == RS_RET_OK) {
 		if(rsCStrLen(pCStr) == 0) {
 			/* we do not process empty lines */
 			DBGPRINTF("omkafka: loadFailedMsgs msg was empty!");
@@ -1464,8 +1472,10 @@ CODESTARTnewActInst
 	}
 	pthread_mutex_unlock(&closeTimeoutMut);
 
-	/* Load failed messages here, do NOT check for IRET!*/
-	loadFailedMsgs(pData);
+	/* Load failed messages here (If enabled), do NOT check for IRET!*/
+	if (pData->bKeepFailedMessages) {
+		loadFailedMsgs(pData);
+	}
 
 CODE_STD_FINALIZERnewActInst
 	cnfparamvalsDestruct(pvals, &actpblk);

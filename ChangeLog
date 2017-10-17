@@ -1,4 +1,212 @@
 ------------------------------------------------------------------------------
+Version 8.30.0 [v8-stable] 2017-10-17
+- NEW BUILD REQUIREMENTS
+  * libfastjson 0.99.7 is now mandatory
+    the new version is required to support case-insensitive variable
+    comparisons, which are now the default
+  * when building imjournal, libsystemd-journal >= 234 is now recommended
+    This is to support the imjournal enhancement. Note that it is possible
+    to build with lower version, but this will degrade imjournal functionality.
+- CHANGE OF BEHAVIOUR: all variables are now case-insensitive by default
+  Formerly, JSON based variables ($!, $., $/) were case-sensitive.
+  Turn old default back on: global(variables.casesensitve="on")
+  See ChangeLog entry below for more details.
+- core: handle (JSON) variables in case-insensitive way
+  The variable system inside rsyslog is JSON based (for easy consumption
+  of JSON input, the prime source of structured data). In JSON, keys
+  ("variable names") are case-sensitive. This causes constant problems
+  inside rsyslog configurations. A major nit is that case-insensitivity
+  option inside templates (even if turned on) does not work with JSON
+  keys because they of inner workings*1.
+  It is much more natural to treat keys in a case-INsensitive way (e.g.
+  "$!Key" and "$!key" are the same). We do not expect any real problems
+  out of this, as key names only differing in case is highly unlikely.
+  However, as it is possible we provide a way to enable case-sensitivity
+  via the global(variables.casesensitve="on") global config object.
+  Note that the default is to do case-insensitive matches. The reason
+  is that this is the right thing to do in almost all cases, and we do
+  not envision any problems at all in existing deployments.
+  *1 Note: case-insensitivity in rsyslog is achieved by converting all
+  names to lower case. So that the higher speed of strcmp() can be used.
+  The template option does actually that, convert the template keys to
+  lower case. Unfortunately, this does not work with JSON, as JSON keys
+  are NOT converted to lower case.
+  closes https://github.com/rsyslog/rsyslog/issues/1805
+- imjournal: made switching to persistent journal in runtime possible
+  with this patch imjournal can continue logging after switch to
+  persistent journal without need to restart rsyslog service
+  Thanks to github user jvymazal for the patch
+- mmanon: complete refactor and enhancements
+  - add pseudonymization mode
+  - add address randomization mode
+  - add support for IPv6 (this also supports various replacement modes)
+    closes https://github.com/rsyslog/rsyslog/issues/1614
+  also fixes bugs
+  - in IPv4 address recognition
+    closes https://github.com/rsyslog/rsyslog/issues/1720
+  - in IPv4 simple mode to-be-anonymized bits can get wrong
+    closes https://github.com/rsyslog/rsyslog/issues/1717
+- imfile: add "fileoffset" metadata
+  This permits to send the offset from which the message was read together
+  with the message text.
+  Thanks to github user derekjsonar for the initial implementation which
+  we extended to use the message start offset.
+- RainerScript: add ltrim and rtrim functions
+  closes https://github.com/rsyslog/rsyslog/issues/1711
+- core: report module name when suspending action
+  Thanks to Orion Poplawski for the patch.
+- core: add ability to limit number of error messages going to stderr
+  This permits to put a hard limit on the number of messages that can
+  go to stderr. If for nothing else, this capability is helpful for the
+  testbench. It permits to reduce spamming the test log while still
+  providing the ability to see initial error messages. Might also be
+  useful for some practical deployments.
+  global parameter: global(errorMessagesToStderr.maxNumber)
+- tcpsrv subsystem: improvate clarity of some error messages
+  operating system error message are added to some messages, providing
+  better advise of what actually is the error cause
+- imptcp: include module name in error msg
+- imtcp: include module name in error msg
+- tls improvement: better error message if certificate file cannot be read
+- omfwd: slightly improved error messages during config parsing
+  They now contain config file/line number information where this was missing.
+- ommysql improvements
+  * Return specifc code for unrecoverable errors. This makes retry processing
+    more performant and robust.
+  * error messages improved
+  * Update to utilize native v8 transactional interface. Previously, it used
+    the v7 interface with v8 emulation.
+  * treat server and client-generated messages differently
+    Server-generated error messages are considered non-recoverable, while
+    client generated once point into connection problems (which simply can
+    be retried). This is part of the improvements towards better
+    message-induced errors. Previous commits did only handle SQL parsing
+    errors, now we aim to address all of the message-induced error. We assume
+    that all server-generated errors are such - mysql API unfortunately does
+    not provide a clear indication of what type if error this is and it is
+    out of question to check for hundereds of error codes.
+    closes https://github.com/rsyslog/rsyslog/issues/1830
+- ommysql bugfix: do not duplicate entries on failed transaction
+  If a multi-message batch contains data errors, messages may be
+  duplicated as connection close is implicit commit (not rollback).
+  This patch introduces a specific rollback request in those cases.
+  closes https://github.com/rsyslog/rsyslog/issues/1829
+- imtcp bugfix: parameter priorityString was ignored
+  defaults were always used
+- template/bugfix: invalid template option conflict detection
+  This prevented "option.casesenstive" to be used with the SQL and JSON
+  options.
+- core/actions: fix handling of data-induced errors
+  Rsyslog core should try to detect data-induced (unrecoverable) errors
+  during action processing. An example of such is invalid SQL statements.
+  If the action returns a data error, rsyslog shall retry individual
+  messages from a batch in an effort to log those without errors. The others
+  shall be dropped.
+  This logic was temporarily disabled after the switch to the new v8
+  transaction interface. Now this bug is fixed and the testbench has been
+  ammended to detect problems in the future.
+  closes https://github.com/rsyslog/rsyslog/issues/974
+- core/action bugfix: no "action suspended" message during retry processing
+  The action engine does not emit "action suspended" messages but "resumed"
+  ones in retry processing. This is wrong, as they are a strong indication
+  that something does not work correctly. Nevertheless, "resumed" messages
+  were emitted, which was very puzzling for the user.
+  This patch fixes it so that "suspend" messages are given during retry
+  processing. These do not contain a retry timestamp, providing evidence
+  that a retry is currently being tried.
+  coses https://github.com/rsyslog/rsyslog/issues/1069
+- core/ratelimit bugfix: race can lead to segfault
+  There was a race in iminternalAddMsg(), where the mutex is
+  released and after that the passed message object is accessed.
+  If the mainloop iterates in between, the msg may have already
+  been deleted by this time, resulting in a segfault.
+  Most importantly, there is no need to release the mutex lock
+  early, as suggested by current code. Inside mainloop the mutex
+  is acquired when it is time to do so, so at worst we'll have a
+  very slight wait there (which really does not matter at all).
+  This only happens if a large number of internal messages are emitted.
+  closes https://github.com/rsyslog/rsyslog/issues/1828
+- core bugfix: rsyslog aborts if errmsg is generated in early startup
+  Note that the segfault can occur only during early startup. Once
+  rsyslog has started, everything works reliably. This condition can
+  especially be triggerred by specifying invalid TLS default certificates.
+  closes https://github.com/rsyslog/rsyslog/issues/1783
+  closes https://github.com/rsyslog/rsyslog/issues/1786
+- core bugfix: informational messages was logged with error severity
+  When the main loop reaped a child process (a normal action), this was
+  reported as an error. This caused user confusion. Now it is reported as
+  an informational message.
+- core bugfix: --enable-debugless build was broken
+  This was a regression from the v8.29.0 debug enhancements
+  Thanks to Stephen Workman for the patch.
+- queue bugfix: file write error message was incorrect
+  when a queue was restarted from disk file, it almost always
+  emitted a message claiming
+  "file opened for non-append write, but already contains xxx bytes"
+  This message was wrong and did not indicate a real error condition.
+  The predicate check was incorrect.
+  closes https://github.com/rsyslog/rsyslog/issues/170 (kind of)
+- omrelp bugfix:  segfault when rebindinterval parameter is used
+- omkafka bugfix: invalid load of failedmsg file on startup if disabled
+  error "rsyslogd: omkafka: could not load failed messages from "
+  "file (null) error -2027 - failed messages will not be resend."
+  occurs because, depite `keepFailedMessages="off"` as a default,
+  omkafka still tries to check for and load a `(none)` file which
+  triggers an IO error of sorts according to the 2027 link above.
+  Obviously, it probably shouldn't try load the file if
+  `keepFailedMessages` is not enabled.
+  Thanks to github user JPvRiel for a very good error report and
+  analysis.
+  closes https://github.com/rsyslog/rsyslog/issues/1765
+- kafka bugfix: problem on invalid kafka configuration values
+  omkafka ended up in an endless loop and high cpu.
+  imkafka tried to subscribe to a not connected kafka server.
+  closes https://github.com/rsyslog/rsyslog/issues/1806
+- imudp bugfix: UDP oversize message not properly handled
+  When a message larger than supported by the UDP stack is to be sent,
+  EMSGSIZE is returned, but not specifically handled. That in turn
+  will lead to action suspension. However, this does not make sense
+  because messages over the UDP max message size simply cannot be sent.
+  closes https://github.com/rsyslog/rsyslog/issues/1654
+- core bugfix: memory corruption during configuration parsing
+  when omfwd is used with the $streamdriverpermittedpeers legacy
+  parameter, a memory corruption can occur. This depends on the
+  length of the provided strings and probably the malloc subsystem.
+  Once config parsing succeeds, no problem can happen.
+  Thanks to Brent Douglas for initially reporting this issue and
+  providing great analysis.
+  Thanks to github user bwdoll for analyzing this bug and providing
+  a suggested fix (which is almost what this commit includes).
+  closes https://github.com/rsyslog/rsyslog/issues/1408
+  closes https://github.com/rsyslog/rsyslog/issues/1474
+- core bugfix: race on worker thread termination during shutdown
+  The testbench got some occasionally failing tests. Review of
+  them brought up the idea that there is a race during worker
+  threat termination. Further investigation showed that this
+  might be a long-standing issue, but so far did not really
+  surface as the timing was almost always correct. However,
+  with the new functionality to emit a message on worker
+  shutdown (v8.29), the timing got more complex and now this
+  seemed to occasionally surface.
+  closes https://github.com/rsyslog/rsyslog/issues/1754
+- omelasticsearch: avoid ES5 warnings while sending json in bulkmode
+  do this by adding proper content type header to ES request
+  Thanks to William Dauchy for the patch
+- omelasticsearch bugfix: incompatibility with newer ElasticSearch version
+  ElasticSearch changed its API in newer versions. When "bulkmode" is enabled
+  in omelasticsearch, rsyslog seems to consider all responses from Elasticsearch
+  as errors, even the successful ones. As a consequence, every single request
+  ends up being logged into the error file.
+  closes https://github.com/rsyslog/rsyslog/issues/1731
+  Thanks to Vincent Quéméner for the patch.
+- imptcp bugfix: invalid mutex addressing on some platforms
+  code did not compile on platforms without atomic instructions
+  Thanks to github user petiepooo for the patch
+- imptcp bugfix: do not accept missing port in legacy listener definition
+  If legacy listener definition was used, a missing port was accepted during
+  the config read phase but errored out upon listener activation. This now
+  errors out directly when processing the config directive.
+------------------------------------------------------------------------------
 Version 8.29.0 [v8-stable] 2017-08-08
 - imptcp: add experimental parameter "multiline"
   This enables a heuristic to support multiline messages on raw tcp syslog

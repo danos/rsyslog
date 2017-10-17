@@ -51,7 +51,6 @@ TESTS +=  \
 	invalid_nested_include.sh \
 	omfwd-keepalive.sh \
 	omfile-read-only-errmsg.sh \
-	omfile-read-only.sh \
 	omfile_both_files_set.sh \
 	msgvar-concurrency.sh \
 	localvar-concurrency.sh \
@@ -238,6 +237,25 @@ TESTS +=  \
 	rscript_ne.sh \
 	rscript_ne_var.sh \
 	rscript_num2ipv4.sh \
+	rscript_trim.sh \
+	rscript_format_time.sh \
+	mmanon_random_32_ipv4.sh \
+	mmanon_random_cons_32_ipv4.sh \
+	mmanon_recognize_ipv4.sh \
+	mmanon_zero_12_ipv4.sh \
+	mmanon_zero_33_ipv4.sh \
+	mmanon_zero_8_ipv4.sh \
+	mmanon_simple_12_ipv4.sh \
+	mmanon_simple_33_ipv4.sh \
+	mmanon_simple_8_ipv4.sh \
+	mmanon_random_128_ipv6.sh \
+	mmanon_zero_128_ipv6.sh \
+	mmanon_zero_96_ipv6.sh \
+	mmanon_random_cons_128_ipv6.sh \
+	mmanon_zero_50_ipv6.sh \
+	mmanon_recognize_ipv6.sh \
+	mmanon_zero_64_ipv6.sh \
+	mmanon_both_modes_compatible.sh \
 	empty-prop-comparison.sh \
 	rs_optimizer_pri.sh \
 	cee_simple.sh \
@@ -348,7 +366,8 @@ TESTS +=  \
 	mysql-basic-cnf6.sh \
 	mysql-asyn.sh \
 	mysql-actq-mt.sh \
-	mysql-actq-mt-withpause.sh
+	mysql-actq-mt-withpause.sh \
+	action-tx-single-processing.sh
 if HAVE_VALGRIND
 TESTS +=  \
 	mysql-basic-vg.sh \
@@ -480,7 +499,6 @@ TESTS += msgvar-concurrency-array.sh \
 	mmnormalize_processing_test2.sh \
 	mmnormalize_processing_test3.sh \
 	mmnormalize_processing_test4.sh
-endif
 
 if ENABLE_IMPTCP
 TESTS +=  \
@@ -493,6 +511,7 @@ endif
 if LOGNORM_REGEX_SUPPORTED
 TESTS += \
 	mmnormalize_regex.sh
+endif
 endif
 
 if ENABLE_MMJSONPARSE
@@ -564,6 +583,7 @@ endif
 
 if ENABLE_RELP
 TESTS += sndrcv_relp.sh \
+	 sndrcv_relp_rebind.sh \
          sndrcv_relp_dflt_pt.sh \
 	 imrelp-basic.sh \
 	 imrelp-manyconn.sh
@@ -824,6 +844,25 @@ EXTRA_DIST= \
 	testsuites/rscript_ne.conf \
 	rscript_ne_var.sh \
 	rscript_num2ipv4.sh \
+	rscript_trim.sh \
+	rscript_format_time.sh \
+	mmanon_random_32_ipv4.sh \
+	mmanon_random_cons_32_ipv4.sh \
+	mmanon_recognize_ipv4.sh \
+	mmanon_zero_12_ipv4.sh \
+	mmanon_zero_33_ipv4.sh \
+	mmanon_zero_8_ipv4.sh \
+	mmanon_simple_12_ipv4.sh \
+	mmanon_simple_33_ipv4.sh \
+	mmanon_simple_8_ipv4.sh \
+	mmanon_random_128_ipv6.sh \
+	mmanon_zero_128_ipv6.sh \
+	mmanon_zero_96_ipv6.sh \
+	mmanon_random_cons_128_ipv6.sh \
+	mmanon_zero_50_ipv6.sh \
+	mmanon_recognize_ipv6.sh \
+	mmanon_zero_64_ipv6.sh \
+	mmanon_both_modes_compatible.sh \
 	testsuites/rscript_ne_var.conf \
 	rscript_eq.sh \
 	testsuites/rscript_eq.conf \
@@ -1128,6 +1167,9 @@ EXTRA_DIST= \
 	sndrcv_relp.sh \
 	testsuites/sndrcv_relp_sender.conf \
 	testsuites/sndrcv_relp_rcvr.conf \
+	sndrcv_relp_rebind.sh \
+	testsuites/sndrcv_relp_rebind_sender.conf \
+	testsuites/sndrcv_relp_rebind_rcvr.conf \
 	sndrcv_relp_tls.sh \
 	testsuites/sndrcv_relp_tls_sender.conf \
 	testsuites/sndrcv_relp_tls_rcvr.conf \
@@ -1154,6 +1196,7 @@ EXTRA_DIST= \
 	sndrcv_gzip.sh \
 	testsuites/sndrcv_gzip_sender.conf \
 	testsuites/sndrcv_gzip_rcvr.conf \
+	./action-tx-single-processing.sh \
 	pipeaction.sh \
 	testsuites/pipeaction.conf \
 	omprog-cleanup.sh \

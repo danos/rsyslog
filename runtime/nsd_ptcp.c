@@ -176,6 +176,23 @@ finalize_it:
 }
 
 
+/* Set priorityString
+ * PascalWithopf 2017-08-18 */
+static rsRetVal
+SetGnutlsPriorityString(nsd_t __attribute__((unused)) *pNsd, uchar *iVal)
+{
+	DEFiRet;
+	if(iVal != NULL) {
+		errmsg.LogError(0, RS_RET_VALUE_NOT_SUPPORTED, "error: "
+		"gnutlsPriorityString '%s' not supported by ptcp netstream "
+		"driver", iVal);
+		ABORT_FINALIZE(RS_RET_VALUE_NOT_SUPPORTED);
+	}
+finalize_it:
+	RETiRet;
+}
+
+
 /* Set the permitted peers. This is a dummy, always returning an
  * error because we do not support fingerprint authentication.
  * rgerhards, 2008-05-17
@@ -474,7 +491,6 @@ LstnInit(netstrms_t *pNS, void *pUsr, rsRetVal(*fAddLstn)(void*,netstrm_t*),
 		}
 
 
-
 		/* We need to enable BSD compatibility. Otherwise an attacker
 		 * could flood our log files by sending us tons of ICMP errors.
 		 */
@@ -525,6 +541,7 @@ LstnInit(netstrms_t *pNS, void *pUsr, rsRetVal(*fAddLstn)(void*,netstrm_t*),
 			}
 		}
 
+
 		/* if we reach this point, we were able to obtain a valid socket, so we can
 		 * construct a new netstrm obj and hand it over to the upper layers for inclusion
 		 * into their socket array. -- rgerhards, 2008-04-23
@@ -535,6 +552,7 @@ LstnInit(netstrms_t *pNS, void *pUsr, rsRetVal(*fAddLstn)(void*,netstrm_t*),
 		CHKiRet(pNS->Drvr.SetMode(pNewNsd, netstrms.GetDrvrMode(pNS)));
 		CHKiRet(pNS->Drvr.SetAuthMode(pNewNsd, netstrms.GetDrvrAuthMode(pNS)));
 		CHKiRet(pNS->Drvr.SetPermPeers(pNewNsd, netstrms.GetDrvrPermPeers(pNS)));
+		CHKiRet(pNS->Drvr.SetGnutlsPriorityString(pNewNsd, netstrms.GetDrvrGnutlsPriorityString(pNS)));
 		CHKiRet(netstrms.CreateStrm(pNS, &pNewStrm));
 		pNewStrm->pDrvrData = (nsd_t*) pNewNsd;
 		pNewNsd = NULL;
@@ -575,22 +593,24 @@ finalize_it:
  * never blocks, not even when called on a blocking socket. That is important
  * for client sockets, which are set to block during send, but should not
  * block when trying to read data. If *pLenBuf is -1, an error occured and
- * errno holds the exact error cause.
+ * oserr holds the exact error cause.
  * rgerhards, 2008-03-17
  */
 static rsRetVal
-Rcv(nsd_t *pNsd, uchar *pRcvBuf, ssize_t *pLenBuf)
+Rcv(nsd_t *pNsd, uchar *pRcvBuf, ssize_t *pLenBuf, int *const oserr)
 {
 	char errStr[1024];
 	DEFiRet;
 	nsd_ptcp_t *pThis = (nsd_ptcp_t*) pNsd;
 	ISOBJ_TYPE_assert(pThis, nsd_ptcp);
+	assert(oserr != NULL);
 /*  AIXPORT : MSG_DONTWAIT not supported */ 
 #if defined (_AIX)
 #define MSG_DONTWAIT    MSG_NONBLOCK
 #endif
 
 	*pLenBuf = recv(pThis->sock, pRcvBuf, *pLenBuf, MSG_DONTWAIT);
+	*oserr = errno;
 
 	if(*pLenBuf == 0) {
 		ABORT_FINALIZE(RS_RET_CLOSED);
@@ -854,6 +874,7 @@ CODESTARTobjQueryInterface(nsd_ptcp)
 	pIf->SetSock = SetSock;
 	pIf->SetMode = SetMode;
 	pIf->SetAuthMode = SetAuthMode;
+	pIf->SetGnutlsPriorityString = SetGnutlsPriorityString;
 	pIf->SetPermPeers = SetPermPeers;
 	pIf->Rcv = Rcv;
 	pIf->Send = Send;
