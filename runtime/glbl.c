@@ -178,11 +178,13 @@ static struct cnfparamdescr cnfparamdescr[] = {
 	{ "net.aclresolvehostname", eCmdHdlrBinary, 0 },
 	{ "net.enabledns", eCmdHdlrBinary, 0 },
 	{ "net.permitACLwarning", eCmdHdlrBinary, 0 },
+	{ "variables.casesensitive", eCmdHdlrBinary, 0 },
 	{ "environment", eCmdHdlrArray, 0 },
 	{ "processinternalmessages", eCmdHdlrBinary, 0 },
 	{ "umask", eCmdHdlrFileCreateMode, 0 },
 	{ "internalmsg.ratelimit.interval", eCmdHdlrPositiveInt, 0 },
 	{ "internalmsg.ratelimit.burst", eCmdHdlrPositiveInt, 0 },
+	{ "errormessagestostderr.maxnumber", eCmdHdlrPositiveInt, 0 },
 	{ "debug.files", eCmdHdlrArray, 0 },
 	{ "debug.whitelist", eCmdHdlrBinary, 0 }
 };
@@ -1123,49 +1125,51 @@ glblDoneLoadCnf(void)
 		if(!strcmp(paramblk.descr[i].name, "workdirectory")) {
 			cstr = (uchar*) es_str2cstr(cnfparamvals[i].val.d.estr, NULL);
 			setWorkDir(NULL, cstr);
+		} else if(!strcmp(paramblk.descr[i].name, "variables.casesensitive")) {
+			const int val = (int) cnfparamvals[i].val.d.n;
+			fjson_global_do_case_sensitive_comparison(val);
+			DBGPRINTF("global/config: set case sensitive variables to %d\n",
+				val);
 		} else if(!strcmp(paramblk.descr[i].name, "localhostname")) {
 			free(LocalHostNameOverride);
 			LocalHostNameOverride = (uchar*)
 				es_str2cstr(cnfparamvals[i].val.d.estr, NULL);
 		} else if(!strcmp(paramblk.descr[i].name, "defaultnetstreamdriverkeyfile")) {
 			free(pszDfltNetstrmDrvrKeyFile);
-			pszDfltNetstrmDrvrKeyFile = (uchar*)
-				es_str2cstr(cnfparamvals[i].val.d.estr, NULL);
-			fp = fopen((const char*)pszDfltNetstrmDrvrKeyFile, "r");
+			uchar *const fn = (uchar*) es_str2cstr(cnfparamvals[i].val.d.estr, NULL);
+			fp = fopen((const char*)fn, "r");
 			if(fp == NULL) {
-				char errStr[1024];
-				rs_strerror_r(errno, errStr, sizeof(errStr));
-				errmsg.LogError(0, RS_RET_NO_FILE_ACCESS,
-				"error: certificate file %s couldn't be accessed: %s\n",
-				pszDfltNetstrmDrvrKeyFile, errStr);
+				LogError(errno, RS_RET_NO_FILE_ACCESS,
+					"error: defaultnetstreamdriverkeyfile '%s' "
+					"could not be accessed", fn);
+			} else {
+				fclose(fp);
+				pszDfltNetstrmDrvrKeyFile = fn;
 			}
-			fclose(fp);
 		} else if(!strcmp(paramblk.descr[i].name, "defaultnetstreamdrivercertfile")) {
 			free(pszDfltNetstrmDrvrCertFile);
-			pszDfltNetstrmDrvrCertFile = (uchar*)
-				es_str2cstr(cnfparamvals[i].val.d.estr, NULL);
-			fp = fopen((const char*)pszDfltNetstrmDrvrCertFile, "r");
+			uchar *const fn = (uchar*) es_str2cstr(cnfparamvals[i].val.d.estr, NULL);
+			fp = fopen((const char*)fn, "r");
 			if(fp == NULL) {
-				char errStr[1024];
-				rs_strerror_r(errno, errStr, sizeof(errStr));
-				errmsg.LogError(0, RS_RET_NO_FILE_ACCESS,
-				"error: certificate file %s couldn't be accessed: %s\n",
-				pszDfltNetstrmDrvrCertFile, errStr);
+				LogError(errno, RS_RET_NO_FILE_ACCESS,
+					"error: defaultnetstreamdrivercertfile '%s' "
+					"could not be accessed", fn);
+			} else {
+				fclose(fp);
+				pszDfltNetstrmDrvrCertFile = fn;
 			}
-			fclose(fp);
 		} else if(!strcmp(paramblk.descr[i].name, "defaultnetstreamdrivercafile")) {
 			free(pszDfltNetstrmDrvrCAF);
-			pszDfltNetstrmDrvrCAF = (uchar*)
-				es_str2cstr(cnfparamvals[i].val.d.estr, NULL);
-			fp = fopen((const char*)pszDfltNetstrmDrvrCAF, "r");
+			uchar *const fn = (uchar*) es_str2cstr(cnfparamvals[i].val.d.estr, NULL);
+			fp = fopen((const char*)fn, "r");
 			if(fp == NULL) {
-				char errStr[1024];
-				rs_strerror_r(errno, errStr, sizeof(errStr));
-				errmsg.LogError(0, RS_RET_NO_FILE_ACCESS,
-				"error: certificate file %s couldn't be accessed: %s\n",
-				pszDfltNetstrmDrvrCAF, errStr);
+				LogError(errno, RS_RET_NO_FILE_ACCESS,
+					"error: defaultnetstreamdrivercafile file '%s' "
+					"could not be accessed", fn);
+			} else {
+				fclose(fp);
+				pszDfltNetstrmDrvrCAF = fn;
 			}
-			fclose(fp);
 		} else if(!strcmp(paramblk.descr[i].name, "defaultnetstreamdriver")) {
 			free(pszDfltNetstrmDrvr);
 			pszDfltNetstrmDrvr = (uchar*)
@@ -1189,7 +1193,9 @@ glblDoneLoadCnf(void)
 		} else if(!strcmp(paramblk.descr[i].name, "debug.unloadmodules")) {
 			glblUnloadModules = (int) cnfparamvals[i].val.d.n;
 		} else if(!strcmp(paramblk.descr[i].name, "parser.controlcharacterescapeprefix")) {
-			cCCEscapeChar = (uchar) *es_str2cstr(cnfparamvals[i].val.d.estr, NULL);
+			uchar* tmp = (uchar*) es_str2cstr(cnfparamvals[i].val.d.estr, NULL);
+			cCCEscapeChar = tmp[0];
+			free(tmp);
 		} else if(!strcmp(paramblk.descr[i].name, "parser.droptrailinglfonreception")) {
 			bDropTrailingLF = (int) cnfparamvals[i].val.d.n;
 		} else if(!strcmp(paramblk.descr[i].name, "parser.escapecontrolcharactersonreceive")) {
@@ -1258,6 +1264,8 @@ glblDoneLoadCnf(void)
 				do_setenv(var);
 				free(var);
 			}
+		} else if(!strcmp(paramblk.descr[i].name, "errormessagestostderr.maxnumber")) {
+		        loadConf->globals.maxErrMsgToStderr = (int) cnfparamvals[i].val.d.n;
 		} else if(!strcmp(paramblk.descr[i].name, "debug.files")) {
 			glblDbgFilesNum = cnfparamvals[i].val.d.ar->nmemb;
 			glblDbgFiles = (char**) malloc(cnfparamvals[i].val.d.ar->nmemb * sizeof(char*));

@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([rsyslog],[8.29.0],[rsyslog@lists.adiscon.com])
+AC_INIT([rsyslog],[8.30.0],[rsyslog@lists.adiscon.com])
 
 # AIXPORT START: Detect the underlying OS
 unamestr=$(uname)
@@ -75,7 +75,7 @@ PKG_PROG_PKG_CONFIG
 # modules we require
 PKG_CHECK_MODULES(LIBESTR, libestr >= 0.1.9)
 
-PKG_CHECK_MODULES([LIBFASTJSON], [libfastjson >= 0.99.3],,)
+PKG_CHECK_MODULES([LIBFASTJSON], [libfastjson >= 0.99.7],,)
 
 AC_DEFINE_UNQUOTED([PLATFORM_ID], ["${host}"], [platform id for display purposes])
 # we don't mind if we don't have the lsb_release utility. But if we have, it's
@@ -460,8 +460,10 @@ AC_ARG_ENABLE(imjournal,
         [enable_imjournal="no"]
 )
 if test "x$enable_imjournal" = "xyes"; then
-	PKG_CHECK_MODULES([LIBSYSTEMD_JOURNAL], [libsystemd >= 209] ,, [
-	    PKG_CHECK_MODULES([LIBSYSTEMD_JOURNAL], [libsystemd-journal >= 197])
+	PKG_CHECK_MODULES([LIBSYSTEMD_JOURNAL], [libsystemd >= 234] , [AC_DEFINE(NEW_JOURNAL, 1, [new systemd present])] , [
+	    PKG_CHECK_MODULES([LIBSYSTEMD_JOURNAL], [libsystemd >= 209] , , [
+	        PKG_CHECK_MODULES([LIBSYSTEMD_JOURNAL], [libsystemd-journal >= 197])
+	    ])
 	])
 fi
 AM_CONDITIONAL(ENABLE_IMJOURNAL, test x$enable_imjournal = xyes)
@@ -2140,9 +2142,7 @@ echo "    Log file signing support:                 $enable_guardtime"
 echo "    Log file signing support via KSI LS12:    $enable_ksi_ls12"
 echo "    Log file encryption support:              $enable_libgcrypt"
 echo "    anonymization support enabled:            $enable_mmanon"
-echo "    mmrm1stspace module enabled:              $enable_mmrm1stspace"
 echo "    message counting support enabled:         $enable_mmcount"
-echo "    mmfields enabled:                         $enable_mmfields"
 echo "    liblogging-stdlog support enabled:        $enable_liblogging_stdlog"
 echo "    kafka static linking enabled:             $enable_kafka_static"
 echo
@@ -2198,6 +2198,8 @@ echo "    mmrfc5424addhmac enabled:                 $enable_mmrfc5424addhmac"
 echo "    mmpstrucdata enabled:                     $enable_mmpstrucdata"
 echo "    mmsequence enabled:                       $enable_mmsequence"
 echo "    mmdblookup enabled:                       $enable_mmdblookup"
+echo "    mmfields enabled:                         $enable_mmfields"
+echo "    mmrm1stspace module enabled:              $enable_mmrm1stspace"
 echo
 echo "---{ database support }---"
 echo "    MySql support enabled:                    $enable_mysql"

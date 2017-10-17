@@ -934,10 +934,30 @@ logmsgInternal(int iErr, const syslog_pri_t pri, const uchar *const msg, int fla
 	 * supressor statement.
 	 */
 	int emit_to_stderr = (ourConf == NULL) ? 1 : ourConf->globals.bErrMsgToStderr;
-	if(((Debug == DEBUG_FULL || !doFork) && emit_to_stderr) || iConfigVerify) {
+	int emit_supress_msg = 0;
+	if(Debug == DEBUG_FULL || !doFork) {
+		emit_to_stderr = 1;
+	}
+	if(ourConf != NULL && ourConf->globals.maxErrMsgToStderr != -1) {
+		if(emit_to_stderr && ourConf->globals.maxErrMsgToStderr != -1 && ourConf->globals.maxErrMsgToStderr) {
+			--ourConf->globals.maxErrMsgToStderr;
+			if(ourConf->globals.maxErrMsgToStderr == 0)
+				emit_supress_msg = 1;
+		} else {
+			emit_to_stderr = 0;
+		}
+	}
+	if(emit_to_stderr || iConfigVerify) {
 		if(pri2sev(pri) == LOG_ERR)
 			fprintf(stderr, "rsyslogd: %s\n",
 				(bufModMsg == NULL) ? (char*)msg : bufModMsg);
+	}
+	if(emit_supress_msg) {
+		fprintf(stderr, "rsyslogd: configured max number of error messages "
+			"to stderr reached, further messages will not be output\n"
+			"Consider adjusting\n"
+			"    global(errorMessagesToStderr.maxNumber=\"xx\")\n"
+			"if you want more.\n");
 	}
 
 finalize_it:
@@ -1177,6 +1197,10 @@ initAll(int argc, char **argv)
 	char cwdbuf[128]; /* buffer to obtain/display current working directory */
 	int parentPipeFD = 0; /* fd of pipe to parent, if auto-backgrounding */
 	DEFiRet;
+
+	/* prepare internal signaling */
+	hdlr_enable(SIGTTIN, hdlr_sigttin_ou);
+	hdlr_enable(SIGTTOU, hdlr_sigttin_ou);
 
 	/* first, parse the command line options. We do not carry out any actual work, just
 	 * see what we should do. This relieves us from certain anomalies and we can process
@@ -1454,8 +1478,6 @@ initAll(int argc, char **argv)
 		hdlr_enable(SIGQUIT, SIG_IGN);
 	}
 	hdlr_enable(SIGTERM, rsyslogdDoDie);
-	hdlr_enable(SIGTTIN, hdlr_sigttin_ou);
-	hdlr_enable(SIGTTOU, hdlr_sigttin_ou);
 	hdlr_enable(SIGCHLD, hdlr_sigchld);
 	hdlr_enable(SIGHUP, hdlr_sighup);
 
@@ -1736,7 +1758,7 @@ mainloop(void)
 				child = waitpid(-1, NULL, WNOHANG);
 				DBGPRINTF("rsyslogd: mainloop waitpid (with-no-hang) returned %u\n", (unsigned) child);
 				if (child != -1 && child != 0) {
-					errmsg.LogError(0, RS_RET_OK, "Child %d has terminated, reaped "
+					LogMsg(0, RS_RET_OK, LOG_INFO, "Child %d has terminated, reaped "
 						"by main-loop.", (unsigned) child);
 				}
 			} while(child > 0);
@@ -1868,11 +1890,10 @@ int
 main(int argc, char **argv)
 {
 #if defined(_AIX)
-	/* AIXPORT : start
-	* SRC support : fd 0 (stdin) must be the SRC socket
-	* startup.  fd 0 is duped to a new descriptor so that stdin can be used
-	* internally by rsyslogd.
-	*/
+	/* SRC support : fd 0 (stdin) must be the SRC socket
+	 * startup.  fd 0 is duped to a new descriptor so that stdin can be used
+	 * internally by rsyslogd.
+	 */
 
 	strncpy(progname,argv[0], sizeof(progname)-1);
 	addrsz = sizeof(srcaddr);
@@ -1881,16 +1902,16 @@ main(int argc, char **argv)
 		src_exists = FALSE;
 	}
 	if (src_exists) 
-		if(dup2(0, SRC_FD) == -1)
-		{
+		if(dup2(0, SRC_FD) == -1) {
 			fprintf(stderr, "%s: dup2 failed exiting now...\n", progname);
 			/* In the unlikely event of dup2 failing we exit */
 			exit(-1);
 		}
 #endif
-	/* AIXPORT : src end */
-	/* use faster hash function inside json lib */
-	json_global_set_string_hash(JSON_C_STR_HASH_PERLLIKE);
+
+	/* disable case-sensitive comparisons in variable subsystem: */
+	fjson_global_do_case_sensitive_comparison(0);
+
 	const char *const log_dflt = getenv("RSYSLOG_DFLT_LOG_INTERNAL");
 	if(log_dflt != NULL && !strcmp(log_dflt, "1"))
 		bProcessInternalMessages = 1;
