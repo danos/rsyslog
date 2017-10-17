@@ -1,3 +1,9 @@
+rsyslog (8.30.0-1) UNRELEASED; urgency=medium
+
+  * New upstream version 8.30.0
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 17 Oct 2017 19:52:10 +0200
+
 rsyslog (8.29.0-2) unstable; urgency=medium
 
   * Change priority of all extra packages to optional
