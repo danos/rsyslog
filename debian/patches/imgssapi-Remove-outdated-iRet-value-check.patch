@@ -1,0 +1,22 @@
+From: Thomas Deutschmann <whissi@whissi.de>
+Date: Tue, 17 Oct 2017 17:37:48 +0200
+Subject: imgssapi: Remove outdated iRet value check
+
+(cherry picked from commit 4affba6acd093315f649e1ca09f3c9dab0776450)
+---
+ plugins/imgssapi/imgssapi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/plugins/imgssapi/imgssapi.c b/plugins/imgssapi/imgssapi.c
+index d3e2d9c..9d72827 100644
+--- a/plugins/imgssapi/imgssapi.c
++++ b/plugins/imgssapi/imgssapi.c
+@@ -307,7 +307,7 @@ doRcvData(tcps_sess_t *pSess, char *buf, size_t lenBuf, ssize_t *piLenRcvd, int
+ 		CHKiRet(TCPSessGSSRecv(pSess, buf, lenBuf, piLenRcvd));
+ 	} else {
+ 		*piLenRcvd = lenBuf;
+-		CHKiRet(netstrm.Rcv(pSess->pStrm, (uchar*) buf, piLenRcvd, oserr) != RS_RET_OK);
++		CHKiRet(netstrm.Rcv(pSess->pStrm, (uchar*) buf, piLenRcvd, oserr));
+ 	}
+ 
+ finalize_it:
