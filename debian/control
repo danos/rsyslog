@@ -23,6 +23,7 @@ Build-Depends: debhelper (>= 10.3),
                libsystemd-dev (>= 209) [linux-any],
                pkg-config,
                bison,
+               flex,
                procps <!nocheck>
 Standards-Version: 4.1.1
 Vcs-Git: https://anonscm.debian.org/git/collab-maint/rsyslog.git
