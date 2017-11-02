@@ -4,6 +4,7 @@ Priority: important
 Maintainer: Michael Biebl <biebl@debian.org>
 Build-Depends: debhelper (>= 10.3),
                dh-exec,
+               autoconf-archive,
                zlib1g-dev,
                libhiredis-dev,
                default-libmysqlclient-dev,
