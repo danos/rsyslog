@@ -71,5 +71,5 @@ override_dh_missing:
 
 override_dh_auto_test:
 ifeq (, $(findstring nocheck, $(DEB_BUILD_OPTIONS)))
-	dh_auto_test || ( cat tests/test-suite.log; exit 1; )
+	make check || ( cat tests/test-suite.log; exit 1; )
 endif
