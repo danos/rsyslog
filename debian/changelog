@@ -1,3 +1,25 @@
+rsyslog (8.30.0-2) unstable; urgency=medium
+
+  * Add Build-Depends on flex for generating grammar/lexer.c.
+    This ensures we can build twice in a row. The pre-generated files in
+    grammar/ are removed on make clean.
+  * Revert "Use dh_auto_test instead of calling make check directly"
+    Somehow this broke the test suite and made lots of tests fail.
+  * Add Build-Depends on autoconf-archive for the AX_COMPILER_FLAGS macro
+
+ -- Michael Biebl <biebl@debian.org>  Thu, 02 Nov 2017 11:48:02 +0100
+
+rsyslog (8.30.0-1) unstable; urgency=medium
+
+  * New upstream version 8.30.0
+  * Rebase patches
+  * Bump Build-Depends on libfastjson-dev to (>= 0.99.7) as per configure.ac
+  * Switch from dh_install --list-missing to dh_missing --list-missing
+  * Cherry-pick upstream patches to fix imgssapi build failures
+  * Bump Standards-Version to 4.1.1
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 01 Nov 2017 22:51:44 +0100
+
 rsyslog (8.29.0-2~bpo9+1) stretch-backports; urgency=medium
 
   * Rebuild for stretch-backports

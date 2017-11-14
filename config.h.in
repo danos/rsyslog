@@ -387,6 +387,9 @@
 /* Defined if debug mode is disabled. */
 #undef NDEBUG
 
+/* new systemd present */
+#undef NEW_JOURNAL
+
 /* Indicator for a AIX OS */
 #undef OS_AIX
 

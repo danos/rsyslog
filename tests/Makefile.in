@@ -116,7 +116,6 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	invalid_nested_include.sh \
 @ENABLE_TESTBENCH_TRUE@	omfwd-keepalive.sh \
 @ENABLE_TESTBENCH_TRUE@	omfile-read-only-errmsg.sh \
-@ENABLE_TESTBENCH_TRUE@	omfile-read-only.sh \
 @ENABLE_TESTBENCH_TRUE@	omfile_both_files_set.sh \
 @ENABLE_TESTBENCH_TRUE@	msgvar-concurrency.sh \
 @ENABLE_TESTBENCH_TRUE@	localvar-concurrency.sh \
@@ -248,6 +247,24 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	rscript_le_var.sh rscript_lt.sh \
 @ENABLE_TESTBENCH_TRUE@	rscript_lt_var.sh rscript_ne.sh \
 @ENABLE_TESTBENCH_TRUE@	rscript_ne_var.sh rscript_num2ipv4.sh \
+@ENABLE_TESTBENCH_TRUE@	rscript_trim.sh rscript_format_time.sh \
+@ENABLE_TESTBENCH_TRUE@	mmanon_random_32_ipv4.sh \
+@ENABLE_TESTBENCH_TRUE@	mmanon_random_cons_32_ipv4.sh \
+@ENABLE_TESTBENCH_TRUE@	mmanon_recognize_ipv4.sh \
+@ENABLE_TESTBENCH_TRUE@	mmanon_zero_12_ipv4.sh \
+@ENABLE_TESTBENCH_TRUE@	mmanon_zero_33_ipv4.sh \
+@ENABLE_TESTBENCH_TRUE@	mmanon_zero_8_ipv4.sh \
+@ENABLE_TESTBENCH_TRUE@	mmanon_simple_12_ipv4.sh \
+@ENABLE_TESTBENCH_TRUE@	mmanon_simple_33_ipv4.sh \
+@ENABLE_TESTBENCH_TRUE@	mmanon_simple_8_ipv4.sh \
+@ENABLE_TESTBENCH_TRUE@	mmanon_random_128_ipv6.sh \
+@ENABLE_TESTBENCH_TRUE@	mmanon_zero_128_ipv6.sh \
+@ENABLE_TESTBENCH_TRUE@	mmanon_zero_96_ipv6.sh \
+@ENABLE_TESTBENCH_TRUE@	mmanon_random_cons_128_ipv6.sh \
+@ENABLE_TESTBENCH_TRUE@	mmanon_zero_50_ipv6.sh \
+@ENABLE_TESTBENCH_TRUE@	mmanon_recognize_ipv6.sh \
+@ENABLE_TESTBENCH_TRUE@	mmanon_zero_64_ipv6.sh \
+@ENABLE_TESTBENCH_TRUE@	mmanon_both_modes_compatible.sh \
 @ENABLE_TESTBENCH_TRUE@	empty-prop-comparison.sh \
 @ENABLE_TESTBENCH_TRUE@	rs_optimizer_pri.sh cee_simple.sh \
 @ENABLE_TESTBENCH_TRUE@	cee_diskqueue.sh incltest.sh \
@@ -356,7 +373,8 @@ host_triplet = @host@
 @ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	mysql-basic-cnf6.sh \
 @ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	mysql-asyn.sh \
 @ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	mysql-actq-mt.sh \
-@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	mysql-actq-mt-withpause.sh
+@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	mysql-actq-mt-withpause.sh \
+@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	action-tx-single-processing.sh
 
 @ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_11 = \
 @ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	mysql-basic-vg.sh \
@@ -466,14 +484,14 @@ host_triplet = @host@
 @ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_processing_test3.sh \
 @ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_processing_test4.sh
 
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_27 = \
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_regex_defaulted.sh \
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_regex_disabled.sh \
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_variable.sh \
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_tokenized.sh
+@ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_27 = \
+@ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_regex_defaulted.sh \
+@ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_regex_disabled.sh \
+@ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_variable.sh \
+@ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_tokenized.sh
 
-@ENABLE_TESTBENCH_TRUE@@LOGNORM_REGEX_SUPPORTED_TRUE@am__append_28 = \
-@ENABLE_TESTBENCH_TRUE@@LOGNORM_REGEX_SUPPORTED_TRUE@	mmnormalize_regex.sh
+@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@LOGNORM_REGEX_SUPPORTED_TRUE@am__append_28 = \
+@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@LOGNORM_REGEX_SUPPORTED_TRUE@	mmnormalize_regex.sh
 
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_29 = \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmjsonparse-w-o-cookie.sh \
@@ -530,6 +548,7 @@ host_triplet = @host@
 
 @ENABLE_OMUXSOCK_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_38 = uxsock_simple.sh
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_39 = sndrcv_relp.sh \
+@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 sndrcv_relp_rebind.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@         sndrcv_relp_dflt_pt.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 imrelp-basic.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 imrelp-manyconn.sh
@@ -1382,6 +1401,25 @@ EXTRA_DIST = \
 	testsuites/rscript_ne.conf \
 	rscript_ne_var.sh \
 	rscript_num2ipv4.sh \
+	rscript_trim.sh \
+	rscript_format_time.sh \
+	mmanon_random_32_ipv4.sh \
+	mmanon_random_cons_32_ipv4.sh \
+	mmanon_recognize_ipv4.sh \
+	mmanon_zero_12_ipv4.sh \
+	mmanon_zero_33_ipv4.sh \
+	mmanon_zero_8_ipv4.sh \
+	mmanon_simple_12_ipv4.sh \
+	mmanon_simple_33_ipv4.sh \
+	mmanon_simple_8_ipv4.sh \
+	mmanon_random_128_ipv6.sh \
+	mmanon_zero_128_ipv6.sh \
+	mmanon_zero_96_ipv6.sh \
+	mmanon_random_cons_128_ipv6.sh \
+	mmanon_zero_50_ipv6.sh \
+	mmanon_recognize_ipv6.sh \
+	mmanon_zero_64_ipv6.sh \
+	mmanon_both_modes_compatible.sh \
 	testsuites/rscript_ne_var.conf \
 	rscript_eq.sh \
 	testsuites/rscript_eq.conf \
@@ -1686,6 +1724,9 @@ EXTRA_DIST = \
 	sndrcv_relp.sh \
 	testsuites/sndrcv_relp_sender.conf \
 	testsuites/sndrcv_relp_rcvr.conf \
+	sndrcv_relp_rebind.sh \
+	testsuites/sndrcv_relp_rebind_sender.conf \
+	testsuites/sndrcv_relp_rebind_rcvr.conf \
 	sndrcv_relp_tls.sh \
 	testsuites/sndrcv_relp_tls_sender.conf \
 	testsuites/sndrcv_relp_tls_rcvr.conf \
@@ -1712,6 +1753,7 @@ EXTRA_DIST = \
 	sndrcv_gzip.sh \
 	testsuites/sndrcv_gzip_sender.conf \
 	testsuites/sndrcv_gzip_rcvr.conf \
+	./action-tx-single-processing.sh \
 	pipeaction.sh \
 	testsuites/pipeaction.conf \
 	omprog-cleanup.sh \
@@ -2728,13 +2770,6 @@ omfwd-keepalive.sh.log: omfwd-keepalive.sh
 omfile-read-only-errmsg.sh.log: omfile-read-only-errmsg.sh
 	@p='omfile-read-only-errmsg.sh'; \
 	b='omfile-read-only-errmsg.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-omfile-read-only.sh.log: omfile-read-only.sh
-	@p='omfile-read-only.sh'; \
-	b='omfile-read-only.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -4034,6 +4069,139 @@ rscript_num2ipv4.sh.log: rscript_num2ipv4.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+rscript_trim.sh.log: rscript_trim.sh
+	@p='rscript_trim.sh'; \
+	b='rscript_trim.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+rscript_format_time.sh.log: rscript_format_time.sh
+	@p='rscript_format_time.sh'; \
+	b='rscript_format_time.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmanon_random_32_ipv4.sh.log: mmanon_random_32_ipv4.sh
+	@p='mmanon_random_32_ipv4.sh'; \
+	b='mmanon_random_32_ipv4.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmanon_random_cons_32_ipv4.sh.log: mmanon_random_cons_32_ipv4.sh
+	@p='mmanon_random_cons_32_ipv4.sh'; \
+	b='mmanon_random_cons_32_ipv4.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmanon_recognize_ipv4.sh.log: mmanon_recognize_ipv4.sh
+	@p='mmanon_recognize_ipv4.sh'; \
+	b='mmanon_recognize_ipv4.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmanon_zero_12_ipv4.sh.log: mmanon_zero_12_ipv4.sh
+	@p='mmanon_zero_12_ipv4.sh'; \
+	b='mmanon_zero_12_ipv4.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmanon_zero_33_ipv4.sh.log: mmanon_zero_33_ipv4.sh
+	@p='mmanon_zero_33_ipv4.sh'; \
+	b='mmanon_zero_33_ipv4.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmanon_zero_8_ipv4.sh.log: mmanon_zero_8_ipv4.sh
+	@p='mmanon_zero_8_ipv4.sh'; \
+	b='mmanon_zero_8_ipv4.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmanon_simple_12_ipv4.sh.log: mmanon_simple_12_ipv4.sh
+	@p='mmanon_simple_12_ipv4.sh'; \
+	b='mmanon_simple_12_ipv4.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmanon_simple_33_ipv4.sh.log: mmanon_simple_33_ipv4.sh
+	@p='mmanon_simple_33_ipv4.sh'; \
+	b='mmanon_simple_33_ipv4.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmanon_simple_8_ipv4.sh.log: mmanon_simple_8_ipv4.sh
+	@p='mmanon_simple_8_ipv4.sh'; \
+	b='mmanon_simple_8_ipv4.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmanon_random_128_ipv6.sh.log: mmanon_random_128_ipv6.sh
+	@p='mmanon_random_128_ipv6.sh'; \
+	b='mmanon_random_128_ipv6.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmanon_zero_128_ipv6.sh.log: mmanon_zero_128_ipv6.sh
+	@p='mmanon_zero_128_ipv6.sh'; \
+	b='mmanon_zero_128_ipv6.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmanon_zero_96_ipv6.sh.log: mmanon_zero_96_ipv6.sh
+	@p='mmanon_zero_96_ipv6.sh'; \
+	b='mmanon_zero_96_ipv6.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmanon_random_cons_128_ipv6.sh.log: mmanon_random_cons_128_ipv6.sh
+	@p='mmanon_random_cons_128_ipv6.sh'; \
+	b='mmanon_random_cons_128_ipv6.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmanon_zero_50_ipv6.sh.log: mmanon_zero_50_ipv6.sh
+	@p='mmanon_zero_50_ipv6.sh'; \
+	b='mmanon_zero_50_ipv6.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmanon_recognize_ipv6.sh.log: mmanon_recognize_ipv6.sh
+	@p='mmanon_recognize_ipv6.sh'; \
+	b='mmanon_recognize_ipv6.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmanon_zero_64_ipv6.sh.log: mmanon_zero_64_ipv6.sh
+	@p='mmanon_zero_64_ipv6.sh'; \
+	b='mmanon_zero_64_ipv6.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mmanon_both_modes_compatible.sh.log: mmanon_both_modes_compatible.sh
+	@p='mmanon_both_modes_compatible.sh'; \
+	b='mmanon_both_modes_compatible.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 empty-prop-comparison.sh.log: empty-prop-comparison.sh
 	@p='empty-prop-comparison.sh'; \
 	b='empty-prop-comparison.sh'; \
@@ -4485,6 +4653,13 @@ mysql-actq-mt.sh.log: mysql-actq-mt.sh
 mysql-actq-mt-withpause.sh.log: mysql-actq-mt-withpause.sh
 	@p='mysql-actq-mt-withpause.sh'; \
 	b='mysql-actq-mt-withpause.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+action-tx-single-processing.sh.log: action-tx-single-processing.sh
+	@p='action-tx-single-processing.sh'; \
+	b='action-tx-single-processing.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -5297,6 +5472,13 @@ uxsock_simple.sh.log: uxsock_simple.sh
 sndrcv_relp.sh.log: sndrcv_relp.sh
 	@p='sndrcv_relp.sh'; \
 	b='sndrcv_relp.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+sndrcv_relp_rebind.sh.log: sndrcv_relp_rebind.sh
+	@p='sndrcv_relp_rebind.sh'; \
+	b='sndrcv_relp_rebind.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

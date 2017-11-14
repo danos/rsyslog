@@ -746,9 +746,12 @@ parseRequestAndResponseForContext(wrkrInstanceData_t *pWrkrData,fjson_object **p
 		}
 		fjson_object_object_get_ex(item, "create", &result);
 		if(result == NULL || !fjson_object_is_type(result, fjson_type_object)) {
-			DBGPRINTF("omelasticsearch: error in elasticsearch reply: "
-				  "cannot obtain 'result' item for #%d\n", i);
-			ABORT_FINALIZE(RS_RET_DATAFAIL);
+			fjson_object_object_get_ex(item, "index", &result);
+			if(result == NULL || !fjson_object_is_type(result, fjson_type_object)) {
+				DBGPRINTF("omelasticsearch: error in elasticsearch reply: "
+					  "cannot obtain 'result' item for #%d\n", i);
+				ABORT_FINALIZE(RS_RET_DATAFAIL);
+			}
 		}
 
 		fjson_object_object_get_ex(result, "status", &ok);
@@ -1323,16 +1326,11 @@ curlPostSetup(CURL *handle, HEADER *header, uchar* authBuf)
 }
 
 #define CONTENT_JSON "Content-Type: application/json; charset=utf-8"
-#define CONTENT_JSON_BULK "Content-Type: application/x-ndjson; charset=utf-8"
 
 static rsRetVal
 curlSetup(wrkrInstanceData_t *pWrkrData, instanceData *pData)
 {
-	if (pData->bulkmode) {
-		pWrkrData->curlHeader = curl_slist_append(NULL, CONTENT_JSON_BULK);
-	} else {
-		pWrkrData->curlHeader = curl_slist_append(NULL, CONTENT_JSON);
-	}
+	pWrkrData->curlHeader = curl_slist_append(NULL, CONTENT_JSON);
 	pWrkrData->curlPostHandle = curl_easy_init();
 	if (pWrkrData->curlPostHandle == NULL) {
 		return RS_RET_OBJ_CREATION_FAILED;

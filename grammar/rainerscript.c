@@ -45,12 +45,14 @@
 #include "queue.h"
 #include "srUtils.h"
 #include "regexp.h"
+#include "datetime.h"
 #include "obj.h"
 #include "modules.h"
 #include "ruleset.h"
 #include "msg.h"
 #include "wti.h"
 #include "unicode-helper.h"
+#include "errmsg.h"
 
 #if !defined(_AIX)
 #pragma GCC diagnostic ignored "-Wswitch-enum"
@@ -58,6 +60,7 @@
 
 DEFobjCurrIf(obj)
 DEFobjCurrIf(regexp)
+DEFobjCurrIf(datetime)
 
 struct cnfexpr* cnfexprOptimize(struct cnfexpr *expr);
 static void cnfstmtOptimizePRIFilt(struct cnfstmt *stmt);
@@ -1720,6 +1723,46 @@ doRandomGen(struct svar *__restrict__ const sourceVal) {
 	return x % max;
 }
 
+static es_str_t*
+lTrim(char *str)
+{
+	int len = strlen(str);
+	int i;
+	es_str_t *estr = NULL;
+
+	for(i = 0; i < len; i++) {
+		if(str[i] != ' ') {
+			break;
+		}
+	}
+
+	if(i != (len - 1)) {
+		estr = es_newStrFromCStr(str + i, strlen(str) - i);
+	}
+
+	return(estr);
+}
+
+static es_str_t*
+rTrim(char *str)
+{
+	int len = strlen(str);
+	int i;
+	es_str_t *estr = NULL;
+
+	for(i = (len - 1); i > -1; i--) {
+		if(str[i] != ' ') {
+			break;
+		}
+	}
+
+	if(i != 0) {
+		estr = es_newStrFromCStr(str, (i + 1));
+	}
+
+	return(estr);
+}
+
 
 static long long
 ipv42num(char *str)
@@ -1899,6 +1942,24 @@ doFuncCall(struct cnffunc *__restrict__ const func, struct svar *__restrict__ co
 		ret->datatype = 'S';
 		varFreeMembers(&r[0]);
 		break;
+	case CNFFUNC_LTRIM:
+		cnfexprEval(func->expr[0], &r[0], usrptr);
+		str = (char*)var2CString(&r[0], &bMustFree);
+		ret->datatype = 'S';
+		ret->d.estr = lTrim(str);
+		varFreeMembers(&r[0]);
+		if(bMustFree)
+			free(str);
+		break;
+	case CNFFUNC_RTRIM:
+		cnfexprEval(func->expr[0], &r[0], usrptr);
+		str = (char*)var2CString(&r[0], &bMustFree);
+		ret->datatype = 'S';
+		ret->d.estr = rTrim(str);
+		varFreeMembers(&r[0]);
+		if(bMustFree)
+			free(str);
+		break;
 	case CNFFUNC_GETENV:
 		/* note: the optimizer shall have replaced calls to getenv()
 		 * with a constant argument to a single string (once obtained via
@@ -2064,6 +2125,54 @@ doFuncCall(struct cnffunc *__restrict__ const func, struct svar *__restrict__ co
 		if(bMustFree) free(str);
 		varFreeMembers(&r[1]);
 		break;
+	case CNFFUNC_FORMAT_TIME: {
+		long long unixtime;
+		const int resMax = 64;
+		char   result[resMax];
+		char  *formatstr = NULL;
+
+		cnfexprEval(func->expr[0], &r[0], usrptr);
+		cnfexprEval(func->expr[1], &r[1], usrptr);
+
+		unixtime = var2Number(&r[0], &retval);
+
+		// Make sure that the timestamp we got can fit into
+		// time_t on older systems.
+		if (sizeof(time_t) == sizeof(int)) {
+			if (unixtime < INT_MIN || unixtime > INT_MAX) {
+				LogMsg(
+					0, RS_RET_VAL_OUT_OF_RANGE, LOG_WARNING, 
+					"Timestamp value %lld is out of range for this system (time_t is 32bits)!\n", unixtime
+				);
+				retval = 0;
+			}
+		}
+
+		// We want the string form too so we can return it as the
+		// default if we run into problems parsing the number.
+		str = (char*) var2CString(&r[0], &bMustFree);
+		formatstr = (char*) es_str2cstr(r[1].d.estr, NULL);
+
+		ret->datatype = 'S';
+
+		if (objUse(datetime, CORE_COMPONENT) != RS_RET_OK) {
+			ret->d.estr = es_newStr(0);
+		} else {
+			if (!retval || datetime.formatUnixTimeFromTime_t(unixtime, formatstr, result, resMax) == -1) {
+				strncpy(result, str, resMax);
+				result[resMax - 1] = '\0';
+			}
+			ret->d.estr = es_newStrFromCStr(result, strlen(result));
+		}
+
+		if (bMustFree) free(str);
+		free(formatstr);
+
+		varFreeMembers(&r[0]);
+		varFreeMembers(&r[1]);
+		
+		break;
+	}
 	default:
 		if(Debug) {
 			char *fname = es_str2cstr(func->fname, NULL);
@@ -4132,6 +4241,10 @@ funcName2ID(es_str_t *fname, unsigned short nParams)
 		GENERATE_FUNC("getenv", 1, CNFFUNC_GETENV);
 	} else if(FUNC_NAME("num2ipv4")) {
 		GENERATE_FUNC("num2ipv4", 1, CNFFUNC_NUM2IPV4);
+	} else if(FUNC_NAME("ltrim")) {
+		GENERATE_FUNC("ltrim", 1, CNFFUNC_LTRIM);
+	} else if(FUNC_NAME("rtrim")) {
+		GENERATE_FUNC("rtrim", 1, CNFFUNC_RTRIM);
 	} else if(FUNC_NAME("tolower")) {
 		GENERATE_FUNC("tolower", 1, CNFFUNC_TOLOWER);
 	} else if(FUNC_NAME("cstr")) {
@@ -4168,6 +4281,8 @@ funcName2ID(es_str_t *fname, unsigned short nParams)
 			"but is %d.");
 	} else if(FUNC_NAME("random")) {
 		GENERATE_FUNC("random", 1, CNFFUNC_RANDOM);
+	} else if(FUNC_NAME("format_time")) {
+		GENERATE_FUNC("format_time", 2, CNFFUNC_FORMAT_TIME);
 	} else {
 		return CNFFUNC_INVALID;
 	}

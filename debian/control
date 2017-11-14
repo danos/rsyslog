@@ -2,8 +2,9 @@ Source: rsyslog
 Section: admin
 Priority: important
 Maintainer: Michael Biebl <biebl@debian.org>
-Build-Depends: debhelper (>= 10),
+Build-Depends: debhelper (>= 10.3),
                dh-exec,
+               autoconf-archive,
                zlib1g-dev,
                libhiredis-dev,
                default-libmysqlclient-dev,
@@ -17,14 +18,15 @@ Build-Depends: debhelper (>= 10),
                libestr-dev (>= 0.1.9),
                liblognorm-dev (>= 2.0.3),
                liblogging-stdlog-dev (>= 1.0.3),
-               libfastjson-dev (>= 0.99.3),
+               libfastjson-dev (>= 0.99.7),
                libczmq-dev,
                uuid-dev,
                libsystemd-dev (>= 209) [linux-any],
                pkg-config,
                bison,
+               flex,
                procps <!nocheck>
-Standards-Version: 4.0.1
+Standards-Version: 4.1.1
 Vcs-Git: https://anonscm.debian.org/git/collab-maint/rsyslog.git
 Vcs-Browser: https://anonscm.debian.org/git/collab-maint/rsyslog.git
 Homepage: http://www.rsyslog.com/
