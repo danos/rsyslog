@@ -1,8 +1,8 @@
-rsyslog (8.30.0-3~bpo9+1) UNRELEASED; urgency=medium
+rsyslog (8.30.0-3~bpo9+1) stretch-backports; urgency=medium
 
   * Rebuild for stretch-backports (Closes: #878907)
 
- -- Michael Biebl <biebl@debian.org>  Mon, 27 Nov 2017 01:56:37 +0100
+ -- Michael Biebl <biebl@debian.org>  Mon, 27 Nov 2017 01:58:14 +0100
 
 rsyslog (8.30.0-3) unstable; urgency=medium
 
