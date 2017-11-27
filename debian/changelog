@@ -1,3 +1,9 @@
+rsyslog (8.30.0-3) unstable; urgency=medium
+
+  * Cherry-pick upstream patch to fix broken imjournal module (Closes: #882261)
+
+ -- Michael Biebl <biebl@debian.org>  Mon, 27 Nov 2017 01:52:56 +0100
+
 rsyslog (8.30.0-2) unstable; urgency=medium
 
   * Add Build-Depends on flex for generating grammar/lexer.c.
