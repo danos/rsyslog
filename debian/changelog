@@ -1,8 +1,14 @@
-rsyslog (8.30.0-2~bpo9+1) UNRELEASED; urgency=medium
+rsyslog (8.30.0-3~bpo9+1) UNRELEASED; urgency=medium
 
   * Rebuild for stretch-backports (Closes: #878907)
 
- -- Michael Biebl <biebl@debian.org>  Tue, 14 Nov 2017 22:34:20 +0100
+ -- Michael Biebl <biebl@debian.org>  Mon, 27 Nov 2017 01:56:37 +0100
+
+rsyslog (8.30.0-3) unstable; urgency=medium
+
+  * Cherry-pick upstream patch to fix broken imjournal module (Closes: #882261)
+
+ -- Michael Biebl <biebl@debian.org>  Mon, 27 Nov 2017 01:52:56 +0100
 
 rsyslog (8.30.0-2) unstable; urgency=medium
 
