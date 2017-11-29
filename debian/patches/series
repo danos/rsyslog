@@ -1,5 +1,2 @@
 Don-t-create-a-database.patch
 Don-t-explicitly-link-tcpflood-against-lgcrypt.patch
-imgssapi-Incooperate-changes-from-tcpsrv-subsystem.patch
-imgssapi-Remove-outdated-iRet-value-check.patch
-imjournal-bugfix-module-did-not-work-at-all.patch
