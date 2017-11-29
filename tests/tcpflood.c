@@ -502,9 +502,10 @@ genMsg(char *buf, size_t maxBuf, int *pLenBuf, struct instdata *inst)
 		}
 		if(extraDataLen == 0) {
 			if(useRFC5424Format) {
-				*pLenBuf = snprintf(buf, maxBuf, "<%s>1 2003-03-01T01:00:00.000Z mymachine.example.com tcpflood "
-						     "- tag [tcpflood@32473 MSGNUM=\"%8.8d\"] msgnum:%s%8.8d:%c",
-						       msgPRI, msgNum, dynFileIDBuf, msgNum, frameDelim);
+				*pLenBuf = snprintf(buf, maxBuf, "<%s>1 2003-03-01T01:00:00.000Z "
+						"mymachine.example.com tcpflood - tag [tcpflood@32473 "
+						"MSGNUM=\"%8.8d\"] msgnum:%s%8.8d:%c",
+						msgPRI, msgNum, dynFileIDBuf, msgNum, frameDelim);
 			} else {
 				*pLenBuf = snprintf(buf, maxBuf, "<%s>Mar  1 01:00:00 172.20.245.8 tag msgnum:%s%8.8d:%c",
 						       msgPRI, dynFileIDBuf, msgNum, frameDelim);
@@ -517,9 +518,10 @@ genMsg(char *buf, size_t maxBuf, int *pLenBuf, struct instdata *inst)
 			memset(extraData, 'X', edLen);
 			extraData[edLen] = '\0';
 			if(useRFC5424Format) {
-				*pLenBuf = snprintf(buf, maxBuf, "<%s>1 2003-03-01T01:00:00.000Z mymachine.example.com tcpflood "
-						     "- tag [tcpflood@32473 MSGNUM=\"%8.8d\"] msgnum:%s%8.8d:%c",
-						       msgPRI, msgNum, dynFileIDBuf, msgNum, frameDelim);
+				*pLenBuf = snprintf(buf, maxBuf, "<%s>1 2003-03-01T01:00:00.000Z "
+						"mymachine.example.com tcpflood - tag [tcpflood@32473 "
+						"MSGNUM=\"%8.8d\"] msgnum:%s%8.8d:%c",
+						msgPRI, msgNum, dynFileIDBuf, msgNum, frameDelim);
 			} else {
 				*pLenBuf = snprintf(buf, maxBuf, "<%s>Mar  1 01:00:00 172.20.245.8 tag msgnum:%s%8.8d:%d:%s%c",
 						       msgPRI, dynFileIDBuf, msgNum, edLen, extraData, frameDelim);
@@ -1187,6 +1189,14 @@ int main(int argc, char *argv[])
 	if(dataFile != NULL) {
 		if((dataFP = fopen(dataFile, "r")) == NULL) {
 			perror(dataFile);
+			exit(1);
+		}
+	}
+
+	if(tlsKeyFile != NULL || tlsCertFile != NULL) {
+		if(transport != TP_TLS) {
+			printf("error: TLS certificates were specified, but TLS is NOT enabled: "
+					"To enable TLS use parameter -Ttls\n");
 			exit(1);
 		}
 	}

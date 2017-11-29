@@ -213,9 +213,9 @@ am_librsyslog_la_OBJECTS = librsyslog_la-rsyslog.lo \
 	librsyslog_la-prop.lo librsyslog_la-ratelimit.lo \
 	librsyslog_la-lookup.lo librsyslog_la-cfsysline.lo \
 	../librsyslog_la-action.lo ../librsyslog_la-threads.lo \
-	../librsyslog_la-parse.lo librsyslog_la-sd-daemon.lo \
-	librsyslog_la-hashtable.lo librsyslog_la-hashtable_itr.lo \
-	../librsyslog_la-outchannel.lo ../librsyslog_la-template.lo
+	../librsyslog_la-parse.lo librsyslog_la-hashtable.lo \
+	librsyslog_la-hashtable_itr.lo ../librsyslog_la-outchannel.lo \
+	../librsyslog_la-template.lo
 librsyslog_la_OBJECTS = $(am_librsyslog_la_OBJECTS)
 am__lmcry_gcry_la_SOURCES_DIST = lmcry_gcry.c lmcry_gcry.h
 @ENABLE_LIBGCRYPT_TRUE@am_lmcry_gcry_la_OBJECTS =  \
@@ -494,14 +494,16 @@ LIBLOGNORM_LIBS = @LIBLOGNORM_LIBS@
 LIBLZ4_CFLAGS = @LIBLZ4_CFLAGS@
 LIBLZ4_LIBS = @LIBLZ4_LIBS@
 LIBM = @LIBM@
-LIBMONGO_CLIENT_CFLAGS = @LIBMONGO_CLIENT_CFLAGS@
-LIBMONGO_CLIENT_LIBS = @LIBMONGO_CLIENT_LIBS@
+LIBMONGOC_CFLAGS = @LIBMONGOC_CFLAGS@
+LIBMONGOC_LIBS = @LIBMONGOC_LIBS@
 LIBOBJS = @LIBOBJS@
 LIBRDKAFKA_CFLAGS = @LIBRDKAFKA_CFLAGS@
 LIBRDKAFKA_LIBS = @LIBRDKAFKA_LIBS@
 LIBS = @LIBS@
+LIBSYSTEMD_CFLAGS = @LIBSYSTEMD_CFLAGS@
 LIBSYSTEMD_JOURNAL_CFLAGS = @LIBSYSTEMD_JOURNAL_CFLAGS@
 LIBSYSTEMD_JOURNAL_LIBS = @LIBSYSTEMD_JOURNAL_LIBS@
+LIBSYSTEMD_LIBS = @LIBSYSTEMD_LIBS@
 LIBTOOL = @LIBTOOL@
 LIBUUID_CFLAGS = @LIBUUID_CFLAGS@
 LIBUUID_LIBS = @LIBUUID_LIBS@
@@ -723,9 +725,6 @@ librsyslog_la_SOURCES = \
 	../parse.c \
 	../parse.h \
 	\
-	sd-daemon.c \
-	sd-daemon.h \
-	\
 	hashtable.c \
 	hashtable.h \
 	hashtable_itr.c \
@@ -735,7 +734,7 @@ librsyslog_la_SOURCES = \
 	../outchannel.c \
 	../outchannel.h \
 	../template.c \
-	../template.h
+	../template.h#
 
 #librsyslog_la_LDFLAGS = -module -avoid-version
 @WITH_MODDIRS_FALSE@librsyslog_la_CPPFLAGS = -DSD_EXPORT_SYMBOLS \
@@ -1082,7 +1081,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librsyslog_la-rsconf.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librsyslog_la-rsyslog.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librsyslog_la-ruleset.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librsyslog_la-sd-daemon.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librsyslog_la-srutils.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librsyslog_la-statsobj.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librsyslog_la-stream.Plo@am__quote@
@@ -1383,13 +1381,6 @@ librsyslog_la-cfsysline.lo: cfsysline.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../parse.c' object='../librsyslog_la-parse.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librsyslog_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ../librsyslog_la-parse.lo `test -f '../parse.c' || echo '$(srcdir)/'`../parse.c
-
-librsyslog_la-sd-daemon.lo: sd-daemon.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librsyslog_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT librsyslog_la-sd-daemon.lo -MD -MP -MF $(DEPDIR)/librsyslog_la-sd-daemon.Tpo -c -o librsyslog_la-sd-daemon.lo `test -f 'sd-daemon.c' || echo '$(srcdir)/'`sd-daemon.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/librsyslog_la-sd-daemon.Tpo $(DEPDIR)/librsyslog_la-sd-daemon.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sd-daemon.c' object='librsyslog_la-sd-daemon.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librsyslog_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o librsyslog_la-sd-daemon.lo `test -f 'sd-daemon.c' || echo '$(srcdir)/'`sd-daemon.c
 
 librsyslog_la-hashtable.lo: hashtable.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librsyslog_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT librsyslog_la-hashtable.lo -MD -MP -MF $(DEPDIR)/librsyslog_la-hashtable.Tpo -c -o librsyslog_la-hashtable.lo `test -f 'hashtable.c' || echo '$(srcdir)/'`hashtable.c

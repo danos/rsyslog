@@ -27,6 +27,9 @@ check_PROGRAMS = $(TESTRUNS) ourtail nettester tcpflood chkseq msleep randomgen 
 	diagtalker uxsockrcvr syslog_caller inputfilegen minitcpsrv \
 	omrelp_dflt_port \
 	mangle_qi
+if ENABLE_IMJOURNAL
+check_PROGRAMS += journal_print
+endif
 TESTS = $(TESTRUNS) 
 #TESTS = $(TESTRUNS) cfg.sh
 
@@ -48,9 +51,11 @@ TESTS +=  \
 	glbl_setenv_err.sh \
 	glbl_setenv_err_too_long.sh \
 	glbl_setenv.sh \
+	nested-call-shutdown.sh \
 	invalid_nested_include.sh \
 	omfwd-keepalive.sh \
 	omfile-read-only-errmsg.sh \
+	omfile-read-only.sh \
 	omfile_both_files_set.sh \
 	msgvar-concurrency.sh \
 	localvar-concurrency.sh \
@@ -239,6 +244,7 @@ TESTS +=  \
 	rscript_num2ipv4.sh \
 	rscript_trim.sh \
 	rscript_format_time.sh \
+	rscript_parse_time.sh \
 	mmanon_random_32_ipv4.sh \
 	mmanon_random_cons_32_ipv4.sh \
 	mmanon_recognize_ipv4.sh \
@@ -256,6 +262,8 @@ TESTS +=  \
 	mmanon_recognize_ipv6.sh \
 	mmanon_zero_64_ipv6.sh \
 	mmanon_both_modes_compatible.sh \
+	mmanon_recognize_ipembedded.sh \
+	mmanon_random_cons_128_ipembedded.sh \
 	empty-prop-comparison.sh \
 	rs_optimizer_pri.sh \
 	cee_simple.sh \
@@ -282,6 +290,8 @@ endif
 
 if HAVE_VALGRIND
 TESTS +=  \
+	mmexternal-SegFault-vg.sh \
+	mmexternal-SegFault-empty-jroot-vg.sh \
 	internal-errmsg-memleak.sh \
 	rscript_set_memleak-vg.sh \
 	no-parser-vg.sh \
@@ -308,6 +318,15 @@ TESTS +=  \
 	multiple_lookup_tables-vg.sh \
 	fac_local0-vg.sh
 endif # HAVE_VALGRIND
+
+if ENABLE_IMJOURNAL
+TESTS +=  \
+	imjournal-basic.sh
+if HAVE_VALGRIND
+TESTS +=  \
+	imjournal-basic-vg.sh
+endif
+endif
 
 if ENABLE_OMJOURNAL
 TESTS +=  \
@@ -348,6 +367,11 @@ TESTS += \
 #	sndrcv_kafka_multi.sh
 #	sndrcv_kafka_fail.sh
 #	sndrcv_kafka_failresume.sh
+if HAVE_VALGRIND
+TESTS += \
+	sndrcv_kafka-vg-sender.sh \
+	sndrcv_kafka-vg-rcvr.sh
+endif
 endif
 endif
 endif
@@ -442,6 +466,7 @@ endif
 if ENABLE_ELASTICSEARCH_TESTS
 TESTS +=  \
 	es-basic.sh \
+	es-basic-es6.0.sh \
 	es-basic-server.sh \
 	es-basic-ha.sh \
 	es-basic-bulk.sh \
@@ -450,12 +475,22 @@ TESTS +=  \
 	es-basic-errfile-popul.sh \
 	es-bulk-errfile-empty.sh \
 	es-bulk-errfile-popul.sh 
+if HAVE_VALGRIND
+TESTS += \
+	es-basic-vgthread.sh
+endif
 if ENABLE_IMFILE
 TESTS +=  \
 	es-bulk-errfile-popul-def-format.sh \
 	es-bulk-errfile-popul-erronly.sh \
 	es-bulk-errfile-popul-erronly-interleaved.sh \
 	es-bulk-errfile-popul-def-interleaved.sh
+endif
+if HAVE_VALGRIND
+TESTS +=  \
+	es-basic-vg.sh \
+	es-basic-bulk-vg.sh \
+	es-basic-ha-vg.sh
 endif
 endif
 
@@ -562,7 +597,8 @@ endif
 if ENABLE_GNUTLS
 TESTS +=  \
 	imtcp_conndrop_tls.sh \
-	sndrcv_tls_anon.sh \
+	sndrcv_tls_anon_hostname.sh \
+	sndrcv_tls_anon_ipv4.sh \
 	sndrcv_tls_priorityString.sh \
 	imtcp-tls-basic.sh \
 	sndrcv_tls_anon_rebind.sh
@@ -589,7 +625,8 @@ TESTS += sndrcv_relp.sh \
 	 imrelp-manyconn.sh
 if ENABLE_GNUTLS
 TESTS += \
-         sndrcv_relp_tls.sh
+         sndrcv_relp_tls.sh \
+         relp_tls_certificate_not_found.sh
 endif
 endif
 
@@ -666,7 +703,8 @@ if HAVE_VALGRIND
 TESTS += \
 	imfile-basic-vg.sh \
 	imfile-endregex-vg.sh \
-	imfile-readmode2-vg.sh
+	imfile-readmode2-vg.sh \
+	imfile-basic-vgthread.sh
 endif
 endif
 
@@ -674,7 +712,7 @@ if ENABLE_OMTCL
 TESTS += \
 	 omtcl.sh
 endif
-
+ 
 endif # if ENABLE_TESTBENCH
 
 TESTS_ENVIRONMENT = RSYSLOG_MODDIR='$(abs_top_builddir)'/runtime/.libs/
@@ -701,6 +739,10 @@ EXTRA_DIST= \
 	glbl_setenv_err.sh \
 	glbl_setenv_err_too_long.sh \
 	glbl_setenv.sh \
+	mmexternal-SegFault-vg.sh \
+	mmexternal-SegFault-empty-jroot-vg.sh \
+	testsuites/mmexternal-SegFault-mm-python.py \
+	nested-call-shutdown.sh \
 	1.rstest 2.rstest 3.rstest err1.rstest \
 	invalid_nested_include.sh \
 	validation-run.sh \
@@ -846,6 +888,8 @@ EXTRA_DIST= \
 	rscript_num2ipv4.sh \
 	rscript_trim.sh \
 	rscript_format_time.sh \
+	rscript_parse_time.sh \
+	rscript_parse_time_get-ts.py \
 	mmanon_random_32_ipv4.sh \
 	mmanon_random_cons_32_ipv4.sh \
 	mmanon_recognize_ipv4.sh \
@@ -863,6 +907,8 @@ EXTRA_DIST= \
 	mmanon_recognize_ipv6.sh \
 	mmanon_zero_64_ipv6.sh \
 	mmanon_both_modes_compatible.sh \
+	mmanon_recognize_ipembedded.sh \
+	mmanon_random_cons_128_ipembedded.sh \
 	testsuites/rscript_ne_var.conf \
 	rscript_eq.sh \
 	testsuites/rscript_eq.conf \
@@ -949,6 +995,8 @@ EXTRA_DIST= \
 	now-utc.sh \
 	testsuites/now-utc.conf \
 	faketime_common.sh \
+	imjournal-basic.sh \
+	imjournal-basic-vg.sh \
 	omjournal-abort-template.sh \
 	omjournal-abort-no-template.sh \
 	omjournal-basic-template.sh \
@@ -1021,7 +1069,9 @@ EXTRA_DIST= \
 	incltest_dir_wildcard.sh \
 	testsuites/incltest_dir_wildcard.conf \
 	testsuites/incltest.d/include.conf \
+	es-basic-es6.0.sh \
 	es-basic.sh \
+	es-basic-vgthread.sh \
 	testsuites/es-basic.conf \
 	es-basic-bulk.sh \
 	testsuites/es-basic-bulk.conf \
@@ -1041,6 +1091,9 @@ EXTRA_DIST= \
 	testsuites/es-bulk-errfile-popul-erronly-interleaved.conf \
 	es-bulk-errfile-popul-def-interleaved.sh \
 	testsuites/es-bulk-errfile-popul-def-interleaved.conf \
+	es-basic-vg.sh \
+	es-basic-bulk-vg.sh \
+	es-basic-ha-vg.sh \
 	linkedlistqueue.sh \
 	testsuites/linkedlistqueue.conf \
 	da-mainmsg-q.sh \
@@ -1173,6 +1226,7 @@ EXTRA_DIST= \
 	sndrcv_relp_tls.sh \
 	testsuites/sndrcv_relp_tls_sender.conf \
 	testsuites/sndrcv_relp_tls_rcvr.conf \
+	relp_tls_certificate_not_found.sh \
 	sndrcv_relp_dflt_pt.sh \
 	testsuites/sndrcv_relp_dflt_pt_rcvr.conf \
 	testsuites/sndrcv_relp_dflt_pt_sender.conf \
@@ -1285,6 +1339,7 @@ EXTRA_DIST= \
 	imfile-fileNotFoundError-parameter.sh \
 	imfile-error-not-repeated.sh \
 	imfile-basic-vg.sh \
+	imfile-basic-vgthread.sh \
 	testsuites/imfile-basic.conf \
 	imfile-endregex-timeout-none-polling.sh \
 	imfile-endregex-timeout-polling.sh \
@@ -1407,6 +1462,8 @@ EXTRA_DIST= \
 	mysql-actq-mt-withpause-vg.sh \
 	testsuites/mysql-actq-mt.conf \
 	sndrcv_kafka.sh \
+	sndrcv_kafka-vg-sender.sh \
+	sndrcv_kafka-vg-rcvr.sh \
 	sndrcv_kafka_multi.sh \
 	sndrcv_kafka_fail.sh \
 	sndrcv_kafka_failresume.sh \
@@ -1588,6 +1645,8 @@ EXTRA_DIST= \
 	testsuites/imptcp_nonProcessingPoller.conf \
 	libmaxmindb.supp \
 	travis/trusty.supp \
+	linux_localtime_r.supp \
+	librdkafka-bugs.supp \
 	json_var_case.sh \
 	testsuites/json_var_case.conf \
 	cfg.sh \
@@ -1595,9 +1654,15 @@ EXTRA_DIST= \
 	sndrcv_tls_anon_rebind.sh \
 	testsuites/sndrcv_tls_anon_rebind_sender.conf \
 	testsuites/sndrcv_tls_anon_rebind_rcvr.conf \
-	sndrcv_tls_anon.sh \
-	testsuites/sndrcv_tls_anon_sender.conf \
-	testsuites/sndrcv_tls_anon_rcvr.conf \
+	sndrcv_tls_anon_hostname.sh \
+	testsuites/sndrcv_tls_anon_hostname_sender.conf \
+	testsuites/sndrcv_tls_anon_hostname_rcvr.conf \
+	sndrcv_tls_anon_ipv4.sh \
+	testsuites/sndrcv_tls_anon_ipv4_sender.conf \
+	testsuites/sndrcv_tls_anon_ipv4_rcvr.conf \
+	sndrcv_tls_anon_ipv6.sh \
+	testsuites/sndrcv_tls_anon_ipv6_sender.conf \
+	testsuites/sndrcv_tls_anon_ipv6_rcvr.conf \
 	sndrcv_tls_priorityString.sh \
 	testsuites/sndrcv_tls_priorityString_sender.conf \
 	testsuites/sndrcv_tls_priorityString_rcvr.conf \
@@ -1640,6 +1705,10 @@ minitcpsrv_LDADD = $(SOL_LIBS)
 syslog_caller_SOURCES = syslog_caller.c
 syslog_caller_CPPFLAGS = $(LIBLOGGING_STDLOG_CFLAGS)
 syslog_caller_LDADD = $(SOL_LIBS) $(LIBLOGGING_STDLOG_LIBS)
+
+journal_print_SOURCES = journal_print.c
+journal_print_CPPFLAGS = $(LIBSYSTEMD_JOURNAL_CFLAGS)
+journal_print_LDADD = $(LIBSYSTEMD_JOURNAL_LIBS)
 
 diagtalker_SOURCES = diagtalker.c
 diagtalker_LDADD = $(SOL_LIBS)

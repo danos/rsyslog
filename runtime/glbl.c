@@ -908,6 +908,11 @@ glblProcessTimezone(struct cnfobj *o)
 	int i;
 
 	pvals = nvlstGetParams(o->nvlst, &timezonepblk, NULL);
+	if(pvals == NULL) {
+		LogError(0, RS_RET_MISSING_CNFPARAMS, "error processing timezone "
+				"config parameters");
+		goto done;
+	}
 	if(Debug) {
 		dbgprintf("timezone param blk after glblProcessTimezone:\n");
 		cnfparamsPrint(&timezonepblk, pvals);
@@ -1215,8 +1220,14 @@ glblDoneLoadCnf(void)
 		} else if(!strcmp(paramblk.descr[i].name, "debug.logfile")) {
 			if(pszAltDbgFileName == NULL) {
 				pszAltDbgFileName = es_str2cstr(cnfparamvals[i].val.d.estr, NULL);
-				if((altdbg = open(pszAltDbgFileName, O_WRONLY|O_CREAT|O_TRUNC|O_NOCTTY|O_CLOEXEC, S_IRUSR|S_IWUSR)) == -1) {
-					errmsg.LogError(0, RS_RET_ERR, "debug log file '%s' could not be opened", pszAltDbgFileName);
+				/* can actually happen if debug system also opened altdbg */
+				if(altdbg != -1) {
+					close(altdbg);
+				}
+				if((altdbg = open(pszAltDbgFileName, O_WRONLY|O_CREAT|O_TRUNC|O_NOCTTY
+				|O_CLOEXEC, S_IRUSR|S_IWUSR)) == -1) {
+					errmsg.LogError(0, RS_RET_ERR, "debug log file '%s' could not be opened",
+							pszAltDbgFileName);
 				}
 			}
 			errmsg.LogError(0, RS_RET_OK, "debug log file is '%s', fd %d", pszAltDbgFileName, altdbg);
@@ -1267,6 +1278,7 @@ glblDoneLoadCnf(void)
 		} else if(!strcmp(paramblk.descr[i].name, "errormessagestostderr.maxnumber")) {
 		        loadConf->globals.maxErrMsgToStderr = (int) cnfparamvals[i].val.d.n;
 		} else if(!strcmp(paramblk.descr[i].name, "debug.files")) {
+			free(glblDbgFiles); /* "fix" Coverity false positive */
 			glblDbgFilesNum = cnfparamvals[i].val.d.ar->nmemb;
 			glblDbgFiles = (char**) malloc(cnfparamvals[i].val.d.ar->nmemb * sizeof(char*));
 			for(int j = 0 ; j <  cnfparamvals[i].val.d.ar->nmemb ; ++j) {

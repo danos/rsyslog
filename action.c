@@ -134,7 +134,6 @@ static rsRetVal doSubmitToActionQNotAllMark(action_t * const pAction, wti_t * co
 DEFobjCurrIf(obj)
 DEFobjCurrIf(datetime)
 DEFobjCurrIf(module)
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(statsobj)
 DEFobjCurrIf(ruleset)
 
@@ -432,7 +431,7 @@ actionConstructFinalize(action_t *__restrict__ const pThis, struct nvlst *lst)
 		int i;
 		for(i = 0 ; i < pThis->iNumTpls ; ++i) {
 			if(pThis->peParamPassing[i] != ACT_STRING_PASSING) {
-				errmsg.LogError(0, RS_RET_INVLD_OMOD, "action '%s'(%d) is transactional but "
+				LogError(0, RS_RET_INVLD_OMOD, "action '%s'(%d) is transactional but "
 						"parameter %d "
 						"uses invalid parameter passing mode -- disabling "
 						"action. This is probably caused by a pre-v7 "
@@ -514,12 +513,12 @@ actionConstructFinalize(action_t *__restrict__ const pThis, struct nvlst *lst)
 		/* ... set some properties ... */
 #		define setQPROP(func, directive, data) \
 		CHKiRet_Hdlr(func(pThis->pQueue, data)) { \
-			errmsg.LogError(0, NO_ERRCODE, "Invalid " #directive ", \
+			LogError(0, NO_ERRCODE, "Invalid " #directive ", \
 				error %d. Ignored, running with default setting", iRet); \
 		}
 #		define setQPROPstr(func, directive, data) \
 		CHKiRet_Hdlr(func(pThis->pQueue, data, (data == NULL)? 0 : strlen((char*) data))) { \
-			errmsg.LogError(0, NO_ERRCODE, "Invalid " #directive ", \
+			LogError(0, NO_ERRCODE, "Invalid " #directive ", \
 				error %d. Ignored, running with default setting", iRet); \
 		}
 		setQPROP(qqueueSetsizeOnDiskMax, "$ActionQueueMaxDiskSpace", cs.iActionQueMaxDiskSpace);
@@ -730,7 +729,7 @@ actionSuspend(action_t * const pThis, wti_t * const pWti)
 	   || (pThis->bReportSuspension && getActionNbrResRtry(pWti, pThis) == 0) ) {
 		ctime_r(&pThis->ttResumeRtry, timebuf);
 		timebuf[strlen(timebuf)-1] = '\0'; /* strip LF */
-		errmsg.LogMsg(0, RS_RET_SUSPENDED, LOG_WARNING,
+		LogMsg(0, RS_RET_SUSPENDED, LOG_WARNING,
 			      "action '%s' suspended (module '%s'), next retry is %s, retry nbr %d. "
 			      "There should be messages before this one giving the reason for suspension.",
 			      pThis->pszName, pThis->pMod->pszName, timebuf,
@@ -785,7 +784,7 @@ actionDoRetry(action_t * const pThis, wti_t * const pWti)
 			DBGPRINTF("actionDoRetry: %s had success RDY again (iRet=%d)\n",
 				  pThis->pszName, iRet);
 			if(pThis->bReportSuspension) {
-				errmsg.LogMsg(0, RS_RET_RESUMED, LOG_INFO, "action '%s' "
+				LogMsg(0, RS_RET_RESUMED, LOG_INFO, "action '%s' "
 					      "resumed (module '%s')",
 					      pThis->pszName, pThis->pMod->pszName);
 			}
@@ -822,8 +821,9 @@ finalize_it:
 
 
 static rsRetVal
-actionCheckAndCreateWrkrInstance(action_t * const pThis, wti_t * const pWti)
+actionCheckAndCreateWrkrInstance(action_t * const pThis, const wti_t *const pWti)
 {
+	int locked = 0;
 	DEFiRet;
 	if(pWti->actWrkrInfo[pThis->iActionNbr].actWrkrData == NULL) {
 		DBGPRINTF("wti %p: we need to create a new action worker instance for "
@@ -836,23 +836,31 @@ actionCheckAndCreateWrkrInstance(action_t * const pThis, wti_t * const pWti)
 		/* maintain worker data table -- only needed if wrkrHUP is requested! */
 
 		pthread_mutex_lock(&pThis->mutWrkrDataTable);
+		locked = 1;
 		int freeSpot;
 		for(freeSpot = 0 ; freeSpot < pThis->wrkrDataTableSize ; ++freeSpot)
 			if(pThis->wrkrDataTable[freeSpot] == NULL)
 				break;
 		if(pThis->nWrkr == pThis->wrkrDataTableSize) {
-			// TODO: check realloc, fall back to old table if it fails. Better than nothing...
-			pThis->wrkrDataTable = realloc(pThis->wrkrDataTable,
+			void *const newTable = realloc(pThis->wrkrDataTable,
 				(pThis->wrkrDataTableSize + 1) * sizeof(void*));
+			if(newTable == NULL) {
+				DBGPRINTF("actionCheckAndCreateWrkrInstance: out of "
+					"memory realloc wrkrDataTable\n")
+				ABORT_FINALIZE(RS_RET_OUT_OF_MEMORY);
+			}
+			pThis->wrkrDataTable = newTable;
 			pThis->wrkrDataTableSize++;
 		}
 		pThis->wrkrDataTable[freeSpot] = pWti->actWrkrInfo[pThis->iActionNbr].actWrkrData;
 		pThis->nWrkr++;
-		pthread_mutex_unlock(&pThis->mutWrkrDataTable);
 		DBGPRINTF("wti %p: created action worker instance %d for "
 			  "action %d\n", pWti, pThis->nWrkr, pThis->iActionNbr);
 	}
 finalize_it:
+	if(locked) {
+		pthread_mutex_unlock(&pThis->mutWrkrDataTable);
+	}
 	RETiRet;
 }
 
@@ -975,7 +983,8 @@ prepareDoActionParams(action_t * __restrict__ const pAction,
 				CHKiRet(tplToJSON(pAction->ppTpl[i], pMsg, &json, ttNow));
 				pWrkrInfo->p.nontx.actParams[i].param = (void*) json;
 				break;
-			default:dbgprintf("software bug/error: unknown pAction->peParamPassing[%d] %d in prepareDoActionParams\n",
+			default:dbgprintf("software bug/error: unknown "
+				"pAction->peParamPassing[%d] %d in prepareDoActionParams\n",
 					  i, (int) pAction->peParamPassing[i]);
 				break;
 			}
@@ -1172,7 +1181,7 @@ doTransaction(action_t *__restrict__ const pThis, wti_t *__restrict__ const pWti
 	} else { /* note: this branch is for compatibility with old TX modules */
 		DBGPRINTF("doTransaction: action '%s', currIParam %d\n",
 			   pThis->pszName, wrkrInfo->p.tx.currIParam);
-		for(i = 0 ; i < wrkrInfo->p.tx.currIParam ; ++i) {
+		for(i = 0 ; i < nparams ; ++i) {
 			/* Note: we provide the message's base iparam - actionProcessMessage()
 			 * uses this as *base* address.
 			 */
@@ -1203,7 +1212,6 @@ actionTryCommit(action_t *__restrict__ const pThis, wti_t *__restrict__ const pW
 	CHKiRet(actionPrepare(pThis, pWti));
 
 	CHKiRet(doTransaction(pThis, pWti, iparams, nparams));
-DBGPRINTF("actionTryCommit[%s] past doTransaction\n", pThis->pszName);
 
 	if(getActionState(pWti, pThis) == ACT_STATE_ITX) {
 		iRet = pThis->pMod->mod.om.endTransaction(pWti->actWrkrInfo[pThis->iActionNbr].actWrkrData);
@@ -1238,7 +1246,6 @@ DBGPRINTF("actionTryCommit[%s] past doTransaction\n", pThis->pszName);
 	iRet = getReturnCode(pThis, pWti);
 
 finalize_it:
-DBGPRINTF("actionTryCommit[%s] exit %d\n", pThis->pszName, iRet);
 	RETiRet;
 }
 
@@ -1268,18 +1275,19 @@ actionTryRemoveHardErrorsFromBatch(action_t *__restrict__ const pThis, wti_t *__
 {
 	actWrkrInfo_t *const wrkrInfo = &(pWti->actWrkrInfo[pThis->iActionNbr]);
 	const unsigned nMsgs = wrkrInfo->p.tx.currIParam;
-	actWrkrIParams_t oneParam;
+	actWrkrIParams_t oneParamSet[CONF_OMOD_NUMSTRINGS_MAXSIZE];
 	rsRetVal ret;
 	DEFiRet;
 
 	*new_nMsgs = 0;
 	for(unsigned i = 0 ; i < nMsgs ; ++i) {
 		setActionResumeInRow(pWti, pThis, 0); // make sure we do not trigger OK-as-SUSPEND handling
-		memcpy(&oneParam, &actParam(wrkrInfo->p.tx.iparams, 1, i, 0), sizeof(oneParam));
-		ret = actionTryCommit(pThis, pWti, &oneParam, 1);
-DBGPRINTF("msg %d, iRet %d, content: '%s'\n", i, ret, oneParam.param);
+		memcpy(&oneParamSet, &actParam(wrkrInfo->p.tx.iparams, pThis->iNumTpls, i, 0),
+			sizeof(actWrkrIParams_t) * pThis->iNumTpls);
+		ret = actionTryCommit(pThis, pWti, oneParamSet, 1);
 		if(ret == RS_RET_SUSPENDED) {
-			memcpy(new_iparams + *new_nMsgs, &oneParam, sizeof(oneParam));
+			memcpy(new_iparams + *new_nMsgs, &oneParamSet,
+				sizeof(actWrkrIParams_t) * pThis->iNumTpls);
 			++(*new_nMsgs);
 		}
 	}
@@ -1344,7 +1352,8 @@ actionCommit(action_t *__restrict__ const pThis, wti_t *__restrict__ const pWti)
 		DBGPRINTF("actionCommit[%s]: somewhat unhappy, full batch of %d msgs returned "
 			"status %d. Trying messages as individual actions.\n",
 			pThis->pszName, wrkrInfo->p.tx.currIParam, iRet);
-		CHKmalloc(iparams = malloc(sizeof(actWrkrIParams_t) * wrkrInfo->p.tx.currIParam));
+		CHKmalloc(iparams = malloc(sizeof(actWrkrIParams_t) * pThis->iNumTpls
+			* wrkrInfo->p.tx.currIParam));
 		needfree_iparams = 1;
 		actionTryRemoveHardErrorsFromBatch(pThis, pWti, iparams, &nMsgs);
 	}
@@ -1561,7 +1570,7 @@ static rsRetVal setActionQueType(void __attribute__((unused)) *pVal, uchar *pszT
 		cs.ActionQueType = QUEUETYPE_DIRECT;
 		DBGPRINTF("action queue type set to DIRECT (no queueing at all)\n");
 	} else {
-		errmsg.LogError(0, RS_RET_INVALID_PARAMS, "unknown actionqueue parameter: %s", (char *) pszType);
+		LogError(0, RS_RET_INVALID_PARAMS, "unknown actionqueue parameter: %s", (char *) pszType);
 		iRet = RS_RET_INVALID_PARAMS;
 	}
 	d_free(pszType); /* no longer needed */
@@ -1736,9 +1745,9 @@ DEFFUNC_llExecFunc(doActivateActions)
 	BEGINfunc
 	localRet = qqueueStart(pThis->pQueue);
 	if(localRet != RS_RET_OK) {
-		errmsg.LogError(0, localRet, "error starting up action queue");
+		LogError(0, localRet, "error starting up action queue");
 		if(localRet == RS_RET_FILE_PREFIX_MISSING) {
-			errmsg.LogError(0, localRet, "file prefix (work directory?) "
+			LogError(0, localRet, "file prefix (work directory?) "
 					"is missing");
 		}
 		actionDisable(pThis);
@@ -1926,15 +1935,16 @@ addAction(action_t **ppAction, modInfo_t *pMod, void *pModData,
 					 " Could not find template %d '%s' - action disabled",
 					 i, pTplName);
 				errno = 0;
-				errmsg.LogError(0, RS_RET_NOT_FOUND, "%s", errMsg);
+				LogError(0, RS_RET_NOT_FOUND, "%s", errMsg);
 				ABORT_FINALIZE(RS_RET_NOT_FOUND);
 			}
 			/* check required template options */
 			if(   (iTplOpts & OMSR_RQD_TPL_OPT_SQL)
 			   && (pAction->ppTpl[i]->optFormatEscape == 0)) {
 				errno = 0;
-				errmsg.LogError(0, RS_RET_RQD_TPLOPT_MISSING, "Action disabled. To use this action, you have to specify "
-					"the SQL or stdSQL option in your template!\n");
+				LogError(0, RS_RET_RQD_TPLOPT_MISSING, "Action disabled."
+						" To use this action, you have to specify "
+						"the SQL or stdSQL option in your template!\n");
 				ABORT_FINALIZE(RS_RET_RQD_TPLOPT_MISSING);
 			}
 		}
@@ -2032,7 +2042,7 @@ actionNewInst(struct nvlst *lst, action_t **ppAction)
 	cnfparamsPrint(&pblk, paramvals);
 	cnfModName = (uchar*)es_str2cstr(paramvals[cnfparamGetIdx(&pblk, ("type"))].val.d.estr, NULL);
 	if((pMod = module.FindWithCnfName(loadConf, cnfModName, eMOD_OUT)) == NULL) {
-		errmsg.LogError(0, RS_RET_MOD_UNKNOWN, "module name '%s' is unknown", cnfModName);
+		LogError(0, RS_RET_MOD_UNKNOWN, "module name '%s' is unknown", cnfModName);
 		ABORT_FINALIZE(RS_RET_MOD_UNKNOWN);
 	}
 	CHKiRet(pMod->mod.om.newActInst(cnfModName, lst, &pModData, &pOMSR));
@@ -2059,7 +2069,6 @@ rsRetVal actionClassInit(void)
 	CHKiRet(objGetObjInterface(&obj)); /* this provides the root pointer for all other queries */
 	CHKiRet(objUse(datetime, CORE_COMPONENT));
 	CHKiRet(objUse(module, CORE_COMPONENT));
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 	CHKiRet(objUse(statsobj, CORE_COMPONENT));
 	CHKiRet(objUse(ruleset, CORE_COMPONENT));
 
