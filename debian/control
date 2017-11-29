@@ -25,7 +25,8 @@ Build-Depends: debhelper (>= 10.3),
                pkg-config,
                bison,
                flex,
-               procps <!nocheck>
+               procps <!nocheck>,
+               python <!nocheck>
 Standards-Version: 4.1.1
 Rules-Requires-Root: no
 Vcs-Git: https://anonscm.debian.org/git/collab-maint/rsyslog.git
