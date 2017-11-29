@@ -226,7 +226,6 @@ freeCnf(rsconf_t *pThis)
 	}
 }
 
-
 /* destructor for the rsconf object */
 PROTOTYPEobjDestruct(rsconf);
 BEGINobjDestruct(rsconf) /* be sure to specify the object type also in END and CODESTART macros! */
@@ -376,7 +375,7 @@ inputProcessCnf(struct cnfobj *o)
 				"input module '%s' does not support input() statement", cnfModName);
 		ABORT_FINALIZE(RS_RET_MOD_NO_INPUT_STMT);
 	}
-	CHKiRet(pMod->mod.im.newInpInst(o->nvlst));
+	iRet = pMod->mod.im.newInpInst(o->nvlst);
 finalize_it:
 	free(cnfModName);
 	cnfparamvalsDestruct(pvals, &inppblk);
@@ -1282,8 +1281,8 @@ validateConf(void)
 	if(ourConf->globals.mainQ.MainMsgQueType == QUEUETYPE_DISK) {
 		errno = 0;	/* for logerror! */
 		if(glbl.GetWorkDir() == NULL) {
-			errmsg.LogError(0, NO_ERRCODE, "No $WorkDirectory specified - can not run main message queue in 'disk' mode. "
-				 "Using 'FixedArray' instead.\n");
+			errmsg.LogError(0, NO_ERRCODE, "No $WorkDirectory specified - can not run main "
+					"message queue in 'disk' mode. Using 'FixedArray' instead.\n");
 			ourConf->globals.mainQ.MainMsgQueType = QUEUETYPE_FIXED_ARRAY;
 		}
 		if(ourConf->globals.mainQ.pszMainMsgQFName == NULL) {

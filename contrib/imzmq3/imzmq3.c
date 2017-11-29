@@ -60,7 +60,6 @@ MODULE_CNFNAME("imzmq3");
 
 /* Module static data */
 DEF_IMOD_STATIC_DATA
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(glbl)
 DEFobjCurrIf(prop)
 DEFobjCurrIf(ruleset)
@@ -70,13 +69,13 @@ DEFobjCurrIf(ruleset)
  * structs to describe sockets
  */
 typedef struct _socket_type {
-    char*  name;
+    const char*  name;
     int    type;
 } socket_type;
 
 /* more overkill, but seems nice to be consistent.*/
 typedef struct _socket_action {
-    char* name;
+    const char* name;
     int   action;
 } socket_action;
 
@@ -217,7 +216,7 @@ static int getSocketType(char* name) {
     
     /* whine if no match was found. */
     if (type == -1) 
-        errmsg.LogError(0, NO_ERRCODE, "unknown type %s",name);
+        LogError(0, NO_ERRCODE, "unknown type %s",name);
     
     return type;
 }
@@ -237,7 +236,7 @@ static int getSocketAction(char* name) {
 
     /* whine if no matching action was found */
     if (action == -1) 
-        errmsg.LogError(0, NO_ERRCODE, "unknown action %s",name);
+        LogError(0, NO_ERRCODE, "unknown action %s",name);
     
     return action;
 }
@@ -313,41 +312,41 @@ finalize_it:
 static rsRetVal validateConfig(instanceConf_t* info) {
 
     if (info->type == -1) {
-        errmsg.LogError(0, RS_RET_INVALID_PARAMS,
+        LogError(0, RS_RET_INVALID_PARAMS,
                         "you entered an invalid type");
         return RS_RET_INVALID_PARAMS;
     }
     if (info->action == -1) {
-        errmsg.LogError(0, RS_RET_INVALID_PARAMS,
+        LogError(0, RS_RET_INVALID_PARAMS,
                         "you entered an invalid action");
         return RS_RET_INVALID_PARAMS;
     }
     if (info->description == NULL) {
-        errmsg.LogError(0, RS_RET_INVALID_PARAMS,
+        LogError(0, RS_RET_INVALID_PARAMS,
                         "you didn't enter a description");
         return RS_RET_INVALID_PARAMS;
     }
     if(info->type == ZMQ_SUB && info->subscriptions == NULL) {
-        errmsg.LogError(0, RS_RET_INVALID_PARAMS,
+        LogError(0, RS_RET_INVALID_PARAMS,
                         "SUB sockets need a subscription");
         return RS_RET_INVALID_PARAMS;
     }
     if(info->type != ZMQ_SUB && info->subscriptions != NULL) {
-        errmsg.LogError(0, RS_RET_INVALID_PARAMS,
+        LogError(0, RS_RET_INVALID_PARAMS,
                         "only SUB sockets can have subscriptions");
         return RS_RET_INVALID_PARAMS;
     }
     return RS_RET_OK;
 }
 
-static rsRetVal createContext() {
+static rsRetVal createContext(void) {
     if (s_context == NULL) {
         DBGPRINTF("imzmq3: creating zctx...");
         zsys_handler_set(NULL);
         s_context = zctx_new();
         
         if (s_context == NULL) {
-            errmsg.LogError(0, RS_RET_INVALID_PARAMS,
+            LogError(0, RS_RET_INVALID_PARAMS,
                             "zctx_new failed: %s",
                             zmq_strerror(errno));
             /* DK: really should do better than invalid params...*/
@@ -368,7 +367,7 @@ static rsRetVal createSocket(instanceConf_t* info, void** sock) {
 
     *sock = zsocket_new(s_context, info->type);
     if (!sock) {
-        errmsg.LogError(0,
+        LogError(0,
                         RS_RET_INVALID_PARAMS,
                         "zsocket_new failed: %s, for type %d",
                         zmq_strerror(errno),info->type);
@@ -405,7 +404,7 @@ static rsRetVal createSocket(instanceConf_t* info, void** sock) {
     if (info->action==ACTION_CONNECT) {
         rv = zsocket_connect(*sock, "%s", info->description);
         if (rv == -1) {
-            errmsg.LogError(0,
+            LogError(0,
                             RS_RET_INVALID_PARAMS,
                             "zmq_connect using %s failed: %s",
                             info->description, zmq_strerror(errno));
@@ -415,7 +414,7 @@ static rsRetVal createSocket(instanceConf_t* info, void** sock) {
     } else {
         rv = zsocket_bind(*sock, "%s", info->description);
         if (rv == -1) {
-            errmsg.LogError(0,
+            LogError(0,
                             RS_RET_INVALID_PARAMS,
                             "zmq_bind using %s failed: %s",
                             info->description, zmq_strerror(errno));
@@ -510,7 +509,7 @@ static rsRetVal createListener(struct cnfparamvals* pvals) {
         } else if(!strcmp(inppblk.descr[i].name, "affinity")) {
             inst->affinity = (int) pvals[i].val.d.n;
         } else {
-            errmsg.LogError(0, NO_ERRCODE, "imzmq3: program error, non-handled "
+            LogError(0, NO_ERRCODE, "imzmq3: program error, non-handled "
                             "param '%s'\n", inppblk.descr[i].name);
         }
     
@@ -596,7 +595,7 @@ static rsRetVal rcv_loop(thrdInfo_t* pThrd){
         addListener(inst);
     }
     if (lcnfRoot == NULL) {
-        errmsg.LogError(0, NO_ERRCODE, "imzmq3: no listeners were "
+        LogError(0, NO_ERRCODE, "imzmq3: no listeners were "
                         "started, input not activated.\n");
         ABORT_FINALIZE(RS_RET_NO_RUN);
     }
@@ -629,7 +628,7 @@ static rsRetVal rcv_loop(thrdInfo_t* pThrd){
         
         rv = zloop_poller(s_zloop, &items[i], handlePoll, &pollerData[i]);
         if (rv) {
-            errmsg.LogError(0, NO_ERRCODE, "imzmq3: zloop_poller failed for item %zu: %s", i, zmq_strerror(errno));
+            LogError(0, NO_ERRCODE, "imzmq3: zloop_poller failed for item %zu: %s", i, zmq_strerror(errno));
         } 
     }
     DBGPRINTF("imzmq3: zloop_poller starting...");
@@ -682,7 +681,6 @@ ENDafterRun
 BEGINmodExit
 CODESTARTmodExit
     /* release what we no longer need */
-    objRelease(errmsg, CORE_COMPONENT);
     objRelease(glbl, CORE_COMPONENT);
     objRelease(prop, CORE_COMPONENT);
     objRelease(ruleset, CORE_COMPONENT);
@@ -715,7 +713,7 @@ BEGINsetModCnf
 CODESTARTsetModCnf
     pvals = nvlstGetParams(lst, &modpblk, NULL);
     if (NULL == pvals) {
-         errmsg.LogError(0, RS_RET_MISSING_CNFPARAMS, "imzmq3: error processing module "
+         LogError(0, RS_RET_MISSING_CNFPARAMS, "imzmq3: error processing module "
                          " config parameters ['module(...)']");
          ABORT_FINALIZE(RS_RET_MISSING_CNFPARAMS);
     }
@@ -726,7 +724,7 @@ CODESTARTsetModCnf
         if (!strcmp(modpblk.descr[i].name, "ioThreads")) {
             runModConf->io_threads = (int)pvals[i].val.d.n;
         } else {
-            errmsg.LogError(0, RS_RET_INVALID_PARAMS, 
+            LogError(0, RS_RET_INVALID_PARAMS, 
                            "imzmq3: config error, unknown "
                            "param %s in setModCnf\n", 
                            modpblk.descr[i].name);
@@ -745,7 +743,7 @@ CODESTARTendCnfLoad
      * input module. After this call, the config object must no longer be
      * changed. */
     if (pModConf != runModConf) {
-        errmsg.LogError(0, NO_ERRCODE, "imzmq3: pointer of in-memory config object has "
+        LogError(0, NO_ERRCODE, "imzmq3: pointer of in-memory config object has "
                         "changed - pModConf=%p, runModConf=%p", pModConf, runModConf);
     }
     assert(pModConf == runModConf);
@@ -756,7 +754,7 @@ ENDendCnfLoad
 static inline void
 std_checkRuleset_genErrMsg(__attribute__((unused)) modConfData_t *modConf, instanceConf_t *inst)
 {
-    errmsg.LogError(0, NO_ERRCODE, "imzmq3: ruleset '%s' for socket %s not found - "
+    LogError(0, NO_ERRCODE, "imzmq3: ruleset '%s' for socket %s not found - "
                     "using default ruleset instead", inst->pszBindRuleset,
                     inst->description);
 }
@@ -778,7 +776,7 @@ ENDcheckCnf
 BEGINactivateCnfPrePrivDrop
 CODESTARTactivateCnfPrePrivDrop
     if (pModConf != runModConf) {
-        errmsg.LogError(0, NO_ERRCODE, "imzmq3: pointer of in-memory config object has "
+        LogError(0, NO_ERRCODE, "imzmq3: pointer of in-memory config object has "
                         "changed - pModConf=%p, runModConf=%p", pModConf, runModConf);
     }
     assert(pModConf == runModConf);
@@ -794,7 +792,7 @@ ENDactivateCnfPrePrivDrop
 BEGINactivateCnf
 CODESTARTactivateCnf
     if (pModConf != runModConf) {
-        errmsg.LogError(0, NO_ERRCODE, "imzmq3: pointer of in-memory config object has "
+        LogError(0, NO_ERRCODE, "imzmq3: pointer of in-memory config object has "
                         "changed - pModConf=%p, runModConf=%p", pModConf, runModConf);
     }
     assert(pModConf == runModConf);
@@ -808,7 +806,7 @@ BEGINfreeCnf
 CODESTARTfreeCnf
     DBGPRINTF("imzmq3: BEGINfreeCnf ...\n");
     if (pModConf != runModConf) {
-        errmsg.LogError(0, NO_ERRCODE, "imzmq3: pointer of in-memory config object has "
+        LogError(0, NO_ERRCODE, "imzmq3: pointer of in-memory config object has "
                         "changed - pModConf=%p, runModConf=%p", pModConf, runModConf);
     }
     for (lstn = lcnfRoot; lstn != NULL; ) {
@@ -838,7 +836,7 @@ CODESTARTnewInpInst
     DBGPRINTF("newInpInst (imzmq3)\n");
     pvals = nvlstGetParams(lst, &inppblk, NULL);
     if(NULL==pvals) {
-        errmsg.LogError(0, RS_RET_MISSING_CNFPARAMS,
+        LogError(0, RS_RET_MISSING_CNFPARAMS,
                         "imzmq3: required parameters are missing\n");
         ABORT_FINALIZE(RS_RET_MISSING_CNFPARAMS);
     }
@@ -870,10 +868,12 @@ CODESTARTmodInit
     /* we only support the current interface specification */
     *ipIFVersProvided = CURR_MOD_IF_VERSION;
 CODEmodInit_QueryRegCFSLineHdlr
-    CHKiRet(objUse(errmsg, CORE_COMPONENT));
     CHKiRet(objUse(glbl, CORE_COMPONENT));
     CHKiRet(objUse(prop, CORE_COMPONENT));
     CHKiRet(objUse(ruleset, CORE_COMPONENT));
+    LogError(0, RS_RET_DEPRECATED, "note: imzmq3 module is deprecated and will "
+	"be removed soon. Do no longer use it, switch to imczmq. See "
+	"https://github.com/rsyslog/rsyslog/issues/2103 for details.");
 ENDmodInit
 
 

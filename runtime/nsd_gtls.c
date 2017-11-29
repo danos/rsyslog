@@ -273,7 +273,7 @@ gtlsClientCertCallback(gnutls_session_t session,
  * rgerhards, 2008-05-21
  */
 static rsRetVal
-gtlsGetCertInfo(nsd_gtls_t *pThis, cstr_t **ppStr)
+gtlsGetCertInfo(nsd_gtls_t *const pThis, cstr_t **ppStr)
 {
 	uchar szBufA[1024];
 	uchar *szBuf = szBufA;
@@ -1009,7 +1009,7 @@ gtlsChkPeerCertValidity(nsd_gtls_t *pThis)
 	DEFiRet;
 	const char *pszErrCause;
 	int gnuRet;
-	cstr_t *pStr;
+	cstr_t *pStr = NULL;
 	unsigned stateCert;
 	const gnutls_datum_t *cert_list;
 	unsigned cert_list_size = 0;
@@ -1068,7 +1068,8 @@ gtlsChkPeerCertValidity(nsd_gtls_t *pThis)
 		if(ttCert == -1)
 			ABORT_FINALIZE(RS_RET_TLS_CERT_ERR);
 		else if(ttCert > ttNow) {
-			errmsg.LogError(0, RS_RET_CERT_NOT_YET_ACTIVE, "not permitted to talk to peer: certificate %d not yet active", i);
+			errmsg.LogError(0, RS_RET_CERT_NOT_YET_ACTIVE, "not permitted to talk to peer: "
+					"certificate %d not yet active", i);
 			gtlsGetCertInfo(pThis, &pStr);
 			errmsg.LogError(0, RS_RET_CERT_NOT_YET_ACTIVE, "invalid cert info: %s", cstrGetSzStrNoNULL(pStr));
 			cstrDestruct(&pStr);
@@ -1431,13 +1432,10 @@ finalize_it:
 static rsRetVal
 CheckConnection(nsd_t __attribute__((unused)) *pNsd)
 {
-	DEFiRet;
 	nsd_gtls_t *pThis = (nsd_gtls_t*) pNsd;
 	ISOBJ_TYPE_assert(pThis, nsd_gtls);
 
-	CHKiRet(nsd_ptcp.CheckConnection(pThis->pTcp));
-finalize_it:
-	RETiRet;
+	return nsd_ptcp.CheckConnection(pThis->pTcp);
 }
 
 
@@ -1706,6 +1704,32 @@ EnableKeepAlive(nsd_t *pNsd)
 	return nsd_ptcp.EnableKeepAlive(pThis->pTcp);
 }
 
+
+/*
+ * SNI should not be used if the hostname is a bare IP address
+ */
+static int
+SetServerNameIfPresent(nsd_gtls_t *pThis, uchar *host) {
+	struct sockaddr_in sa;
+	struct sockaddr_in6 sa6;
+
+	int inet_pton_ret = inet_pton(AF_INET, CHAR_CONVERT(host), &(sa.sin_addr));
+
+	if (inet_pton_ret == 0) { // host wasn't a bare IPv4 address: try IPv6
+		inet_pton_ret = inet_pton(AF_INET6, CHAR_CONVERT(host), &(sa6.sin6_addr));
+	}
+
+	switch(inet_pton_ret) {
+		case 1: // host is a valid IP address: don't use SNI
+			return 0;
+		case 0: // host isn't a valid IP address: assume it's a domain name, use SNI
+			return gnutls_server_name_set(pThis->sess, GNUTLS_NAME_DNS, host, ustrlen(host));
+		default: // unexpected error
+			return -1;
+	}
+
+}
+
 /* open a connection to a remote host (server). With GnuTLS, we always
  * open a plain tcp socket and then, if in TLS mode, do a handshake on it.
  * rgerhards, 2008-03-19
@@ -1737,6 +1761,8 @@ Connect(nsd_t *pNsd, int family, uchar *port, uchar *host, char *device)
 	CHKgnutls(gnutls_init(&pThis->sess, GNUTLS_CLIENT));
 	pThis->bHaveSess = 1;
 	pThis->bIsInitiator = 1;
+
+	CHKgnutls(SetServerNameIfPresent(pThis, host));
 
 	/* in the client case, we need to set a callback that ensures our certificate
 	 * will be presented to the server even if it is not signed by one of the server's

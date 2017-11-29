@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([rsyslog],[8.30.0],[rsyslog@lists.adiscon.com])
+AC_INIT([rsyslog],[8.31.0],[rsyslog@lists.adiscon.com])
 
 # AIXPORT START: Detect the underlying OS
 unamestr=$(uname)
@@ -28,6 +28,8 @@ if test "$unamestr" = "AIX"; then
 fi
 # AIXPORT END
 
+# change to the one below if Travis has a timeout
+#AM_INIT_AUTOMAKE([subdir-objects serial-tests])
 AM_INIT_AUTOMAKE([subdir-objects])
 
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
@@ -283,6 +285,12 @@ case "${enable_largefile}" in
   no) ;;
   *) enable_largefile="yes" ;;
 esac
+
+# do we have libsystemd?
+PKG_CHECK_MODULES([LIBSYSTEMD], [libsystemd],
+	[ AC_DEFINE(HAVE_LIBSYSTEMD, 1, [libsystemd present]) ],
+	[ AC_MSG_NOTICE([libsystemd not present - disabling systemd support]) ]
+)
 
 # Regular expressions
 AC_ARG_ENABLE(regexp,
@@ -926,7 +934,7 @@ if test "x$enable_rsyslogrt" = "xyes"; then
   RSRT_LIBS1="\$(top_builddir)/runtime/librsyslog.la"
 fi
 AM_CONDITIONAL(ENABLE_RSYSLOGRT, test x$enable_rsyslogrt = xyes)
-RSRT_CFLAGS="\$(RSRT_CFLAGS1) \$(LIBESTR_CFLAGS) \$(LIBFASTJSON_CFLAGS)"
+RSRT_CFLAGS="\$(RSRT_CFLAGS1) \$(LIBESTR_CFLAGS) \$(LIBFASTJSON_CFLAGS) \$(LIBSYSTEMD_CFLAGS)"
 if test "$GCC" = "yes"; then
   RSRT_CFLAGS="$RSRT_CFLAGS -W -Wall -Wformat-security -Wshadow -Wcast-align -Wpointer-arith -Wmissing-format-attribute"
   if $CC -Werror=implicit-function-declaration -x c -c /dev/null -o /dev/null 2>/dev/null; then
@@ -940,7 +948,7 @@ if test "$GCC" = "yes"; then
   fi
 fi
 RSRT_CFLAGS="$RSRT_CFLAGS $WARN_CFLAGS"
-RSRT_LIBS="\$(RSRT_LIBS1) \$(LIBESTR_LIBS) \$(LIBFASTJSON_LIBS)"
+RSRT_LIBS="\$(RSRT_LIBS1) \$(LIBESTR_LIBS) \$(LIBFASTJSON_LIBS) \$(LIBSYSTEMD_LIBS)"
 AC_SUBST(RSRT_CFLAGS1)
 AC_SUBST(RSRT_LIBS1)
 AC_SUBST(RSRT_CFLAGS)
@@ -1292,7 +1300,7 @@ AC_ARG_ENABLE(ksi-ls12,
         [enable_ksi_ls12=no]
 )
 if test "x$enable_ksi_ls12" = "xyes"; then
-	PKG_CHECK_MODULES(GT_KSI_LS12, libksi >= 3.13.0)
+	PKG_CHECK_MODULES(GT_KSI_LS12, libksi >= 3.16.0)
 fi
 AM_CONDITIONAL(ENABLE_KSI_LS12, test x$enable_ksi_ls12 = xyes)
 
@@ -1793,7 +1801,7 @@ AC_ARG_ENABLE(ommongodb,
         [enable_ommongodb=no]
 )
 if test "x$enable_ommongodb" = "xyes"; then
-	PKG_CHECK_MODULES(LIBMONGO_CLIENT, libmongo-client >= 0.1.4)
+	PKG_CHECK_MODULES(LIBMONGOC, libmongoc-1.0)
 fi
 AM_CONDITIONAL(ENABLE_OMMONGODB, test x$enable_ommongodb = xyes)
 # end of mongodb code
@@ -1994,7 +2002,6 @@ AM_CONDITIONAL(ENABLE_OMTCL, test x$enable_omtcl = xyes)
 # END TCL SUPPORT
 
 # man pages
-AC_CHECKING([if required man pages already exist])
 have_to_generate_man_pages="no"
 git_src_have_to_generate_man_pages="yes" # default to use when building from git source
 AC_ARG_ENABLE(generate-man-pages,
@@ -2027,7 +2034,7 @@ AM_CONDITIONAL(ENABLE_DISTCHECK_WORKAROUND, test x$enable_distcheck_workaround =
 if test "x$in_git_src" = "xyes"; then
         AC_MSG_NOTICE([Running from git source])
 
-        have_to_generate_man_pages=git_src_have_to_generate_man_pages
+        have_to_generate_man_pages=$git_src_have_to_generate_man_pages
 
         if test "x$LEX" != "xflex"; then
                 AC_MSG_ERROR([flex program is needed to build rsyslog, please install flex.])

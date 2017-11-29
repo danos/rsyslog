@@ -2,7 +2,7 @@
  *
  * An implementation of the nsd interface for plain tcp sockets.
  * 
- * Copyright 2007-2013 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2007-2017 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -449,11 +449,12 @@ LstnInit(netstrms_t *pNS, void *pUsr, rsRetVal(*fAddLstn)(void*,netstrm_t*),
 	for(r = res; r != NULL ; r = r->ai_next) {
                sock = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
         	if(sock < 0) {
-			if(!(r->ai_family == PF_INET6 && errno == EAFNOSUPPORT))
+			if(!(r->ai_family == PF_INET6 && errno == EAFNOSUPPORT)) {
 				dbgprintf("error %d creating tcp listen socket", errno);
 				/* it is debatable if PF_INET with EAFNOSUPPORT should
 				 * also be ignored...
 				 */
+			}
                         continue;
                 }
 
@@ -548,7 +549,6 @@ LstnInit(netstrms_t *pNS, void *pUsr, rsRetVal(*fAddLstn)(void*,netstrm_t*),
 		 */
 		CHKiRet(pNS->Drvr.Construct(&pNewNsd));
 		CHKiRet(pNS->Drvr.SetSock(pNewNsd, sock));
-		sock = -1;
 		CHKiRet(pNS->Drvr.SetMode(pNewNsd, netstrms.GetDrvrMode(pNS)));
 		CHKiRet(pNS->Drvr.SetAuthMode(pNewNsd, netstrms.GetDrvrAuthMode(pNS)));
 		CHKiRet(pNS->Drvr.SetPermPeers(pNewNsd, netstrms.GetDrvrPermPeers(pNS)));
@@ -558,6 +558,10 @@ LstnInit(netstrms_t *pNS, void *pUsr, rsRetVal(*fAddLstn)(void*,netstrm_t*),
 		pNewNsd = NULL;
 		CHKiRet(fAddLstn(pUsr, pNewStrm));
 		pNewStrm = NULL;
+		/* sock has been handed over by SetSock() above, so invalidate it here
+		 * coverity scan falsely identifies this as ressource leak
+		 */
+		sock = -1;
 		++numSocks;
 	}
 
@@ -571,12 +575,13 @@ LstnInit(netstrms_t *pNS, void *pUsr, rsRetVal(*fAddLstn)(void*,netstrm_t*),
 	}
 
 finalize_it:
+	if(sock != -1) {
+		close(sock);
+	}
 	if(res != NULL)
 		freeaddrinfo(res);
 
 	if(iRet != RS_RET_OK) {
-		if(sock != -1)
-			close(sock);
 		if(pNewStrm != NULL)
 			netstrm.Destruct(&pNewStrm);
 		if(pNewNsd != NULL)
@@ -754,11 +759,14 @@ Connect(nsd_t *pNsd, int family, uchar *port, uchar *host, char *device)
 	hints.ai_family = family;
 	hints.ai_socktype = SOCK_STREAM;
 	if(getaddrinfo((char*)host, (char*)port, &hints, &res) != 0) {
-		dbgprintf("error %d in getaddrinfo\n", errno);
+		LogError(errno, RS_RET_IO_ERROR, "cannot resolve hostname '%s'",
+			host);
 		ABORT_FINALIZE(RS_RET_IO_ERROR);
 	}
 	
 	if((pThis->sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == -1) {
+		LogError(errno, RS_RET_IO_ERROR, "cannot bind socket for %s:%s",
+			host, port);
 		ABORT_FINALIZE(RS_RET_IO_ERROR);
 	}
 
@@ -773,6 +781,8 @@ Connect(nsd_t *pNsd, int family, uchar *port, uchar *host, char *device)
 	}
 
 	if(connect(pThis->sock, res->ai_addr, res->ai_addrlen) != 0) {
+		LogError(errno, RS_RET_IO_ERROR, "cannot connect to %s:%s",
+			host, port);
 		ABORT_FINALIZE(RS_RET_IO_ERROR);
 	}
 

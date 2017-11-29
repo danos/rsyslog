@@ -42,6 +42,7 @@
 #include <sys/wait.h>
 #include <ctype.h>
 #include <inttypes.h>
+#include <fcntl.h>
 #include "srUtils.h"
 #include "obj.h"
 #include "errmsg.h"
@@ -194,9 +195,13 @@ uchar *srUtilStrDup(uchar *pOld, size_t len)
  * the creation fails in the similar way, we return an error on that second
  * try because otherwise we would potentially run into an endless loop.
  * loop. -- rgerhards, 2010-03-25
+ * The likeliest scenario for a prolonged contest of creating the parent directiories
+ * is within our process space. This can happen with a high probability when two
+ * threads, that want to start logging to files within same directory tree, are
+ * started close to each other. We should fix what we can. -- nipakoo, 2017-11-25
  */
-int makeFileParentDirs(const uchar *const szFile, size_t lenFile, mode_t mode,
-		       uid_t uid, gid_t gid, int bFailOnChownFail)
+static int real_makeFileParentDirs(const uchar *const szFile, const size_t lenFile, const mode_t mode,
+	const uid_t uid, const gid_t gid, const int bFailOnChownFail)
 {
         uchar *p;
         uchar *pszWork;
@@ -252,6 +257,21 @@ again:
                 }
 	free(pszWork);
 	return 0;
+}
+/* note: this small function is the stub for the brain-dead POSIX cancel handling */
+int makeFileParentDirs(const uchar *const szFile, const size_t lenFile, const mode_t mode,
+		       const uid_t uid, const gid_t gid, const int bFailOnChownFail)
+{
+	static pthread_mutex_t mutParentDir = PTHREAD_MUTEX_INITIALIZER;
+	int r;	/* needs to be declared OUTSIDE of pthread_cleanup... macros! */
+	pthread_mutex_lock(&mutParentDir);
+	pthread_cleanup_push(mutexCancelCleanup, &mutParentDir);
+
+	r = real_makeFileParentDirs(szFile, lenFile, mode, uid, gid, bFailOnChownFail);
+
+	pthread_mutex_unlock(&mutParentDir);
+	pthread_cleanup_pop(0);
+	return r;
 }
 
 
@@ -691,7 +711,7 @@ containsGlobWildcard(char *str)
 	return 0;
 }
 
-void seedRandomNumber(void)
+static void seedRandomInsecureNumber(void)
 {
 	struct timespec t;
 	timeoutComp(&t, 0);
@@ -699,10 +719,48 @@ void seedRandomNumber(void)
 	srandom((unsigned int) x);
 }
 
-long int randomNumber(void)
+static long int randomInsecureNumber(void)
 {
 	return random();
 }
+
+#ifdef OS_LINUX
+static int fdURandom = -1;
+void seedRandomNumber(void)
+{
+	fdURandom = open("/dev/urandom", O_RDONLY);
+	if(fdURandom == -1) {
+		LogError(errno, RS_RET_IO_ERROR, "failed to seed random number generation,"
+			" will use fallback (open urandom failed)");
+		seedRandomInsecureNumber();
+	}
+}
+
+long int randomNumber(void)
+{
+	long int ret;
+	if(fdURandom >= 0) {
+		if(read(fdURandom, &ret, sizeof(long int)) == -1) {
+			LogError(errno, RS_RET_IO_ERROR, "failed to generate random number, will"
+				" use fallback (read urandom failed)");
+			ret = randomInsecureNumber();
+		}
+	} else {
+		ret = randomInsecureNumber();
+	}
+	return ret;
+}
+#else
+void seedRandomNumber(void)
+{
+	seedRandomInsecureNumber();
+}
+
+long int randomNumber(void)
+{
+	return randomInsecureNumber();
+}
+#endif
 
 /* vim:set ai:
  */

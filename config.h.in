@@ -138,6 +138,9 @@
 /* Define to 1 if you have the <librdkafka/rdkafka.h> header file. */
 #undef HAVE_LIBRDKAFKA_RDKAFKA_H
 
+/* libsystemd present */
+#undef HAVE_LIBSYSTEMD
+
 /* Define to 1 if you have the <locale.h> header file. */
 #undef HAVE_LOCALE_H
 
