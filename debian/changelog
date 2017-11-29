@@ -1,3 +1,9 @@
+rsyslog (8.31.0-1) UNRELEASED; urgency=medium
+
+  * New upstream version 8.31.0
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 29 Nov 2017 20:40:56 +0100
+
 rsyslog (8.30.0-3) unstable; urgency=medium
 
   * Cherry-pick upstream patch to fix broken imjournal module (Closes: #882261)
