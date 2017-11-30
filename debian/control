@@ -28,7 +28,8 @@ Build-Depends: debhelper (>= 10.3),
                procps <!nocheck>,
                python <!nocheck>,
                libfaketime <!nocheck>,
-               valgrind [amd64] <!nocheck>
+               valgrind [amd64] <!nocheck>,
+               systemd [linux-any] <!nocheck>
 Standards-Version: 4.1.1
 Rules-Requires-Root: no
 Vcs-Git: https://anonscm.debian.org/git/collab-maint/rsyslog.git
