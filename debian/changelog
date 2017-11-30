@@ -1,8 +1,17 @@
-rsyslog (8.31.0-1) UNRELEASED; urgency=medium
+rsyslog (8.31.0-1) unstable; urgency=medium
 
   * New upstream version 8.31.0
+  * Switch from libmongo-client to libmongoc
+  * Rebase patches
+  * Set Rules-Requires-Root to no
+  * Add Build-Depends on python for running the test suite
+  * Add Build-Depends on libfaketime and valgrind.
+    This allows more tests to run which would otherwise be skipped.
+    As valgrind is currently not available everywhere, restrict it to amd64
+    for now.
+  * Modernize config syntax for rsyslog-mysql and rsyslog-pgsql
 
- -- Michael Biebl <biebl@debian.org>  Wed, 29 Nov 2017 20:40:56 +0100
+ -- Michael Biebl <biebl@debian.org>  Thu, 30 Nov 2017 01:19:36 +0100
 
 rsyslog (8.30.0-3) unstable; urgency=medium
 
