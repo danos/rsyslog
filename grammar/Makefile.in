@@ -104,7 +104,8 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
-libgrammar_la_LIBADD =
+am__DEPENDENCIES_1 =
+libgrammar_la_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_libgrammar_la_OBJECTS = libgrammar_la-grammar.lo \
 	libgrammar_la-lexer.lo libgrammar_la-rainerscript.lo
 libgrammar_la_OBJECTS = $(am_libgrammar_la_OBJECTS)
@@ -230,8 +231,6 @@ GREP = @GREP@
 GSS_LIBS = @GSS_LIBS@
 GT_KSI_LS12_CFLAGS = @GT_KSI_LS12_CFLAGS@
 GT_KSI_LS12_LIBS = @GT_KSI_LS12_LIBS@
-GUARDTIME_CFLAGS = @GUARDTIME_CFLAGS@
-GUARDTIME_LIBS = @GUARDTIME_LIBS@
 HIREDIS_CFLAGS = @HIREDIS_CFLAGS@
 HIREDIS_LIBS = @HIREDIS_LIBS@
 IMUDP_LIBS = @IMUDP_LIBS@
@@ -418,6 +417,8 @@ libgrammar_la_SOURCES = \
 	grammar.h
 
 libgrammar_la_CPPFLAGS = $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_CFLAGS)
+#libgrammar_la_LIBADD = $(CURL_LIBS) $(RSRT_LIBS) $(SOL_LIBS)
+libgrammar_la_LIBADD = $(CURL_LIBS)
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
