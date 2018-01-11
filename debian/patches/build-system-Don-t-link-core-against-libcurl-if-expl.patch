@@ -1,0 +1,48 @@
+From 50205ced0fc22e74f26f2a07b557b69c5d30e168 Mon Sep 17 00:00:00 2001
+From: Michael Biebl <biebl@debian.org>
+Date: Sun, 14 Jan 2018 12:21:42 +0100
+Subject: [PATCH] build system: Don't link core against libcurl if explicitly
+ requested
+
+When using --disable-libcurl, libgrammar should not be linked against
+libcurl unconditionally as CURL_LIBS might be set if one of the modules
+using libcurl, like elasticsearch, is enabled.
+---
+ grammar/Makefile.am                 | 7 +++++--
+ plugins/omelasticsearch/Makefile.am | 2 +-
+ 2 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/grammar/Makefile.am b/grammar/Makefile.am
+index 7be4133b5..4fa635096 100644
+--- a/grammar/Makefile.am
++++ b/grammar/Makefile.am
+@@ -12,8 +12,11 @@ libgrammar_la_SOURCES = \
+ 	parserif.h \
+ 	grammar.h
+ libgrammar_la_CPPFLAGS =  $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_CFLAGS)
+-#libgrammar_la_LIBADD = $(CURL_LIBS) $(RSRT_LIBS) $(SOL_LIBS)
+-libgrammar_la_LIBADD = $(CURL_LIBS)
++libgrammar_la_LIBADD =
++if ENABLE_LIBCURL
++libgrammar_la_CPPFLAGS += $(CURL_CFLAGS)
++libgrammar_la_LIBADD += $(CURL_LIBS)
++endif
+ 
+ #testdriver_SOURCES = testdriver.c libgrammar.la
+ #testdriver_CPPFLAGS =  $(RSRT_CFLAGS)
+diff --git a/plugins/omelasticsearch/Makefile.am b/plugins/omelasticsearch/Makefile.am
+index 2fadb74dc..ddaa59a3c 100644
+--- a/plugins/omelasticsearch/Makefile.am
++++ b/plugins/omelasticsearch/Makefile.am
+@@ -1,7 +1,7 @@
+ pkglib_LTLIBRARIES = omelasticsearch.la
+ 
+ omelasticsearch_la_SOURCES = omelasticsearch.c
+-omelasticsearch_la_CPPFLAGS =  $(RSRT_CFLAGS) $(PTHREADS_CFLAGS)
++omelasticsearch_la_CPPFLAGS = $(RSRT_CFLAGS) $(PTHREADS_CFLAGS) $(CURL_CFLAGS)
+ omelasticsearch_la_LDFLAGS = -module -avoid-version
+ omelasticsearch_la_LIBADD =  $(CURL_LIBS) $(LIBM)
+ 
+-- 
+2.15.1
+

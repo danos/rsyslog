@@ -53,6 +53,7 @@ override_dh_auto_configure:
 		--enable-testbench \
 		--enable-imdiag \
 		--disable-generate-man-pages \
+		--disable-libcurl \
 		--without-valgrind-testbench \
 		--with-systemdsystemunitdir=/lib/systemd/system
 
