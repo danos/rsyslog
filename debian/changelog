@@ -1,8 +1,16 @@
-rsyslog (8.32.0-1) UNRELEASED; urgency=medium
+rsyslog (8.32.0-1) unstable; urgency=medium
 
   * New upstream version 8.32.0
+  * Bump Build-Depends as per configure.ac.
+    Bump libfastjson-dev to (>= 0.99.8) and libczmq-dev to (>= 3.0.2).
+  * Disable valgrind testbench again.
+    Those tests using valgrind turned out to be too brittle. (Closes: #884305)
+  * Disable libcurl support.
+    This means that the new http_request() functionality is not available
+    but avoids a dependency on libcurl in rsyslog core.
+  * Update Vcs-* to point to salsa.debian.org (gitlab)
 
- -- Michael Biebl <biebl@debian.org>  Tue, 09 Jan 2018 22:59:09 +0100
+ -- Michael Biebl <biebl@debian.org>  Sun, 14 Jan 2018 12:48:11 +0100
 
 rsyslog (8.31.0-2) unstable; urgency=medium
 
