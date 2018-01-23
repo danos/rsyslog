@@ -1,3 +1,10 @@
+rsyslog (8.32.0-1~bpo9+1) stretch-backports; urgency=medium
+
+  * Rebuild for stretch-backports.
+  * Add explicit Build-Depends on libbson-dev and libssl-dev
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 23 Jan 2018 22:36:45 +0100
+
 rsyslog (8.32.0-1) unstable; urgency=medium
 
   * New upstream version 8.32.0
