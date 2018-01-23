@@ -218,12 +218,14 @@ finalize_it:
 	RETiRet;
 }
 
-static rsRetVal
-execSet(struct cnfstmt *stmt, smsg_t *pMsg)
+static rsRetVal ATTR_NONNULL()
+execSet(const struct cnfstmt *const stmt,
+	smsg_t *const pMsg,
+	wti_t *const __restrict__ pWti)
 {
 	struct svar result;
 	DEFiRet;
-	cnfexprEval(stmt->d.s_set.expr, &result, pMsg);
+	cnfexprEval(stmt->d.s_set.expr, &result, pMsg, pWti);
 	msgSetJSONFromVar(pMsg, stmt->d.s_set.varname, &result, stmt->d.s_set.force_reset);
 	varDelete(&result);
 	RETiRet;
@@ -249,7 +251,7 @@ execCallIndirect(struct cnfstmt *const __restrict__ stmt,
 
 	assert(stmt->d.s_call_ind.expr != NULL);
 
-	cnfexprEval(stmt->d.s_call_ind.expr, &result, pMsg);
+	cnfexprEval(stmt->d.s_call_ind.expr, &result, pMsg, pWti);
 	uchar *const rsName = (uchar*) var2CString(&result, &bMustFree);
 	const rsRetVal localRet = rulesetGetRuleset(loadConf, &pRuleset, rsName);
 	if(localRet != RS_RET_OK) {
@@ -301,11 +303,11 @@ finalize_it:
 }
 
 static rsRetVal
-execIf(struct cnfstmt *stmt, smsg_t *pMsg, wti_t *pWti)
+execIf(struct cnfstmt *const stmt, smsg_t *const pMsg, wti_t *const pWti)
 {
 	sbool bRet;
 	DEFiRet;
-	bRet = cnfexprEvalBool(stmt->d.s_if.expr, pMsg);
+	bRet = cnfexprEvalBool(stmt->d.s_if.expr, pMsg, pWti);
 	DBGPRINTF("if condition result is %d\n", bRet);
 	if(bRet) {
 		if(stmt->d.s_if.t_then != NULL)
@@ -375,19 +377,24 @@ callForeachObject(struct cnfstmt *stmt, json_object *arr, smsg_t *pMsg, wti_t *p
 finalize_it:
 	if (keys != NULL) free(keys);
 	if (entry != NULL) json_object_put(entry);
-	if (key != NULL) json_object_put(key);
+	/* "fix" Coverity scan issue CID 185393: key currently can NOT be NULL
+	 * However, instead of just removing the
+	 *   if (key != NULL) json_object_put(key);
+	 * we put an assertion in its place.
+	 */
+	assert(key == NULL);
 	
 	RETiRet;
 }
 
-static rsRetVal
-execForeach(struct cnfstmt *stmt, smsg_t *pMsg, wti_t *pWti)
+static rsRetVal ATTR_NONNULL()
+execForeach(struct cnfstmt *const stmt, smsg_t *const pMsg, wti_t *const pWti)
 {
 	json_object *arr = NULL;
 	DEFiRet;
 
 	/* arr can either be an array or an associative-array (obj) */
-	arr = cnfexprEvalCollection(stmt->d.s_foreach.iter->collection, pMsg);
+	arr = cnfexprEvalCollection(stmt->d.s_foreach.iter->collection, pMsg, pWti);
 	
 	if (arr == NULL) {
 		DBGPRINTF("foreach loop skipped, as object to iterate upon is empty\n");
@@ -539,8 +546,10 @@ finalize_it:
 	RETiRet;
 }
 
-static rsRetVal
-execReloadLookupTable(struct cnfstmt *stmt) {
+static rsRetVal ATTR_NONNULL()
+execReloadLookupTable(struct cnfstmt *stmt)
+{
+	assert(stmt != NULL);
 	lookup_ref_t *t;
 	DEFiRet;
 	t = stmt->d.s_reload_lookup_table.table;
@@ -548,7 +557,7 @@ execReloadLookupTable(struct cnfstmt *stmt) {
 		ABORT_FINALIZE(RS_RET_NONE);
 	}
 	
-	CHKiRet(lookupReload(t, stmt->d.s_reload_lookup_table.stub_value));
+	iRet = lookupReload(t, stmt->d.s_reload_lookup_table.stub_value);
 	/* Note that reload dispatched above is performed asynchronously,
 	   on a different thread. So rsRetVal it returns means it was triggered
 	   successfully, and not that it was reloaded successfully. */
@@ -563,8 +572,8 @@ finalize_it:
  * better suited here.
  * rgerhards, 2012-09-04
  */
-static rsRetVal
-scriptExec(struct cnfstmt *root, smsg_t *pMsg, wti_t *pWti)
+static rsRetVal ATTR_NONNULL(2, 3)
+scriptExec(struct cnfstmt *const root, smsg_t *const pMsg, wti_t *const pWti)
 {
 	struct cnfstmt *stmt;
 	DEFiRet;
@@ -588,7 +597,7 @@ scriptExec(struct cnfstmt *root, smsg_t *pMsg, wti_t *pWti)
 			CHKiRet(execAct(stmt, pMsg, pWti));
 			break;
 		case S_SET:
-			CHKiRet(execSet(stmt, pMsg));
+			CHKiRet(execSet(stmt, pMsg, pWti));
 			break;
 		case S_UNSET:
 			CHKiRet(execUnset(stmt, pMsg));
@@ -611,7 +620,7 @@ scriptExec(struct cnfstmt *root, smsg_t *pMsg, wti_t *pWti)
 		case S_PROPFILT:
 			CHKiRet(execPROPFILT(stmt, pMsg, pWti));
 			break;
-        case S_RELOAD_LOOKUP_TABLE:
+		case S_RELOAD_LOOKUP_TABLE:
 			CHKiRet(execReloadLookupTable(stmt));
 			break;
 		default:
@@ -826,6 +835,19 @@ CODESTARTobjDestruct(ruleset)
 ENDobjDestruct(ruleset)
 
 
+/* helper for Destructor, shut down queue workers */
+DEFFUNC_llExecFunc(doShutdownQueueWorkers)
+{
+	DEFiRet;
+	ruleset_t *const pThis = (ruleset_t*) pData;
+	DBGPRINTF("shutting down queue workers for ruleset %p, name %s, queue %p\n",
+		pThis, pThis->pszName, pThis->pQueue);
+	ISOBJ_TYPE_assert(pThis, ruleset);
+	if(pThis->pQueue != NULL) {
+		qqueueShutdownWorkers(pThis->pQueue);
+	}
+	RETiRet;
+}
 /* destruct ALL rule sets that reside in the system. This must
  * be callable before unloading this module as the module may
  * not be unloaded before unload of the actions is required. This is
@@ -836,6 +858,15 @@ static rsRetVal
 destructAllActions(rsconf_t *conf)
 {
 	DEFiRet;
+
+DBGPRINTF("rulesetDestructAllActions\n");
+	/* we first need to stop all queue workers, else we
+	 * may run into trouble with "call" statements calling
+	 * into then-destroyed rulesets.
+	 * see: https://github.com/rsyslog/rsyslog/issues/1122
+	 */
+DBGPRINTF("RRRRRR: rsconfDestruct - queue shutdown\n");
+	llExecFunc(&(conf->rulesets.llRulesets), doShutdownQueueWorkers, NULL);
 
 	CHKiRet(llDestroy(&(conf->rulesets.llRulesets)));
 	CHKiRet(llInit(&(conf->rulesets.llRulesets), rulesetDestructForLinkedList, rulesetKeyDestruct, strcasecmp));
@@ -1132,7 +1163,8 @@ BEGINObjClassInit(ruleset, 1, OBJ_IS_CORE_MODULE) /* class, version */
 
 	/* config file handlers */
 	CHKiRet(regCfSysLineHdlr((uchar *)"rulesetparser", 0, eCmdHdlrGetWord, rulesetAddParser, NULL, NULL));
-	CHKiRet(regCfSysLineHdlr((uchar *)"rulesetcreatemainqueue", 0, eCmdHdlrBinary, rulesetCreateQueue, NULL, NULL));
+	CHKiRet(regCfSysLineHdlr((uchar *)"rulesetcreatemainqueue", 0, eCmdHdlrBinary, rulesetCreateQueue,
+		NULL, NULL));
 ENDObjClassInit(ruleset)
 
 /* vi:set ai:

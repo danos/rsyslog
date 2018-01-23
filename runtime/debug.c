@@ -187,7 +187,8 @@ static void dbgFuncDBPrint(dbgFuncDB_t *pFuncDB)
 	assert(pFuncDB != NULL);
 	assert(pFuncDB->magic == dbgFUNCDB_MAGIC);
 	/* make output suitable for sorting on invocation count */
-	dbgprintf("%10.10ld times called: %s:%d:%s\n", pFuncDB->nTimesCalled, pFuncDB->file, pFuncDB->line, pFuncDB->func);
+	dbgprintf("%10.10ld times called: %s:%d:%s\n", pFuncDB->nTimesCalled, pFuncDB->file, pFuncDB->line,
+		pFuncDB->func);
 }
 
 
@@ -218,7 +219,8 @@ dbgFuncDBGetMutexInfo(dbgFuncDB_t *pFuncDB, pthread_mutex_t *pmut)
 	pthread_t ourThrd = pthread_self();
 
 	for(i = 0 ; i < SIZE_FUNCDB_MUTEX_TABLE(pFuncDB) ; ++i) {
-		if(pFuncDB->mutInfo[i].pmut == pmut && pFuncDB->mutInfo[i].lockLn != -1 && pFuncDB->mutInfo[i].thrd == ourThrd) {
+		if(pFuncDB->mutInfo[i].pmut == pmut && pFuncDB->mutInfo[i].lockLn != -1 &&
+			pFuncDB->mutInfo[i].thrd == ourThrd) {
 			iFound = i;
 			break;
 		}
@@ -241,9 +243,9 @@ dbgFuncDBPrintActiveMutexes(dbgFuncDB_t *pFuncDB, const char *pszHdrText, pthrea
 	for(i = 0 ; i < SIZE_FUNCDB_MUTEX_TABLE(pFuncDB) ; ++i) {
 		if(pFuncDB->mutInfo[i].lockLn != -1 && (thrd == 0 || thrd == pFuncDB->mutInfo[i].thrd)) {
 			dbgGetThrdName(pszThrdName, sizeof(pszThrdName), pFuncDB->mutInfo[i].thrd, 1);
-			dbgprintf("%s:%d:%s:invocation %ld: %s %p[%d/%s]\n", pFuncDB->file, pFuncDB->line, pFuncDB->func,
-				  pFuncDB->mutInfo[i].lInvocation, pszHdrText, (void*)pFuncDB->mutInfo[i].pmut, i,
-				  pszThrdName);
+			dbgprintf("%s:%d:%s:invocation %ld: %s %p[%d/%s]\n", pFuncDB->file, pFuncDB->line,
+				pFuncDB->func, pFuncDB->mutInfo[i].lInvocation, pszHdrText,
+				(void*)pFuncDB->mutInfo[i].pmut, i, pszThrdName);
 		}
 	}
 }
@@ -425,7 +427,8 @@ static dbgMutLog_t *dbgMutLogFindFromBack(pthread_mutex_t *pmut, dbgMutLog_t *pL
 	if(pLast == NULL)
 		pLog = dbgMutLogListLast;
 	else
-		pLog = pLast->pPrev; /* if we get the last processed one, we need to go one before it, else its an endless loop */
+		pLog = pLast->pPrev; /* if we get the last processed one, we need to go one before
+					it, else its an endless loop */
 
 	while(pLog != NULL) {
 		if(pLog->mut == pmut) {
@@ -470,7 +473,8 @@ dbgMutexPreLockLog(pthread_mutex_t *pmut, dbgFuncDB_t *pFuncDB, int ln)
 		pszHolder = "[NONE]";
 	else {
 		dbgGetThrdName(pszHolderThrdName, sizeof(pszHolderThrdName), pHolder->thrd, 1);
-		snprintf(pszBuf, sizeof(pszBuf), "%s:%d [%s]", pHolder->pFuncDB->file, pHolder->lockLn, pszHolderThrdName);
+		snprintf(pszBuf, sizeof(pszBuf), "%s:%d [%s]", pHolder->pFuncDB->file,
+			pHolder->lockLn, pszHolderThrdName);
 		pszHolder = pszBuf;
 	}
 
@@ -634,21 +638,6 @@ dbgFuncDB_t *pFuncDB, int ln, int iStackPtr)
 /* ------------------------- end mutex tracking code ------------------------- */ 
 
 
-/* ------------------------- malloc/free tracking code ------------------------- */ 
-
-/* wrapper for free() */
-void dbgFree(void *pMem, dbgFuncDB_t *pFuncDB, int ln, int iStackPtr)
-{
-	dbgRecordExecLocation(iStackPtr, ln);
-	if(bLogAllocFree) {
-		dbgprintf("%s:%d:%s: free %p\n", pFuncDB->file, ln, pFuncDB->func, (void*) pMem);
-	}
-	free(pMem);
-}
-
-
-/* ------------------------- end malloc/free tracking code ------------------------- */ 
-
 /* ------------------------- thread tracking code ------------------------- */ 
 
 /* get ptr to call stack - if none exists, create a new stack
@@ -757,7 +746,8 @@ static void dbgCallStackPrint(dbgThrdInfo_t *pThrd)
 	dbgprintf("\n");
 	dbgprintf("Recorded Call Order for Thread '%s':\n", pszThrdName);
 	for(i = 0 ; i < pThrd->stackPtr ; i++) {
-		dbgprintf("%d: %s:%d:%s:\n", i, pThrd->callStack[i]->file, pThrd->lastLine[i], pThrd->callStack[i]->func);
+		dbgprintf("%d: %s:%d:%s:\n", i, pThrd->callStack[i]->file, pThrd->lastLine[i],
+			pThrd->callStack[i]->func);
 	}
 	dbgprintf("maximum number of nested calls for this thread: %d.\n", pThrd->stackPtrMax);
 	dbgprintf("NOTE: not all calls may have been recorded, code does not currently guarantee that!\n");
@@ -875,14 +865,17 @@ do_dbgprint(uchar *pszObjName, char *pszMsg, const char *pszFileName, size_t len
 			offsWriteBuf += lenWriteBuf;
 		}
 
-		lenWriteBuf = snprintf(pszWriteBuf + offsWriteBuf, sizeof(pszWriteBuf) - offsWriteBuf, "%s: ", pszThrdName);
+		lenWriteBuf = snprintf(pszWriteBuf + offsWriteBuf, sizeof(pszWriteBuf) - offsWriteBuf,
+				"%s: ", pszThrdName);
 		offsWriteBuf += lenWriteBuf;
 		/* print object name header if we have an object */
 		if(pszObjName != NULL) {
-			lenWriteBuf = snprintf(pszWriteBuf + offsWriteBuf, sizeof(pszWriteBuf) - offsWriteBuf, "%s: ", pszObjName);
+			lenWriteBuf = snprintf(pszWriteBuf + offsWriteBuf, sizeof(pszWriteBuf) - offsWriteBuf,
+					"%s: ", pszObjName);
 			offsWriteBuf += lenWriteBuf;
 		}
-		lenWriteBuf = snprintf(pszWriteBuf + offsWriteBuf, sizeof(pszWriteBuf) - offsWriteBuf, "%s: ", pszFileName);
+		lenWriteBuf = snprintf(pszWriteBuf + offsWriteBuf, sizeof(pszWriteBuf) - offsWriteBuf,
+			"%s: ", pszFileName);
 		offsWriteBuf += lenWriteBuf;
 	}
 #endif
@@ -902,16 +895,22 @@ do_dbgprint(uchar *pszObjName, char *pszMsg, const char *pszFileName, size_t len
 	bWasNL = (pszMsg[lenMsg - 1] == '\n') ? 1 : 0;
 }
 
-#if !defined(_AIX)
-#pragma GCC diagnostic ignored "-Wunknown-pragmas"
-#pragma GCC diagnostic ignored "-Wempty-body"
-#pragma GCC diagnostic ignored "-Wclobbered"
-#endif
+static void
+dbgprintfWithCancelHdlr(uchar *const pszObjName, char *pszMsg,
+	const char *pszFileName, const size_t lenMsg)
+{
+	pthread_mutex_lock(&mutdbgprint);
+	pthread_cleanup_push(dbgMutexCancelCleanupHdlr, &mutdbgprint);
+	do_dbgprint(pszObjName, pszMsg, pszFileName, lenMsg);
+	pthread_cleanup_pop(1);
+}
 /* write the debug message. This is a helper to dbgprintf and dbgoprint which
  * contains common code. added 2008-09-26 rgerhards
+ * Note: We need to split the function due to the bad nature of POSIX
+ * cancel cleanup handlers.
  */
 static void DBGL_UNUSED
-dbgprint(obj_t *pObj, char *pszMsg, const char *pszFileName, size_t lenMsg)
+dbgprint(obj_t *pObj, char *pszMsg, const char *pszFileName, const size_t lenMsg)
 {
 	uchar *pszObjName = NULL;
 
@@ -925,17 +924,8 @@ dbgprint(obj_t *pObj, char *pszMsg, const char *pszFileName, size_t lenMsg)
 		pszObjName = obj.GetName(pObj);
 	}
 
-	pthread_mutex_lock(&mutdbgprint);
-	pthread_cleanup_push(dbgMutexCancelCleanupHdlr, &mutdbgprint);
-
-	do_dbgprint(pszObjName, pszMsg, pszFileName, lenMsg);
-
-	pthread_cleanup_pop(1);
+	dbgprintfWithCancelHdlr(pszObjName, pszMsg, pszFileName, lenMsg);
 }
-#if !defined(_AIX)
-#pragma GCC diagnostic warning "-Wempty-body"
-#pragma GCC diagnostic warning "-Wclobbered"
-#endif 
 
 static int DBGL_UNUSED
 checkDbgFile(const char *srcname)
@@ -1068,7 +1058,8 @@ int dbgEntrFunc(dbgFuncDB_t **ppFuncDB, const char *file, const char *func, int 
 		 * yet see any need to handle these questions, so duplicaton seems to be the right
 		 * thing to do. -- rgerhards, 2008-03-10
 		 */
-		/* dbgprintf("%s:%d:%s: called first time, initializing FuncDB\n", pFuncDB->file, pFuncDB->line, pFuncDB->func); */
+		/* dbgprintf("%s:%d:%s: called first time, initializing FuncDB\n", pFuncDB->file,
+			pFuncDB->line, pFuncDB->func); */
 		/* get a new funcDB and add it to the list (all of this is protected by the mutex) */
 		pthread_mutex_lock(&mutFuncDBList);
 		if((pFuncDBListEntry = calloc(1, sizeof(dbgFuncDBListEntry_t))) == NULL) {
@@ -1158,14 +1149,16 @@ void dbgExitFunc(dbgFuncDB_t *pFuncDB, int iStackPtrRestore, int iRet)
 	if(bLogFuncFlow && dbgPrintNameIsInList((const uchar*)pFuncDB->file, printNameFileRoot)) {
 		if(strcmp(pFuncDB->file, "stringbuf.c")) {	/* TODO: make configurable */
 			if(iRet == RS_RET_NO_IRET)
-				dbgprintf("%s:%d: %s: exit: (no iRet)\n", pFuncDB->file, pFuncDB->line, pFuncDB->func);
+				dbgprintf("%s:%d: %s: exit: (no iRet)\n", pFuncDB->file, pFuncDB->line,
+					pFuncDB->func);
 			else 
 				dbgprintf("%s:%d: %s: exit: %d\n", pFuncDB->file, pFuncDB->line, pFuncDB->func, iRet);
 		}
 	}
 	pThrd->stackPtr = iStackPtrRestore;
 	if(pThrd->stackPtr < 0) {
-		dbgprintf("Stack pointer for thread %lx below 0 - resetting (some RETiRet still wrong!)\n", (long) pthread_self());
+		dbgprintf("Stack pointer for thread %lx below 0 - resetting (some RETiRet still wrong!)\n",
+			(long) pthread_self());
 		pThrd->stackPtr = 0;
 	}
 }
@@ -1307,20 +1300,6 @@ dbgPrintNameIsInList(const uchar *pName, dbgPrintName_t *pRoot)
 }
 
 
-/* this is a special version of malloc that fills the alloced memory with
- * HIGHVALUE, as this helps to identify bugs. -- rgerhards, 2009-10-22
- */
-void *
-dbgmalloc(size_t size)
-{
-	void *pRet;
-	pRet = malloc(size);
-	if(pRet != NULL)
-		memset(pRet, 0xff, size);
-	return pRet;
-}
-
-
 /* report fd used for debug log. This is needed in case of
  * auto-backgrounding, where the debug log shall not be closed.
  */
@@ -1346,8 +1325,8 @@ dbgGetRuntimeOptions(void)
 		while(dbgGetRTOptNamVal(&pszOpts, &optname, &optval)) {
 			if(!strcasecmp((char*)optname, "help")) {
 				fprintf(stderr,
-					"rsyslogd " VERSION " runtime debug support - help requested, rsyslog terminates\n\n"
-					"environment variables:\n"
+					"rsyslogd " VERSION " runtime debug support - help requested, "
+					"rsyslog terminates\n\nenvironment variables:\n"
 					"addional logfile: export RSYSLOG_DEBUGFILE=\"/path/to/file\"\n"
 					"to set: export RSYSLOG_DEBUG=\"cmd cmd cmd\"\n\n"
 					"Commands are (all case-insensitive):\n"
@@ -1397,16 +1376,16 @@ dbgGetRuntimeOptions(void)
 				bOutputTidToStderr = 1;
 			} else if(!strcasecmp((char*)optname, "filetrace")) {
 				if(*optval == '\0') {
-					fprintf(stderr, "rsyslogd " VERSION " error: logfile debug option requires filename, "
-						"e.g. \"logfile=debug.c\"\n");
+					fprintf(stderr, "rsyslogd " VERSION " error: logfile debug option requires "
+					"filename, e.g. \"logfile=debug.c\"\n");
 					exit(1);
 				} else {
 					/* create new entry and add it to list */
 					dbgPrintNameAdd(optval, &printNameFileRoot);
 				}
 			} else {
-				fprintf(stderr, "rsyslogd " VERSION " error: invalid debug option '%s', value '%s' - ignored\n",
-					optval, optname);
+				fprintf(stderr, "rsyslogd " VERSION " error: invalid debug option '%s', "
+					"value '%s' - ignored\n", optval, optname);
 			}
 		}
 	}
@@ -1475,8 +1454,10 @@ rsRetVal dbgClassInit(void)
 
 	if(pszAltDbgFileName != NULL) {
 		/* we have a secondary file, so let's open it) */
-		if((altdbg = open(pszAltDbgFileName, O_WRONLY|O_CREAT|O_TRUNC|O_NOCTTY|O_CLOEXEC, S_IRUSR|S_IWUSR)) == -1) {
-			fprintf(stderr, "alternate debug file could not be opened, ignoring. Error: %s\n", strerror(errno));
+		if((altdbg = open(pszAltDbgFileName, O_WRONLY|O_CREAT|O_TRUNC|O_NOCTTY|O_CLOEXEC, S_IRUSR|S_IWUSR))
+		== -1) {
+			fprintf(stderr, "alternate debug file could not be opened, ignoring. Error: %s\n",
+				strerror(errno));
 		}
 	}
 

@@ -79,29 +79,52 @@ static prop_t *staticErrValue;
 static unsigned int
 hash_from_key_fn(void *k) 
 {
-    int len;
-    uchar *rkey = (uchar*) k; /* we treat this as opaque bytes */
-    unsigned hashval = 1;
+	int len = 0;
+	uchar *rkey; /* we treat this as opaque bytes */
+	unsigned hashval = 1;
 
-    len = SALEN((struct sockaddr*)k);
-    while(len--)
-        hashval = hashval * 33 + *rkey++;
+	switch (((struct sockaddr *)k)->sa_family) {
+		case AF_INET:
+			len = sizeof (struct in_addr);
+			rkey = (uchar*) &(((struct sockaddr_in *)k)->sin_addr);
+			break;
+		case AF_INET6:
+			len = sizeof (struct in6_addr);
+			rkey = (uchar*) &(((struct sockaddr_in6 *)k)->sin6_addr);
+			break;
+	}
+	while(len--)
+		hashval = hashval * 33 + *rkey++;
 
-    return hashval;
+	return hashval;
 }
 
 static int
 key_equals_fn(void *key1, void *key2)
 {
-	return (SALEN((struct sockaddr*)key1) == SALEN((struct sockaddr*) key2) 
-		   && !memcmp(key1, key2, SALEN((struct sockaddr*) key1)));
+	int RetVal = 0;
+
+	if (((struct sockaddr *)key1)->sa_family != ((struct sockaddr *)key2)->sa_family)
+		return 0;
+	 switch (((struct sockaddr *)key1)->sa_family) {
+		case AF_INET:
+			RetVal = !memcmp(&((struct sockaddr_in *)key1)->sin_addr,
+			&((struct sockaddr_in *)key2)->sin_addr, sizeof (struct in_addr));
+			break;
+		case AF_INET6:
+			RetVal = !memcmp(&((struct sockaddr_in6 *)key1)->sin6_addr,
+			&((struct sockaddr_in6 *)key2)->sin6_addr, sizeof (struct in6_addr));
+			break;
+	}
+
+	return RetVal;
 }
 
 /* destruct a cache entry.
  * Precondition: entry must already be unlinked from list
  */
-static void
-entryDestruct(dnscache_entry_t *etry)
+static void ATTR_NONNULL()
+entryDestruct(dnscache_entry_t *const etry)
 {
 	if(etry->fqdn != NULL)
 		prop.Destruct(&etry->fqdn);
@@ -257,7 +280,7 @@ done:	return;
  * we should abort. For this, the return value tells the caller if the
  * message should be processed (1) or discarded (0).
  */
-static rsRetVal
+static rsRetVal ATTR_NONNULL()
 resolveAddr(struct sockaddr_storage *addr, dnscache_entry_t *etry)
 {
 	DEFiRet;
@@ -362,36 +385,43 @@ finalize_it:
 }
 
 
-static rsRetVal
-addEntry(struct sockaddr_storage *addr, dnscache_entry_t **pEtry)
+static rsRetVal ATTR_NONNULL()
+addEntry(struct sockaddr_storage *const addr, dnscache_entry_t **const pEtry)
 {
 	int r;
-	struct sockaddr_storage *keybuf;
+	struct sockaddr_storage *keybuf = NULL;
 	dnscache_entry_t *etry = NULL;
 	DEFiRet;
 
+	pthread_rwlock_wrlock(&dnsCache.rwlock);
+	/* first check, if the entry was added in the mean time */
+	etry = findEntry(addr);
+	if(etry != NULL) {
+		FINALIZE;
+	}
+
+	/* entry still does not exist, so add it */
 	CHKmalloc(etry = MALLOC(sizeof(dnscache_entry_t)));
+	CHKmalloc(keybuf = malloc(sizeof(struct sockaddr_storage)));
 	CHKiRet(resolveAddr(addr, etry));
 	memcpy(&etry->addr, addr, SALEN((struct sockaddr*) addr));
 	etry->nUsed = 0;
-	*pEtry = etry;
 
-	CHKmalloc(keybuf = malloc(sizeof(struct sockaddr_storage)));
 	memcpy(keybuf, addr, sizeof(struct sockaddr_storage));
 
-	pthread_rwlock_unlock(&dnsCache.rwlock); /* release read lock */
-	pthread_rwlock_wrlock(&dnsCache.rwlock); /* and re-aquire for writing */
-	r = hashtable_insert(dnsCache.ht, keybuf, *pEtry);
+	r = hashtable_insert(dnsCache.ht, keybuf, etry);
+	keybuf = NULL;
 	if(r == 0) {
 		DBGPRINTF("dnscache: inserting element failed\n");
 	}
-	pthread_rwlock_unlock(&dnsCache.rwlock);
-	pthread_rwlock_rdlock(&dnsCache.rwlock); /* we need this again */
 
 finalize_it:
-	if(iRet != RS_RET_OK && etry != NULL) {
-		/* Note: sub-fields cannot be populated in this case */
-		free(etry);
+	pthread_rwlock_unlock(&dnsCache.rwlock);
+	if(iRet == RS_RET_OK) {
+		*pEtry = etry;
+	} else {
+		free(keybuf);
+		free(etry); /* Note: sub-fields cannot be populated in this case */
 	}
 	RETiRet;
 }
@@ -421,13 +451,19 @@ dnscacheLookup(struct sockaddr_storage *addr, prop_t **fqdn, prop_t **fqdnLowerC
 	DEFiRet;
 
 	pthread_rwlock_rdlock(&dnsCache.rwlock); /* TODO: optimize this! */
-	etry = findEntry(addr);
-	dbgprintf("dnscache: entry %p found\n", etry);
-	if(etry == NULL) {
-		CHKiRet(addEntry(addr, &etry));
-	} else {
-		CHKiRet(validateEntry(etry, addr));
-	}
+	do {
+		etry = findEntry(addr);
+		dbgprintf("dnscache: entry %p found\n", etry);
+		if(etry == NULL) {
+			pthread_rwlock_unlock(&dnsCache.rwlock);
+			iRet = addEntry(addr, &etry);
+			pthread_rwlock_rdlock(&dnsCache.rwlock); /* TODO: optimize this! */
+			CHKiRet(iRet);
+		} else {
+			CHKiRet(validateEntry(etry, addr));
+		}
+	} while(etry == NULL);
+
 	prop.AddRef(etry->ip);
 	*ip = etry->ip;
 	if(fqdn != NULL) {

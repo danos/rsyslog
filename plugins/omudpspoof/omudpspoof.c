@@ -425,7 +425,8 @@ UDPSend(wrkrInstanceData_t *pWrkrData, uchar *pszSourcename, char *msg, size_t l
 			pWrkrData->libnet_handle,	/* libnet handle */
 			udp);			/* libnet id */
 		if (udp == -1) {
-			DBGPRINTF("omudpspoof: can't build UDP header: %s\n", libnet_geterror(pWrkrData->libnet_handle));
+			DBGPRINTF("omudpspoof: can't build UDP header: %s\n",
+				libnet_geterror(pWrkrData->libnet_handle));
 		}
 
 		ip = libnet_build_ipv4(
@@ -443,7 +444,8 @@ UDPSend(wrkrInstanceData_t *pWrkrData, uchar *pszSourcename, char *msg, size_t l
 			pWrkrData->libnet_handle,		/* libnet handle */
 			ip);				/* libnet id */
 		if (ip == -1) {
-			DBGPRINTF("omudpspoof: can't build IP header: %s\n", libnet_geterror(pWrkrData->libnet_handle));
+			DBGPRINTF("omudpspoof: can't build IP header: %s\n",
+				libnet_geterror(pWrkrData->libnet_handle));
 		}
 
 		/* Write it to the wire. */
@@ -497,13 +499,15 @@ UDPSend(wrkrInstanceData_t *pWrkrData, uchar *pszSourcename, char *msg, size_t l
 				pWrkrData->libnet_handle,		/* libnet handle */
 				ip);				/* libnet id */
 			if (ip == -1) {
-				DBGPRINTF("omudpspoof: can't build IP fragment header: %s\n", libnet_geterror(pWrkrData->libnet_handle));
+				DBGPRINTF("omudpspoof: can't build IP fragment header: %s\n",
+					libnet_geterror(pWrkrData->libnet_handle));
 			}
 			/* Write it to the wire. */
 			lsent = libnet_write(pWrkrData->libnet_handle);
 			if(lsent != (int) (LIBNET_IPV4_H+pktLen)) {
 				DBGPRINTF("omudpspoof: fragment write error len %d, sent %d: %s\n",
-					  (int) (LIBNET_IPV4_H+LIBNET_UDP_H+len), lsent, libnet_geterror(pWrkrData->libnet_handle));
+					  (int) (LIBNET_IPV4_H+LIBNET_UDP_H+len), lsent,
+						libnet_geterror(pWrkrData->libnet_handle));
 				bSendSuccess = RSFALSE;
 				continue;
 			}
@@ -703,7 +707,8 @@ CODE_STD_STRING_REQUESTparseSelectorAct(2)
 						    : cs.pszSourceNameTemplate;
 
 	if(cs.pszTargetHost == NULL) {
-		errmsg.LogError(0, NO_ERRCODE, "No $ActionOMUDPSpoofTargetHost given, can not continue with this action.");
+		errmsg.LogError(0, NO_ERRCODE, "No $ActionOMUDPSpoofTargetHost given, can not continue "
+			"with this action.");
 		ABORT_FINALIZE(RS_RET_HOST_NOT_SPECIFIED);
 	}
 

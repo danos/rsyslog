@@ -69,7 +69,8 @@ struct queue_s {
 	int	iMaxQueueSize;	/* how large can the queue grow? */
 	int 	iNumWorkerThreads;/* number of worker threads to use */
 	int 	iCurNumWrkThrd;/* current number of active worker threads */
-	int	iMinMsgsPerWrkr;/* minimum nbr of msgs per worker thread, if more, a new worker is started until max wrkrs */
+	int	iMinMsgsPerWrkr;
+	/* minimum nbr of msgs per worker thread, if more, a new worker is started until max wrkrs */
 	wtp_t	*pWtpDA;
 	wtp_t	*pWtpReg;
 	action_t *pAction;	/* for action queues, ptr to action object; for main queues unused */
@@ -207,6 +208,7 @@ rsRetVal qqueueApplyCnfParam(qqueue_t *pThis, struct nvlst *lst);
 void qqueueSetDefaultsRulesetQueue(qqueue_t *pThis);
 void qqueueSetDefaultsActionQueue(qqueue_t *pThis);
 void qqueueDbgPrint(qqueue_t *pThis);
+rsRetVal qqueueShutdownWorkers(qqueue_t *pThis);
 
 PROTOTYPEObjClassInit(qqueue);
 PROTOTYPEpropSetMeth(qqueue, iPersistUpdCnt, int);

@@ -11,7 +11,7 @@
  * e.g. search. Further refactoring and simplificytin may make
  * sense.
  *
- * Copyright (C) 2005-2016 Adiscon GmbH
+ * Copyright (C) 2005-2017 Adiscon GmbH
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -43,6 +43,7 @@
 #include "srUtils.h"
 #include "regexp.h"
 #include "errmsg.h"
+#include "unicode-helper.h"
 
 
 /* ################################################################# *
@@ -59,13 +60,16 @@ DEFobjCurrIf(regexp)
 
 
 rsRetVal
-cstrConstruct(cstr_t **ppThis)
+cstrConstruct(cstr_t **const ppThis)
 {
 	DEFiRet;
 	cstr_t *pThis;
 
 	CHKmalloc(pThis = (cstr_t*) malloc(sizeof(cstr_t)));
 	rsSETOBJTYPE(pThis, OIDrsCStr);
+	#ifndef NDEBUG
+	pThis->isFinalized = 0;
+	#endif
 	pThis->pBuf = NULL;
 	pThis->iBufSize = 0;
 	pThis->iStrLen = 0;
@@ -80,7 +84,7 @@ finalize_it:
  * rgerhards 2005-09-15
  */
 rsRetVal
-rsCStrConstructFromszStr(cstr_t **ppThis, const uchar *sz)
+rsCStrConstructFromszStr(cstr_t **const ppThis, const uchar *const sz)
 {
 	DEFiRet;
 	cstr_t *pThis;
@@ -109,7 +113,7 @@ finalize_it:
 static rsRetVal rsCStrConstructFromszStrv(cstr_t **ppThis, const char *fmt,
 va_list ap) __attribute__((format(printf,2, 0)));
 static rsRetVal
-rsCStrConstructFromszStrv(cstr_t **ppThis, const char *fmt, va_list ap)
+rsCStrConstructFromszStrv(cstr_t **const ppThis, const char *const fmt, va_list ap)
 {
 	DEFiRet;
 	cstr_t *pThis;
@@ -160,7 +164,7 @@ rsCStrConstructFromszStrf(cstr_t **ppThis, const char *fmt, ...)
  * rgerhards 2010-12-03
  */
 rsRetVal
-cstrConstructFromESStr(cstr_t **ppThis, es_str_t *str)
+cstrConstructFromESStr(cstr_t **const ppThis, es_str_t *const str)
 {
 	DEFiRet;
 	cstr_t *pThis;
@@ -186,7 +190,7 @@ finalize_it:
 /* construct from CStr object.
  * rgerhards 2005-10-18
  */
-rsRetVal rsCStrConstructFromCStr(cstr_t **ppThis, cstr_t *pFrom)
+rsRetVal rsCStrConstructFromCStr(cstr_t **const ppThis, const cstr_t *const pFrom)
 {
 	DEFiRet;
 	cstr_t *pThis;
@@ -211,12 +215,10 @@ finalize_it:
 }
 
 
-void rsCStrDestruct(cstr_t **ppThis)
+void rsCStrDestruct(cstr_t **const ppThis)
 {
-	cstr_t *pThis = *ppThis;
-
-	free(pThis->pBuf);
-	RSFREEOBJ(pThis);
+	free((*ppThis)->pBuf);
+	RSFREEOBJ(*ppThis);
 	*ppThis = NULL;
 }
 
@@ -281,7 +283,7 @@ finalize_it:
 /* append a string of known length. In this case, we make sure we do at most
  * one additional memory allocation.
  */
-rsRetVal rsCStrAppendStrWithLen(cstr_t *pThis, const uchar* psz, size_t iStrLen)
+rsRetVal rsCStrAppendStrWithLen(cstr_t *const pThis, const uchar*const  psz, const size_t iStrLen)
 {
 	DEFiRet;
 
@@ -307,7 +309,7 @@ finalize_it:
  * need to change existing code.
  * rgerhards, 2007-07-03
  */
-rsRetVal rsCStrAppendStr(cstr_t *pThis, const uchar* psz)
+rsRetVal rsCStrAppendStr(cstr_t *const pThis, const uchar*const  psz)
 {
 	return rsCStrAppendStrWithLen(pThis, psz, strlen((char*) psz));
 }
@@ -380,7 +382,7 @@ rsRetVal rsCStrSetSzStr(cstr_t *const __restrict__ pThis,
 		if(newlen > pThis->iBufSize) {
 			uchar *const newbuf = (uchar*) realloc(pThis->pBuf, newlen + 1);
 			if(newbuf == NULL) {
-				RSFREEOBJ(pThis);
+				/* we keep the old value, best we can do */
 				return RS_RET_OUT_OF_MEMORY;
 			}
 			pThis->pBuf = newbuf;
@@ -401,12 +403,8 @@ uchar*
 cstrGetSzStrNoNULL(cstr_t *const __restrict__ pThis)
 {
 	rsCHECKVALIDOBJECT(pThis, OIDrsCStr);
-
-	if(pThis->pBuf == NULL)
-		return (uchar*) "";
-
-	pThis->pBuf[pThis->iStrLen] = '\0'; /* space for this is reserved */
-	return(pThis->pBuf);
+	assert(pThis->isFinalized);
+	return (pThis->pBuf == NULL) ? (uchar*) "" : pThis->pBuf;
 }
 
 
@@ -434,6 +432,7 @@ rsRetVal cstrConvSzStrAndDestruct(cstr_t **ppThis, uchar **ppSz, int bRetNULL)
 
 	assert(ppThis != NULL);
 	pThis = *ppThis;
+	assert(pThis->isFinalized);
 	rsCHECKVALIDOBJECT(pThis, OIDrsCStr);
 	assert(ppSz != NULL);
 	assert(bRetNULL == 0 || bRetNULL == 1);
@@ -704,7 +703,7 @@ int rsCStrSzStrCmp(cstr_t *pCS1, uchar *psz, size_t iLenSz)
 		else
 			return strncmp((char*)pCS1->pBuf, (char*)psz, iLenSz);
 	else
-		return pCS1->iStrLen - iLenSz;
+		return (ssize_t) pCS1->iStrLen - (ssize_t) iLenSz;
 }
 
 
@@ -713,10 +712,12 @@ int rsCStrSzStrCmp(cstr_t *pCS1, uchar *psz, size_t iLenSz)
  * returned. Both parameters MUST be given (NULL is not allowed).
  * rgerhards 2005-09-19
  */
-int rsCStrLocateInSzStr(cstr_t *pThis, uchar *sz)
+int ATTR_NONNULL(1, 2)
+rsCStrLocateInSzStr(cstr_t *const pThis, uchar *const sz)
 {
-	int i;
-	int iMax;
+	size_t i;
+	size_t iMax;
+	size_t len_sz = ustrlen(sz);
 	int bFound;
 	rsCHECKVALIDOBJECT(pThis, OIDrsCStr);
 	assert(sz != NULL);
@@ -728,7 +729,7 @@ int rsCStrLocateInSzStr(cstr_t *pThis, uchar *sz)
 	 * the to-be-located string must be able to be present in the 
 	 * searched string (it needs its size ;)).
 	 */
-	iMax = strlen((char*)sz) - pThis->iStrLen;
+	iMax = (pThis->iStrLen >= len_sz) ? 0 : len_sz - pThis->iStrLen;
 
 	bFound = 0;
 	i = 0;
@@ -744,7 +745,7 @@ int rsCStrLocateInSzStr(cstr_t *pThis, uchar *sz)
 			++i; /* on to the next try */
 	}
 
-	return(bFound ? i : -1);
+	return(bFound ? (int) i : -1);
 }
 
 

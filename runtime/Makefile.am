@@ -87,9 +87,6 @@ librsyslog_la_SOURCES = \
 	../parse.c \
 	../parse.h \
 	\
-	sd-daemon.c \
-	sd-daemon.h \
-	\
 	hashtable.c \
 	hashtable.h \
 	hashtable_itr.c \
@@ -99,7 +96,7 @@ librsyslog_la_SOURCES = \
 	../outchannel.c \
 	../outchannel.h \
 	../template.c \
-	../template.h
+	../template.h#
 # the files with ../ we need to work on - so that they either become part of the
 # runtime or will no longer be needed. -- rgerhards, 2008-06-13
 #
@@ -201,19 +198,6 @@ if ENABLE_LIBGCRYPT
    lmcry_gcry_la_LIBADD = libgcry.la $(LIBGCRYPT_LIBS)
 endif
 
-
-#
-# support library for guardtime
-#
-if ENABLE_GUARDTIME
-   noinst_LTLIBRARIES +=  librsgt.la
-   librsgt_la_SOURCES = librsgt.c librsgt_read.c librsgt.h librsgt_common.h
-   pkglib_LTLIBRARIES += lmsig_gt.la
-   lmsig_gt_la_SOURCES = lmsig_gt.c lmsig_gt.h
-   lmsig_gt_la_CPPFLAGS = $(RSRT_CFLAGS) $(GUARDTIME_CFLAGS)
-   lmsig_gt_la_LDFLAGS = -module -avoid-version
-   lmsig_gt_la_LIBADD = librsgt.la $(GUARDTIME_LIBS)
-endif
 
 #
 # gssapi support

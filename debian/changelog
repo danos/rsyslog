@@ -1,3 +1,42 @@
+rsyslog (8.32.0-1) unstable; urgency=medium
+
+  * New upstream version 8.32.0
+  * Bump Build-Depends as per configure.ac.
+    Bump libfastjson-dev to (>= 0.99.8) and libczmq-dev to (>= 3.0.2).
+  * Disable valgrind testbench again.
+    Those tests using valgrind turned out to be too brittle. (Closes: #884305)
+  * Disable libcurl support.
+    This means that the new http_request() functionality is not available
+    but avoids a dependency on libcurl in rsyslog core.
+  * Update Vcs-* to point to salsa.debian.org (gitlab)
+
+ -- Michael Biebl <biebl@debian.org>  Sun, 14 Jan 2018 12:48:11 +0100
+
+rsyslog (8.31.0-2) unstable; urgency=medium
+
+  * Add Build-Depends on systemd to allow journal related tests to run
+  * Extend list of architectures for valgrind Build-Depends.
+    Run valgrind related tests on all release architectures where valgrind
+    is available.
+  * Bump Standards-Version to 4.1.2
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 13 Dec 2017 13:09:35 +0100
+
+rsyslog (8.31.0-1) unstable; urgency=medium
+
+  * New upstream version 8.31.0
+  * Switch from libmongo-client to libmongoc
+  * Rebase patches
+  * Set Rules-Requires-Root to no
+  * Add Build-Depends on python for running the test suite
+  * Add Build-Depends on libfaketime and valgrind.
+    This allows more tests to run which would otherwise be skipped.
+    As valgrind is currently not available everywhere, restrict it to amd64
+    for now.
+  * Modernize config syntax for rsyslog-mysql and rsyslog-pgsql
+
+ -- Michael Biebl <biebl@debian.org>  Thu, 30 Nov 2017 01:19:36 +0100
+
 rsyslog (8.30.0-3~bpo9+1) stretch-backports; urgency=medium
 
   * Rebuild for stretch-backports (Closes: #878907)

@@ -9,7 +9,7 @@
  * (and in the web doc set on http://www.rsyslog.com/doc). Be sure to read it
  * if you are getting aquainted to the object.
  *
- * Copyright 2008-2016 Adiscon GmbH.
+ * Copyright 2008-2017 Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -40,6 +40,7 @@
 #include "rsyslog.h"
 #include "stringbuf.h"
 #include "srUtils.h"
+#include "errmsg.h"
 #include "wtp.h"
 #include "wti.h"
 #include "obj.h"
@@ -76,7 +77,7 @@ wtiGetDbgHdr(wti_t *pThis)
 /* return the current worker processing state. For the sake of
  * simplicity, we do not use the iRet interface. -- rgerhards, 2009-07-17
  */
-sbool
+int ATTR_NONNULL()
 wtiGetState(wti_t *pThis)
 {
 	return ATOMIC_FETCH_32BIT(&pThis->bIsRunning, &pThis->mutIsRunning);
@@ -86,7 +87,7 @@ wtiGetState(wti_t *pThis)
 /* Set this thread to "always running" state (can not be unset)
  * rgerhards, 2009-07-20
  */
-rsRetVal
+rsRetVal ATTR_NONNULL()
 wtiSetAlwaysRunning(wti_t *pThis)
 {
 	ISOBJ_TYPE_assert(pThis, wti);
@@ -98,14 +99,14 @@ wtiSetAlwaysRunning(wti_t *pThis)
  * use for wtp, but we need to have it per thread instance (thus it
  * is inside wti). -- rgerhards, 2009-07-17
  */
-rsRetVal
-wtiSetState(wti_t *pThis, sbool bNewVal)
+rsRetVal ATTR_NONNULL()
+wtiSetState(wti_t *pThis, const int newVal)
 {
 	ISOBJ_TYPE_assert(pThis, wti);
-	if(bNewVal) {
-		ATOMIC_STORE_1_TO_INT(&pThis->bIsRunning, &pThis->mutIsRunning);
-	} else {
+	if(newVal == WRKTHRD_STOPPED) {
 		ATOMIC_STORE_0_TO_INT(&pThis->bIsRunning, &pThis->mutIsRunning);
+	} else {
+		ATOMIC_OR_INT_TO_INT(&pThis->bIsRunning, &pThis->mutIsRunning, newVal);
 	}
 	return RS_RET_OK;
 }
@@ -141,22 +142,25 @@ wtiWakeupThrd(wti_t *pThis)
  * kind of non-optimal wait is considered preferable over using condition variables.
  * rgerhards, 2008-02-26
  */
-rsRetVal
-wtiCancelThrd(wti_t *pThis)
+rsRetVal ATTR_NONNULL()
+wtiCancelThrd(wti_t *pThis, const uchar *const cancelobj)
 {
 	DEFiRet;
 
 	ISOBJ_TYPE_assert(pThis, wti);
 
-
 	if(wtiGetState(pThis)) {
+		LogMsg(0, RS_RET_ERR, LOG_WARNING, "%s: need to do cooperative cancellation "
+			"- some data may be lost, increase timeout?", cancelobj);
 		/* we first try the cooperative "cancel" interface */
 		pthread_kill(pThis->thrdID, SIGTTIN);
-		DBGPRINTF("sent SIGTTIN to worker thread %p, giving it a chance to terminate\n", (void *) pThis->thrdID);
+		DBGPRINTF("sent SIGTTIN to worker thread %p, giving it a chance to terminate\n",
+			(void *) pThis->thrdID);
 		srSleep(0, 10000);
 	}
 
 	if(wtiGetState(pThis)) {
+		LogMsg(0, RS_RET_ERR, LOG_WARNING, "%s: need to do hard cancellation", cancelobj);
 		DBGPRINTF("cooperative worker termination failed, using cancellation...\n");
 		DBGOPRINT((obj_t*) pThis, "canceling worker thread\n");
 		pthread_cancel(pThis->thrdID);
@@ -233,7 +237,7 @@ wtiConstructFinalize(wti_t *pThis)
 		  wtiGetDbgHdr(pThis), iActionNbr);
 
 	/* initialize our thread instance descriptor (no concurrency here) */
-	pThis->bIsRunning = RSFALSE; 
+	pThis->bIsRunning = WRKTHRD_STOPPED;
 
 	/* must use calloc as we need zero-init */
 	CHKmalloc(pThis->actWrkrInfo = calloc(iActionNbr, sizeof(actWrkrInfo_t)));
@@ -368,8 +372,8 @@ wtiWorker(wti_t *__restrict__ const pThis)
 			break;	/* end of loop */
 		} else if(localRet == RS_RET_IDLE) {
 			if(terminateRet == RS_RET_TERMINATE_WHEN_IDLE || bInactivityTOOccured) {
-				DBGOPRINT((obj_t*) pThis, "terminating worker terminateRet=%d, bInactivityTOOccured=%d\n",
-					  terminateRet, bInactivityTOOccured);
+				DBGOPRINT((obj_t*) pThis, "terminating worker terminateRet=%d, "
+					"bInactivityTOOccured=%d\n", terminateRet, bInactivityTOOccured);
 				break;	/* end of loop */
 			}
 			doIdleProcessing(pThis, pWtp, &bInactivityTOOccured);

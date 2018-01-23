@@ -1,5 +1,5 @@
 Don-t-create-a-database.patch
 Don-t-explicitly-link-tcpflood-against-lgcrypt.patch
-imgssapi-Incooperate-changes-from-tcpsrv-subsystem.patch
-imgssapi-Remove-outdated-iRet-value-check.patch
-imjournal-bugfix-module-did-not-work-at-all.patch
+Fix-building-with-disable-libcurl.patch
+tests-Run-rscript_http_request.sh-only-when-built-with-li.patch
+build-system-Don-t-link-core-against-libcurl-if-expl.patch

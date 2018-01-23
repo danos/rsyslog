@@ -545,7 +545,8 @@ TCPSendBufUncompressed(wrkrInstanceData_t *pWrkrData, uchar *buf, unsigned len)
 	ssize_t lenSend;
 
 	alreadySent = 0;
-	CHKiRet(netstrm.CheckConnection(pWrkrData->pNetstrm)); /* hack for plain tcp syslog - see ptcp driver for details */
+	CHKiRet(netstrm.CheckConnection(pWrkrData->pNetstrm));
+	/* hack for plain tcp syslog - see ptcp driver for details */
 
 	while(alreadySent != len) {
 		lenSend = len - alreadySent;
@@ -642,7 +643,8 @@ doZipFinish(wrkrInstanceData_t *pWrkrData)
 	pWrkrData->zstrm.avail_in = 0;
 	/* run deflate() on buffer until everything has been compressed */
 	do {
-		DBGPRINTF("in deflate() loop, avail_in %d, total_in %ld\n", pWrkrData->zstrm.avail_in, pWrkrData->zstrm.total_in);
+		DBGPRINTF("in deflate() loop, avail_in %d, total_in %ld\n", pWrkrData->zstrm.avail_in,
+			pWrkrData->zstrm.total_in);
 		pWrkrData->zstrm.avail_out = sizeof(zipBuf);
 		pWrkrData->zstrm.next_out = zipBuf;
 		zRet = deflate(&pWrkrData->zstrm, Z_FINISH);    /* no bad return value */
@@ -811,12 +813,14 @@ static rsRetVal changeToNs(instanceData *pData)
 				  pData->networkNamespace, gai_strerror(iErr));
 			ABORT_FINALIZE(RS_RET_IO_ERROR);
 		}
-		close(destinationNs);
-		free(nsPath);
 		dbgprintf("omfwd: changed to network namespace '%s'\n", pData->networkNamespace);
 	}
 
 finalize_it:
+	free(nsPath);
+	if(destinationNs >= 0) {
+		close(destinationNs);
+	}
 #else /* #ifdef HAVE_SETNS */
 		dbgprintf("omfwd: OS does not support network namespaces\n");
 #endif /* #ifdef HAVE_SETNS */

@@ -154,24 +154,13 @@ CODESTARTdoAction
 ENDdoAction
 
 
-BEGINparseSelectorAct
-CODESTARTparseSelectorAct
-CODE_STD_STRING_REQUESTparseSelectorAct(1)
-	if(strncmp((char*) p, ":mmrm1stspace:", sizeof(":mmrm1stspace:") - 1)) {
-		errmsg.LogError(0, RS_RET_LEGA_ACT_NOT_SUPPORTED,
-			"mmrm1stspace supports only v6+ config format, use: "
-			"action(type=\"mmrm1stspace\" ...)");
-	}
-	ABORT_FINALIZE(RS_RET_CONFLINE_UNPROCESSED);
-CODE_STD_FINALIZERparseSelectorAct
-ENDparseSelectorAct
-
-
 BEGINmodExit
 CODESTARTmodExit
 	objRelease(errmsg, CORE_COMPONENT);
 ENDmodExit
 
+
+NO_LEGACY_CONF_parseSelectorAct
 
 BEGINqueryEtryPt
 CODESTARTqueryEtryPt
@@ -188,5 +177,5 @@ CODESTARTmodInit
 	*ipIFVersProvided = CURR_MOD_IF_VERSION; /* we only support the current interface specification */
 CODEmodInit_QueryRegCFSLineHdlr
 	DBGPRINTF("mmrm1stspace: module compiled with rsyslog version %s.\n", VERSION);
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
+	iRet = objUse(errmsg, CORE_COMPONENT);
 ENDmodInit

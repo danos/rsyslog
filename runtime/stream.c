@@ -379,7 +379,9 @@ static rsRetVal strmOpenFile(strm_t *pThis)
 		  (pThis->tOperationsMode == STREAMMODE_READ) ? "READ" : "WRITE", pThis->fd);
 
 finalize_it:
-	if(iRet != RS_RET_OK) {
+	if(iRet == RS_RET_OK) {
+		assert(pThis->fd != -1);
+	} else {
 		if(pThis->pszCurrFName != NULL) {
 			free(pThis->pszCurrFName);
 			pThis->pszCurrFName = NULL; /* just to prevent mis-adressing down the road... */
@@ -442,7 +444,13 @@ static rsRetVal strmCloseFile(strm_t *pThis)
 	/* if we have a signature provider, we must make sure that the crypto
 	 * state files are opened and proper close processing happens. */
 	if(pThis->cryprov != NULL && pThis->fd == -1) {
-		strmOpenFile(pThis);
+		const rsRetVal localRet = strmOpenFile(pThis);
+		if(localRet != RS_RET_OK) {
+			LogError(0, localRet, "could not open file %s, this "
+				"may result in problems with encryption - "
+				"unfortunately, we cannot do anything against "
+				"this.", pThis->pszCurrFName);
+		}
 	}
 
 	/* the file may already be closed (or never have opened), so guard
@@ -682,7 +690,8 @@ static rsRetVal strmReadChar(strm_t *pThis, uchar *pC)
 	ASSERT(pThis != NULL);
 	ASSERT(pC != NULL);
 
-	/* DEV debug only: DBGOPRINT((obj_t*) pThis, "strmRead index %zd, max %zd\n", pThis->iBufPtr, pThis->iBufPtrMax); */
+	/* DEV debug only: DBGOPRINT((obj_t*) pThis, "strmRead index %zd, max %zd\n", pThis->iBufPtr,
+	pThis->iBufPtrMax); */
 	if(pThis->iUngetC != -1) {	/* do we have an "unread" char that we need to provide? */
 		*pC = pThis->iUngetC;
 		++pThis->iCurrOffs; /* one more octet read */
@@ -752,6 +761,7 @@ strmReadLine(strm_t *pThis, cstr_t **ppCStr, uint8_t mode, sbool bEscapeLF,
 
 	/* append previous message to current message if necessary */
 	if(pThis->prevLineSegment != NULL) {
+		cstrFinalize(pThis->prevLineSegment);
 		dbgprintf("readLine: have previous line segment: '%s'\n",
 			rsCStrGetSzStrNoNULL(pThis->prevLineSegment));
 		CHKiRet(cstrAppendCStr(*ppCStr, pThis->prevLineSegment));
@@ -784,11 +794,13 @@ strmReadLine(strm_t *pThis, cstr_t **ppCStr, uint8_t mode, sbool bEscapeLF,
 			} else {
 				if ((((*ppCStr)->iStrLen) > 0) ){
 					if(pThis->bPrevWasNL) {
-						rsCStrTruncate(*ppCStr, (bEscapeLF) ? 4 : 1); /* remove the prior newline */
+						rsCStrTruncate(*ppCStr, (bEscapeLF) ? 4 : 1);
+						/* remove the prior newline */
 						finished=1;
 					} else {
 						if(bEscapeLF) {
-							CHKiRet(rsCStrAppendStrWithLen(*ppCStr, (uchar*)"#012", sizeof("#012")-1));
+							CHKiRet(rsCStrAppendStrWithLen(*ppCStr, (uchar*)"#012",
+							sizeof("#012")-1));
 						} else {
 							CHKiRet(cstrAppendChar(*ppCStr, c));
 						}
@@ -796,7 +808,8 @@ strmReadLine(strm_t *pThis, cstr_t **ppCStr, uint8_t mode, sbool bEscapeLF,
 						pThis->bPrevWasNL = 1;
 					}
 				} else {
-					finished=1;  /* this is a blank line, a \n with nothing since the last complete record */
+					finished=1;  /* this is a blank line, a \n with nothing since
+							the last complete record */
 				}
 			}
 		}
@@ -812,7 +825,8 @@ strmReadLine(strm_t *pThis, cstr_t **ppCStr, uint8_t mode, sbool bEscapeLF,
                				CHKiRet(cstrAppendChar(*ppCStr, c));
                				CHKiRet(strmReadChar(pThis, &c));
 				} else {
-					finished=1;  /* this is a blank line, a \n with nothing since the last complete record */
+					finished=1;  /* this is a blank line, a \n with nothing since the
+							last complete record */
 				}
 			} else {
 				if(pThis->bPrevWasNL) {
@@ -822,7 +836,8 @@ strmReadLine(strm_t *pThis, cstr_t **ppCStr, uint8_t mode, sbool bEscapeLF,
 						pThis->bPrevWasNL = 0;
 					} else {
 						/* clean things up by putting the character we just read back into
-						 * the input buffer and removing the LF character that is currently at the
+						 * the input buffer and removing the LF character that is
+						 * currently at the
 						 * end of the output string */
 						CHKiRet(strmUnreadChar(pThis, c));
 						rsCStrTruncate(*ppCStr, (bEscapeLF) ? 4 : 1);
@@ -832,7 +847,8 @@ strmReadLine(strm_t *pThis, cstr_t **ppCStr, uint8_t mode, sbool bEscapeLF,
 					if(c == '\n') {
 						pThis->bPrevWasNL = 1;
 						if(bEscapeLF) {
-							CHKiRet(rsCStrAppendStrWithLen(*ppCStr, (uchar*)"#012", sizeof("#012")-1));
+							CHKiRet(rsCStrAppendStrWithLen(*ppCStr, (uchar*)"#012",
+							sizeof("#012")-1));
 						} else {
 							CHKiRet(cstrAppendChar(*ppCStr, c));
 						}
@@ -863,7 +879,12 @@ finalize_it:
 		if(*ppCStr != NULL) {
 			if(cstrLen(*ppCStr) > 0) {
 			/* we may have an empty string in an unsuccesfull poll or after restart! */
-				rsCStrConstructFromCStr(&pThis->prevLineSegment, *ppCStr);
+				if(rsCStrConstructFromCStr(&pThis->prevLineSegment, *ppCStr) != RS_RET_OK) {
+					/* we cannot do anything against this, but we can at least
+					 * ensure we do not have any follow-on errors.
+					 */
+					 pThis->prevLineSegment = NULL;
+				}
 			}
 			cstrDestruct(ppCStr);
 		}
@@ -959,29 +980,36 @@ strmReadMultiLine(strm_t *pThis, cstr_t **ppCStr, regex_t *preg, const sbool bEs
 					int currLineLen = cstrLen(thisLine);
 					if(currLineLen > 0) {
 						int len;
-						if((len = cstrLen(pThis->prevMsgSegment) + currLineLen) < maxMsgSize) {
+						if((len = cstrLen(pThis->prevMsgSegment) + currLineLen) <
+						maxMsgSize) {
 							CHKiRet(cstrAppendCStr(pThis->prevMsgSegment, thisLine));
 							/* we could do this faster, but for now keep it simple */
 						} else {
 							len = currLineLen-(len-maxMsgSize);
 							for(int z=0; z<len; z++) {
-								cstrAppendChar(pThis->prevMsgSegment, thisLine->pBuf[z]);
+								cstrAppendChar(pThis->prevMsgSegment,
+								thisLine->pBuf[z]);
 							}
 							finished = 1;
 							*ppCStr = pThis->prevMsgSegment;
-							CHKiRet(rsCStrConstructFromszStr(&pThis->prevMsgSegment, thisLine->pBuf+len));
+							CHKiRet(rsCStrConstructFromszStr(&pThis->prevMsgSegment,
+								thisLine->pBuf+len));
 							if(discardTruncatedMsg == 1) {
 								pThis->ignoringMsg = 1;
 							}
 							if(msgDiscardingError == 1) {
 								if(discardTruncatedMsg == 1) {
-									errmsg.LogError(0, RS_RET_ERR, "imfile error: message received is "
-											"larger than max msg size; rest of message "
-											"will not be processed");
+									errmsg.LogError(0, RS_RET_ERR,
+									"imfile error: message received is "
+									"larger than max msg size; "
+									"rest of message will not be "
+									"processed");
 								} else {
-									errmsg.LogError(0, RS_RET_ERR, "imfile error: message received is "
-											"larger than max msg size; message will be "
-											"split and processed as another message");
+									errmsg.LogError(0, RS_RET_ERR,
+									"imfile error: message received is "
+									"larger than max msg size; message "
+									"will be split and processed as "
+									"another message");
 								}
 							}
 						}
@@ -994,19 +1022,25 @@ strmReadMultiLine(strm_t *pThis, cstr_t **ppCStr, regex_t *preg, const sbool bEs
 
 finalize_it:
 	*strtOffs = pThis->strtOffs;
+	if(thisLine != NULL) {
+		cstrDestruct(&thisLine);
+	}
 	if(iRet == RS_RET_OK) {
 		pThis->strtOffs = pThis->iCurrOffs; /* we are at begin of next line */
+		cstrFinalize(*ppCStr);
 	} else {
 		if(   pThis->readTimeout
 		   && (pThis->prevMsgSegment != NULL)
 		   && (tCurr > pThis->lastRead + pThis->readTimeout)) {
-			CHKiRet(rsCStrConstructFromCStr(ppCStr, pThis->prevMsgSegment));
-			cstrDestruct(&pThis->prevMsgSegment);
-			pThis->lastRead = tCurr;
-			pThis->strtOffs = pThis->iCurrOffs; /* we are at begin of next line */
-			dbgprintf("stream: generated msg based on timeout: %s\n", cstrGetSzStrNoNULL(*ppCStr));
-				FINALIZE;
-			iRet = RS_RET_OK;
+			if(rsCStrConstructFromCStr(ppCStr, pThis->prevMsgSegment) == RS_RET_OK) {
+				cstrFinalize(*ppCStr);
+				cstrDestruct(&pThis->prevMsgSegment);
+				pThis->lastRead = tCurr;
+				pThis->strtOffs = pThis->iCurrOffs; /* we are at begin of next line */
+				dbgprintf("stream: generated msg based on timeout: %s\n",
+					cstrGetSzStrNoNULL(*ppCStr));
+				iRet = RS_RET_OK;
+			}
 		}
 	}
         RETiRet;
@@ -1069,8 +1103,8 @@ static rsRetVal strmConstructFinalize(strm_t *pThis)
 			char errStr[1024];
 			int err = errno;
 			rs_strerror_r(err, errStr, sizeof(errStr));
-			DBGPRINTF("error %d opening directory file for fsync() use - fsync for directory disabled: %s\n",
-				   errno, errStr);
+			DBGPRINTF("error %d opening directory file for fsync() use - fsync for directory "
+				"disabled: %s\n", errno, errStr);
 		}
 	}
 
@@ -1451,8 +1485,8 @@ asyncWriterThread(void *pPtr)
 					if(err != ETIMEDOUT) {
 						char errStr[1024];
 						rs_strerror_r(err, errStr, sizeof(errStr));
-						DBGPRINTF("stream async writer timeout with error (%d): %s - ignoring\n",
-							   err, errStr);
+						DBGPRINTF("stream async writer timeout with error (%d): %s - "
+							"ignoring\n", err, errStr);
 					}
 				}
 			} else {
@@ -1660,7 +1694,8 @@ doZipFinish(strm_t *pThis)
 	pThis->zstrm.avail_in = 0;
 	/* run deflate() on buffer until everything has been compressed */
 	do {
-		DBGPRINTF("in deflate() loop, avail_in %d, total_in %ld\n", pThis->zstrm.avail_in, pThis->zstrm.total_in);
+		DBGPRINTF("in deflate() loop, avail_in %d, total_in %ld\n", pThis->zstrm.avail_in,
+			pThis->zstrm.total_in);
 		pThis->zstrm.avail_out = pThis->sIOBufSize;
 		pThis->zstrm.next_out = pThis->pZipBuf;
 		zRet = zlibw.Deflate(&pThis->zstrm, Z_FINISH);    /* no bad return value */
@@ -1788,7 +1823,12 @@ strmMultiFileSeek(strm_t *pThis, unsigned int FNum, off64_t offs, off64_t *bytes
 		CHKiRet(genFileName(&pThis->pszCurrFName, pThis->pszDir, pThis->lenDir,
 				    pThis->pszFName, pThis->lenFName, pThis->iCurrFNum,
 				    pThis->iFileNumDigits));
-		stat((char*)pThis->pszCurrFName, &statBuf);
+		if(stat((char*)pThis->pszCurrFName, &statBuf) != 0) {
+			LogError(errno, RS_RET_IO_ERROR, "unexpected error doing a stat() "
+				"on file %s - further malfunctions may happen",
+				pThis->pszCurrFName);
+			ABORT_FINALIZE(RS_RET_IO_ERROR);
+		}
 		*bytesDel = statBuf.st_size;
 		DBGPRINTF("strmMultiFileSeek: detected new filenum, was %u, new %u, "
 			  "deleting '%s' (%lld bytes)\n", pThis->iCurrFNum, FNum,

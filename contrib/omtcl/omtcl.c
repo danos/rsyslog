@@ -25,6 +25,9 @@
  */
 #include "config.h"
 #include "rsyslog.h"
+/* work around gcc-7 build problems - acceptable for contributed module */
+#pragma GCC diagnostic ignored "-Wundef"
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -46,7 +49,6 @@ MODULE_TYPE_OUTPUT
 MODULE_TYPE_NOKEEP
 
 DEF_OMOD_STATIC_DATA
-DEFobjCurrIf(errmsg)
 
 typedef struct _instanceData {
 	Tcl_Interp * interp;
@@ -117,7 +119,7 @@ CODE_STD_STRING_REQUESTparseSelectorAct(1)
 	p += sizeof(":omtcl:") - 1;
 
 	if(getSubString(&p, fileName, PATH_MAX+1, ',') || getSubString(&p, buffer, 4096, ';') || !strlen(buffer)) {
-		errmsg.LogError(0, RS_RET_INVALID_PARAMS, "Invalid OmTcl parameters");
+		LogError(0, RS_RET_INVALID_PARAMS, "Invalid OmTcl parameters");
 		ABORT_FINALIZE(RS_RET_INVALID_PARAMS);
 	}
 
@@ -132,7 +134,7 @@ CODE_STD_STRING_REQUESTparseSelectorAct(1)
 
 	// TODO parse arguments: file,procname
 	if (Tcl_EvalFile(pData->interp, fileName) == TCL_ERROR) {
-		errmsg.LogError(0, RS_RET_CONFIG_ERROR, "Loading Tcl script: %s", Tcl_GetStringResult(pData->interp));
+		LogError(0, RS_RET_CONFIG_ERROR, "Loading Tcl script: %s", Tcl_GetStringResult(pData->interp));
 		ABORT_FINALIZE(RS_RET_CONFIG_ERROR);
 	}
 

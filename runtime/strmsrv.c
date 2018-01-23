@@ -127,8 +127,7 @@ doRcvData(strms_sess_t *pSess, char *buf, size_t lenBuf, ssize_t *piLenRcvd, int
 	assert(piLenRcvd != NULL);
 
 	*piLenRcvd = lenBuf;
-	CHKiRet(netstrm.Rcv(pSess->pStrm, (uchar*) buf, piLenRcvd, oserr));
-finalize_it:
+	iRet = netstrm.Rcv(pSess->pStrm, (uchar*) buf, piLenRcvd, oserr);
 	RETiRet;
 }
 
@@ -369,7 +368,8 @@ initSTRMListener(strmsrv_t *pThis, strmLstnPortList_t *pPortEntry)
 	assert(pPortEntry != NULL);
 
 	/* TODO: add capability to specify local listen address! */
-	CHKiRet(netstrm.LstnInit(pThis->pNS, (void*)pPortEntry, addStrmLstn, pPortEntry->pszPort, NULL, pThis->iSessMax));
+	CHKiRet(netstrm.LstnInit(pThis->pNS, (void*)pPortEntry, addStrmLstn, pPortEntry->pszPort,
+		NULL, pThis->iSessMax));
 
 finalize_it:
 	RETiRet;
@@ -400,7 +400,8 @@ create_strm_socket(strmsrv_t *pThis)
 		 * session table, so we can not continue. We need to free all
 		 * we have assigned so far, because we can not really use it...
 		 */
-		errmsg.LogError(0, RS_RET_ERR, "Could not initialize STRM session table, suspending STRM message reception.");
+		errmsg.LogError(0, RS_RET_ERR, "Could not initialize STRM session table, suspending STRM "
+				"message reception.");
 		ABORT_FINALIZE(RS_RET_ERR);
 	}
 
@@ -470,7 +471,8 @@ SessAccept(strmsrv_t *pThis, strmLstnPortList_t *pLstnInfo, strms_sess_t **ppSes
 		dbgprintf("%s is not an allowed sender\n", fromHostFQDN);
 		if(glbl.GetOption_DisallowWarning()) {
 			errno = 0;
-			errmsg.LogError(0, RS_RET_HOST_NOT_PERMITTED, "STRM message from disallowed sender %s discarded", fromHostFQDN);
+			errmsg.LogError(0, RS_RET_HOST_NOT_PERMITTED, "STRM message from disallowed "
+					"sender %s discarded", fromHostFQDN);
 		}
 		ABORT_FINALIZE(RS_RET_HOST_NOT_PERMITTED);
 	}
@@ -592,7 +594,8 @@ Run(strmsrv_t *pThis)
 					strms_sess.Destruct(&pThis->pSessions[iSTRMSess]);
 					break;
 				case RS_RET_RETRY:
-					/* we simply ignore retry - this is not an error, but we also have not received anything */
+					/* we simply ignore retry - this is not an error, but we also
+					have not received anything */
 					break;
 				case RS_RET_OK:
 					/* valid data received, process it! */

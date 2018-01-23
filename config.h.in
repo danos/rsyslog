@@ -111,6 +111,9 @@
    function. */
 #undef HAVE_GNUTLS_CERTIFICATE_TYPE_SET_PRIORITY
 
+/* Define to 1 if you have the <grok.h> header file. */
+#undef HAVE_GROK_H
+
 /* Define to 1 if you have the <hadoop/hdfs.h> header file. */
 #undef HAVE_HADOOP_HDFS_H
 
@@ -126,6 +129,9 @@
 /* jemalloc support is integrated. */
 #undef HAVE_JEMALLOC
 
+/* libcurl present */
+#undef HAVE_LIBCURL
+
 /* Define to 1 if you have the <libgen.h> header file. */
 #undef HAVE_LIBGEN_H
 
@@ -137,6 +143,9 @@
 
 /* Define to 1 if you have the <librdkafka/rdkafka.h> header file. */
 #undef HAVE_LIBRDKAFKA_RDKAFKA_H
+
+/* libsystemd present */
+#undef HAVE_LIBSYSTEMD
 
 /* Define to 1 if you have the <locale.h> header file. */
 #undef HAVE_LOCALE_H
@@ -182,6 +191,12 @@
 
 /* Define to 1 if you have the <paths.h> header file. */
 #undef HAVE_PATHS_H
+
+/* Define to 1 if you have the `port_create' function. */
+#undef HAVE_PORT_CREATE
+
+/* Enable FEN support for imfile */
+#undef HAVE_PORT_SOURCE_FILE
 
 /* Define to 1 if you have the `prctl' function. */
 #undef HAVE_PRCTL
@@ -437,9 +452,6 @@
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE
-
-/* Defined if runtime instrumentation mode is enabled. */
-#undef RTINST
 
 /* Define to the type of arg 1 for `select'. */
 #undef SELECT_TYPE_ARG1

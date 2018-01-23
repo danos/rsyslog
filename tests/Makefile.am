@@ -27,11 +27,17 @@ check_PROGRAMS = $(TESTRUNS) ourtail nettester tcpflood chkseq msleep randomgen 
 	diagtalker uxsockrcvr syslog_caller inputfilegen minitcpsrv \
 	omrelp_dflt_port \
 	mangle_qi
+if ENABLE_IMJOURNAL
+check_PROGRAMS += journal_print
+endif
 TESTS = $(TESTRUNS) 
 #TESTS = $(TESTRUNS) cfg.sh
 
 TESTS +=  \
-	empty-hostname.sh \
+	empty-hostname.sh 
+
+if ENABLE_TESTBENCH1
+TESTS +=  \
 	hostname-getaddrinfo-fail.sh \
 	prop-programname.sh \
 	prop-programname-with-slashes.sh \
@@ -48,9 +54,11 @@ TESTS +=  \
 	glbl_setenv_err.sh \
 	glbl_setenv_err_too_long.sh \
 	glbl_setenv.sh \
+	nested-call-shutdown.sh \
 	invalid_nested_include.sh \
 	omfwd-keepalive.sh \
 	omfile-read-only-errmsg.sh \
+	omfile-read-only.sh \
 	omfile_both_files_set.sh \
 	msgvar-concurrency.sh \
 	localvar-concurrency.sh \
@@ -79,19 +87,6 @@ TESTS +=  \
 	fac_invld4_rfc5424.sh \
 	compresssp.sh \
 	compresssp-stringtpl.sh \
-	now_family_utc.sh \
-	now-utc.sh \
-	now-utc-ymd.sh \
-	now-utc-casecmp.sh \
-	timegenerated-ymd.sh \
-	timegenerated-uxtimestamp.sh \
-	timegenerated-uxtimestamp-invld.sh \
-	timegenerated-dateordinal.sh \
-	timegenerated-dateordinal-invld.sh \
-	timegenerated-utc.sh \
-	timegenerated-utc-legacy.sh \
-	timereported-utc.sh \
-	timereported-utc-legacy.sh \
 	rawmsg-after-pri.sh \
 	rfc5424parser.sh \
 	pmrfc3164-msgFirstSpace.sh \
@@ -99,6 +94,7 @@ TESTS +=  \
 	pmrfc3164-AtSignsInHostname_off.sh \
 	pmrfc3164-tagEndingByColon.sh \
 	pmrfc3164-defaultTag.sh \
+	pmrfc3164-json.sh \
 	tcp_forwarding_tpl.sh \
 	tcp_forwarding_dflt_tpl.sh \
 	tcp_forwarding_retries.sh \
@@ -135,7 +131,6 @@ TESTS +=  \
 	sndrcv.sh \
 	sndrcv_failover.sh \
 	sndrcv_gzip.sh \
-	sndrcv_udp.sh \
 	sndrcv_udp_nonstdpt.sh \
 	sndrcv_udp_nonstdpt_v6.sh \
 	imudp_thread_hang.sh \
@@ -190,10 +185,6 @@ TESTS +=  \
 	imuxsock_logger_syssock.sh \
 	imuxsock_traillf_syssock.sh \
 	imuxsock_ccmiddle_syssock.sh \
-	imuxsock_logger_root.sh \
-	imuxsock_traillf_root.sh \
-	imuxsock_ccmiddle_root.sh \
-	imklog_permitnonkernelfacility_root.sh \
 	discard-rptdmsg.sh \
 	discard-allmark.sh \
 	discard.sh \
@@ -204,8 +195,38 @@ TESTS +=  \
 	failover-rptd.sh \
 	failover-no-rptd.sh \
 	failover-no-basic.sh \
-	rcvr_fail_restore.sh \
+	rcvr_fail_restore.sh
+if ENABLE_LIBFAKETIME
+TESTS +=  \
+	now_family_utc.sh \
+	now-utc.sh \
+	now-utc-ymd.sh \
+	now-utc-casecmp.sh \
+	timegenerated-ymd.sh \
+	timegenerated-uxtimestamp.sh \
+	timegenerated-uxtimestamp-invld.sh \
+	timegenerated-dateordinal.sh \
+	timegenerated-dateordinal-invld.sh \
+	timegenerated-utc.sh \
+	timegenerated-utc-legacy.sh \
+	timereported-utc.sh \
+	timereported-utc-legacy.sh
+if ENABLE_MMNORMALIZE
+TESTS += \
+	mmnormalize_processing_test1.sh \
+	mmnormalize_processing_test2.sh \
+	mmnormalize_processing_test3.sh \
+	mmnormalize_processing_test4.sh
+endif
+endif
+endif
+
+if ENABLE_TESTBENCH2
+TESTS +=  \
 	rscript_contains.sh \
+	rscript_bare_var_root.sh \
+	rscript_bare_var_root-empty.sh \
+	rscript_http_request.sh \
 	rscript_ipv42num.sh \
 	rscript_field.sh \
 	rscript_stop.sh \
@@ -237,8 +258,16 @@ TESTS +=  \
 	rscript_ne.sh \
 	rscript_ne_var.sh \
 	rscript_num2ipv4.sh \
+	rscript_int2Hex.sh \
 	rscript_trim.sh \
+	rscript_substring.sh \
 	rscript_format_time.sh \
+	rscript_parse_time.sh \
+	rscript_is_time.sh \
+	rscript_script_error.sh \
+	rscript_parse_json.sh \
+	rscript_previous_action_suspended.sh \
+	rscript_str2num_negative.sh \
 	mmanon_random_32_ipv4.sh \
 	mmanon_random_cons_32_ipv4.sh \
 	mmanon_recognize_ipv4.sh \
@@ -256,6 +285,8 @@ TESTS +=  \
 	mmanon_recognize_ipv6.sh \
 	mmanon_zero_64_ipv6.sh \
 	mmanon_both_modes_compatible.sh \
+	mmanon_recognize_ipembedded.sh \
+	mmanon_random_cons_128_ipembedded.sh \
 	empty-prop-comparison.sh \
 	rs_optimizer_pri.sh \
 	cee_simple.sh \
@@ -274,16 +305,15 @@ TESTS +=  \
 	lookup_table_rscript_reload.sh \
 	lookup_table_rscript_reload_without_stub.sh \
 	multiple_lookup_tables.sh
-
-if ENABLE_IP
-TESTS += \
-	tcp_forwarding_ns_tpl.sh
 endif
 
 if HAVE_VALGRIND
 TESTS +=  \
-	internal-errmsg-memleak.sh \
+	mmexternal-SegFault-vg.sh \
+	mmexternal-InvldProg-vg.sh \
+	internal-errmsg-memleak-vg.sh \
 	rscript_set_memleak-vg.sh \
+	rscript_http_request-vg.sh \
 	no-parser-vg.sh \
 	discard-rptdmsg-vg.sh \
 	discard-allmark-vg.sh \
@@ -296,7 +326,7 @@ TESTS +=  \
 	udp-msgreduc-orgmsg-vg.sh \
 	tcp-msgreduc-vg.sh \
 	rscript_field-vg.sh \
-	unused_lookup_table.sh \
+	unused_lookup_table-vg.sh \
 	lookup_table-vg.sh \
 	lookup_table_no_hup_reload-vg.sh \
 	array_lookup_table-vg.sh \
@@ -306,8 +336,37 @@ TESTS +=  \
 	lookup_table_rscript_reload-vg.sh \
 	lookup_table_rscript_reload_without_stub-vg.sh \
 	multiple_lookup_tables-vg.sh \
-	fac_local0-vg.sh
+	fac_local0-vg.sh \
+	rscript_trim-vg.sh
 endif # HAVE_VALGRIND
+
+if ENABLE_ROOT_TESTS
+TESTS +=  \
+	sndrcv_udp.sh \
+	imuxsock_logger_root.sh \
+	imuxsock_traillf_root.sh \
+	imuxsock_ccmiddle_root.sh \
+	imklog_permitnonkernelfacility_root.sh
+if ENABLE_IP
+TESTS += tcp_forwarding_ns_tpl.sh
+endif
+if ENABLE_RELP
+TESTS += sndrcv_relp_dflt_pt.sh
+endif
+if HAVE_VALGRIND
+TESTS +=  \
+	mmexternal-SegFault-empty-jroot-vg.sh
+endif
+endif
+
+if ENABLE_IMJOURNAL
+TESTS +=  \
+	imjournal-basic.sh
+if HAVE_VALGRIND
+TESTS +=  \
+	imjournal-basic-vg.sh
+endif
+endif
 
 if ENABLE_OMJOURNAL
 TESTS +=  \
@@ -348,6 +407,11 @@ TESTS += \
 #	sndrcv_kafka_multi.sh
 #	sndrcv_kafka_fail.sh
 #	sndrcv_kafka_failresume.sh
+if HAVE_VALGRIND
+TESTS += \
+	sndrcv_kafka-vg-sender.sh \
+	sndrcv_kafka-vg-rcvr.sh
+endif
 endif
 endif
 endif
@@ -356,7 +420,20 @@ if ENABLE_PGSQL
 if ENABLE_PGSQL_TESTS
 TESTS += \
 	pgsql-basic.sh \
-	pgsql-template.sh
+	pgsql-basic-cnf6.sh \
+	pgsql-basic-threads-cnf6.sh \
+	pgsql-template.sh \
+	pgsql-template-cnf6.sh \
+	pgsql-actq-mt-withpause.sh \
+	pgsql-template-threads-cnf6.sh
+if HAVE_VALGRIND
+TESTS += \
+	pgsql-basic-vg.sh \
+	pgsql-template-vg.sh \
+	pgsql-basic-cnf6-vg.sh \
+	pgsql-template-cnf6-vg.sh \
+	pgsql-actq-mt-withpause-vg.sh
+endif
 endif
 endif
 
@@ -367,7 +444,8 @@ TESTS +=  \
 	mysql-asyn.sh \
 	mysql-actq-mt.sh \
 	mysql-actq-mt-withpause.sh \
-	action-tx-single-processing.sh
+	action-tx-single-processing.sh \
+	action-tx-errfile.sh
 if HAVE_VALGRIND
 TESTS +=  \
 	mysql-basic-vg.sh \
@@ -442,6 +520,7 @@ endif
 if ENABLE_ELASTICSEARCH_TESTS
 TESTS +=  \
 	es-basic.sh \
+	es-basic-es6.0.sh \
 	es-basic-server.sh \
 	es-basic-ha.sh \
 	es-basic-bulk.sh \
@@ -450,6 +529,10 @@ TESTS +=  \
 	es-basic-errfile-popul.sh \
 	es-bulk-errfile-empty.sh \
 	es-bulk-errfile-popul.sh 
+if HAVE_VALGRIND
+TESTS += \
+	es-basic-vgthread.sh
+endif
 if ENABLE_IMFILE
 TESTS +=  \
 	es-bulk-errfile-popul-def-format.sh \
@@ -457,11 +540,18 @@ TESTS +=  \
 	es-bulk-errfile-popul-erronly-interleaved.sh \
 	es-bulk-errfile-popul-def-interleaved.sh
 endif
+if HAVE_VALGRIND
+TESTS +=  \
+	es-basic-vg.sh \
+	es-basic-bulk-vg.sh \
+	es-basic-ha-vg.sh
+endif
 endif
 
 if ENABLE_MMPSTRUCDATA
 TESTS +=  \
-	mmpstrucdata.sh
+	mmpstrucdata.sh \
+	mmpstrucdata-case.sh
 if HAVE_VALGRIND
 TESTS +=  \
 	mmpstrucdata-vg.sh \
@@ -494,11 +584,7 @@ if ENABLE_MMNORMALIZE
 TESTS += msgvar-concurrency-array.sh \
 	msgvar-concurrency-array-event.tags.sh \
 	mmnormalize_rule_from_string.sh \
-	mmnormalize_rule_from_array.sh \
-	mmnormalize_processing_test1.sh \
-	mmnormalize_processing_test2.sh \
-	mmnormalize_processing_test3.sh \
-	mmnormalize_processing_test4.sh
+	mmnormalize_rule_from_array.sh
 
 if ENABLE_IMPTCP
 TESTS +=  \
@@ -562,7 +648,8 @@ endif
 if ENABLE_GNUTLS
 TESTS +=  \
 	imtcp_conndrop_tls.sh \
-	sndrcv_tls_anon.sh \
+	sndrcv_tls_anon_hostname.sh \
+	sndrcv_tls_anon_ipv4.sh \
 	sndrcv_tls_priorityString.sh \
 	imtcp-tls-basic.sh \
 	sndrcv_tls_anon_rebind.sh
@@ -584,12 +671,12 @@ endif
 if ENABLE_RELP
 TESTS += sndrcv_relp.sh \
 	 sndrcv_relp_rebind.sh \
-         sndrcv_relp_dflt_pt.sh \
 	 imrelp-basic.sh \
 	 imrelp-manyconn.sh
 if ENABLE_GNUTLS
 TESTS += \
-         sndrcv_relp_tls.sh
+         sndrcv_relp_tls.sh \
+         relp_tls_certificate_not_found.sh
 endif
 endif
 
@@ -659,14 +746,23 @@ TESTS += \
 	imfile-wildcards.sh \
 	imfile-wildcards-dirs.sh \
 	imfile-wildcards-dirs2.sh \
-	imfile-wildcards-dirs-multi.sh \
-	imfile-wildcards-dirs-multi2.sh \
 	imfile-rename.sh
+
+# TEMPORARILY disable some imfile tests because refactoring 
+# is needed to get them to work 100% all the time.
+# alorbach, 2018-01-05
+#	imfile-wildcards-dirs-multi.sh \
+#	imfile-wildcards-dirs-multi2.sh \
+#	imfile-wildcards-dirs-multi3.sh \
+#	imfile-wildcards-dirs-multi4.sh \
+#
+
 if HAVE_VALGRIND
 TESTS += \
 	imfile-basic-vg.sh \
 	imfile-endregex-vg.sh \
-	imfile-readmode2-vg.sh
+	imfile-readmode2-vg.sh \
+	imfile-basic-vgthread.sh
 endif
 endif
 
@@ -674,7 +770,7 @@ if ENABLE_OMTCL
 TESTS += \
 	 omtcl.sh
 endif
-
+ 
 endif # if ENABLE_TESTBENCH
 
 TESTS_ENVIRONMENT = RSYSLOG_MODDIR='$(abs_top_builddir)'/runtime/.libs/
@@ -682,7 +778,7 @@ DISTCLEANFILES=rsyslog.pid
 test_files = testbench.h runtime-dummy.c
 
 EXTRA_DIST= \
-	internal-errmsg-memleak.sh \
+	internal-errmsg-memleak-vg.sh \
 	empty-hostname.sh \
 	hostname-getaddrinfo-fail.sh \
 	hostname-with-slash-pmrfc5424.sh \
@@ -692,6 +788,7 @@ EXTRA_DIST= \
 	pmrfc3164-AtSignsInHostname_off.sh \
 	pmrfc3164-tagEndingByColon.sh \
 	pmrfc3164-defaultTag.sh \
+	pmrfc3164-json.sh \
 	hostname-with-slash-dflt-invld.sh \
 	hostname-with-slash-dflt-slash-valid.sh \
 	glbl-umask.sh \
@@ -701,6 +798,11 @@ EXTRA_DIST= \
 	glbl_setenv_err.sh \
 	glbl_setenv_err_too_long.sh \
 	glbl_setenv.sh \
+	mmexternal-SegFault-vg.sh \
+	mmexternal-SegFault-empty-jroot-vg.sh \
+	testsuites/mmexternal-SegFault-mm-python.py \
+	mmexternal-InvldProg-vg.sh \
+	nested-call-shutdown.sh \
 	1.rstest 2.rstest 3.rstest err1.rstest \
 	invalid_nested_include.sh \
 	validation-run.sh \
@@ -812,6 +914,10 @@ EXTRA_DIST= \
 	testsuites/diskqueue.conf \
 	arrayqueue.sh \
 	testsuites/arrayqueue.conf \
+	rscript_http_request.sh \
+	rscript_http_request-vg.sh \
+	rscript_bare_var_root.sh \
+	rscript_bare_var_root-empty.sh \
 	rscript_contains.sh \
 	testsuites/rscript_contains.conf \
 	rscript_ipv42num.sh \
@@ -844,8 +950,17 @@ EXTRA_DIST= \
 	testsuites/rscript_ne.conf \
 	rscript_ne_var.sh \
 	rscript_num2ipv4.sh \
+	rscript_int2Hex.sh \
 	rscript_trim.sh \
+	rscript_substring.sh \
 	rscript_format_time.sh \
+	rscript_parse_time.sh \
+	rscript_parse_time_get-ts.py \
+	rscript_is_time.sh \
+	rscript_script_error.sh \
+	rscript_parse_json.sh \
+	rscript_previous_action_suspended.sh \
+	rscript_str2num_negative.sh \
 	mmanon_random_32_ipv4.sh \
 	mmanon_random_cons_32_ipv4.sh \
 	mmanon_recognize_ipv4.sh \
@@ -863,6 +978,8 @@ EXTRA_DIST= \
 	mmanon_recognize_ipv6.sh \
 	mmanon_zero_64_ipv6.sh \
 	mmanon_both_modes_compatible.sh \
+	mmanon_recognize_ipembedded.sh \
+	mmanon_random_cons_128_ipembedded.sh \
 	testsuites/rscript_ne_var.conf \
 	rscript_eq.sh \
 	testsuites/rscript_eq.conf \
@@ -949,6 +1066,8 @@ EXTRA_DIST= \
 	now-utc.sh \
 	testsuites/now-utc.conf \
 	faketime_common.sh \
+	imjournal-basic.sh \
+	imjournal-basic-vg.sh \
 	omjournal-abort-template.sh \
 	omjournal-abort-no-template.sh \
 	omjournal-basic-template.sh \
@@ -1021,7 +1140,9 @@ EXTRA_DIST= \
 	incltest_dir_wildcard.sh \
 	testsuites/incltest_dir_wildcard.conf \
 	testsuites/incltest.d/include.conf \
+	es-basic-es6.0.sh \
 	es-basic.sh \
+	es-basic-vgthread.sh \
 	testsuites/es-basic.conf \
 	es-basic-bulk.sh \
 	testsuites/es-basic-bulk.conf \
@@ -1041,6 +1162,9 @@ EXTRA_DIST= \
 	testsuites/es-bulk-errfile-popul-erronly-interleaved.conf \
 	es-bulk-errfile-popul-def-interleaved.sh \
 	testsuites/es-bulk-errfile-popul-def-interleaved.conf \
+	es-basic-vg.sh \
+	es-basic-bulk-vg.sh \
+	es-basic-ha-vg.sh \
 	linkedlistqueue.sh \
 	testsuites/linkedlistqueue.conf \
 	da-mainmsg-q.sh \
@@ -1173,6 +1297,7 @@ EXTRA_DIST= \
 	sndrcv_relp_tls.sh \
 	testsuites/sndrcv_relp_tls_sender.conf \
 	testsuites/sndrcv_relp_tls_rcvr.conf \
+	relp_tls_certificate_not_found.sh \
 	sndrcv_relp_dflt_pt.sh \
 	testsuites/sndrcv_relp_dflt_pt_rcvr.conf \
 	testsuites/sndrcv_relp_dflt_pt_sender.conf \
@@ -1196,7 +1321,8 @@ EXTRA_DIST= \
 	sndrcv_gzip.sh \
 	testsuites/sndrcv_gzip_sender.conf \
 	testsuites/sndrcv_gzip_rcvr.conf \
-	./action-tx-single-processing.sh \
+	action-tx-single-processing.sh \
+	action-tx-errfile.sh \
 	pipeaction.sh \
 	testsuites/pipeaction.conf \
 	omprog-cleanup.sh \
@@ -1285,6 +1411,7 @@ EXTRA_DIST= \
 	imfile-fileNotFoundError-parameter.sh \
 	imfile-error-not-repeated.sh \
 	imfile-basic-vg.sh \
+	imfile-basic-vgthread.sh \
 	testsuites/imfile-basic.conf \
 	imfile-endregex-timeout-none-polling.sh \
 	imfile-endregex-timeout-polling.sh \
@@ -1299,12 +1426,16 @@ EXTRA_DIST= \
 	imfile-wildcards-dirs2.sh \
 	imfile-wildcards-dirs-multi.sh \
 	imfile-wildcards-dirs-multi2.sh \
+	imfile-wildcards-dirs-multi3.sh \
+	imfile-wildcards-dirs-multi4.sh \
 	imfile-rename.sh \
 	testsuites/imfile-wildcards.conf \
 	testsuites/imfile-wildcards-simple.conf \
 	testsuites/imfile-wildcards-dirs.conf \
 	testsuites/imfile-wildcards-dirs-multi.conf \
 	testsuites/imfile-wildcards-dirs-multi2.conf \
+	testsuites/imfile-wildcards-dirs-multi3.conf \
+	testsuites/imfile-wildcards-dirs-multi4.conf \
 	dynfile_invld_async.sh \
 	dynfile_invld_sync.sh \
 	dynfile_cachemiss.sh \
@@ -1407,6 +1538,8 @@ EXTRA_DIST= \
 	mysql-actq-mt-withpause-vg.sh \
 	testsuites/mysql-actq-mt.conf \
 	sndrcv_kafka.sh \
+	sndrcv_kafka-vg-sender.sh \
+	sndrcv_kafka-vg-rcvr.sh \
 	sndrcv_kafka_multi.sh \
 	sndrcv_kafka_fail.sh \
 	sndrcv_kafka_failresume.sh \
@@ -1423,8 +1556,10 @@ EXTRA_DIST= \
 	testsuites/zoo.dep_wrk2.cfg \
 	testsuites/zoo.dep_wrk3.cfg \
 	mmpstrucdata.sh \
+	mmpstrucdata-case.sh \
 	mmpstrucdata-vg.sh \
 	testsuites/mmpstrucdata.conf \
+	testsuites/mmpstrucdata-case.conf \
 	mmpstrucdata-invalid-vg.sh \
 	testsuites/mmpstrucdata-invalid.conf \
 	libdbi-basic-vg.sh \
@@ -1535,13 +1670,14 @@ EXTRA_DIST= \
 	lookup_table_rscript_reload_without_stub.sh \
 	lookup_table_rscript_reload-vg.sh \
 	lookup_table_rscript_reload_without_stub-vg.sh \
+	rscript_trim-vg.sh \
 	testsuites/lookup_table.conf \
 	testsuites/lookup_table_no_hup_reload.conf \
 	testsuites/lookup_table_reload_stub.conf \
 	testsuites/lookup_table_reload.conf \
 	testsuites/xlate.lkp_tbl \
 	testsuites/xlate_more.lkp_tbl \
-	unused_lookup_table.sh \
+	unused_lookup_table-vg.sh \
 	lookup_table-vg.sh \
 	testsuites/unused_lookup_table.conf \
 	array_lookup_table.sh \
@@ -1588,6 +1724,7 @@ EXTRA_DIST= \
 	testsuites/imptcp_nonProcessingPoller.conf \
 	libmaxmindb.supp \
 	travis/trusty.supp \
+	linux_localtime_r.supp \
 	json_var_case.sh \
 	testsuites/json_var_case.conf \
 	cfg.sh \
@@ -1595,9 +1732,15 @@ EXTRA_DIST= \
 	sndrcv_tls_anon_rebind.sh \
 	testsuites/sndrcv_tls_anon_rebind_sender.conf \
 	testsuites/sndrcv_tls_anon_rebind_rcvr.conf \
-	sndrcv_tls_anon.sh \
-	testsuites/sndrcv_tls_anon_sender.conf \
-	testsuites/sndrcv_tls_anon_rcvr.conf \
+	sndrcv_tls_anon_hostname.sh \
+	testsuites/sndrcv_tls_anon_hostname_sender.conf \
+	testsuites/sndrcv_tls_anon_hostname_rcvr.conf \
+	sndrcv_tls_anon_ipv4.sh \
+	testsuites/sndrcv_tls_anon_ipv4_sender.conf \
+	testsuites/sndrcv_tls_anon_ipv4_rcvr.conf \
+	sndrcv_tls_anon_ipv6.sh \
+	testsuites/sndrcv_tls_anon_ipv6_sender.conf \
+	testsuites/sndrcv_tls_anon_ipv6_rcvr.conf \
 	sndrcv_tls_priorityString.sh \
 	testsuites/sndrcv_tls_priorityString_sender.conf \
 	testsuites/sndrcv_tls_priorityString_rcvr.conf \
@@ -1640,6 +1783,10 @@ minitcpsrv_LDADD = $(SOL_LIBS)
 syslog_caller_SOURCES = syslog_caller.c
 syslog_caller_CPPFLAGS = $(LIBLOGGING_STDLOG_CFLAGS)
 syslog_caller_LDADD = $(SOL_LIBS) $(LIBLOGGING_STDLOG_LIBS)
+
+journal_print_SOURCES = journal_print.c
+journal_print_CPPFLAGS = $(LIBSYSTEMD_JOURNAL_CFLAGS)
+journal_print_LDADD = $(LIBSYSTEMD_JOURNAL_LIBS)
 
 diagtalker_SOURCES = diagtalker.c
 diagtalker_LDADD = $(SOL_LIBS)

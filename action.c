@@ -63,7 +63,7 @@
  * beast.
  * rgerhards, 2011-06-15
  *
- * Copyright 2007-2017 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2007-2018 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
@@ -92,6 +92,10 @@
 #include <strings.h>
 #include <time.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 #ifdef _AIX
 #include <pthread.h>
 #endif 
@@ -122,6 +126,10 @@
 #pragma GCC diagnostic ignored "-Wswitch-enum"
 #endif
 
+#ifndef O_LARGEFILE
+#define O_LARGEFILE 0
+#endif
+
 #define NO_TIME_PROVIDED 0 /* indicate we do not provide any cached time */
 
 /* forward definitions */
@@ -134,7 +142,6 @@ static rsRetVal doSubmitToActionQNotAllMark(action_t * const pAction, wti_t * co
 DEFobjCurrIf(obj)
 DEFobjCurrIf(datetime)
 DEFobjCurrIf(module)
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(statsobj)
 DEFobjCurrIf(ruleset)
 
@@ -156,7 +163,8 @@ typedef struct configSettings_s {
 	int iActionQHighWtrMark;			/* high water mark for disk-assisted queues */
 	int iActionQLowWtrMark;				/* low water mark for disk-assisted queues */
 	int iActionQDiscardMark;			/* begin to discard messages */
-	int iActionQDiscardSeverity;			/* by default, discard nothing to prevent unintentional loss */
+	int iActionQDiscardSeverity;
+	/* by default, discard nothing to prevent unintentional loss */
 	int iActionQueueNumWorkers;			/* number of worker threads for the mm queue above */
 	uchar *pszActionQFName;				/* prefix for the main message queue file */
 	int64 iActionQueMaxFileSize;
@@ -191,11 +199,13 @@ int bActionReportSuspensionCont = 0;
 static struct cnfparamdescr cnfparamdescr[] = {
 	{ "name", eCmdHdlrGetWord, 0 }, /* legacy: actionname */
 	{ "type", eCmdHdlrString, CNFPARAM_REQUIRED }, /* legacy: actionname */
+	{ "action.errorfile", eCmdHdlrString, 0 },
 	{ "action.writeallmarkmessages", eCmdHdlrBinary, 0 }, /* legacy: actionwriteallmarkmessages */
 	{ "action.execonlyeverynthtime", eCmdHdlrInt, 0 }, /* legacy: actionexeconlyeverynthtime */
 	{ "action.execonlyeverynthtimetimeout", eCmdHdlrInt, 0 }, /* legacy: actionexeconlyeverynthtimetimeout */
 	{ "action.execonlyonceeveryinterval", eCmdHdlrInt, 0 }, /* legacy: actionexeconlyonceeveryinterval */
-	{ "action.execonlywhenpreviousissuspended", eCmdHdlrBinary, 0 }, /* legacy: actionexeconlywhenpreviousissuspended */
+	{ "action.execonlywhenpreviousissuspended", eCmdHdlrBinary, 0 },
+	/* legacy: actionexeconlywhenpreviousissuspended */
 	{ "action.repeatedmsgcontainsoriginalmsg", eCmdHdlrBinary, 0 }, /* legacy: repeatedmsgcontainsoriginalmsg */
 	{ "action.resumeretrycount", eCmdHdlrInt, 0 }, /* legacy: actionresumeretrycount */
 	{ "action.reportsuspension", eCmdHdlrBinary, 0 },
@@ -340,8 +350,12 @@ rsRetVal actionDestruct(action_t * const pThis)
 	if(pThis->pModData != NULL)
 		pThis->pMod->freeInstance(pThis->pModData);
 
+	if(pThis->fdErrFile != -1)
+		close(pThis->fdErrFile);
+	pthread_mutex_destroy(&pThis->mutErrFile);
 	pthread_mutex_destroy(&pThis->mutAction);
 	pthread_mutex_destroy(&pThis->mutWrkrDataTable);
+	free((void*)pThis->pszErrFile);
 	d_free(pThis->pszName);
 	d_free(pThis->ppTpl);
 	d_free(pThis->peParamPassing);
@@ -382,6 +396,8 @@ rsRetVal actionConstruct(action_t **ppThis)
 	pThis->iResumeInterval = 30;
 	pThis->iResumeRetryCount = 0;
 	pThis->pszName = NULL;
+	pThis->pszErrFile = NULL;
+	pThis->fdErrFile = -1;
 	pThis->bWriteAllMarkMsgs = 1;
 	pThis->iExecEveryNthOccur = 0;
 	pThis->iExecEveryNthOccurTO = 0;
@@ -395,6 +411,7 @@ rsRetVal actionConstruct(action_t **ppThis)
 	pThis->bCopyMsg = 0;
 	pThis->tLastOccur = datetime.GetTime(NULL);	/* done once per action on startup only */
 	pThis->iActionNbr = iActionNbr;
+	pthread_mutex_init(&pThis->mutErrFile, NULL);
 	pthread_mutex_init(&pThis->mutAction, NULL);
 	pthread_mutex_init(&pThis->mutWrkrDataTable, NULL);
 	INIT_ATOMIC_HELPER_MUT(pThis->mutCAS);
@@ -432,7 +449,7 @@ actionConstructFinalize(action_t *__restrict__ const pThis, struct nvlst *lst)
 		int i;
 		for(i = 0 ; i < pThis->iNumTpls ; ++i) {
 			if(pThis->peParamPassing[i] != ACT_STRING_PASSING) {
-				errmsg.LogError(0, RS_RET_INVLD_OMOD, "action '%s'(%d) is transactional but "
+				LogError(0, RS_RET_INVLD_OMOD, "action '%s'(%d) is transactional but "
 						"parameter %d "
 						"uses invalid parameter passing mode -- disabling "
 						"action. This is probably caused by a pre-v7 "
@@ -514,12 +531,12 @@ actionConstructFinalize(action_t *__restrict__ const pThis, struct nvlst *lst)
 		/* ... set some properties ... */
 #		define setQPROP(func, directive, data) \
 		CHKiRet_Hdlr(func(pThis->pQueue, data)) { \
-			errmsg.LogError(0, NO_ERRCODE, "Invalid " #directive ", \
+			LogError(0, NO_ERRCODE, "Invalid " #directive ", \
 				error %d. Ignored, running with default setting", iRet); \
 		}
 #		define setQPROPstr(func, directive, data) \
 		CHKiRet_Hdlr(func(pThis->pQueue, data, (data == NULL)? 0 : strlen((char*) data))) { \
-			errmsg.LogError(0, NO_ERRCODE, "Invalid " #directive ", \
+			LogError(0, NO_ERRCODE, "Invalid " #directive ", \
 				error %d. Ignored, running with default setting", iRet); \
 		}
 		setQPROP(qqueueSetsizeOnDiskMax, "$ActionQueueMaxDiskSpace", cs.iActionQueMaxDiskSpace);
@@ -614,8 +631,8 @@ static rsRetVal getReturnCode(action_t * const pThis, wti_t * const pWti)
 			iRet = RS_RET_OK;
 			break;
 		case ACT_STATE_ITX:
-			if(pThis->bHadAutoCommit) {
-				pThis->bHadAutoCommit = 0; /* auto-reset */
+			if(pWti->actWrkrInfo[pThis->iActionNbr].bHadAutoCommit) {
+				pWti->actWrkrInfo[pThis->iActionNbr].bHadAutoCommit = 0; /* auto-reset */
 				iRet = RS_RET_PREVIOUS_COMMITTED;
 			} else {
 				iRet = RS_RET_DEFER_COMMIT;
@@ -730,7 +747,7 @@ actionSuspend(action_t * const pThis, wti_t * const pWti)
 	   || (pThis->bReportSuspension && getActionNbrResRtry(pWti, pThis) == 0) ) {
 		ctime_r(&pThis->ttResumeRtry, timebuf);
 		timebuf[strlen(timebuf)-1] = '\0'; /* strip LF */
-		errmsg.LogMsg(0, RS_RET_SUSPENDED, LOG_WARNING,
+		LogMsg(0, RS_RET_SUSPENDED, LOG_WARNING,
 			      "action '%s' suspended (module '%s'), next retry is %s, retry nbr %d. "
 			      "There should be messages before this one giving the reason for suspension.",
 			      pThis->pszName, pThis->pMod->pszName, timebuf,
@@ -785,7 +802,7 @@ actionDoRetry(action_t * const pThis, wti_t * const pWti)
 			DBGPRINTF("actionDoRetry: %s had success RDY again (iRet=%d)\n",
 				  pThis->pszName, iRet);
 			if(pThis->bReportSuspension) {
-				errmsg.LogMsg(0, RS_RET_RESUMED, LOG_INFO, "action '%s' "
+				LogMsg(0, RS_RET_RESUMED, LOG_INFO, "action '%s' "
 					      "resumed (module '%s')",
 					      pThis->pszName, pThis->pMod->pszName);
 			}
@@ -822,8 +839,9 @@ finalize_it:
 
 
 static rsRetVal
-actionCheckAndCreateWrkrInstance(action_t * const pThis, wti_t * const pWti)
+actionCheckAndCreateWrkrInstance(action_t * const pThis, const wti_t *const pWti)
 {
+	int locked = 0;
 	DEFiRet;
 	if(pWti->actWrkrInfo[pThis->iActionNbr].actWrkrData == NULL) {
 		DBGPRINTF("wti %p: we need to create a new action worker instance for "
@@ -836,23 +854,31 @@ actionCheckAndCreateWrkrInstance(action_t * const pThis, wti_t * const pWti)
 		/* maintain worker data table -- only needed if wrkrHUP is requested! */
 
 		pthread_mutex_lock(&pThis->mutWrkrDataTable);
+		locked = 1;
 		int freeSpot;
 		for(freeSpot = 0 ; freeSpot < pThis->wrkrDataTableSize ; ++freeSpot)
 			if(pThis->wrkrDataTable[freeSpot] == NULL)
 				break;
 		if(pThis->nWrkr == pThis->wrkrDataTableSize) {
-			// TODO: check realloc, fall back to old table if it fails. Better than nothing...
-			pThis->wrkrDataTable = realloc(pThis->wrkrDataTable,
+			void *const newTable = realloc(pThis->wrkrDataTable,
 				(pThis->wrkrDataTableSize + 1) * sizeof(void*));
+			if(newTable == NULL) {
+				DBGPRINTF("actionCheckAndCreateWrkrInstance: out of "
+					"memory realloc wrkrDataTable\n")
+				ABORT_FINALIZE(RS_RET_OUT_OF_MEMORY);
+			}
+			pThis->wrkrDataTable = newTable;
 			pThis->wrkrDataTableSize++;
 		}
 		pThis->wrkrDataTable[freeSpot] = pWti->actWrkrInfo[pThis->iActionNbr].actWrkrData;
 		pThis->nWrkr++;
-		pthread_mutex_unlock(&pThis->mutWrkrDataTable);
 		DBGPRINTF("wti %p: created action worker instance %d for "
 			  "action %d\n", pWti, pThis->nWrkr, pThis->iActionNbr);
 	}
 finalize_it:
+	if(locked) {
+		pthread_mutex_unlock(&pThis->mutWrkrDataTable);
+	}
 	RETiRet;
 }
 
@@ -975,7 +1001,8 @@ prepareDoActionParams(action_t * __restrict__ const pAction,
 				CHKiRet(tplToJSON(pAction->ppTpl[i], pMsg, &json, ttNow));
 				pWrkrInfo->p.nontx.actParams[i].param = (void*) json;
 				break;
-			default:dbgprintf("software bug/error: unknown pAction->peParamPassing[%d] %d in prepareDoActionParams\n",
+			default:dbgprintf("software bug/error: unknown "
+				"pAction->peParamPassing[%d] %d in prepareDoActionParams\n",
 					  i, (int) pAction->peParamPassing[i]);
 				break;
 			}
@@ -1058,7 +1085,7 @@ handleActionExecResult(action_t *__restrict__ const pThis,
 			break;
 		case RS_RET_PREVIOUS_COMMITTED:
 			/* action state remains the same, but we had a commit. */
-			pThis->bHadAutoCommit = 1;
+			pWti->actWrkrInfo[pThis->iActionNbr].bHadAutoCommit = 1;
 			actionSetActionWorked(pThis, pWti); /* we had a successful call! */
 			break;
 		case RS_RET_DISABLE_ACTION:
@@ -1098,7 +1125,7 @@ actionCallDoAction(action_t *__restrict__ const pThis,
 	DBGPRINTF("entering actionCalldoAction(), state: %s, actionNbr %d\n",
 		  getActStateName(pThis, pWti), pThis->iActionNbr);
 
-	pThis->bHadAutoCommit = 0;
+	pWti->actWrkrInfo[pThis->iActionNbr].bHadAutoCommit = 0;
 	/* for this interface, we need to emulate the old style way
 	 * of parameter passing.
 	 */
@@ -1172,17 +1199,25 @@ doTransaction(action_t *__restrict__ const pThis, wti_t *__restrict__ const pWti
 	} else { /* note: this branch is for compatibility with old TX modules */
 		DBGPRINTF("doTransaction: action '%s', currIParam %d\n",
 			   pThis->pszName, wrkrInfo->p.tx.currIParam);
-		for(i = 0 ; i < wrkrInfo->p.tx.currIParam ; ++i) {
+		for(i = 0 ; i < nparams ; ++i) {
 			/* Note: we provide the message's base iparam - actionProcessMessage()
 			 * uses this as *base* address.
 			 */
 			iRet = actionProcessMessage(pThis,
 				&actParam(iparams, pThis->iNumTpls, i, 0), pWti);
-			if(iRet != RS_RET_DEFER_COMMIT && iRet != RS_RET_PREVIOUS_COMMITTED &&
-			   iRet != RS_RET_OK)
-				--i; /* we need to re-submit */
 			DBGPRINTF("doTransaction: action %d, processing msg %d, result %d\n",
 			   pThis->iActionNbr, i,iRet);
+			if(iRet == RS_RET_SUSPENDED) {
+				--i; /* we need to re-submit */
+				/* note: we are suspended and need to retry. In order not to
+				 * hammer the CPU, we now do a voluntarly wait of 1 second.
+				 * The rest will be handled by the standard retry handler.
+				 */
+				srSleep(1, 0);
+			} else if(iRet != RS_RET_DEFER_COMMIT && iRet != RS_RET_PREVIOUS_COMMITTED &&
+			   iRet != RS_RET_OK) {
+				FINALIZE; /* let upper peer handle the error condition! */
+			}
 		}
 	}
 finalize_it:
@@ -1193,7 +1228,7 @@ finalize_it:
 
 
 /* Commit try committing (do not handle retry processing and such) */
-static rsRetVal
+static rsRetVal ATTR_NONNULL()
 actionTryCommit(action_t *__restrict__ const pThis, wti_t *__restrict__ const pWti,
 	actWrkrIParams_t *__restrict__ const iparams, const int nparams)
 {
@@ -1203,7 +1238,6 @@ actionTryCommit(action_t *__restrict__ const pThis, wti_t *__restrict__ const pW
 	CHKiRet(actionPrepare(pThis, pWti));
 
 	CHKiRet(doTransaction(pThis, pWti, iparams, nparams));
-DBGPRINTF("actionTryCommit[%s] past doTransaction\n", pThis->pszName);
 
 	if(getActionState(pWti, pThis) == ACT_STATE_ITX) {
 		iRet = pThis->pMod->mod.om.endTransaction(pWti->actWrkrInfo[pThis->iActionNbr].actWrkrData);
@@ -1238,27 +1272,79 @@ DBGPRINTF("actionTryCommit[%s] past doTransaction\n", pThis->pszName);
 	iRet = getReturnCode(pThis, pWti);
 
 finalize_it:
-DBGPRINTF("actionTryCommit[%s] exit %d\n", pThis->pszName, iRet);
 	RETiRet;
 }
 
 /* If a transcation failed, we write the error file (if configured).
- * TODO: implement
  */
-static void
-actionWriteErrorFile(action_t *__restrict__ const pThis, wti_t *__restrict__ const pWti)
+static void ATTR_NONNULL()
+actionWriteErrorFile(action_t *__restrict__ const pThis, const rsRetVal ret,
+	actWrkrIParams_t *__restrict__ const iparams, const int nparams)
 {
-	unsigned i;
-	actWrkrInfo_t *const wrkrInfo = &(pWti->actWrkrInfo[pThis->iActionNbr]);
-	const unsigned nMsgs = wrkrInfo->p.tx.currIParam;
+	fjson_object *etry=NULL;
+	int bNeedUnlock = 0;
 
-	DBGPRINTF("action %d commit failed, writing %u messages to error file\n",
-		pThis->iActionNbr, nMsgs);
-	for(i = 0 ; i < nMsgs ; ++i) {
-		// TODO: get actual param count!
-		dbgprintf("msg %d: '%s'\n", i,
-			actParam(wrkrInfo->p.tx.iparams, 1, i, 0).param);
+	if(pThis->pszErrFile == NULL) {
+		DBGPRINTF("action %s: commit failed, no error file set, silently "
+			"discarding %d messages\n", pThis->pszName, nparams);
+		goto done;
 	}
+
+	DBGPRINTF("action %d commit failed, writing %u messages (%d tpls) to error file\n",
+		pThis->iActionNbr, nparams, pThis->iNumTpls);
+
+	pthread_mutex_lock(&pThis->mutErrFile);
+	bNeedUnlock = 1;
+
+	if(pThis->fdErrFile == -1) {
+		pThis->fdErrFile = open(pThis->pszErrFile,
+					O_WRONLY|O_CREAT|O_APPEND|O_LARGEFILE|O_CLOEXEC,
+					S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP);
+		if(pThis->fdErrFile == -1) {
+			LogError(errno, RS_RET_ERR, "action %s: error opening error file %s",
+				pThis->pszName, pThis->pszErrFile);
+			goto done;
+		}
+	}
+
+	for(int i = 0 ; i < nparams ; ++i) {
+		if((etry = fjson_object_new_object()) == NULL)
+			goto done;
+		fjson_object_object_add(etry, "action", fjson_object_new_string((char*)pThis->pszName));
+		fjson_object_object_add(etry, "status", fjson_object_new_int(ret));
+		for(int j = 0 ; j < pThis->iNumTpls ; ++j) {
+			char tplname[20];
+			snprintf(tplname, sizeof(tplname), "template%d", j);
+			tplname[sizeof(tplname)-1] = '\0';
+			fjson_object_object_add(etry, tplname,
+				fjson_object_new_string((char*)actParam(iparams, 1, i, j).param));
+		}
+
+		char *const rendered = strdup((char*)fjson_object_to_json_string(etry));
+		if(rendered == NULL)
+			goto done;
+		const size_t toWrite = strlen(rendered) + 1;
+		/* note: we use the '\0' inside the string to store a LF - we do not
+		 * otherwise need it and it safes us a copy/realloc.
+		 */
+		rendered[toWrite-1] = '\n'; /* NO LONGER A STRING! */
+		const ssize_t wrRet = write(pThis->fdErrFile, rendered, toWrite);
+		if(wrRet != (ssize_t) toWrite) {
+			LogError(errno, RS_RET_IO_ERROR,
+				"action %s: error writing errorFile %s, write returned %lld",
+				pThis->pszName, pThis->pszErrFile, (long long) wrRet);
+		}
+		free(rendered);
+
+		fjson_object_put(etry);
+		etry = NULL;
+	}
+done:
+	if(bNeedUnlock) {
+		pthread_mutex_unlock(&pThis->mutErrFile);
+	}
+	fjson_object_put(etry);
+	return;
 }
 
 
@@ -1268,19 +1354,22 @@ actionTryRemoveHardErrorsFromBatch(action_t *__restrict__ const pThis, wti_t *__
 {
 	actWrkrInfo_t *const wrkrInfo = &(pWti->actWrkrInfo[pThis->iActionNbr]);
 	const unsigned nMsgs = wrkrInfo->p.tx.currIParam;
-	actWrkrIParams_t oneParam;
+	actWrkrIParams_t oneParamSet[CONF_OMOD_NUMSTRINGS_MAXSIZE];
 	rsRetVal ret;
 	DEFiRet;
 
 	*new_nMsgs = 0;
 	for(unsigned i = 0 ; i < nMsgs ; ++i) {
 		setActionResumeInRow(pWti, pThis, 0); // make sure we do not trigger OK-as-SUSPEND handling
-		memcpy(&oneParam, &actParam(wrkrInfo->p.tx.iparams, 1, i, 0), sizeof(oneParam));
-		ret = actionTryCommit(pThis, pWti, &oneParam, 1);
-DBGPRINTF("msg %d, iRet %d, content: '%s'\n", i, ret, oneParam.param);
+		memcpy(&oneParamSet, &actParam(wrkrInfo->p.tx.iparams, pThis->iNumTpls, i, 0),
+			sizeof(actWrkrIParams_t) * pThis->iNumTpls);
+		ret = actionTryCommit(pThis, pWti, oneParamSet, 1);
 		if(ret == RS_RET_SUSPENDED) {
-			memcpy(new_iparams + *new_nMsgs, &oneParam, sizeof(oneParam));
+			memcpy(new_iparams + *new_nMsgs, &oneParamSet,
+				sizeof(actWrkrIParams_t) * pThis->iNumTpls);
 			++(*new_nMsgs);
+		} else if(ret != RS_RET_OK) {
+			actionWriteErrorFile(pThis, ret, oneParamSet, 1);
 		}
 	}
 	RETiRet;
@@ -1291,7 +1380,7 @@ DBGPRINTF("msg %d, iRet %d, content: '%s'\n", i, ret, oneParam.param);
  * as it looks like there is no ultimate consumer of this code.
  * rgerhards, 2013-11-06
  */
-static rsRetVal
+static rsRetVal ATTR_NONNULL()
 actionCommit(action_t *__restrict__ const pThis, wti_t *__restrict__ const pWti)
 {
 	actWrkrInfo_t *const wrkrInfo = &(pWti->actWrkrInfo[pThis->iActionNbr]);
@@ -1310,13 +1399,6 @@ actionCommit(action_t *__restrict__ const pThis, wti_t *__restrict__ const pWti)
 	}
 	DBGPRINTF("actionCommit[%s]: processing...\n", pThis->pszName);
 
-/* even more TODO:
-	This is the place where retry processing needs to go in. If the action
-	permanently fails, we should - as a new feature - add the capability to
-	write an error file. This is already done be omelasticsearch, and IMHO
-	pretty useful.
-	rgerhards, 2013-11-04
- */
  	/* we now do one try at commiting the whole batch. Usually, this will
 	 * succeed. If so, we are happy and done. If not, we dig into the details
 	 * of finding out if we have a non-temporary error and try to handle this
@@ -1325,6 +1407,7 @@ actionCommit(action_t *__restrict__ const pThis, wti_t *__restrict__ const pWti)
 	 * do no real harm. - rgerhards, 2017-10-06
 	 */
 	iRet = actionTryCommit(pThis, pWti, wrkrInfo->p.tx.iparams, wrkrInfo->p.tx.currIParam);
+DBGPRINTF("actionCommit[%s]: return actionTryCommit %d\n", pThis->pszName, iRet);
 	if(iRet == RS_RET_OK) {
 		FINALIZE;
 	}
@@ -1344,7 +1427,8 @@ actionCommit(action_t *__restrict__ const pThis, wti_t *__restrict__ const pWti)
 		DBGPRINTF("actionCommit[%s]: somewhat unhappy, full batch of %d msgs returned "
 			"status %d. Trying messages as individual actions.\n",
 			pThis->pszName, wrkrInfo->p.tx.currIParam, iRet);
-		CHKmalloc(iparams = malloc(sizeof(actWrkrIParams_t) * wrkrInfo->p.tx.currIParam));
+		CHKmalloc(iparams = malloc(sizeof(actWrkrIParams_t) * pThis->iNumTpls
+			* wrkrInfo->p.tx.currIParam));
 		needfree_iparams = 1;
 		actionTryRemoveHardErrorsFromBatch(pThis, pWti, iparams, &nMsgs);
 	}
@@ -1372,7 +1456,7 @@ actionCommit(action_t *__restrict__ const pThis, wti_t *__restrict__ const pWti)
 			if(iRet == RS_RET_FORCE_TERM) {
 				ABORT_FINALIZE(RS_RET_FORCE_TERM);
 			} else if(iRet != RS_RET_OK) {
-				actionWriteErrorFile(pThis, pWti);
+				actionWriteErrorFile(pThis, iRet, iparams, nMsgs);
 				bDone = 1;
 			}
 			continue;
@@ -1396,7 +1480,7 @@ finalize_it:
 }
 
 /* Commit all active transactions in *DIRECT mode* */
-void
+void ATTR_NONNULL()
 actionCommitAllDirect(wti_t *__restrict__ const pWti)
 {
 	int i;
@@ -1561,7 +1645,7 @@ static rsRetVal setActionQueType(void __attribute__((unused)) *pVal, uchar *pszT
 		cs.ActionQueType = QUEUETYPE_DIRECT;
 		DBGPRINTF("action queue type set to DIRECT (no queueing at all)\n");
 	} else {
-		errmsg.LogError(0, RS_RET_INVALID_PARAMS, "unknown actionqueue parameter: %s", (char *) pszType);
+		LogError(0, RS_RET_INVALID_PARAMS, "unknown actionqueue parameter: %s", (char *) pszType);
 		iRet = RS_RET_INVALID_PARAMS;
 	}
 	d_free(pszType); /* no longer needed */
@@ -1736,9 +1820,9 @@ DEFFUNC_llExecFunc(doActivateActions)
 	BEGINfunc
 	localRet = qqueueStart(pThis->pQueue);
 	if(localRet != RS_RET_OK) {
-		errmsg.LogError(0, localRet, "error starting up action queue");
+		LogError(0, localRet, "error starting up action queue");
 		if(localRet == RS_RET_FILE_PREFIX_MISSING) {
-			errmsg.LogError(0, localRet, "file prefix (work directory?) "
+			LogError(0, localRet, "file prefix (work directory?) "
 					"is missing");
 		}
 		actionDisable(pThis);
@@ -1825,6 +1909,8 @@ actionApplyCnfParam(action_t * const pAction, struct cnfparamvals * const pvals)
 			pAction->pszName = (uchar*) es_str2cstr(pvals[i].val.d.estr, NULL);
 		} else if(!strcmp(pblk.descr[i].name, "type")) {
 			continue; /* this is handled seperately during module select! */
+		} else if(!strcmp(pblk.descr[i].name, "action.errorfile")) {
+			pAction->pszErrFile = es_str2cstr(pvals[i].val.d.estr, NULL);
 		} else if(!strcmp(pblk.descr[i].name, "action.writeallmarkmessages")) {
 			pAction->bWriteAllMarkMsgs = pvals[i].val.d.n;
 		} else if(!strcmp(pblk.descr[i].name, "action.execonlyeverynthtime")) {
@@ -1909,7 +1995,8 @@ addAction(action_t **ppAction, modInfo_t *pMod, void *pModData,
 	if(pAction->iNumTpls > 0) {
 		/* we first need to create the template arrays */
 		CHKmalloc(pAction->ppTpl = (struct template **)calloc(pAction->iNumTpls, sizeof(struct template *)));
-		CHKmalloc(pAction->peParamPassing = (paramPassing_t*)calloc(pAction->iNumTpls, sizeof(paramPassing_t)));
+		CHKmalloc(pAction->peParamPassing = (paramPassing_t*)calloc(pAction->iNumTpls,
+			sizeof(paramPassing_t)));
 	}
 	
 	pAction->bUsesMsgPassingMode = 0;
@@ -1926,15 +2013,16 @@ addAction(action_t **ppAction, modInfo_t *pMod, void *pModData,
 					 " Could not find template %d '%s' - action disabled",
 					 i, pTplName);
 				errno = 0;
-				errmsg.LogError(0, RS_RET_NOT_FOUND, "%s", errMsg);
+				LogError(0, RS_RET_NOT_FOUND, "%s", errMsg);
 				ABORT_FINALIZE(RS_RET_NOT_FOUND);
 			}
 			/* check required template options */
 			if(   (iTplOpts & OMSR_RQD_TPL_OPT_SQL)
 			   && (pAction->ppTpl[i]->optFormatEscape == 0)) {
 				errno = 0;
-				errmsg.LogError(0, RS_RET_RQD_TPLOPT_MISSING, "Action disabled. To use this action, you have to specify "
-					"the SQL or stdSQL option in your template!\n");
+				LogError(0, RS_RET_RQD_TPLOPT_MISSING, "Action disabled."
+						" To use this action, you have to specify "
+						"the SQL or stdSQL option in your template!\n");
 				ABORT_FINALIZE(RS_RET_RQD_TPLOPT_MISSING);
 			}
 		}
@@ -2032,7 +2120,7 @@ actionNewInst(struct nvlst *lst, action_t **ppAction)
 	cnfparamsPrint(&pblk, paramvals);
 	cnfModName = (uchar*)es_str2cstr(paramvals[cnfparamGetIdx(&pblk, ("type"))].val.d.estr, NULL);
 	if((pMod = module.FindWithCnfName(loadConf, cnfModName, eMOD_OUT)) == NULL) {
-		errmsg.LogError(0, RS_RET_MOD_UNKNOWN, "module name '%s' is unknown", cnfModName);
+		LogError(0, RS_RET_MOD_UNKNOWN, "module name '%s' is unknown", cnfModName);
 		ABORT_FINALIZE(RS_RET_MOD_UNKNOWN);
 	}
 	CHKiRet(pMod->mod.om.newActInst(cnfModName, lst, &pModData, &pOMSR));
@@ -2059,7 +2147,6 @@ rsRetVal actionClassInit(void)
 	CHKiRet(objGetObjInterface(&obj)); /* this provides the root pointer for all other queries */
 	CHKiRet(objUse(datetime, CORE_COMPONENT));
 	CHKiRet(objUse(module, CORE_COMPONENT));
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 	CHKiRet(objUse(statsobj, CORE_COMPONENT));
 	CHKiRet(objUse(ruleset, CORE_COMPONENT));
 

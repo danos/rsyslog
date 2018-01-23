@@ -224,6 +224,7 @@ struct modConfData_s {
 	uid_t dirUID;
 	gid_t fileGID;
 	gid_t dirGID;
+	int bDynafileDoNotSuspend;
 };
 
 static modConfData_t *loadModConf = NULL;/* modConf ptr to use for the current load process */
@@ -242,6 +243,7 @@ static struct cnfparamdescr modpdescr[] = {
 	{ "fileowner", eCmdHdlrUID, 0 },
 	{ "fileownernum", eCmdHdlrInt, 0 },
 	{ "filegroup", eCmdHdlrGID, 0 },
+	{ "dynafile.donotsuspend", eCmdHdlrBinary, 0 },
 	{ "filegroupnum", eCmdHdlrInt, 0 },
 };
 static struct cnfparamblk modpblk =
@@ -609,13 +611,17 @@ prepareFile(instanceData *__restrict__ const pData, const uchar *__restrict__ co
 	/* the copies below are clumpsy, but there is no way around given the
 	 * anomalies in dirname() and basename() [they MODIFY the provided buffer...]
 	 */
-	uchar szNameBuf[MAXFNAME];
-	uchar szDirName[MAXFNAME];
-	uchar szBaseName[MAXFNAME];
+	uchar szNameBuf[MAXFNAME+1];
+	uchar szDirName[MAXFNAME+1];
+	uchar szBaseName[MAXFNAME+1];
 	ustrncpy(szNameBuf, newFileName, MAXFNAME);
+	szNameBuf[MAXFNAME] = '\0';
 	ustrncpy(szDirName, (uchar*)dirname((char*)szNameBuf), MAXFNAME);
+	szDirName[MAXFNAME] = '\0';
 	ustrncpy(szNameBuf, newFileName, MAXFNAME);
+	szNameBuf[MAXFNAME] = '\0';
 	ustrncpy(szBaseName, (uchar*)basename((char*)szNameBuf), MAXFNAME);
+	szBaseName[MAXFNAME] = '\0';
 
 	CHKiRet(strm.Construct(&pData->pStrm));
 	CHKiRet(strm.SetFName(pData->pStrm, szBaseName, ustrlen(szBaseName)));
@@ -831,9 +837,8 @@ writeFile(instanceData *__restrict__ const pData,
 		pData->nInactive = 0;
 	}
 
-	CHKiRet(doWrite(pData,
-		 	actParam(pParam, pData->iNumTpls, iMsg, 0).param,
-		 	actParam(pParam, pData->iNumTpls, iMsg, 0).lenStr));
+	iRet = doWrite(pData, actParam(pParam, pData->iNumTpls, iMsg, 0).param,
+		actParam(pParam, pData->iNumTpls, iMsg, 0).lenStr);
 
 finalize_it:
 	RETiRet;
@@ -851,6 +856,7 @@ CODESTARTbeginCnfLoad
 	pModConf->dirUID = -1;
 	pModConf->fileGID = -1;
 	pModConf->dirGID = -1;
+	pModConf->bDynafileDoNotSuspend = 1;
 ENDbeginCnfLoad
 
 BEGINsetModCnf
@@ -877,9 +883,9 @@ CODESTARTsetModCnf
 		if(!strcmp(modpblk.descr[i].name, "template")) {
 			loadModConf->tplName = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
 			if(pszFileDfltTplName != NULL) {
-				parser_errmsg("omfile: warning: default template "
-						"was already set via legacy directive - may lead to inconsistent "
-						"results.");
+				parser_errmsg("omfile: warning: default template was already "
+					"set via legacy directive - may lead to inconsistent "
+					"results.");
 			}
 		} else if(!strcmp(modpblk.descr[i].name, "dircreatemode")) {
 			loadModConf->fDirCreateMode = (int) pvals[i].val.d.n;
@@ -901,6 +907,8 @@ CODESTARTsetModCnf
 			loadModConf->fileGID = (int) pvals[i].val.d.n;
 		} else if(!strcmp(modpblk.descr[i].name, "filegroupnum")) {
 			loadModConf->fileGID = (int) pvals[i].val.d.n;
+		} else if(!strcmp(modpblk.descr[i].name, "dynafile.donotsuspend")) {
+			loadModConf->bDynafileDoNotSuspend = (int) pvals[i].val.d.n;
 		} else {
 			dbgprintf("omfile: program error, non-handled "
 			  "param '%s' in beginCnfLoad\n", modpblk.descr[i].name);
@@ -1062,10 +1070,11 @@ CODESTARTcommitTransaction
 	}
 
 finalize_it:
-	if (pData->bDynamicName &&
-	    (iRet == RS_RET_FILE_OPEN_ERROR || iRet == RS_RET_FILE_NOT_FOUND) )
-		iRet = RS_RET_OK;
 	pthread_mutex_unlock(&pData->mutWrite);
+	if(iRet == RS_RET_FILE_OPEN_ERROR || iRet == RS_RET_FILE_NOT_FOUND) {
+		iRet = (pData->bDynamicName && runModConf->bDynafileDoNotSuspend) ?
+			RS_RET_OK : RS_RET_SUSPENDED;
+	}
 ENDcommitTransaction
 
 
@@ -1573,5 +1582,3 @@ INITLegCnfVars
 	CHKiRet(omsdRegCFSLineHdlr((uchar *)"resetconfigvariables", 1, eCmdHdlrCustomHandler, resetConfigVariables,
 		NULL, STD_LOADABLE_MODULE_ID));
 ENDmodInit
-/* vi:set ai:
- */

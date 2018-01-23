@@ -31,7 +31,8 @@ local4.* :omstdout:;outfmt
 
 EXPECTED='{ "rfc3164": "Oct  5 01:10:11", "rfc3339": "2017-10-05T01:10:11Z", "rfc3164Neg": "Mar 29 22:49:49", "rfc3339Neg": "1922-03-29T22:49:49Z", "str1": "2017-10-05T01:10:11Z", "strinv1": "ABC" }'
 
-echo "$EXPECTED" | cmp -b rsyslog.out.log
+# FreeBSD's cmp does not support reading from STDIN
+cmp <(echo "$EXPECTED") rsyslog.out.log
 
 if [[ $? -ne 0 ]]; then
   printf "Invalid function output detected!\n"

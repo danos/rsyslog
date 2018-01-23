@@ -489,9 +489,10 @@ genMsg(char *buf, size_t maxBuf, int *pLenBuf, struct instdata *inst)
 		} while(!done); /* Attention: do..while()! */
 	} else if(jsonCookie != NULL) {
 		if(useRFC5424Format) {
-			*pLenBuf = snprintf(buf, maxBuf, "<%s>1 2003-03-01T01:00:00.000Z mymachine.example.com tcpflood "
-					     "- tag [tcpflood@32473 MSGNUM=\"%8.8d\"] %s{\"msgnum\":%d}%c",
-					       msgPRI, msgNum, jsonCookie, msgNum, frameDelim);
+			*pLenBuf = snprintf(buf, maxBuf, "<%s>1 2003-03-01T01:00:00.000Z mymachine.example.com "
+						"tcpflood - tag [tcpflood@32473 MSGNUM"
+						"=\"%8.8d\"] %s{\"msgnum\":%d}%c", msgPRI, msgNum,
+						jsonCookie, msgNum, frameDelim);
 		} else {
 			*pLenBuf = snprintf(buf, maxBuf, "<%s>Mar  1 01:00:00 172.20.245.8 tag %s{\"msgnum\":%d}%c",
 					       msgPRI, jsonCookie, msgNum, frameDelim);
@@ -502,12 +503,13 @@ genMsg(char *buf, size_t maxBuf, int *pLenBuf, struct instdata *inst)
 		}
 		if(extraDataLen == 0) {
 			if(useRFC5424Format) {
-				*pLenBuf = snprintf(buf, maxBuf, "<%s>1 2003-03-01T01:00:00.000Z mymachine.example.com tcpflood "
-						     "- tag [tcpflood@32473 MSGNUM=\"%8.8d\"] msgnum:%s%8.8d:%c",
-						       msgPRI, msgNum, dynFileIDBuf, msgNum, frameDelim);
+				*pLenBuf = snprintf(buf, maxBuf, "<%s>1 2003-03-01T01:00:00.000Z "
+						"mymachine.example.com tcpflood - tag [tcpflood@32473 "
+						"MSGNUM=\"%8.8d\"] msgnum:%s%8.8d:%c",
+						msgPRI, msgNum, dynFileIDBuf, msgNum, frameDelim);
 			} else {
-				*pLenBuf = snprintf(buf, maxBuf, "<%s>Mar  1 01:00:00 172.20.245.8 tag msgnum:%s%8.8d:%c",
-						       msgPRI, dynFileIDBuf, msgNum, frameDelim);
+				*pLenBuf = snprintf(buf, maxBuf, "<%s>Mar  1 01:00:00 172.20.245.8 tag "
+						"msgnum:%s%8.8d:%c", msgPRI, dynFileIDBuf, msgNum, frameDelim);
 			}
 		} else {
 			if(bRandomizeExtraData)
@@ -517,12 +519,14 @@ genMsg(char *buf, size_t maxBuf, int *pLenBuf, struct instdata *inst)
 			memset(extraData, 'X', edLen);
 			extraData[edLen] = '\0';
 			if(useRFC5424Format) {
-				*pLenBuf = snprintf(buf, maxBuf, "<%s>1 2003-03-01T01:00:00.000Z mymachine.example.com tcpflood "
-						     "- tag [tcpflood@32473 MSGNUM=\"%8.8d\"] msgnum:%s%8.8d:%c",
-						       msgPRI, msgNum, dynFileIDBuf, msgNum, frameDelim);
+				*pLenBuf = snprintf(buf, maxBuf, "<%s>1 2003-03-01T01:00:00.000Z "
+						"mymachine.example.com tcpflood - tag [tcpflood@32473 "
+						"MSGNUM=\"%8.8d\"] msgnum:%s%8.8d:%c",
+						msgPRI, msgNum, dynFileIDBuf, msgNum, frameDelim);
 			} else {
-				*pLenBuf = snprintf(buf, maxBuf, "<%s>Mar  1 01:00:00 172.20.245.8 tag msgnum:%s%8.8d:%d:%s%c",
-						       msgPRI, dynFileIDBuf, msgNum, edLen, extraData, frameDelim);
+				*pLenBuf = snprintf(buf, maxBuf, "<%s>Mar  1 01:00:00 172.20.245.8 tag msgnum"
+						":%s%8.8d:%d:%s%c", msgPRI, dynFileIDBuf, msgNum, edLen,
+						extraData, frameDelim);
 			}
 		}
 	} else {
@@ -671,8 +675,8 @@ int sendMessages(struct instdata *inst)
 					/* send remaining buffer */
 					lenSend = sendTLS(socknum, sendBuf, offsSendBuf);
 					if(lenSend != offsSendBuf) {
-						fprintf(stderr, "tcpflood: error in send function causes potential data loss "
-						"lenSend %d, offsSendBuf %d\n",
+						fprintf(stderr, "tcpflood: error in send function causes potential "
+						"data loss lenSend %d, offsSendBuf %d\n",
 						lenSend, offsSendBuf);
 					}
 					offsSendBuf = 0;
@@ -1187,6 +1191,14 @@ int main(int argc, char *argv[])
 	if(dataFile != NULL) {
 		if((dataFP = fopen(dataFile, "r")) == NULL) {
 			perror(dataFile);
+			exit(1);
+		}
+	}
+
+	if(tlsKeyFile != NULL || tlsCertFile != NULL) {
+		if(transport != TP_TLS) {
+			printf("error: TLS certificates were specified, but TLS is NOT enabled: "
+					"To enable TLS use parameter -Ttls\n");
 			exit(1);
 		}
 	}

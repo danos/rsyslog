@@ -1,12 +1,7 @@
 #!/bin/bash
 # addd 2016-10-06 by RGerhards, released under ASL 2.0
-
-uname
-if [ `uname` = "SunOS" ] ; then
-   echo "Solaris does not support inotify."
-   exit 77
-fi
-
+echo [imfile-truncate.sh]
+. $srcdir/diag.sh check-inotify
 . $srcdir/diag.sh init
 . $srcdir/diag.sh generate-conf
 . $srcdir/diag.sh add-conf '

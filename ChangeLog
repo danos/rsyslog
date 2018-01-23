@@ -1,4 +1,705 @@
 ------------------------------------------------------------------------------
+Version 8.32.0 [v8-stable] 2018-01-09
+- NEW BUILD REQUIREMENTs:
+  * libfastjson 0.99.8 is now required; older versions lead to bugs in rsyslog
+  * libczmq >= 3.0.2 is now required for omczmq
+    This was actually required for quite some while, but not properly checked
+    during configure run. If the lib was older, build failed. Now configure
+    detects this and emits the appropiate error message.
+  * libcurl is now needed for rsyslog core
+    due to new script function http_request(). This can be turned off by the
+    new configure option --disable-libcurl. If so, http_request() is not
+    available.
+- rsyslogd: add capability to specify that no pid file shall be written
+  Command line option -iNONE provides this capability. This utilizes the
+  pre-existing -i option, but uses the special name "NONE" to turn of the
+  pid file check feature. Turning off is useful for systems where this no
+  longer is needed (e.g. systemd based).
+  closes https://github.com/rsyslog/rsyslog/issues/2143
+- ompgsql: considerable enhancements
+  The PostgreSQL output module was woefully out-of-date the following
+  list is changes made to update the module to current Rsyslog standards.
+    * allow for v6 configuration syntax
+    * configurable ports
+    * support transactional interface
+    * push db connection into workers (libpq is threadsafe)
+    * enable module testing on travis
+    * ensure configuration syntax backwards compatibility
+    * formatting around postgres core templating
+    * use new test conventions
+    * add new configuration syntax test
+    * add valgrind tests for new and old syntax
+    * add threading tests
+    * add action queue long running tests
+    * add action queue valgrind test
+  Thanks to Dan Molik for contributing this great enhancement!
+- build system: removed --enable-rtinst configure option
+  This was a historic debugging option which has been superseeded by
+  newer tools like valgrind, helgrind, ASAN, TSAN, etc...
+- pmrfc3164: support for headerless messages
+  pmrfc3164 now detects if the first non-SP, non-HT character is either
+  '{' or '[' and if so assume that no header (TAG, HOSTNAME, DATE) is
+  given. If so, it uses defaults for these values. The full message is
+  used as the MSG part in that case. Note that an initial PRI may still
+  be specified.
+  This follows the trend to send JSON messages via syslog without any
+  header. We use default header values in this case.
+  This right now is a bit experimental; we may roll it back if
+  problems show up in practice.
+  closes https://github.com/rsyslog/rsyslog/issues/2030
+- omhiredis: add option to use RPUSH instead of LPUSH
+  see also https://github.com/rsyslog/rsyslog/issues/1625
+- mmexternal improvements
+  * better error reporting if to-be-executed script cannot be executed
+  * some general cleanup
+  * better redirection of stdin/out/err for the executed script
+  * bugfix: argv[0] of the script was missing if command line parameters
+    were not specified
+- omprog: refactored, code shared with mmexternal moved to common object
+- logctl tool: refactor to support newer rsyslog standards
+  * Made the logctl usertool ISO C90 compliant.
+  * Made the logctl usertool use a homogeneous coding style.
+  Thanks to Hugo Soszynski for contributing this work (as well as
+  suggesting some workarounds related to libmongoc/libbson).
+- imfile: added support for Solaris File Event notification (FEN)
+  also improves performance under Solaris, with FEN imfile provides
+  features equivalent to inotify mode
+- core/action: new parameter "action.errorfile"
+  permits to write failed messages to an "error file" so that they
+  can be reviewed and potentially be reprocessed
+- imfile: added new module parameter "sortFiles"
+  This permits to process newly created files in sorted order.
+- imuxsock: improved status reporting: socket name received from systemd
+  Providing an indication of what we got from systemd facilitates problem
+  analysis.
+- build system: added new testbench configure switches
+  now --enable-testbench1 and --enable-testbench2 exists which permit
+  to enable/disable parts of the testbench. By default, both are on
+  when --enable-testbench is given. For full testbench coverage, both
+  options must be given. These options are necessary because under
+  Travis we hit the max runtime for tests and needed to split tests
+  over multiple incarnations.
+- mmpstrucdata: new parameter "sd_name.lowercase"
+  to permit preserving case for structured data identifiers
+  Special thanks to github user alanrobson for the intial commit that
+  preseves case (on which we based other work).
+- omfile: add module-global option "dynafile.donotsuspend"
+  this permits to enable SUSPENDing dynafile actions. Traditionally,
+  SUSPEND mode was never entered for dynafiles as it would have blocked
+  overall processing flow. Default is not to suspend (and thus block).
+  closes https://github.com/rsyslog/rsyslog/issues/2236
+- testbench: add a capability to turn off libfaketime tests via configure
+  Unfortunately, libfaketime becomes more and more problematic in newer
+  versions and causes aborts on some platforms. This provides the ability
+  to turn it off via --disable-libfaketime.
+  In the longer term, we should consider writing our own replacement.
+- testbench: name valgrind tests consistently
+  all valgrind tests now end in -vg.sh
+- RainerScript: add function parse_json()
+- RainerScript: add function substring()
+- RainerScript: add function http_request()
+- RainerScript: add function previous_is_suspended()
+  This function returns a boolean indicating if the previous action is
+  suspended (0 - no, 1 - yes). This is useful if arbitrary processing
+  (other than calling actions) should be made depending on that state.
+  A prime example for this is probably calling a ruleset.
+  closes https://github.com/rsyslog/rsyslog/issues/1939
+- Patches from BSD projects have been imported
+  ... as far as they still apply. Some patches that patched BSD-specific
+  code were broadened to be more generic.
+- script bugfix: invalid function names were silently ignored
+  no error message was produced
+  thanks to Matt Ezell for providing the patch.
+- rainerscript: add int2hex() function
+- rainerscript: add is_time() function
+  Thanks to Stephen Workman for implementing this.
+- RainerScript: add function script_error() and error-reporting support
+  This permits script functions that could fail to report errors back, so
+  that the user can handle them if desired. We use an errno-style of
+  interface. That means script_error() needs to be called after functions
+  that supports it. It will return either 0 (all OK) or something else
+  (an error condition).
+  The commit also modifies the parse_time() function to use the new
+  interface. First of all, this is useful for users, and secondly we
+  needed a capability to craft a testbench test.
+  closes https://github.com/rsyslog/rsyslog/issues/1978
+- testbench: fixed build problem of testbench tools under Alpine Linux
+- added --enable-libsystemd configure option to enforce use of libsystemd
+  so we can fail the build on platforms where this is required
+- core/glbl: remove long-unused option $optimizeforuniprocessor
+  This was still available, but had no effect (for ~10 years or so). The
+  plumbing is now removed. If someone tries to use the option, an
+  error message is generated.
+  closes https://github.com/rsyslog/rsyslog/issues/2280
+- core/queue: emit better status messages at rsyslog shutdown
+  this helps to diagnose issue - unfortunately we need more work to ensure
+  that the messages always make it to the user. This is a start and
+  hopefully useful at least for the testbench, possibly more.
+- fixed a couple of build issues with gcc-7 (in less frequently used modules)
+- fixed a couple of build issues on the arm platform (actually raspbian)
+- impstats: fix invalid counter definitions for getrusage() reporting 
+  some of the counters were defined as  int (32 bit) vs. intctr_t (64 bit).
+  On some platforms "long" seems to be 64bit, and getrusage() provides
+  what we store as int via long. So this caused truncation and/or overflow.
+  This had undefined effects. Most often, everything worked fine
+  for values smaller than 2^31 but sometimes we got negative values.
+  closes https://github.com/rsyslog/rsyslog/issues/1517
+- imudp bugfix: potential segfault in ratelimiting
+  The rate-limiter inside imudp was not set to be thread safe, but was
+  used across multiple threads. This worked in default configuration,
+  but failed when RepeatedMsgReduction was set to "on".
+  Note that it in general is a bug to use a rate-limiter in
+  non-threadsafe mode across multiple threads. This also causes invalid
+  rate limiting counts in the default case.
+  closes https://github.com/rsyslog/rsyslog/issues/441
+  fixes https://github.com/rsyslog/rsyslog/issues/2132
+- imptcp bugfix: access to free'ed memory
+  When notifyconnectionclose was on, a string buffer was accessed immediately
+  after it was freed (as part of the connection close operation).
+  Detected by LLVM ASAN.
+- mmanon bugfix: fix wrong ipv6 embedded recognition
+  mmanon recognized IPv6 with embedded IPv4 that have too few (16 bit) fields.
+  example: 13:abd:45:0.0.0.0
+  closes https://github.com/rsyslog/rsyslog/issues/2357
+- imfile bugfix: not detecting files in directory when wildcards are used.
+  When directories and files are created at the same time,
+  imfile may missed subdirs or file if the machine is on high load.
+  The handling has been enhanced to scan newly created directories ALWAYS for
+  matching files.
+  fixes https://github.com/rsyslog/rsyslog/issues/2271
+  However there still exist problems with multilevel directory configurations.
+  Details are discussed in https://github.com/rsyslog/rsyslog/issues/2354
+  Fixes for the remaining issues are expected for 8.33.0.
+- script bugfix: improper string-to-number conversion for negative numbers
+- core/action bugfix: 100% CPU utilization on suspension of output module
+    Triggering condition:
+    * output module using the legacy transaction interface
+      (e.g. omelasticsearch, omlibdbi)
+    * output module needs to suspend itself
+  In these cases, rsyslog enters a busy loop trying to resolve the
+  suspend condition. The bug is rooted in rsyslog core action code.
+  This patch fixes it by inserting a 1-second sleep during calls
+  to the resume handler.
+  Note: we cannot sleep exactly as long as tryResume needs. This
+  would require larger refactoring, which probably is not worth for
+  the legacy interface. The current solution is almost as good, as
+  the one second sleep has very little overhead on a real system.
+  Thus we have choosen that approach.
+  This patch now also ensures that failed messages are properly
+  handled and do not cause eternal hang.
+  closes https://github.com/rsyslog/rsyslog/issues/2113
+- core/variables bugfix: bare $! cannot be used in set statement
+  fixes https://github.com/rsyslog/rsyslog/issues/326
+- core bugfix: auto commit of actions improperly handled
+  The internal state variable bHadAutoCommit was handled in thread-unsafe way
+  and most probably caused (hard to see) issues when action instances were
+  run on multiple worker threads. It looks like the state variable was
+  forgotten to move over to worker state when action workers were introduced.
+  closes https://github.com/rsyslog/rsyslog/issues/2046
+- core bugfix: filename length limitation of 199 bytes
+  file names (including path names) longer than 199 bytes could not be
+  handled at many places. This has now been uplifted to 4KiB after careful
+  review for the largest size supported among all relevant platforms.
+- core bugfix: undefined behavior due to integer overflow
+  when searching strings, we may have an (unsigned) interger overflow
+  which can lead to misadressing.
+  Detected by clang ubsan.
+- core bugfix: race on LocalHostIP property during startup
+  The way the default was set could lead to a race if e.g. two internal
+  messages were emitted at startup when the property was not yet set. This
+  has been seen to happen in practice. It had no bad effect except a very
+  small stationary memory leak, but made using thread analyzers unreliable
+  (as it was rightfully detected as a problem).
+  closes https://github.com/rsyslog/rsyslog/issues/2012
+- bugfix: potential segfault on startup
+  timezone info table was "sorted" even though it may be NULL. There is
+  no practical case known where this lead to an actual abort, but in
+  theory it would be possible. If so, it would happen immediately on
+  startup.
+  Detected by clang ubsan.
+- omhiredis bugfix: rsyslog segfault on startup if no template is specified
+- omprog bugfix: argv[0] not set when using binary without arguments
+  When using the omprog plugin with a binary without arguments, argv[0] (the
+  name of the binary) is not set, causing binaries that depend on this value
+  being set to crash or misbehave.
+  This patch also mildly refactors omprog argv[] creations, albeit some more
+  refactoring would be useful.
+  closes https://github.com/rsyslog/rsyslog/issues/1858
+- core: refactoring of rsyslog's cstr "class"
+  Function cstrGetSzStrNoNULL shall modified the string buffer on each call,
+  albeit it is considered a "read-only" function. It currently adds a '\0'
+  at the end. This is bad, especially when multiple threads access the same
+  string. As always the same data is written, it was not causing real issues
+  (except unnecessary cache writes), but it polluted the thread debugger and
+  as such prevent more elaborate automatted tests.
+- parent directory creation function refactored
+  This should not cause any change of behavior, but is worth noting in case
+  we see a regression not caught by the CI system.
+- mmsnmptrapd bugfix: potential misadressing
+  This only occured in situations when the system was totally out of memory.
+- imkafka: fix potential small ressource leak
+  If rdkafka handle cannot fully populated, cleanup is added. Previously, we
+  could leak a handle if e.g. no brokers were avaiable. Note that this was
+  a cosmetic leak, as proper processing is not possible in any case and the
+  leak is once per listener, so not growing. But we now also ensure that
+  proper error reporting and handling is done in any case. Previously, we
+  may have some misleading error messages if the defunct kafka handle was
+  used.
+  closes https://github.com/rsyslog/rsyslog/issues/2084
+- imkafka bugfix: do not emit error message on regular state
+  This was misunderstood as an error state and could spam the system
+  log considerably. Regression from 8.31.0.
+- omkafka: expose operational status to user where useful
+  omkafka emits many useful operational status messages only to the debug
+  log. After careful review, we have exposed many of these as user error
+  and warning message (ex: librdkafka queue full, so user knows why we
+  suspend the plugin temporarily). This may have made the module too
+  chatty. If so, one can always filter out messages via configuration. And
+  if we really went overboard, we can undo those parts with the next
+  release. So it's better to give a bit more than less, as this definitely
+  eases troubleshooting for users.
+  closes https://github.com/rsyslog/rsyslog/pull/2334
+- omkafka bugfix: potential message duplication
+  If a message that already failed in librdkafka was resubmitted and that
+  resubmit also failed, it got duplicated.
+- omkafka: fix multithreading
+  omkafka has several issue if multiple worker instances are used. This commit
+  actually make the module use a single worker thread at max. Reasoning:
+  Librdkafka creates background threads itself. So omkafka basically needs to move
+  memory buffers over to librdkafka, which then does the heavy hauling. As such, we
+  think that it is best to run max one wrkr instance of omkafka -- otherwise we just
+  get additional locking (contention) overhead without any real gain. As such,
+  we use a global mutex for doAction which ensures only one worker can be active
+  at any given time. That mutex is also used to guard utility functions (like
+  tryResume) which may also be accessed by multiple workers in parallel.
+  Note: shall this method be changed, the kafka connection/suspension handling needs
+  to be refactored. The current code assumes that all workers share state information
+  including librdkafka handles.
+  closes https://github.com/rsyslog/rsyslog/issues/2313
+- omkafka bugfix: potential misadressing
+  The failed message list is improperly cleaned. This is a regression
+  from recent commit 4eae19e089b5a83da679fe29398c6b2c10003793, which
+  was introduced in 8.31.0.
+  This problem is more likely to happen under heavy load or bad
+  connectivity, when the local librdkafka queue overruns or message
+  delivery times out.
+  closes https://github.com/rsyslog/rsyslog/issues/2184
+  closes https://github.com/rsyslog/rsyslog/issues/2067
+- omkafka bugfix: build fails with older versions of librdkafka
+  closes https://github.com/rsyslog/rsyslog/issues/2168
+- omgssapi bugfix: fix compiler warnings with gcc-7
+  closes https://github.com/rsyslog/rsyslog/issues/2097
+- dnscache bugfix: entries were cached based on IP AND port number
+  That  hash key which is used to find out already cached dns entry gets
+  incorrectly computed from the whole sockaddr_storage
+  (sockaddr_in/sockaddr_in6) structure including a sin_port (which doesn't
+  have a static value) instead of only an address, thus creating redundant
+  dns cache entries/consuming more space. This lead to potentially high memory
+  usage and ineffectiveness of the case. It could be considered a memory leak.
+  Thanks to Martin Osvald for the patch.
+  see also: https://github.com/rsyslog/rsyslog/pull/2160
+- omkafka bugfix: fixed memory leak
+  a memory leak occurred when librdkafka communicated error/status information
+  to omkafka. this seems to happen relatively frequently, so this leak
+  could be pretty problematic.
+- mmdblookup bugfix: replace thread-unsafe strtok() by thread-safe counterpart
+  Many thanks to Will Storey (github user @horgh) for mentioning this and
+  his phantastic help in debugging this rsyslog problem!
+- pmnormalize bugfix: remove unsave "strcat" implementation
+- rainerscript bugfix: ltrim() and rtrim function misadressing
+  This could lead to a segfault and was triggerred by certain input data
+  schemes. For example, a ltrim(" a") could lead to the fault.
+- imklog bugfix: local host IP was hardcoded to 127.0.0.1
+  This is now taken from the global localHostIP setting, which is used
+  consistent accross all modules.
+  Also, the removed (2012?) directive $klogLocalIPIF has been added
+  again but directly marked as removed. That way, an informative error
+  message is generated if someone tries to use it.
+  closes https://github.com/rsyslog/rsyslog/issues/2276
+- cleanup: remove obsolete pre-KSI GuardTime signature interface
+  this is no longer functional starting Jan 2018 as it reached end of life
+  closes https://github.com/rsyslog/rsyslog/issues/2128
+- cleanup: obsolete defintion SOL_TCP replaced by newer IPPROTO_TCP
+  this should not have any effect at all except better portability, but is
+  worth mentioning in the ChangeLog nevertheless.
+- lookup tables: fixed undefined behavior detected by UBSan
+- CI testing
+  - ARM (via Raspberry PI) added to CI system
+  - Debian 9 added to CI system
+  - omgssapi and usertools components are now also tested in Travis
+  - test coverage on BSD has been enhanced
+------------------------------------------------------------------------------
+Version 8.31.0 [v8-stable] 2017-11-28
+- NEW BUILD DEPENDENCY: ommongodb now requires libmongo-c
+  instead of deprecated libmongo-client.
+- remove systemd embedded code, use libsystemd instead
+  Since the early days rsyslog used the orginal systemd embedded
+  interface code. This version now uses libsystemd where available.
+  If we do not find libsystemd, we assume the system does not use
+  systemd, which is a safe assumption nowadays. This ensures we use the
+  fresh interface code and also removes bloat from our project.
+  closes https://github.com/rsyslog/rsyslog/issues/1933
+- mmanon: add support for IPv6 adresses with embedded IPv4 address
+  While this format is uncommon, it may still be present in logs and as
+  such should be supported. It is configurable via individual settings,
+  though. Especially the number of bits to anonymize may be desired to
+  be different than in pure IPv6.
+- ommongodb: big refactoring, more or less a feature-enhanced rewrite
+  New features are :
+  * Handle TLS connexion to mongodb
+  * Handle MongoDB Replicasets
+  * Added the 'ssl_ca' and 'ssl_cert' directives to configure tls connexion
+  * Added 'uristr' directive to configure the connection uri in the form
+    of 'mongodb://...'
+  Now uses the official mongo-c-driver library instead of the deprecated
+  mongo-client library
+  Special thanks to Hugo Soszynski and Jérémie Jourdin for there hard work
+  to make this a reality!
+  See also: https://github.com/rsyslog/rsyslog/pull/1917
+- rainerscript: add parse_time() function
+  Thanks to Stephen Workman for implementing this.
+- omelasticsearch: add LF to every elastic response for error file
+  error file content was written without LF after each message, making
+  it hard to work with and monitor.
+  Thanks to Yaroslav Bo for the patch.
+- omelasticsearch: add pipeline support
+  supports static and dynamic ElasticSearch pipeline parameter.
+  closes https://github.com/rsyslog/rsyslog/issues/1411
+  Thanks to github users scibi and WaeCo for the implementation.
+- lmsig_ksi_ls12: support asynchronous mode of libksi
+- omprog: added error handling and transaction support for external plugins
+  This permits much better integration of external output modules.
+  Special thanks to Joan Sala for providing this work!
+- imzmq3/omzmq3: marked as deprecated, modules will be remove in v8.41
+  see also: https://github.com/rsyslog/rsyslog/issues/2100
+- imzmq3/omzmq3: fixed build issues with gcc-7
+- core: emit error message on abnormal input thread termination
+  This indicates a serious issue of which the user should be notified.
+  Was not done so far and caused grief when troubleshooting issues.
+- core: refactored locking for json variable access
+  refactored the method so that it consistent in all functions and easier
+  to follow. Most importantly, now an as simple as possible locking paradigm
+  of lock ... unlock within the function. Hopefully easier to understand
+  both for humans and static code analyzers.
+- core: refactored creation of UDP sockets
+  was very old, hard to follow code; streamlined that a bit
+- core/dnscache: refactor locking
+  keep a simple lock ... unlock scheme within the function. That is
+  easier to follow for both humans as well as static analyzers.
+  Also removes Coverity scan CID 185419
+- rainerscript: use crypto-grade random number generator for random() function
+  We now use /dev/urandom if available. If not, we fall back to the weak PRNG.
+- imkafka: improve error reporting and cleanup refactoring
+- imkafka bugfix: segfault if "broker" parameter is not specified
+  Now emits warning message instead and uses hardcoded default
+  (which usually matches where the kafka broker can be found).
+  fixes https://github.com/rsyslog/rsyslog/issues/2085
+- omkafka: improve error reporting
+- omkafka: slight speedup do to refactoring of LIST class
+  double-linked list was used for temporarily undeliverable message tracking
+  where singly-linked list was sufficient. Changed that.
+- TCP syslog: support SNI when connecting as a client
+  This is done if a hostname is configured and turned off if an IP is used.
+  Thanks to Art O Cathain for the patch.
+  see also https://github.com/rsyslog/rsyslog/pull/1393
+- msg variable bugfix: potential segfault on variable access
+  A segfault is likely to happen if during processing a variable with
+  more than one path component is accessed (e.g. $!path!var) and NO
+  variables oft hat kind (local, message, global) are defined at all.
+  closes https://github.com/rsyslog/rsyslog/issues/1920
+- ratelimiting bugfix: data race in Linux-like ratelimiter
+  access to the Linux-like ratelimiter was not properly synchronized, and
+  the system rate-limiter was not using it in any case.
+  This could lead to the rate-limit settings not being properly
+  respected, but no "hard error".
+- core/template bugfix: potential NULL pointer access at config load
+  could happen if the config was loaded and the parameters could not properly
+  be processed. If so, this occured only during the startup phase.
+  Detected by Coverity scan, CID 185318
+- core/json var subsystem bugfix: segfault in MsgSetPropsViaJSON
+  Invalid libfastjson API use lead to double-free. This was most importantly
+  triggerred by mmexternal (but could potentially be triggered by other
+  uses as well)
+  closes https://github.com/rsyslog/rsyslog/issues/1822
+- core/wrkr threads bugfix: race condition
+  During e.g. shutdown it could happen that a worker thread was started
+  and immediately be requested to terminate. In such situations there was
+  a race the prevented proper initialization. This could lead to follow-on
+  problems.
+  We believe (but could not proof) that this also could lead to a hang of
+  the termination process. Thus we claim to close an issue tracker down
+  here below, but are not 100% certain it really closes it (we hope for
+  user feedback on this). In any case, the thread debuger showed invalid
+  operations and this has been fixed, so it is useful in any case.
+  closes https://github.com/rsyslog/rsyslog/issues/1959
+- core/wtp: potential hang during shutdown
+  when the wtp worker is cancelled in the final stage of shutting down
+  while the mutex is locked and there is one worker left, the system
+  will hang. The reason is that the cancelled thread could not free the
+  mutex that the other needs in order to shut down orderly.
+  Deteced with clang thread sanitizer.
+- omfwd bugfix: generate error message on connection failure
+- imtcp bugfix: "streamdriver.mode" parameter could not be set to 0
+- imjournal bugfix: module was defunctional
+  The open function was broken by commit 92ac801, resulting in
+  no data being ever read from the journal.
+  patch bases on the idea of Radovan Sroka given here:
+  https://github.com/rsyslog/rsyslog/issues/1895#issuecomment-339017357
+  but follows the current imjournal-paradigm of having the journal
+  handle inside a global variable.
+  see also https://github.com/rsyslog/rsyslog/issues/1895
+  closes https://github.com/rsyslog/rsyslog/issues/1897
+- imjournal: refactor error handling, fix error messages
+  imjournal did not try to recover from errors and used the error state
+  returned by journal functions incorrectly, resulting in misleading
+  error messages. Fixed this and also increased the number of error
+  messages so that it now is easier to diagnose problems with this module.
+  Also a little bit of internal brush-up.
+ -mmdblookup bugfix: fix potential segfault due to threading issues
+  libmaxminddb seems to have issues when running under multiple threads. As
+  a first measure, we prevent mmdblookup now from running on more than one
+  thread concurrently.
+  see also: https://github.com/rsyslog/rsyslog/issues/1885#issuecomment-344882616
+- omelasticsearch bugfix: operational error messages not passed to user
+  This lead to sometimes hard to diagnose problem. Note that for obvious
+  raesons the amont of messages from omelasticsearch has increased; this
+  is not a sign of a problem in itself -- but it may reveal problems that
+  existed before and went unnoticed. Also note that too-verbose messages
+  can be filtered out via regular rsyslog methods (e.g. message discarding
+  based on content).
+- omkafka bugfixes
+  * statistics counter maxoutqsize could not be reset
+    Thanks to github user flisky for the patch.
+  * potential hang condition
+    omkafka did not release a mutex under some error conditions (most
+    notably out of memory on specific alloc calls). This lead to a hang
+    during actively processing messages or during shutdown (at latest).
+    This could happen only if dynamic topics were configured.
+    Detected by Coverity Scan, CID  185781 (originally 185721, detected
+    as a different issue by Coverity after code refactoring done in regard
+    to 185721 -- then the problem became more obvious).
+  * file handle leak, which could occur when local buffering
+    of messages was needed
+  * invalid load of failedmsg file on startup if disabled
+    error "rsyslogd: omkafka: could not load failed messages from "
+    "file (null) error -2027 - failed messages will not be resend."
+    occurs because, depite `keepFailedMessages="off"` as a default,
+    omkafka still tries to check for and load a `(none)` file which
+    triggers an IO error of sorts according to the 2027 link above.
+    Obviously, it probably shouldn't try load the file if
+    `keepFailedMessages` is not enabled.
+    Thanks to github user JPvRiel for a very good error report and
+    analysis.
+    closes https://github.com/rsyslog/rsyslog/issues/1765
+  * various config parameters did not work
+    These were not even recognized when used and lead to a config startup
+    error message:
+    ~ closeTimeout
+    ~ reopenOnHup
+    ~ resubmitOnFailure
+    ~ keepFailedMessages
+    ~ failedMsgFile
+    closes https://github.com/rsyslog/rsyslog/issues/2052
+  * considerable memory leak
+    Whenever a message could (temporarily) not be delivered to kafka,
+    a non-trivial amount of memory was leaked. This could sum up to
+    quite a big memory leak.
+    fixes https://github.com/rsyslog/rsyslog/issues/1991
+  * some small memory leaks fixed
+    most of them cosmetic or a few bytes statically (not growing as
+    omkafka was used) -- thus we do not mention each one explicitely.
+    For more details, see git commit log or this pull request:
+    https://github.com/rsyslog/rsyslog/pull/2051
+- kafka bugfix: problem on invalid kafka configuration values
+  omkafka ended up in an endless loop and high cpu.
+  imkafka tried to subscribe to a not connected kafka server.
+  closes https://github.com/rsyslog/rsyslog/issues/1806
+- [io]mgssapi: fix build problems (regression from 8.30.0)
+- [io]czmq: fix build problems on some platforms (namely gcc 7, clang 5)
+- tcpsrv bugfix: potential hang during shutdown
+- queue bugfix: potential hang during shutdown
+- queue bugfix: NULL pointer dereference during config processing
+  If the queue parameters were incorrectly given, a NULL pointer derefernce
+  could happen during config parsing. Once post that stage, no problem could
+  occur.
+  Detected by Coverity scan, CID 185339
+- imczmq bugfix: segfault
+  happened in a call to
+    371: zcert_destroy(&serverCert) called from rcvData().
+  Thanks to ~achiketa Prachanda for the patch.
+- imfile: some small performance enhancements
+  Thanks to Peter Portante for the patch
+- omfile: hande file open error via SUSPEND mode
+  For a while, an open file error lead to suspension as the error was
+  not detected by the rule engine. This has changed with fixes
+  in 8.30.0. I asked users what they prefer (and expect) and
+  everyone meant it should still be handled via suspension. See
+  github tracker below for more details.
+  closes https://github.com/rsyslog/rsyslog/issues/1832
+- omfile bugfix: race during directory creation can lead to loop
+  There was a race where two threads were competing for directory creation
+  which could lead to none succeeding and a flood of error message like this
+  "error during config processing: omfile: creating parent directories for
+  file". This has been solved.
+  Thanks to Niko Kortström for the patch.
+- imudp: improve error reporting
+  When udp listener cannot be created, an error message containing
+  the ip-address and port is put out.
+  closes https://github.com/rsyslog/rsyslog/issues/1899
+- omrelp bugfix: incorrect error handling
+  if librelp with TLS but without Authentication was included, librelp
+  did not emit the correct error message due to invalid error code
+  check. It also did not err-out but instead suspended itself.
+  Detected by Coverity scan, CID 185362
+- [io]mrelp bugfix: segfault on startup if configured cert not readable
+  When the certificate file specified in the omrelp/imrelp configuration
+  can't be accessed, e.g. because it doesn't exist or you don't have
+  permission to do so, a Segmentation Fault will appear when you start
+  Rsyslog. This commit fixes that problem.
+  closes https://github.com/rsyslog/rsyslog/issues/1869
+- mmanon fix: make build under gcc 7
+  Thanks to William Dauchy for the patch
+- mmpstrucdata bugfix: formatting error of ']' char
+  This was invalidly formatted as '"'. Thanks to github user
+  wu3396 for the error report including the patch idea.
+  closes https://github.com/rsyslog/rsyslog/issues/1826
+- mmexternalb bugfix: memory leak
+- core/stats bugfix: memory leak if sender stats or tracking are enabled
+- core bugfix: potential segfault during startup
+  A NULL pointer could be accessed if there was a problem with the
+  timezone parameters.  Affects only startup, once started, no problem
+  existed.
+  Detected by Coverty scan; CID 185414
+- core bugfix: potential race in variable handling
+  Root of variable tree is accessed prior to locking access to it.
+  This introduces a race that may result in various kinds of
+  misadressing.
+  Found while reviewing code, no bug report exists.
+- core bugfix: potential segfault when shutting down rsyslog
+  when rulesets are nested a segfault can occur when shutting down
+  rsyslog. the reason is that rule sets are destructed in load order,
+  which means a "later" ruleset may still be active when an "earlier"
+  one was already destructed. In these cases, a "call" can invalidly
+  call into the earlier ruleset, which is destructed and so leads to
+  invalid memory access. If a segfault actually happens depends on the
+  OS, but it is highly probable.
+  The cure is to split the queue shutdown sequence. In a first step,
+  all worker threads are terminated and the queue set to enqOnly.
+  While some are terminated, it is still possible that the others
+  enqueue messages into the queue (which are then just placed into the
+  queue, not processed). After this happens, a call can no longer
+  be issued (as there are no more workers). So then we can destruct
+  the rulesets in any order.
+  closes https://github.com/rsyslog/rsyslog/issues/1122
+- core/action bugfix: potential misadressing when processing hard errors
+  For batches that did fail in an output module, the rsyslog core
+  tries to find offending messages that generate hard (non-recoverable)
+  errors. During this process, the action templates for each message
+  are copied into a temporary buffer. That copy was invalidly sized,
+  actually copying only the first template string. As such, outputs
+  that requested more template strings AND had erros in batch submission
+  received uninitialized pointers. This could lead to all sorts of
+  problems.
+  see also https://github.com/rsyslog/rsyslog/issues/1885
+  closes https://github.com/rsyslog/rsyslog/issues/1906
+- template object bugfix: NULL pointer access on invalid parameters
+  could happen only during startup
+  Detected by Coverity scan, CID 185376
+- omjournal bugfix: NULL pointer access on invalid parameters
+  could happen only during startup
+- omelasticsearch bugfix: configured credentials not used during health check
+  Authentication credentials were not applied during health check,
+  permission to use unsigned CERTS was not applied to regular data post.
+  closes https://github.com/rsyslog/rsyslog/issues/1949
+- omelasticsearch bugfix: abort on unavailable ES server
+  Depending on the state of unavailability (libcurl return code),
+  omelasticsearch tries to process a NULL return message, what
+  leads to a segfault.
+  This fixes the problem and introduces better error handling and
+  better error messages.
+  see also https://github.com/rsyslog/rsyslog/issues/1885
+- omelasticsearch: fix memory leak and potential misadressing
+  Commit 96b5fce introduced regressions, leading to potential misadressing
+  and a very probable memory leak. This commit fixes the issues and
+  hardens the module to better detect some error cases in the
+  future.
+  It also adds valgrind-based testbench tests which ensure that no
+  pointer errors exist. If they had been in place, the regressions
+  would never have been undetected.
+  Note that commit 96b5fce was introduced in 8.23.0 on Nov, 15th 2016.
+  Many thanks to Yaroslav Bo for alerting me on the root problem and
+  providing a very good analysis and guidance.
+  see also https://github.com/rsyslog/rsyslog/issues/1906
+  see also https://github.com/rsyslog/rsyslog/issues/1964
+  closes https://github.com/rsyslog/rsyslog/issues/1962
+- omelasticsearch bugfix: output from libcurl to stdout
+  omelasticsearch made libcurl output messages to stdout. This
+  commit fixes that. It also automatically enables libcurl verbose
+  mode during debug runs - it needs to be seen if this is smart or
+  not (previously, code needed to be commented in).
+  closes https://github.com/rsyslog/rsyslog/issues/1909
+- iczmq bugfix: potential memory leak
+- imptcp bugfix: potential misadressing
+  When during a connection request the remote peer could not be
+  identified, imptcp could misadress memory if it is configured
+  to emit messages on connection open.
+  Detected by clang 5.0 static analyzer.
+- imptcp: potential buffer overflow
+  if the local hostname or IP is larger than NI_MAXHOST-1, an internal
+  buffer is overflowed. This is irrespective of any input data.
+  Detected by Coverity scan, CID 185390
+- core/nsd_gtls: fix potential unitialized data access
+  could occur during certificate check
+  found by clang 5.0 static analyzer
+- stats bugfix: potential program hang
+  due to missing unlock. This could only occur if pstats was set to
+  CEE-format logging (very uncommon) AND if the system runs out of
+  memory (in which case other things go pretty bad as well).
+  found by Coverty scan
+- omfwd bugfix: memory leak if network namespaces are used
+  very seldom used feature, occurs only during error case
+  found by Coverty scan.
+- core: potential misadressing when accessing JSON properties
+  When a JSON property is accessed in template processing, memory may
+  have been misadressed or a double-free may occur while obtaining the
+  propety.
+  This was detected by a Coverty scan.
+- gcry crypto provider bugfixes: potential misadressing and memory leak
+  If the config parameters were invalid, a misadressing could occur. If so,
+  this happens only during startup.
+  Also, a memory leak existed when the crypto provider errored out. This could
+  build up if it were used in frequently-changing dynafiles. This was
+  detected by Coverity scan, CID 185360.
+- core/file stream object bugfix: memory leak
+  If a multiline read errored out, a line buffer could be leaked.
+  Detected by Coverity scan, CID 185328
+- imdiag bugfix: double mutex unlock when working with stats
+  Note: while this could potentially lead to a program hang, it affected
+  only testbench execution as imdiag is a testbench-only tool.
+  Detected by Coverity scan, CID 185348 and 185350
+- fixed several minor and cosmetic issues found by Coverty scan
+  includding false positives. For details see "$ git log". All noteworthy
+  issues are seperately mentioned in this ChangeLog. The ones not mentioned
+  are for example problems that can only occur during out of memory
+  conditions, under which it is extremely likely tha the rsyslog process
+  will be killed in any case
+- testbench:
+  * added compile-check for [io]mgssapi, mmcount
+  * harden tests against hanging previous instances
+  * re-enable RELP tests on Solaris
+  * added basic test for imjournal
+  * added threading tests via valgrind's helgrind tool
+  * added valgrind test for kafka modules
+  * added capability to run elasticsearch tests with
+    a) different ElasticSearch versions
+    b) independently from OS-installed version
+    This also sets base to enable more elaboreate ES tests
+  * further relaxed timing of dynstats tests, as they tend to create
+    false positives on slow machines
+- CI: improved test coverage on FreeBSD
+- Travis: clang static analyzer 5.0 now run over all source files
+- build: make compile warning-free under gcc 7
+------------------------------------------------------------------------------
 Version 8.30.0 [v8-stable] 2017-10-17
 - NEW BUILD REQUIREMENTS
   * libfastjson 0.99.7 is now mandatory
@@ -147,21 +848,6 @@ Version 8.30.0 [v8-stable] 2017-10-17
   The predicate check was incorrect.
   closes https://github.com/rsyslog/rsyslog/issues/170 (kind of)
 - omrelp bugfix:  segfault when rebindinterval parameter is used
-- omkafka bugfix: invalid load of failedmsg file on startup if disabled
-  error "rsyslogd: omkafka: could not load failed messages from "
-  "file (null) error -2027 - failed messages will not be resend."
-  occurs because, depite `keepFailedMessages="off"` as a default,
-  omkafka still tries to check for and load a `(none)` file which
-  triggers an IO error of sorts according to the 2027 link above.
-  Obviously, it probably shouldn't try load the file if
-  `keepFailedMessages` is not enabled.
-  Thanks to github user JPvRiel for a very good error report and
-  analysis.
-  closes https://github.com/rsyslog/rsyslog/issues/1765
-- kafka bugfix: problem on invalid kafka configuration values
-  omkafka ended up in an endless loop and high cpu.
-  imkafka tried to subscribe to a not connected kafka server.
-  closes https://github.com/rsyslog/rsyslog/issues/1806
 - imudp bugfix: UDP oversize message not properly handled
   When a message larger than supported by the UDP stack is to be sent,
   EMSGSIZE is returned, but not specifically handled. That in turn

@@ -30,7 +30,7 @@
 #pragma GCC diagnostic ignored "-Wredundant-decls" // TODO: remove!
 #pragma GCC diagnostic ignored "-Wstrict-prototypes" // TODO: remove!
 #pragma GCC diagnostic ignored "-Wswitch-default" // TODO: remove!
-#endif 
+#endif
 #include <pthread.h>
 #include "typedefs.h"
 
@@ -43,12 +43,25 @@ extern int src_exists;
 #endif
 /* src end */
 
+/* define a couple of attributes to improve cross-platform builds */
+#if __GNUC__ > 6
+	#define CASE_FALLTHROUGH __attribute__((fallthrough));
+#else
+	#define CASE_FALLTHROUGH
+#endif
+
+#define ATTR_NORETURN __attribute__ ((noreturn))
+#define ATTR_UNUSED __attribute__((unused))
+#define ATTR_NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
 
 /* ############################################################# *
  * #                 Some constant values                      # *
  * ############################################################# */
 #define CONST_LEN_TIMESTAMP_3164 15 		/* number of chars (excluding \0!) in a RFC3164 timestamp */
 #define CONST_LEN_TIMESTAMP_3339 32 		/* number of chars (excluding \0!) in a RFC3339 timestamp */
+
+#define CONST_LEN_CEE_COOKIE 5
+#define CONST_CEE_COOKIE "@cee:"
 
 /* ############################################################# *
  * #                    Config Settings                        # *
@@ -67,26 +80,26 @@ extern int src_exists;
 #define CONF_PROP_BUFSIZE		16	/* should be close to sizeof(ptr) or lighly above it */
 #define CONF_IPARAMS_BUFSIZE		16	/* initial size of iparams array in wti (is automatically extended) */
 #define	CONF_MIN_SIZE_FOR_COMPRESS	60 	/* config param: minimum message size to try compression. The smaller
-						 * the message, the less likely is any compression gain. We check for
-						 * gain before we submit the message. But to do so we still need to
-						 * do the (costly) compress() call. The following setting sets a size
-						 * for which no call to compress() is done at all. This may result in
-						 * a few more bytes being transmited but better overall performance.
-						 * Note: I have not yet checked the minimum UDP packet size. It might be
-						 * that we do not save anything by compressing very small messages, because
-						 * UDP might need to pad ;)
-						 * rgerhards, 2006-11-30
-						 */
+	 * the message, the less likely is any compression gain. We check for
+	 * gain before we submit the message. But to do so we still need to
+	 * do the (costly) compress() call. The following setting sets a size
+	 * for which no call to compress() is done at all. This may result in
+	 * a few more bytes being transmited but better overall performance.
+	 * Note: I have not yet checked the minimum UDP packet size. It might be
+	 * that we do not save anything by compressing very small messages, because
+	 * UDP might need to pad ;)
+	 * rgerhards, 2006-11-30
+	 */
 
 #define CONF_OMOD_NUMSTRINGS_MAXSIZE	5	/* cache for pointers to output module buffer pointers. All
-						 * rsyslog-provided plugins do NOT need more than five buffers. If
-						 * more are needed (future developments, third-parties), rsyslog
-						 * must be recompiled with a larger parameter. Hardcoding this
-						 * saves us some overhead, both in runtime in code complexity. As
-						 * it is doubtful if ever more than 3 parameters are needed, the
-						 * approach taken here is considered appropriate.
-						 * rgerhards, 2010-06-24
-						 */
+	 * rsyslog-provided plugins do NOT need more than five buffers. If
+	 * more are needed (future developments, third-parties), rsyslog
+	 * must be recompiled with a larger parameter. Hardcoding this
+	 * saves us some overhead, both in runtime in code complexity. As
+	 * it is doubtful if ever more than 3 parameters are needed, the
+	 * approach taken here is considered appropriate.
+	 * rgerhards, 2010-06-24
+	 */
 #define CONF_NUM_MULTISUB		1024	/* default number of messages per multisub structure */
 
 /* ############################################################# *
@@ -151,8 +164,8 @@ extern int src_exists;
 static inline syslog_pri_t __attribute__((unused))
 pri2fac(const syslog_pri_t pri)
 {
-       unsigned fac = pri >> 3;
-       return (fac > 23) ? LOG_FAC_INVLD : fac;
+	unsigned fac = pri >> 3;
+	return (fac > 23) ? LOG_FAC_INVLD : fac;
 }
 #define pri2sev(pri) ((pri) & 0x07)
 
@@ -199,15 +212,19 @@ operation not carried out */
 	RS_RET_NO_MORE_DATA = -3006,	/**< insufficient data, e.g. end of string during parsing */
 	RS_RET_INVALID_IP = -3007,	/**< invalid ip found where valid was expected */
 	RS_RET_OBJ_CREATION_FAILED = - 3008, /**< the creation of an object failed (no details available) */
-	RS_RET_INOTIFY_INIT_FAILED = - 3009, /**< the initialization of an inotify instance failed (no details available) */
+	RS_RET_INOTIFY_INIT_FAILED = - 3009,
+	/**< the initialization of an inotify instance failed (no details available) */
+	RS_RET_FEN_INIT_FAILED = - 3010, /**< the initialization of a fen instance failed (no details available) */
 	RS_RET_PARAM_ERROR = -1000,	/**< invalid parameter in call to function */
 	RS_RET_MISSING_INTERFACE = -1001,/**< interface version mismatch, required missing */
 	RS_RET_INVALID_CORE_INTERFACE = -1002,/**< interface provided by host invalid, can not be used */
 	RS_RET_ENTRY_POINT_NOT_FOUND = -1003,/**< a requested entry point was not found */
 	RS_RET_MODULE_ENTRY_POINT_NOT_FOUND = -1004,/**< a entry point requested from a module was not present in it */
-	RS_RET_OBJ_NOT_AVAILABLE = -1005,/**< something could not be completed because the required object is not available*/
+	RS_RET_OBJ_NOT_AVAILABLE = -1005,
+	/**< something could not be completed because the required object is not available*/
 	RS_RET_LOAD_ERROR = -1006,/**< we had an error loading the object/interface and can not continue */
-	RS_RET_MODULE_STILL_REFERENCED = -1007,/**< module could not be unloaded because it still is referenced by someone */
+	RS_RET_MODULE_STILL_REFERENCED = -1007,
+	/**< module could not be unloaded because it still is referenced by someone */
 	RS_RET_OBJ_UNKNOWN = -1008,/**< object is unknown where required */
 	RS_RET_OBJ_NOT_REGISTERED = -1009,/**< tried to unregister an object that is not registered */
 	/* return states for config file processing */
@@ -351,7 +368,8 @@ operation not carried out */
 	RS_RET_HOST_NOT_SPECIFIED = -2151, /**< (target) host was not specified where it was needed */
 	RS_RET_ERR_LIBNET_INIT = -2152, /**< error initializing libnet, e.g. because not running as root */
 	RS_RET_FORCE_TERM = -2153,	/**< thread was forced to terminate by bShallShutdown, a state, not an error */
-	RS_RET_RULES_QUEUE_EXISTS = -2154,/**< we were instructed to create a new ruleset queue, but one already exists */
+	RS_RET_RULES_QUEUE_EXISTS = -2154,/**< we were instructed to create a new
+					   ruleset queue, but one already exists */
 	RS_RET_NO_CURR_RULESET = -2155,/**< no current ruleset exists (but one is required) */
 	RS_RET_NO_MSG_PASSING = -2156,
 /*< output module interface parameter passing mode "MSG" is not available but required */
@@ -486,6 +504,7 @@ operation not carried out */
 	RS_RET_JSON_UNUSABLE = -2438, /**< JSON object is NULL or otherwise unusable */
 	RS_RET_OPERATION_STATUS = -2439, /**< operational status (info) message, no error */
 	RS_RET_UDP_MSGSIZE_TOO_LARGE = -2440, /**< a message is too large to be sent via UDP */
+	RS_RET_NON_JSON_PROP = -2441, /**< a non-json property id is provided where a json one is requried */
 
 	/* RainerScript error messages (range 1000.. 1999) */
 	RS_RET_SYSVAR_NOT_FOUND = 1001, /**< system variable could not be found (maybe misspelled) */
@@ -495,7 +514,8 @@ operation not carried out */
 	RS_RET_OK = 0,			/**< operation successful */
 	RS_RET_OK_DELETE_LISTENTRY = 1,
 /*< operation successful, but callee requested the deletion of an entry (special state) */
-	RS_RET_TERMINATE_NOW = 2,	/**< operation successful, function is requested to terminate (mostly used with threads) */
+	RS_RET_TERMINATE_NOW = 2,	/**< operation successful, function is requested to terminate
+					(mostly used with threads) */
 	RS_RET_NO_RUN = 3,		/**< operation successful, but function does not like to be executed */
 	RS_RET_IDLE = 4,		/**< operation successful, but callee is idle (e.g. because queue is empty) */
 	RS_RET_TERMINATE_WHEN_IDLE = 5	/**< operation successful, function is requested to terminate when idle */
@@ -511,7 +531,13 @@ operation not carried out */
 #	define CHKiRet(code) if((iRet = code) != RS_RET_OK) goto finalize_it
 #endif
 
-# define CHKiConcCtrl(code) if (code != 0) { iRet = RS_RET_CONC_CTRL_ERR; errno = code; goto finalize_it; }
+# define CHKiConcCtrl(code)  { int tmp_CC; \
+	if ((tmp_CC = code) != 0) { \
+		iRet = RS_RET_CONC_CTRL_ERR; \
+		errno = tmp_CC; \
+		goto finalize_it; \
+	} \
+}
 
 /* macro below is to be used if we need our own handling, eg for cleanup */
 #define CHKiRet_Hdlr(code) if((iRet = code) != RS_RET_OK)

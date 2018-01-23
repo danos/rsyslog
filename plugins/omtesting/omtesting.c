@@ -22,7 +22,7 @@
  * NOTE: read comments in module-template.h to understand how this file
  *       works!
  *
- * Copyright 2007-2013 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2007-2017 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
@@ -55,6 +55,7 @@
 #include "module-template.h"
 #include "conf.h"
 #include "cfsysline.h"
+#include "srUtils.h"
 
 MODULE_TYPE_OUTPUT
 MODULE_TYPE_NOKEEP
@@ -177,7 +178,7 @@ static rsRetVal doSleep(instanceData *pData)
 static rsRetVal doRandFail(void)
 {
 	DEFiRet;
-	if((rand() >> 4) < (RAND_MAX >> 5)) { /* rougly same probability */
+	if((randomNumber() >> 4) < (RAND_MAX >> 5)) { /* rougly same probability */
 		iRet = RS_RET_OK;
 		dbgprintf("omtesting randfail: succeeded this time\n");
 	} else {

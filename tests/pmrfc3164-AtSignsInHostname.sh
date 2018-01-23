@@ -22,7 +22,7 @@ ruleset(name="customparser" parser="custom.rfc3164") {
 echo '-Hostname1-
 -Hostn@me2-
 -Hostname3-
--Hos@name4-' | cmp rsyslog.out.log
+-Hos@name4-' | cmp - rsyslog.out.log
 if [ ! $? -eq 0 ]; then
   echo "invalid response generated, rsyslog.out.log is:"
   cat rsyslog.out.log

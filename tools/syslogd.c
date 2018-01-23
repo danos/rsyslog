@@ -58,15 +58,19 @@
 #include <time.h>
 #include <assert.h>
 
-#ifdef OS_SOLARIS
+#if defined(OS_SOLARIS) || defined(OS_BSD)
 #	include <errno.h>
+#else
+#	include <sys/errno.h>
+#endif
+
+#ifdef OS_SOLARIS
 #	include <fcntl.h>
 #	include <stropts.h>
 #	include <sys/termios.h>
 #	include <sys/types.h>
 #else
 #	include <libgen.h>
-#	include <sys/errno.h>
 #endif
 
 #include <sys/ioctl.h>
@@ -102,7 +106,6 @@
 #include "parser.h"
 #include "unicode-helper.h"
 #include "dnscache.h"
-#include "sd-daemon.h"
 #include "ratelimit.h"
 
 /* forward defintions from rsyslogd.c (ASL 2.0 code) */

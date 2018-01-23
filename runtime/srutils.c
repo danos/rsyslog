@@ -42,6 +42,7 @@
 #include <sys/wait.h>
 #include <ctype.h>
 #include <inttypes.h>
+#include <fcntl.h>
 #include "srUtils.h"
 #include "obj.h"
 #include "errmsg.h"
@@ -194,15 +195,17 @@ uchar *srUtilStrDup(uchar *pOld, size_t len)
  * the creation fails in the similar way, we return an error on that second
  * try because otherwise we would potentially run into an endless loop.
  * loop. -- rgerhards, 2010-03-25
+ * The likeliest scenario for a prolonged contest of creating the parent directiories
+ * is within our process space. This can happen with a high probability when two
+ * threads, that want to start logging to files within same directory tree, are
+ * started close to each other. We should fix what we can. -- nipakoo, 2017-11-25
  */
-int makeFileParentDirs(const uchar *const szFile, size_t lenFile, mode_t mode,
-		       uid_t uid, gid_t gid, int bFailOnChownFail)
+static int real_makeFileParentDirs(const uchar *const szFile, const size_t lenFile, const mode_t mode,
+	const uid_t uid, const gid_t gid, const int bFailOnChownFail)
 {
         uchar *p;
         uchar *pszWork;
         size_t len;
-	int iTry = 0;
-	int bErr = 0;
 
 	assert(szFile != NULL);
 	assert(lenFile > 0);
@@ -215,43 +218,49 @@ int makeFileParentDirs(const uchar *const szFile, size_t lenFile, mode_t mode,
                 if(*p == '/') {
 			/* temporarily terminate string, create dir and go on */
                         *p = '\0';
-			iTry = 0;
-again:
-                        if(access((char*)pszWork, F_OK)) {
-                                if(mkdir((char*)pszWork, mode) == 0) {
-					if(uid != (uid_t) -1 || gid != (gid_t) -1) {
-						/* we need to set owner/group */
-						if(chown((char*)pszWork, uid, gid) != 0) {
-							char errStr[1024]; /* buffer for strerr() */
-							rs_strerror_r(errno, errStr, sizeof(errStr));
-							LogError(0, RS_RET_DIR_CHOWN_ERROR,
-								"chown for directory '%s' failed: %s",
-								pszWork, errStr);
-							if(bFailOnChownFail)
-								bErr = 1;
-							/* silently ignore if configured
-							 * to do so.
-							 */
+			int bErr = 0;
+			if(mkdir((char*)pszWork, mode) == 0) {
+				if(uid != (uid_t) -1 || gid != (gid_t) -1) {
+					/* we need to set owner/group */
+					if(chown((char*)pszWork, uid, gid) != 0) {
+						LogError(errno, RS_RET_DIR_CHOWN_ERROR,
+							"chown for directory '%s' failed", pszWork);
+						if(bFailOnChownFail) {
+							/* ignore if configured to do so */
+							bErr = 1;
 						}
 					}
-				} else {
-					if(errno == EEXIST && iTry == 0) {
-						iTry = 1;
-						goto again;
-						}
-					bErr = 1;
 				}
-				if(bErr) {
-					int eSave = errno;
-					free(pszWork);
-					errno = eSave;
-					return -1;
-				}
+			} else if(errno != EEXIST) {
+				/* EEXIST is ok, means this component exists */
+				bErr = 1;
+			}
+
+			if(bErr) {
+				int eSave = errno;
+				free(pszWork);
+				errno = eSave;
+				return -1;
 			}
                         *p = '/';
                 }
 	free(pszWork);
 	return 0;
+}
+/* note: this small function is the stub for the brain-dead POSIX cancel handling */
+int makeFileParentDirs(const uchar *const szFile, const size_t lenFile, const mode_t mode,
+		       const uid_t uid, const gid_t gid, const int bFailOnChownFail)
+{
+	static pthread_mutex_t mutParentDir = PTHREAD_MUTEX_INITIALIZER;
+	int r;	/* needs to be declared OUTSIDE of pthread_cleanup... macros! */
+	pthread_mutex_lock(&mutParentDir);
+	pthread_cleanup_push(mutexCancelCleanup, &mutParentDir);
+
+	r = real_makeFileParentDirs(szFile, lenFile, mode, uid, gid, bFailOnChownFail);
+
+	pthread_mutex_unlock(&mutParentDir);
+	pthread_cleanup_pop(0);
+	return r;
 }
 
 
@@ -691,7 +700,7 @@ containsGlobWildcard(char *str)
 	return 0;
 }
 
-void seedRandomNumber(void)
+static void seedRandomInsecureNumber(void)
 {
 	struct timespec t;
 	timeoutComp(&t, 0);
@@ -699,10 +708,135 @@ void seedRandomNumber(void)
 	srandom((unsigned int) x);
 }
 
-long int randomNumber(void)
+static long int randomInsecureNumber(void)
 {
 	return random();
 }
 
-/* vim:set ai:
+#ifdef OS_LINUX
+static int fdURandom = -1;
+void seedRandomNumber(void)
+{
+	fdURandom = open("/dev/urandom", O_RDONLY);
+	if(fdURandom == -1) {
+		LogError(errno, RS_RET_IO_ERROR, "failed to seed random number generation,"
+			" will use fallback (open urandom failed)");
+		seedRandomInsecureNumber();
+	}
+}
+
+long int randomNumber(void)
+{
+	long int ret;
+	if(fdURandom >= 0) {
+		if(read(fdURandom, &ret, sizeof(long int)) == -1) {
+			LogError(errno, RS_RET_IO_ERROR, "failed to generate random number, will"
+				" use fallback (read urandom failed)");
+			ret = randomInsecureNumber();
+		}
+	} else {
+		ret = randomInsecureNumber();
+	}
+	return ret;
+}
+#else
+void seedRandomNumber(void)
+{
+	seedRandomInsecureNumber();
+}
+
+long int randomNumber(void)
+{
+	return randomInsecureNumber();
+}
+#endif
+
+
+/* process "binary" parameters where this is needed to execute
+ * programs (namely mmexternal and omprog).
+ * Most importantly, split them into argv[] and get the binary name
  */
+rsRetVal ATTR_NONNULL()
+split_binary_parameters(uchar **const szBinary, char ***const __restrict__ aParams,
+	int *const iParams, es_str_t *const param_binary)
+{
+	es_size_t iCnt;
+	es_size_t iStr;
+	int iPrm;
+	es_str_t *estrParams = NULL;
+	es_str_t *estrBinary = param_binary;
+	es_str_t *estrTmp = NULL;
+	uchar *c;
+	int bInQuotes;
+	DEFiRet;
+	assert(iParams != NULL);
+	assert(param_binary != NULL);
+
+	/* Search for end of binary name */
+	c = es_getBufAddr(param_binary);
+	iCnt = 0;
+	while(iCnt < es_strlen(param_binary) ) {
+		if (c[iCnt] == ' ') {
+			/* Split binary name from parameters */
+			estrBinary = es_newStrFromSubStr( param_binary, 0, iCnt);
+			estrParams = es_newStrFromSubStr( param_binary, iCnt+1,
+					es_strlen(param_binary));
+			break;
+		}
+		iCnt++;
+	}
+	*szBinary = (uchar*)es_str2cstr(estrBinary, NULL);
+	DBGPRINTF("szBinary = '%s'\n", *szBinary);
+
+	*iParams = 2; /* we always have argv[0], and NULL-terminator for array */
+	/* count size of argv[] */
+	if (estrParams != NULL) {
+		if(Debug) {
+			char *params = es_str2cstr(estrParams, NULL);
+			dbgprintf("szParams = '%s'\n", params);
+			free(params);
+		}
+		c = es_getBufAddr(estrParams);
+		assert(c[iCnt] != ' '); /* cannot be at this stage! */
+		for(iCnt = 0 ; iCnt < es_strlen(estrParams) ; ++iCnt) {
+			if (c[iCnt] == ' ' && c[iCnt-1] != '\\')
+				 (*iParams)++;
+		}
+	}
+	DBGPRINTF("iParams = '%d'\n", *iParams);
+
+	/* create argv[] */
+	CHKmalloc(*aParams = malloc(*iParams * sizeof(char*)));
+	iPrm = 0;
+	bInQuotes = FALSE;
+	/* Set first parameter to binary */
+	(*aParams)[iPrm] = strdup((char*)*szBinary);
+	iPrm++;
+	if (estrParams != NULL) {
+		iCnt = iStr = 0;
+		c = es_getBufAddr(estrParams); /* Reset to beginning */
+		while(iCnt < es_strlen(estrParams) ) {
+			if ( c[iCnt] == ' ' && !bInQuotes ) {
+				estrTmp = es_newStrFromSubStr( estrParams, iStr, iCnt-iStr);
+			} else if ( iCnt+1 >= es_strlen(estrParams) ) {
+				estrTmp = es_newStrFromSubStr( estrParams, iStr, iCnt-iStr+1);
+			} else if (c[iCnt] == '"') {
+				bInQuotes = !bInQuotes;
+			}
+
+			if ( estrTmp != NULL ) {
+				(*aParams)[iPrm] = es_str2cstr(estrTmp, NULL);
+				iStr = iCnt+1; /* Set new start */
+				DBGPRINTF("Param (%d): '%s'\n", iPrm, (*aParams)[iPrm]);
+				es_deleteStr( estrTmp );
+				estrTmp = NULL;
+				iPrm++;
+			}
+			iCnt++;
+		}
+	}
+	(*aParams)[iPrm] = NULL; /* NULL per argv[] convention */
+
+finalize_it:
+	RETiRet;
+}

@@ -521,8 +521,8 @@ startupSrv(ptcpsrv_t *pSrv)
 				/* it is debatable if PF_INET with EAFNOSUPPORT should
 				 * also be ignored...
 				 */
-				continue;
 			}
+                        continue;
 		}
 
 		if(r->ai_family == AF_INET6) {
@@ -645,8 +645,8 @@ static rsRetVal
 getPeerNames(prop_t **peerName, prop_t **peerIP, struct sockaddr *pAddr, sbool bUXServer)
 {
 	int error;
-	uchar szIP[NI_MAXHOST] = "";
-	uchar szHname[NI_MAXHOST] = "";
+	uchar szIP[NI_MAXHOST+1] = "";
+	uchar szHname[NI_MAXHOST+1] = "";
 	struct addrinfo hints, *res;
 	sbool bMaliciousHName = 0;
 	
@@ -656,8 +656,10 @@ getPeerNames(prop_t **peerName, prop_t **peerIP, struct sockaddr *pAddr, sbool b
 	*peerIP = NULL;
 
 	if (bUXServer) {
-		strcpy((char *) szHname, (char *) glbl.GetLocalHostName());
-		strcpy((char *) szIP, (char *) glbl.GetLocalHostIP());
+		strncpy((char *) szHname, (char *) glbl.GetLocalHostName(), NI_MAXHOST);
+		strncpy((char *) szIP, (char *) glbl.GetLocalHostIP(), NI_MAXHOST);
+		szHname[NI_MAXHOST] = '\0';
+		szIP[NI_MAXHOST] = '\0';
 	} else {
 		error = getnameinfo(pAddr, SALEN(pAddr), (char *) szIP, sizeof(szIP), NULL, 0, NI_NUMERICHOST);
 		if (error) {
@@ -734,7 +736,7 @@ EnableKeepAlive(ptcplstn_t *pLstn, int sock)
 	if(pLstn->pSrv->iKeepAliveProbes > 0) {
 		optval = pLstn->pSrv->iKeepAliveProbes;
 		optlen = sizeof(optval);
-		ret = setsockopt(sock, SOL_TCP, TCP_KEEPCNT, &optval, optlen);
+		ret = setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &optval, optlen);
 	} else {
 		ret = 0;
 	}
@@ -749,7 +751,7 @@ EnableKeepAlive(ptcplstn_t *pLstn, int sock)
 	if(pLstn->pSrv->iKeepAliveTime > 0) {
 		optval = pLstn->pSrv->iKeepAliveTime;
 		optlen = sizeof(optval);
-		ret = setsockopt(sock, SOL_TCP, TCP_KEEPIDLE, &optval, optlen);
+		ret = setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &optval, optlen);
 	} else {
 		ret = 0;
 	}
@@ -764,7 +766,7 @@ EnableKeepAlive(ptcplstn_t *pLstn, int sock)
 	if(pLstn->pSrv->iKeepAliveIntvl > 0) {
 		optval = pLstn->pSrv->iKeepAliveIntvl;
 		optlen = sizeof(optval);
-		ret = setsockopt(sock, SOL_TCP, TCP_KEEPINTVL, &optval, optlen);
+		ret = setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &optval, optlen);
 	} else {
 		ret = 0;
 	}
@@ -785,8 +787,8 @@ finalize_it:
 /* accept an incoming connection request
  * rgerhards, 2008-04-22
  */
-static rsRetVal
-AcceptConnReq(ptcplstn_t *pLstn, int *newSock, prop_t **peerName, prop_t **peerIP)
+static rsRetVal ATTR_NONNULL()
+AcceptConnReq(ptcplstn_t *const pLstn, int *const newSock, prop_t **peerName, prop_t **peerIP)
 {
 	int sockflags;
 	struct sockaddr_storage addr;
@@ -795,6 +797,7 @@ AcceptConnReq(ptcplstn_t *pLstn, int *newSock, prop_t **peerName, prop_t **peerI
 
 	DEFiRet;
 
+	*peerName = NULL; /* ensure we know if we don't have one! */
 	iNewSock = accept(pLstn->sock, (struct sockaddr*) &addr, &addrlen);
 	if(iNewSock < 0) {
 		if(errno == EAGAIN || errno == EWOULDBLOCK || errno == EMFILE)
@@ -802,6 +805,10 @@ AcceptConnReq(ptcplstn_t *pLstn, int *newSock, prop_t **peerName, prop_t **peerI
 		LogError(errno, RS_RET_ACCEPT_ERR, "error accepting connection "
 			    "on listen socket %d", pLstn->sock);
 		ABORT_FINALIZE(RS_RET_ACCEPT_ERR);
+	}
+	if(addrlen == 0) {
+		LogError(errno, RS_RET_ACCEPT_ERR, "AcceptConnReq could not obtain "
+			    "remote peer identification on listen socket %d", pLstn->sock);
 	}
 
 	if(pLstn->pSrv->bKeepAlive)
@@ -826,7 +833,9 @@ AcceptConnReq(ptcplstn_t *pLstn, int *newSock, prop_t **peerName, prop_t **peerI
 		ABORT_FINALIZE(RS_RET_IO_ERROR);
 	}
 	if(pLstn->pSrv->bEmitMsgOnOpen) {
-		LogMsg(0, RS_RET_NO_ERRCODE, LOG_INFO, "imptcp: connection established with host: %s", propGetSzStr(*peerName));
+		LogMsg(0, RS_RET_NO_ERRCODE, LOG_INFO,
+			"imptcp: connection established with host: %s",
+			propGetSzStr(*peerName));
 	}
 
 	STATSCOUNTER_INC(pLstn->ctrSessOpen, pLstn->mutCtrSessOpen);
@@ -836,7 +845,10 @@ finalize_it:
 	DBGPRINTF("iRet: %d\n", iRet);
 	if(iRet != RS_RET_OK) {
 		if(iRet != RS_RET_NO_MORE_DATA && pLstn->pSrv->bEmitMsgOnOpen) {
-			LogError(0, NO_ERRCODE, "imptcp: connection could not be established with host: %s", propGetSzStr(*peerName));
+			LogError(0, NO_ERRCODE, "imptcp: connection could not be "
+				"established with host: %s",
+				*peerName == NULL ? "(could not query)"
+					: (const char*)propGetSzStr(*peerName));
 		}
 		STATSCOUNTER_INC(pLstn->ctrSessOpenErr, pLstn->mutCtrSessOpenErr);
 		/* the close may be redundant, but that doesn't hurt... */
@@ -1036,9 +1048,10 @@ processDataRcvd(ptcpsess_t *const __restrict__ pThis,
 					pThis->inputState = eAtStrtFram;
 				}
 			} else {
-				/* IMPORTANT: here we copy the actual frame content to the message - for BOTH framing modes!
-				 * If we have a message that is larger than the max msg size, we truncate it. This is the best
-				 * we can do in light of what the engine supports. -- rgerhards, 2008-03-14
+				/* IMPORTANT: here we copy the actual frame content to the message - for BOTH
+				 * framing modes! If we have a message that is larger than the max msg size,
+				 * we truncate it. This is the best we can do in light of what the engine supports.
+				 * -- rgerhards, 2008-03-14
 				 */
 				if(pThis->iMsg < iMaxLine) {
 					*(pThis->pMsg + pThis->iMsg++) = c;
@@ -1159,7 +1172,8 @@ DataRcvdCompressed(ptcpsess_t *pThis, char *buf, size_t len)
 	pThis->zstrm.avail_in = len;
 	/* run inflate() on buffer until everything has been uncompressed */
 	do {
-		DBGPRINTF("imptcp: in inflate() loop, avail_in %d, total_in %ld\n", pThis->zstrm.avail_in, pThis->zstrm.total_in);
+		DBGPRINTF("imptcp: in inflate() loop, avail_in %d, total_in %ld\n",
+			pThis->zstrm.avail_in, pThis->zstrm.total_in);
 		pThis->zstrm.avail_out = sizeof(zipBuf);
 		pThis->zstrm.next_out = zipBuf;
 		zRet = inflate(&pThis->zstrm, Z_SYNC_FLUSH);    /* no bad return value */
@@ -1173,7 +1187,8 @@ DataRcvdCompressed(ptcpsess_t *pThis, char *buf, size_t len)
 		}
 	} while (pThis->zstrm.avail_out == 0);
 
-	dbgprintf("end of DataRcvCompress, sizes: in %lld, out %llu\n", (long long) len, (long long unsigned) outtotal);
+	dbgprintf("end of DataRcvCompress, sizes: in %lld, out %llu\n", (long long) len,
+		(long long unsigned) outtotal);
 finalize_it:
 	RETiRet;
 }
@@ -1394,7 +1409,8 @@ doZipFinish(ptcpsess_t *pSess)
 		outavail = sizeof(zipBuf) - pSess->zstrm.avail_out;
 		if(outavail != 0) {
 			pSess->pLstn->rcvdDecompressed += outavail;
-			CHKiRet(DataRcvdUncompressed(pSess, (char*)zipBuf, outavail, &stTime, 0)); // TODO: query time!
+			CHKiRet(DataRcvdUncompressed(pSess, (char*)zipBuf, outavail, &stTime, 0));
+		// TODO: query time!
 		}
 	} while (pSess->zstrm.avail_out == 0);
 
@@ -1634,13 +1650,15 @@ static void
 startWorkerPool(void)
 {
 	int i;
+	pthread_mutex_lock(&io_q.mut); /* locking to keep Coverity happy */
 	wrkrRunning = 0;
+	pthread_mutex_unlock(&io_q.mut);
 	DBGPRINTF("imptcp: starting worker pool, %d workers\n", runModConf->wrkrMax);
-    wrkrInfo = calloc(runModConf->wrkrMax, sizeof(struct wrkrInfo_s));
-    if (wrkrInfo == NULL) {
-        DBGPRINTF("imptcp: worker-info array allocation failed.\n");
-        return;
-    }
+	wrkrInfo = calloc(runModConf->wrkrMax, sizeof(struct wrkrInfo_s));
+	if (wrkrInfo == NULL) {
+		LogError(errno, RS_RET_OUT_OF_MEMORY, "imptcp: worker-info array allocation failed.");
+		return;
+	}
 	for(i = 0 ; i < runModConf->wrkrMax ; ++i) {
 		/* init worker info structure! */
 		wrkrInfo[i].numCalled = 0;
@@ -1767,11 +1785,11 @@ sessActivity(ptcpsess_t *pSess, int *continue_polling)
 				bEmitOnClose = 1;
 			}
 			*continue_polling = 0;
-			CHKiRet(closeSess(pSess)); /* close may emit more messages in strmzip mode! */
 			if(bEmitOnClose) {
 				errmsg.LogError(0, RS_RET_PEER_CLOSED_CONN, "imptcp session %d closed by "
 					  	"remote peer %s.", remsock, peerName);
 			}
+			CHKiRet(closeSess(pSess)); /* close may emit more messages in strmzip mode! */
 			break;
 		} else {
 			if(errno == EAGAIN || errno == EWOULDBLOCK)
@@ -1849,7 +1867,8 @@ destroyIoQ(void)
 	while (!STAILQ_EMPTY(&io_q.q)) {
 		n = STAILQ_FIRST(&io_q.q);
 		STAILQ_REMOVE_HEAD(&io_q.q, link);
-		errmsg.LogError(0, RS_RET_INTERNAL_ERROR, "imptcp: discarded enqueued io-work to allow shutdown - ignored");
+		errmsg.LogError(0, RS_RET_INTERNAL_ERROR, "imptcp: discarded enqueued io-work to allow shutdown "
+								"- ignored");
 		free(n);
 	}
 	io_q.sz = 0;

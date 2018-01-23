@@ -76,18 +76,26 @@ static int bGlblSrvrInitDone = 0;	/**< 0 - server global init not yet done, 1 - 
 static pthread_mutex_t mutGtlsStrerror;
 /*< a mutex protecting the potentially non-reentrant gtlStrerror() function */
 
-/* a macro to check GnuTLS calls against unexpected errors */
-#define CHKgnutls(x) { \
-	gnuRet = (x); \
-	if(gnuRet == GNUTLS_E_FILE_ERROR) { \
-		errmsg.LogError(0, RS_RET_GNUTLS_ERR, "error reading file - a common cause is that the file  does not exist"); \
-		ABORT_FINALIZE(RS_RET_GNUTLS_ERR); \
-	} else if(gnuRet != 0) { \
+/* a macro to abort if GnuTLS error is not acceptable. We split this off from
+ * CHKgnutls() to avoid some Coverity report in cases where we know GnuTLS
+ * failed. Note: gnuRet must already be set accordingly!
+ */
+#define ABORTgnutls { \
 		uchar *pErr = gtlsStrerror(gnuRet); \
 		errmsg.LogError(0, RS_RET_GNUTLS_ERR, "unexpected GnuTLS error %d in %s:%d: %s\n", \
 	gnuRet, __FILE__, __LINE__, pErr); \
 		free(pErr); \
 		ABORT_FINALIZE(RS_RET_GNUTLS_ERR); \
+}
+/* a macro to check GnuTLS calls against unexpected errors */
+#define CHKgnutls(x) { \
+	gnuRet = (x); \
+	if(gnuRet == GNUTLS_E_FILE_ERROR) { \
+		errmsg.LogError(0, RS_RET_GNUTLS_ERR, "error reading file - a common cause is that the " \
+			"file  does not exist"); \
+		ABORT_FINALIZE(RS_RET_GNUTLS_ERR); \
+	} else if(gnuRet != 0) { \
+		ABORTgnutls; \
 	} \
 }
 
@@ -273,7 +281,7 @@ gtlsClientCertCallback(gnutls_session_t session,
  * rgerhards, 2008-05-21
  */
 static rsRetVal
-gtlsGetCertInfo(nsd_gtls_t *pThis, cstr_t **ppStr)
+gtlsGetCertInfo(nsd_gtls_t *const pThis, cstr_t **ppStr)
 {
 	uchar szBufA[1024];
 	uchar *szBuf = szBufA;
@@ -534,8 +542,8 @@ gtlsRecordRecv(nsd_gtls_t *pThis)
 		dbgprintf("GnuTLS receive requires a retry (this most probably is OK and no error condition)\n");
 		ABORT_FINALIZE(RS_RET_RETRY);
 	} else {
-		int gnuRet; /* TODO: build a specific function for GnuTLS error reporting */
-		CHKgnutls(lenRcvd); /* this will abort the function */
+		int gnuRet = lenRcvd;
+		ABORTgnutls;
 	}
 
 finalize_it:
@@ -1009,7 +1017,7 @@ gtlsChkPeerCertValidity(nsd_gtls_t *pThis)
 	DEFiRet;
 	const char *pszErrCause;
 	int gnuRet;
-	cstr_t *pStr;
+	cstr_t *pStr = NULL;
 	unsigned stateCert;
 	const gnutls_datum_t *cert_list;
 	unsigned cert_list_size = 0;
@@ -1024,7 +1032,8 @@ gtlsChkPeerCertValidity(nsd_gtls_t *pThis)
 	cert_list = gnutls_certificate_get_peers(pThis->sess, &cert_list_size);
 	if(cert_list_size < 1) {
 		errno = 0;
-		errmsg.LogError(0, RS_RET_TLS_NO_CERT, "peer did not provide a certificate, not permitted to talk to it");
+		errmsg.LogError(0, RS_RET_TLS_NO_CERT,
+			"peer did not provide a certificate, not permitted to talk to it");
 		ABORT_FINALIZE(RS_RET_TLS_NO_CERT);
 	}
 
@@ -1068,9 +1077,11 @@ gtlsChkPeerCertValidity(nsd_gtls_t *pThis)
 		if(ttCert == -1)
 			ABORT_FINALIZE(RS_RET_TLS_CERT_ERR);
 		else if(ttCert > ttNow) {
-			errmsg.LogError(0, RS_RET_CERT_NOT_YET_ACTIVE, "not permitted to talk to peer: certificate %d not yet active", i);
+			errmsg.LogError(0, RS_RET_CERT_NOT_YET_ACTIVE, "not permitted to talk to peer: "
+					"certificate %d not yet active", i);
 			gtlsGetCertInfo(pThis, &pStr);
-			errmsg.LogError(0, RS_RET_CERT_NOT_YET_ACTIVE, "invalid cert info: %s", cstrGetSzStrNoNULL(pStr));
+			errmsg.LogError(0, RS_RET_CERT_NOT_YET_ACTIVE,
+				"invalid cert info: %s", cstrGetSzStrNoNULL(pStr));
 			cstrDestruct(&pStr);
 			ABORT_FINALIZE(RS_RET_CERT_NOT_YET_ACTIVE);
 		}
@@ -1079,7 +1090,8 @@ gtlsChkPeerCertValidity(nsd_gtls_t *pThis)
 		if(ttCert == -1)
 			ABORT_FINALIZE(RS_RET_TLS_CERT_ERR);
 		else if(ttCert < ttNow) {
-			errmsg.LogError(0, RS_RET_CERT_EXPIRED, "not permitted to talk to peer: certificate %d expired", i);
+			errmsg.LogError(0, RS_RET_CERT_EXPIRED, "not permitted to talk to peer: certificate"
+				" %d expired", i);
 			gtlsGetCertInfo(pThis, &pStr);
 			errmsg.LogError(0, RS_RET_CERT_EXPIRED, "invalid cert info: %s", cstrGetSzStrNoNULL(pStr));
 			cstrDestruct(&pStr);
@@ -1431,13 +1443,10 @@ finalize_it:
 static rsRetVal
 CheckConnection(nsd_t __attribute__((unused)) *pNsd)
 {
-	DEFiRet;
 	nsd_gtls_t *pThis = (nsd_gtls_t*) pNsd;
 	ISOBJ_TYPE_assert(pThis, nsd_gtls);
 
-	CHKiRet(nsd_ptcp.CheckConnection(pThis->pTcp));
-finalize_it:
-	RETiRet;
+	return nsd_ptcp.CheckConnection(pThis->pTcp);
 }
 
 
@@ -1532,7 +1541,8 @@ AcceptConnReq(nsd_t *pNsd, nsd_t **ppNew)
 	gnuRet = gnutls_handshake(pNew->sess);
 	if(gnuRet == GNUTLS_E_AGAIN || gnuRet == GNUTLS_E_INTERRUPTED) {
 		pNew->rtryCall = gtlsRtry_handshake;
-		dbgprintf("GnuTLS handshake does not complete immediately - setting to retry (this is OK and normal)\n");
+		dbgprintf("GnuTLS handshake does not complete immediately - "
+			"setting to retry (this is OK and normal)\n");
 	} else if(gnuRet == 0) {
 		/* we got a handshake, now check authorization */
 		CHKiRet(gtlsChkPeerAuth(pNew));
@@ -1706,6 +1716,32 @@ EnableKeepAlive(nsd_t *pNsd)
 	return nsd_ptcp.EnableKeepAlive(pThis->pTcp);
 }
 
+
+/*
+ * SNI should not be used if the hostname is a bare IP address
+ */
+static int
+SetServerNameIfPresent(nsd_gtls_t *pThis, uchar *host) {
+	struct sockaddr_in sa;
+	struct sockaddr_in6 sa6;
+
+	int inet_pton_ret = inet_pton(AF_INET, CHAR_CONVERT(host), &(sa.sin_addr));
+
+	if (inet_pton_ret == 0) { // host wasn't a bare IPv4 address: try IPv6
+		inet_pton_ret = inet_pton(AF_INET6, CHAR_CONVERT(host), &(sa6.sin6_addr));
+	}
+
+	switch(inet_pton_ret) {
+		case 1: // host is a valid IP address: don't use SNI
+			return 0;
+		case 0: // host isn't a valid IP address: assume it's a domain name, use SNI
+			return gnutls_server_name_set(pThis->sess, GNUTLS_NAME_DNS, host, ustrlen(host));
+		default: // unexpected error
+			return -1;
+	}
+
+}
+
 /* open a connection to a remote host (server). With GnuTLS, we always
  * open a plain tcp socket and then, if in TLS mode, do a handshake on it.
  * rgerhards, 2008-03-19
@@ -1737,6 +1773,8 @@ Connect(nsd_t *pNsd, int family, uchar *port, uchar *host, char *device)
 	CHKgnutls(gnutls_init(&pThis->sess, GNUTLS_CLIENT));
 	pThis->bHaveSess = 1;
 	pThis->bIsInitiator = 1;
+
+	CHKgnutls(SetServerNameIfPresent(pThis, host));
 
 	/* in the client case, we need to set a callback that ensures our certificate
 	 * will be presented to the server even if it is not signed by one of the server's

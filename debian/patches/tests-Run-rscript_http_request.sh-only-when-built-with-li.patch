@@ -1,0 +1,67 @@
+From: Thomas Deutschmann <whissi@whissi.de>
+Date: Thu, 11 Jan 2018 17:47:00 +0100
+Subject: tests: Run rscript_http_request.sh only when built with libcurl
+
+(cherry picked from commit 468eeb79b8da91fb71dfef6bfb25476b2a37f446)
+---
+ configure.ac      |  2 ++
+ tests/Makefile.am | 12 +++++++++---
+ 2 files changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index 1411434..31d26da 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -454,6 +454,8 @@ if test "$enable_libcurl" = "yes"; then
+ 	)
+ fi
+ 
++AM_CONDITIONAL(ENABLE_LIBCURL, test "x${enable_libcurl}" = "xyes")
++
+ # klog
+ AC_ARG_ENABLE(klog,
+         [AS_HELP_STRING([--enable-klog],[Integrated klog functionality @<:@default=yes@:>@])],
+diff --git a/tests/Makefile.am b/tests/Makefile.am
+index a016113..b029ca4 100644
+--- a/tests/Makefile.am
++++ b/tests/Makefile.am
+@@ -226,7 +226,6 @@ TESTS +=  \
+ 	rscript_contains.sh \
+ 	rscript_bare_var_root.sh \
+ 	rscript_bare_var_root-empty.sh \
+-	rscript_http_request.sh \
+ 	rscript_ipv42num.sh \
+ 	rscript_field.sh \
+ 	rscript_stop.sh \
+@@ -305,7 +304,11 @@ TESTS +=  \
+ 	lookup_table_rscript_reload.sh \
+ 	lookup_table_rscript_reload_without_stub.sh \
+ 	multiple_lookup_tables.sh
+-endif
++if ENABLE_LIBCURL
++TESTS +=  \
++	rscript_http_request.sh
++endif # ENABLE_LIBCURL
++endif # ENABLE_TESTBENCH2
+ 
+ if HAVE_VALGRIND
+ TESTS +=  \
+@@ -313,7 +316,6 @@ TESTS +=  \
+ 	mmexternal-InvldProg-vg.sh \
+ 	internal-errmsg-memleak-vg.sh \
+ 	rscript_set_memleak-vg.sh \
+-	rscript_http_request-vg.sh \
+ 	no-parser-vg.sh \
+ 	discard-rptdmsg-vg.sh \
+ 	discard-allmark-vg.sh \
+@@ -338,6 +340,10 @@ TESTS +=  \
+ 	multiple_lookup_tables-vg.sh \
+ 	fac_local0-vg.sh \
+ 	rscript_trim-vg.sh
++if ENABLE_LIBCURL
++TESTS +=  \
++	rscript_http_request-vg.sh
++endif # ENABLE_LIBCURL
+ endif # HAVE_VALGRIND
+ 
+ if ENABLE_ROOT_TESTS

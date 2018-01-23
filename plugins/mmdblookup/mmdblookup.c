@@ -32,6 +32,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <pthread.h>
 #include "conf.h"
 #include "syslogd-types.h"
 #include "srUtils.h"
@@ -368,7 +369,7 @@ CODESTARTdoAction
 	size_t  memlen;
 	char   *membuf;
 	FILE   *memstream;
-	memstream = open_memstream(&membuf, &memlen);
+	CHKmalloc(memstream = open_memstream(&membuf, &memlen));
 
 	if (entry_data_list != NULL && memstream != NULL) {
 		MMDB_dump_entry_data_list(memstream, entry_data_list, 2);
@@ -383,6 +384,7 @@ CODESTARTdoAction
 
 	/* extract and amend fields (to message) as configured */
 	for (int i = 0 ; i <  pData->fieldList.nmemb; ++i) {
+		char *strtok_save;
 		char buf[(strlen((char *)(pData->fieldList.name[i])))+1];
 		strcpy(buf, (char *)pData->fieldList.name[i]);
 
@@ -392,11 +394,11 @@ CODESTARTdoAction
 		const char *SEP = "!";
 
 		/* find lowest level JSON object */
-		char *s = strtok(buf, SEP);
+		char *s = strtok_r(buf, SEP, &strtok_save);
 		for (; s != NULL; j++) {
 			json_object_object_get_ex(temp_json, s, &sub_obj);
 			temp_json = sub_obj;
-			s = strtok(NULL, SEP);
+			s = strtok_r(NULL, SEP, &strtok_save);
 		}
 		/* temp_json now contains the value we want to have, so set it */
 		json_object_get(temp_json);
@@ -412,17 +414,7 @@ finalize_it:
 ENDdoAction
 
 
-BEGINparseSelectorAct
-CODESTARTparseSelectorAct
-CODE_STD_STRING_REQUESTparseSelectorAct(1)
-	if (strncmp((char*) p, ":mmdblookup:", sizeof(":mmdblookup:") - 1)) {
-		errmsg.LogError(0, RS_RET_LEGA_ACT_NOT_SUPPORTED,
-			"mmdblookup supports only v6+ config format, use: "
-			"action(type=\"mmdblookup\" ...)");
-	}
-	ABORT_FINALIZE(RS_RET_CONFLINE_UNPROCESSED);
-CODE_STD_FINALIZERparseSelectorAct
-ENDparseSelectorAct
+NO_LEGACY_CONF_parseSelectorAct
 
 
 BEGINmodExit
