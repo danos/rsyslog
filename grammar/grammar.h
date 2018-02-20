@@ -49,48 +49,49 @@ extern int yydebug;
     FUNC = 259,
     BEGINOBJ = 260,
     ENDOBJ = 261,
-    BEGIN_ACTION = 262,
-    BEGIN_PROPERTY = 263,
-    BEGIN_CONSTANT = 264,
-    BEGIN_TPL = 265,
-    BEGIN_RULESET = 266,
-    STOP = 267,
-    SET = 268,
-    RESET = 269,
-    UNSET = 270,
-    CONTINUE = 271,
-    CALL = 272,
-    CALL_INDIRECT = 273,
-    LEGACY_ACTION = 274,
-    LEGACY_RULESET = 275,
-    PRIFILT = 276,
-    PROPFILT = 277,
-    BSD_TAG_SELECTOR = 278,
-    BSD_HOST_SELECTOR = 279,
-    RELOAD_LOOKUP_TABLE_PROCEDURE = 280,
-    IF = 281,
-    THEN = 282,
-    ELSE = 283,
-    FOREACH = 284,
-    ITERATOR_ASSIGNMENT = 285,
-    DO = 286,
-    OR = 287,
-    AND = 288,
-    NOT = 289,
-    VAR = 290,
-    STRING = 291,
-    NUMBER = 292,
-    CMP_EQ = 293,
-    CMP_NE = 294,
-    CMP_LE = 295,
-    CMP_GE = 296,
-    CMP_LT = 297,
-    CMP_GT = 298,
-    CMP_CONTAINS = 299,
-    CMP_CONTAINSI = 300,
-    CMP_STARTSWITH = 301,
-    CMP_STARTSWITHI = 302,
-    UMINUS = 303
+    BEGIN_INCLUDE = 262,
+    BEGIN_ACTION = 263,
+    BEGIN_PROPERTY = 264,
+    BEGIN_CONSTANT = 265,
+    BEGIN_TPL = 266,
+    BEGIN_RULESET = 267,
+    STOP = 268,
+    SET = 269,
+    RESET = 270,
+    UNSET = 271,
+    CONTINUE = 272,
+    CALL = 273,
+    CALL_INDIRECT = 274,
+    LEGACY_ACTION = 275,
+    LEGACY_RULESET = 276,
+    PRIFILT = 277,
+    PROPFILT = 278,
+    BSD_TAG_SELECTOR = 279,
+    BSD_HOST_SELECTOR = 280,
+    RELOAD_LOOKUP_TABLE_PROCEDURE = 281,
+    IF = 282,
+    THEN = 283,
+    ELSE = 284,
+    FOREACH = 285,
+    ITERATOR_ASSIGNMENT = 286,
+    DO = 287,
+    OR = 288,
+    AND = 289,
+    NOT = 290,
+    VAR = 291,
+    STRING = 292,
+    NUMBER = 293,
+    CMP_EQ = 294,
+    CMP_NE = 295,
+    CMP_LE = 296,
+    CMP_GE = 297,
+    CMP_LT = 298,
+    CMP_GT = 299,
+    CMP_CONTAINS = 300,
+    CMP_CONTAINSI = 301,
+    CMP_STARTSWITH = 302,
+    CMP_STARTSWITHI = 303,
+    UMINUS = 304
   };
 #endif
 /* Tokens.  */
@@ -98,48 +99,49 @@ extern int yydebug;
 #define FUNC 259
 #define BEGINOBJ 260
 #define ENDOBJ 261
-#define BEGIN_ACTION 262
-#define BEGIN_PROPERTY 263
-#define BEGIN_CONSTANT 264
-#define BEGIN_TPL 265
-#define BEGIN_RULESET 266
-#define STOP 267
-#define SET 268
-#define RESET 269
-#define UNSET 270
-#define CONTINUE 271
-#define CALL 272
-#define CALL_INDIRECT 273
-#define LEGACY_ACTION 274
-#define LEGACY_RULESET 275
-#define PRIFILT 276
-#define PROPFILT 277
-#define BSD_TAG_SELECTOR 278
-#define BSD_HOST_SELECTOR 279
-#define RELOAD_LOOKUP_TABLE_PROCEDURE 280
-#define IF 281
-#define THEN 282
-#define ELSE 283
-#define FOREACH 284
-#define ITERATOR_ASSIGNMENT 285
-#define DO 286
-#define OR 287
-#define AND 288
-#define NOT 289
-#define VAR 290
-#define STRING 291
-#define NUMBER 292
-#define CMP_EQ 293
-#define CMP_NE 294
-#define CMP_LE 295
-#define CMP_GE 296
-#define CMP_LT 297
-#define CMP_GT 298
-#define CMP_CONTAINS 299
-#define CMP_CONTAINSI 300
-#define CMP_STARTSWITH 301
-#define CMP_STARTSWITHI 302
-#define UMINUS 303
+#define BEGIN_INCLUDE 262
+#define BEGIN_ACTION 263
+#define BEGIN_PROPERTY 264
+#define BEGIN_CONSTANT 265
+#define BEGIN_TPL 266
+#define BEGIN_RULESET 267
+#define STOP 268
+#define SET 269
+#define RESET 270
+#define UNSET 271
+#define CONTINUE 272
+#define CALL 273
+#define CALL_INDIRECT 274
+#define LEGACY_ACTION 275
+#define LEGACY_RULESET 276
+#define PRIFILT 277
+#define PROPFILT 278
+#define BSD_TAG_SELECTOR 279
+#define BSD_HOST_SELECTOR 280
+#define RELOAD_LOOKUP_TABLE_PROCEDURE 281
+#define IF 282
+#define THEN 283
+#define ELSE 284
+#define FOREACH 285
+#define ITERATOR_ASSIGNMENT 286
+#define DO 287
+#define OR 288
+#define AND 289
+#define NOT 290
+#define VAR 291
+#define STRING 292
+#define NUMBER 293
+#define CMP_EQ 294
+#define CMP_NE 295
+#define CMP_LE 296
+#define CMP_GE 297
+#define CMP_LT 298
+#define CMP_GT 299
+#define CMP_CONTAINS 300
+#define CMP_CONTAINSI 301
+#define CMP_STARTSWITH 302
+#define CMP_STARTSWITHI 303
+#define UMINUS 304
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -162,7 +164,7 @@ union YYSTYPE
 	struct cnffparamlst *fparams;
 	struct cnfitr *itr;
 
-#line 166 "grammar.h" /* yacc.c:1909  */
+#line 168 "grammar.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;
