@@ -1,6 +1,6 @@
 /* rsyslog rainerscript definitions
  *
- * Copyright 2011-2016 Rainer Gerhards
+ * Copyright 2011-2018 Rainer Gerhards
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -313,6 +313,7 @@ void objlstDestruct(struct objlst *lst);
 void objlstPrint(struct objlst *lst);
 struct nvlst* nvlstNewArray(struct cnfarray *ar);
 struct nvlst* nvlstNewStr(es_str_t *value);
+struct nvlst* nvlstNewStrBackticks(es_str_t *const value);
 struct nvlst* nvlstSetName(struct nvlst *lst, es_str_t *name);
 void nvlstDestruct(struct nvlst *lst);
 void nvlstPrint(struct nvlst *lst);
@@ -332,7 +333,7 @@ struct cnfstringval* cnfstringvalNew(es_str_t *estr);
 struct cnfvar* cnfvarNew(char *name);
 struct cnffunc * cnffuncNew(es_str_t *fname, struct cnffparamlst* paramlst);
 struct cnffparamlst * cnffparamlstNew(struct cnfexpr *expr, struct cnffparamlst *next);
-int cnfDoInclude(char *name);
+int cnfDoInclude(const char *name, const int optional);
 int cnfparamGetIdx(struct cnfparamblk *params, const char *name);
 struct cnfparamvals* nvlstGetParams(struct nvlst *lst, struct cnfparamblk *params,
 	       struct cnfparamvals *vals);
@@ -367,6 +368,7 @@ rsRetVal initRainerscript(void);
 void unescapeStr(uchar *s, int len);
 const char * tokenval2str(int tok);
 uchar* var2CString(struct svar *__restrict__ const r, int *__restrict__ const bMustFree);
+void includeProcessCnf(struct nvlst *const lst);
 
 /* debug helper */
 void cstrPrint(const char *text, es_str_t *estr);

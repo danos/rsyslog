@@ -30,11 +30,11 @@ check_PROGRAMS = $(TESTRUNS) ourtail nettester tcpflood chkseq msleep randomgen 
 if ENABLE_IMJOURNAL
 check_PROGRAMS += journal_print
 endif
-TESTS = $(TESTRUNS) 
+TESTS = $(TESTRUNS)
 #TESTS = $(TESTRUNS) cfg.sh
 
 TESTS +=  \
-	empty-hostname.sh 
+	empty-hostname.sh
 
 if ENABLE_TESTBENCH1
 TESTS +=  \
@@ -226,7 +226,6 @@ TESTS +=  \
 	rscript_contains.sh \
 	rscript_bare_var_root.sh \
 	rscript_bare_var_root-empty.sh \
-	rscript_http_request.sh \
 	rscript_ipv42num.sh \
 	rscript_field.sh \
 	rscript_stop.sh \
@@ -268,6 +267,7 @@ TESTS +=  \
 	rscript_parse_json.sh \
 	rscript_previous_action_suspended.sh \
 	rscript_str2num_negative.sh \
+	rscript-config_enable-on.sh \
 	mmanon_random_32_ipv4.sh \
 	mmanon_random_cons_32_ipv4.sh \
 	mmanon_recognize_ipv4.sh \
@@ -304,8 +304,23 @@ TESTS +=  \
 	lookup_table_bad_configs.sh \
 	lookup_table_rscript_reload.sh \
 	lookup_table_rscript_reload_without_stub.sh \
+	include-obj-text-from-file.sh \
 	multiple_lookup_tables.sh
-endif
+if ENABLE_LIBCURL
+TESTS +=  \
+	rscript_http_request.sh
+endif # ENABLE_LIBCURL
+if HAVE_VALGRIND
+TESTS +=  \
+	include-obj-outside-control-flow-vg.sh \
+	include-obj-in-if-vg.sh \
+	include-obj-text-vg.sh \
+	rscript_parse_json-vg.sh \
+	rscript_backticks-vg.sh \
+	rscript-config_enable-off-vg.sh \
+	prop-jsonmesg-vg.sh
+endif # HAVE_VALGRIND
+endif # ENABLE_TESTBENCH2
 
 if HAVE_VALGRIND
 TESTS +=  \
@@ -313,7 +328,6 @@ TESTS +=  \
 	mmexternal-InvldProg-vg.sh \
 	internal-errmsg-memleak-vg.sh \
 	rscript_set_memleak-vg.sh \
-	rscript_http_request-vg.sh \
 	no-parser-vg.sh \
 	discard-rptdmsg-vg.sh \
 	discard-allmark-vg.sh \
@@ -338,6 +352,10 @@ TESTS +=  \
 	multiple_lookup_tables-vg.sh \
 	fac_local0-vg.sh \
 	rscript_trim-vg.sh
+if ENABLE_LIBCURL
+TESTS +=  \
+	rscript_http_request-vg.sh
+endif # ENABLE_LIBCURL
 endif # HAVE_VALGRIND
 
 if ENABLE_ROOT_TESTS
@@ -381,7 +399,8 @@ TESTS +=  \
 	omprog-cleanup.sh \
 	omprog-cleanup-with-outfile.sh \
 	omprog-noterm-cleanup.sh \
-	omprog-noterm-default.sh
+	omprog-noterm-default.sh \
+	omprog-feedback.sh
 if OS_LINUX
 TESTS += \
 	omprog-cleanup-when-unresponsive.sh \
@@ -390,6 +409,7 @@ endif
 if HAVE_VALGRIND
 TESTS +=  \
 	omprog-cleanup-vg.sh \
+	omprog-multiparam-vg.sh \
 	omprog-noterm-cleanup-vg.sh
 if OS_LINUX
 TESTS += \
@@ -402,7 +422,7 @@ if ENABLE_OMKAFKA
 if ENABLE_IMKAFKA
 if ENABLE_KAFKA_TESTS
 TESTS += \
-	sndrcv_kafka.sh 
+	sndrcv_kafka.sh
 # Tests below need to be stable first!
 #	sndrcv_kafka_multi.sh
 #	sndrcv_kafka_fail.sh
@@ -450,7 +470,7 @@ if HAVE_VALGRIND
 TESTS +=  \
 	mysql-basic-vg.sh \
 	mysql-asyn-vg.sh \
-	mysql-actq-mt-withpause-vg.sh 
+	mysql-actq-mt-withpause-vg.sh
 endif
 if ENABLE_OMLIBDBI
 TESTS +=  \
@@ -528,7 +548,7 @@ TESTS +=  \
 	es-basic-errfile-empty.sh \
 	es-basic-errfile-popul.sh \
 	es-bulk-errfile-empty.sh \
-	es-bulk-errfile-popul.sh 
+	es-bulk-errfile-popul.sh
 if HAVE_VALGRIND
 TESTS += \
 	es-basic-vgthread.sh
@@ -718,7 +738,7 @@ endif
 if ENABLE_EXTENDED_TESTS
 # random.sh is temporarily disabled as it needs some work
 # to rsyslog core to complete in reasonable time
-#TESTS += random.sh 
+#TESTS += random.sh
 endif
 
 if ENABLE_IMFILE
@@ -748,7 +768,7 @@ TESTS += \
 	imfile-wildcards-dirs2.sh \
 	imfile-rename.sh
 
-# TEMPORARILY disable some imfile tests because refactoring 
+# TEMPORARILY disable some imfile tests because refactoring
 # is needed to get them to work 100% all the time.
 # alorbach, 2018-01-05
 #	imfile-wildcards-dirs-multi.sh \
@@ -770,7 +790,7 @@ if ENABLE_OMTCL
 TESTS += \
 	 omtcl.sh
 endif
- 
+
 endif # if ENABLE_TESTBENCH
 
 TESTS_ENVIRONMENT = RSYSLOG_MODDIR='$(abs_top_builddir)'/runtime/.libs/
@@ -914,6 +934,12 @@ EXTRA_DIST= \
 	testsuites/diskqueue.conf \
 	arrayqueue.sh \
 	testsuites/arrayqueue.conf \
+	include-obj-text-from-file.sh \
+	include-obj-outside-control-flow-vg.sh \
+	include-obj-in-if-vg.sh \
+	include-obj-text-vg.sh \
+	rscript-config_enable-off-vg.sh \
+	rscript-config_enable-on.sh \
 	rscript_http_request.sh \
 	rscript_http_request-vg.sh \
 	rscript_bare_var_root.sh \
@@ -959,6 +985,8 @@ EXTRA_DIST= \
 	rscript_is_time.sh \
 	rscript_script_error.sh \
 	rscript_parse_json.sh \
+	rscript_parse_json-vg.sh \
+	rscript_backticks-vg.sh \
 	rscript_previous_action_suspended.sh \
 	rscript_str2num_negative.sh \
 	mmanon_random_32_ipv4.sh \
@@ -1010,6 +1038,7 @@ EXTRA_DIST= \
 	testsuites/localvar-concurrency.conf \
 	exec_tpl-concurrency.sh \
 	testsuites/exec_tpl-concurrency.conf \
+	prop-jsonmesg-vg.sh \
 	prop-all-json-concurrency.sh \
 	testsuites/prop-all-json-concurrency.conf \
 	no-parser-errmsg.sh \
@@ -1334,6 +1363,8 @@ EXTRA_DIST= \
 	omprog-noterm-cleanup-vg.sh \
 	omprog-noterm-default.sh \
 	omprog-noterm-unresponsive.sh \
+	omprog-feedback.sh \
+	omprog-multiparam-vg.sh \
 	testsuites/omprog-cleanup.conf \
 	testsuites/omprog-noterm.conf \
 	testsuites/omprog-noterm-default.conf \
@@ -1343,6 +1374,8 @@ EXTRA_DIST= \
 	testsuites/omprog-cleanup-unresponsive.conf \
 	testsuites/omprog-test-bin.sh \
 	testsuites/term-ignoring-script.sh \
+	testsuites/omprog-feedback.conf \
+	testsuites/omprog-feedback-bin.sh \
 	pipe_noreader.sh \
 	testsuites/pipe_noreader.conf \
 	uxsock_simple.sh \
@@ -1759,7 +1792,7 @@ EXTRA_DIST= \
 	testsuites/sample.pmsnare_cccstyle \
 	testsuites/sample.pmsnare_ccbackslash \
 	testsuites/sample.pmsnare_modoverride
-	
+
 ourtail_SOURCES = ourtail.c
 msleep_SOURCES = msleep.c
 omrelp_dflt_port_SOURCES = omrelp_dflt_port.c
