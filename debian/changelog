@@ -1,10 +1,10 @@
-rsyslog (8.33.1-1) UNRELEASED; urgency=medium
+rsyslog (8.33.1-1) unstable; urgency=medium
 
   * New upstream version 8.33.1
   * Rebase patches
   * Drop old upgrade code from pre-jessie
 
- -- Michael Biebl <biebl@debian.org>  Tue, 06 Mar 2018 18:28:11 +0100
+ -- Michael Biebl <biebl@debian.org>  Tue, 06 Mar 2018 18:52:11 +0100
 
 rsyslog (8.32.0-1) unstable; urgency=medium
 
