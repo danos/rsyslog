@@ -68,11 +68,13 @@ TESTS +=  \
 	privdropgroup.sh \
 	privdropgroupid.sh \
 	template-json.sh \
+	template-pure-json.sh \
 	template-pos-from-to.sh \
 	template-pos-from-to-lowercase.sh \
 	template-pos-from-to-oversize.sh \
 	template-pos-from-to-oversize-lowercase.sh \
 	template-pos-from-to-missing-jsonvar.sh \
+	template-const-jsonf.sh
 	fac_authpriv.sh \
 	fac_local0.sh \
 	fac_local7.sh \
@@ -395,8 +397,10 @@ TESTS +=  \
 endif
 
 if ENABLE_OMPROG
+# see https://github.com/rsyslog/rsyslog/issues/2403
+# TODO: re-enable!
+#	omprog-cleanup.sh
 TESTS +=  \
-	omprog-cleanup.sh \
 	omprog-cleanup-with-outfile.sh \
 	omprog-noterm-cleanup.sh \
 	omprog-noterm-default.sh \
@@ -429,8 +433,9 @@ TESTS += \
 #	sndrcv_kafka_failresume.sh
 if HAVE_VALGRIND
 TESTS += \
-	sndrcv_kafka-vg-sender.sh \
 	sndrcv_kafka-vg-rcvr.sh
+# re-enable: (see https://github.com/rsyslog/rsyslog/issues/2434)
+# sndrcv_kafka-vg-sender.sh
 endif
 endif
 endif
@@ -588,6 +593,11 @@ if ENABLE_PMNULL
 TESTS +=  \
 	pmnull-basic.sh \
 	pmnull-withparams.sh
+endif
+
+if ENABLE_OMSTDOUT
+TESTS +=  \
+	omstdout-basic.sh
 endif
 
 if ENABLE_PMNORMALIZE
@@ -1056,11 +1066,13 @@ EXTRA_DIST= \
 	privdropgroup.sh \
 	privdropgroupid.sh \
 	template-json.sh \
+	template-pure-json.sh \
 	template-pos-from-to.sh \
 	template-pos-from-to-lowercase.sh \
 	template-pos-from-to-oversize.sh \
 	template-pos-from-to-oversize-lowercase.sh \
 	template-pos-from-to-missing-jsonvar.sh \
+	template-const-jsonf.sh \
 	fac_authpriv.sh \
 	testsuites/fac_authpriv.conf \
 	fac_local0.sh \
@@ -1116,6 +1128,7 @@ EXTRA_DIST= \
 	mmnormalize_rule_from_array.sh \
 	pmnull-basic.sh \
 	pmnull-withparams.sh \
+	omstdout-basic.sh \
 	testsuites/mmnormalize_processing_tests.rulebase \
 	mmnormalize_processing_test1.sh \
 	mmnormalize_processing_test2.sh \
@@ -1352,6 +1365,7 @@ EXTRA_DIST= \
 	testsuites/sndrcv_gzip_rcvr.conf \
 	action-tx-single-processing.sh \
 	action-tx-errfile.sh \
+	testsuites/action-tx-errfile.result \
 	pipeaction.sh \
 	testsuites/pipeaction.conf \
 	omprog-cleanup.sh \
@@ -1791,7 +1805,26 @@ EXTRA_DIST= \
 	testsuites/sample.pmsnare_ccdefault \
 	testsuites/sample.pmsnare_cccstyle \
 	testsuites/sample.pmsnare_ccbackslash \
-	testsuites/sample.pmsnare_modoverride
+	testsuites/sample.pmsnare_modoverride \
+	testsuites/include-std-omfile-action.conf \
+	pgsql-basic.sh \
+	testsuites/pgsql-basic.sql \
+	testsuites/pgsql-basic.conf \
+	testsuites/pgsql-select-msg.sql \
+	testsuites/pgsql-select-syslogtag.sql \
+	pgsql-basic-cnf6.sh \
+	pgsql-basic-threads-cnf6.sh \
+	pgsql-template.sh \
+	testsuites/pgsql-template.conf \
+	pgsql-template-cnf6.sh \
+	pgsql-actq-mt-withpause.sh \
+	pgsql-template-threads-cnf6.sh \
+	pgsql-basic-vg.sh \
+	pgsql-template-vg.sh \
+	pgsql-basic-cnf6-vg.sh \
+	pgsql-template-cnf6-vg.sh \
+	pgsql-actq-mt-withpause-vg.sh \
+	../devtools/prep-mysql-db.sh
 
 ourtail_SOURCES = ourtail.c
 msleep_SOURCES = msleep.c

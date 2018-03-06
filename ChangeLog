@@ -1,4 +1,25 @@
 ------------------------------------------------------------------------------
+Version 8.34.0 [v8-stable] 2018-04-03
+------------------------------------------------------------------------------
+Version 8.33.1 [v8-stable] 2018-03-06
+- 8.33.0 tarball release was actually pre-8.33.0
+  ... and so did not contain all features. This alone made a re-release
+  necessary, which is what now happens with 8.33.1.
+  Note: the git 8.33.0 label was correctly applied, "just" the tarball
+  was wrong.
+- devcontainer: use some more sensible defaults
+  and add ability to specify generic docker run options
+  this makes integration into CI (and other scripting) easier
+- fix problems with make dist
+  make dist did not package everything that was needed for CI, thus
+  resulting in make check failures if build from tarball.
+  Thanks to Thomas D. (whissi), and Michael Biebl for alerting us on the
+  problem, providing advise and some of the patches. We also added addt'l
+  patches ourselves. The problem occured as the CI check for tarball
+  completeness was more or less disabled a couple of weeks ago, which
+  unfortunately went unnoticed. We have also applied some more safeguards
+  to detect such problems in the future.
+------------------------------------------------------------------------------
 Version 8.33.0 [v8-stable] 2018-02-20
 - auto-detect if running inside a container (as pid 1)
   adjust defaults in this case to be more container-friendly
@@ -17,6 +38,16 @@ Version 8.33.0 [v8-stable] 2018-02-20
     --> ex: include(text=`echo $ENVVAR`)
   This finally really obsoletes $IncludeConfig.
   closes https://github.com/rsyslog/rsyslog/issues/2151
+- template: add option to generate json "container"
+  This enables easy JSON generation via template.
+  This commit also corrects an issue with the constant "jsonf"
+  format. That was recently added, and the implementation problem
+  only became visible when used inside a larger json object. No
+  officially released code is affected, thought - so it rellay
+  is just a side-note.
+  closes https://github.com/rsyslog/rsyslog/issues/2347
+- core/template: add format jsonf to constant template entries
+  closes https://github.com/rsyslog/rsyslog/issues/2348
 - config: add ability to disable config parameter ("config.enable")
   For auto-generated configs, it is useful to have the ability to disable some
   config constructs even though they may be specified inside the config. This
@@ -29,8 +60,14 @@ Version 8.33.0 [v8-stable] 2018-02-20
 - script: permit to use environment variables during configuration
   new constant string type "backticks", inspired by sh
   (sample: `echo $VARNAME`).
-- new global config parameter "shutdown.enable.ctl-c"
+- new global config parameter "shutdown.enable.ctlc"
   permits to shutdown rsyslog via ctl-c; useful e.g. in containers
+- config optimizer: detect totally empty "if" statements and optimize
+  them out
+- template: constant entry can now also be formatted as json field
+  This enhancements permits to craft clean templates that generate JSON,
+  e.g. for ElasticSearch consumption (or any other REST API)
+- omstdout: support for new-style configuration parameters added
 - core: set TZ on startup if not already set
   In theory, TZ should be set by the OS. Unfortuantely, this seems
   to be not the case any longer on many Linux distros. We now check
@@ -38,6 +75,10 @@ Version 8.33.0 [v8-stable] 2018-02-20
   Thanks to github user JPvRiel for providing an excellent explanation
   of the reasoning for this and how to work around it.
   closes https://github.com/rsyslog/rsyslog/issues/2054
+- imjournal bugfix: file handle leak during journal rotation
+  Thanks to Peter Portante for the patch
+  see also: https://github.com/rsyslog/rsyslog/pull/2437
+- lmsig_ksils12 bugfix: dirOwner and dirGroup config was not respected
 - script bugfix: replace() function worked incorrectly in some cases
   If the end of the message was similar to the replacement string, parts
   of the string could (not always) be missing.
@@ -61,8 +102,13 @@ Version 8.33.0 [v8-stable] 2018-02-20
 - core bugfix: string not properly terminated when RFC5424 MSGID is used
   This could lead to misadressing when the jsonmesg property was used.
   closes https://github.com/rsyslog/rsyslog/issues/2396
+- bugfix: strndup() compatibility layer func copies too much
+  The function did not obey the upper limit, effectively becoming
+  a strdup(). This was only noticed when the compatibility layer
+  was required, most importantly on Solaris 10.
 - CI system
   - we now use well-defined containers for parts of the CI runs
+  - now also build test under Alpine Linux
   - test added for omprog feedback feature
 ------------------------------------------------------------------------------
 Version 8.32.0 [v8-stable] 2018-01-09
