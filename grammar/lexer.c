@@ -404,8 +404,8 @@ static void yy_fatal_error (yyconst char msg[]  );
 	*yy_cp = '\0'; \
 	(yy_c_buf_p) = yy_cp;
 
-#define YY_NUM_RULES 119
-#define YY_END_OF_BUFFER 120
+#define YY_NUM_RULES 118
+#define YY_END_OF_BUFFER 119
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -416,74 +416,74 @@ struct yy_trans_info
 static yyconst flex_int16_t yy_accept[628] =
     {   0,
         0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-        0,    0,    9,    9,    0,    0,  120,  118,  117,  117,
-      118,  118,  118,   55,   89,  118,  118,  118,  118,   94,
-      118,   94,   94,   94,   94,   94,   94,   94,   94,   94,
-       94,   94,   94,   94,   94,   56,   57,   88,  117,   89,
-      118,  118,  118,   94,   94,   94,   94,   94,   94,   94,
-       94,   94,   94,   94,   94,   94,   94,   94,  110,  109,
-      109,  110,  110,   95,   97,  110,  100,   96,   98,   99,
-      110,  107,  107,  107,   70,   70,   69,   68,   67,   53,
-       52,   52,   53,   10,    9,    9,   10,   10,    4,    8,
+        0,    0,    9,    9,    0,    0,  119,  117,  116,  116,
+      117,  117,  117,   54,   88,  117,  117,  117,  117,   93,
+      117,   93,   93,   93,   93,   93,   93,   93,   93,   93,
+       93,   93,   93,   93,   93,   55,   56,   87,  116,   88,
+      117,  117,  117,   93,   93,   93,   93,   93,   93,   93,
+       93,   93,   93,   93,   93,   93,   93,   93,  109,  108,
+      108,  109,  109,   94,   96,  109,   99,   95,   97,   98,
+      109,  106,  106,  106,   69,   69,   68,   67,   66,   52,
+       51,   51,   52,   10,    9,    9,   10,   10,    4,    8,
 
-        7,   51,   49,   49,   51,   51,   45,   22,   24,   51,
-       11,   29,   20,   23,   19,   25,   21,   44,   44,   14,
-       35,   18,   36,   50,   50,   50,   50,   50,   50,   50,
-       50,   50,   26,   27,   51,    0,    0,  116,    0,    0,
-       93,   93,   93,   91,  103,   94,    0,   94,   94,   94,
-       94,   94,   94,   94,    1,   94,   94,   94,   94,   94,
-       94,   94,   94,   94,   94,   94,   94,   94,    0,    0,
-        0,    0,    0,    0,    0,    0,   93,    0,    0,    0,
-       94,   94,   94,   94,   94,   94,   94,   94,   94,   94,
-        1,   94,   94,   94,   94,   94,   94,   94,   94,   94,
+        7,   50,   48,   48,   50,   50,   44,   22,   24,   50,
+       11,   28,   20,   23,   19,   25,   21,   43,   43,   14,
+       34,   18,   35,   49,   49,   49,   49,   49,   49,   49,
+       49,   49,   26,   27,   50,    0,    0,  115,    0,    0,
+       92,   92,   92,   90,  102,   93,    0,   93,   93,   93,
+       93,   93,   93,   93,    1,   93,   93,   93,   93,   93,
+       93,   93,   93,   93,   93,   93,   93,   93,    0,    0,
+        0,    0,    0,    0,    0,    0,   92,    0,    0,    0,
+       93,   93,   93,   93,   93,   93,   93,   93,   93,   93,
+        1,   93,   93,   93,   93,   93,   93,   93,   93,   93,
 
-       94,   94,   94,   94,    0,  101,    0,    0,  108,  104,
-       96,    0,    0,  102,  107,  107,  106,   71,   67,   54,
-        9,    0,    6,    0,    0,    5,    0,   33,    0,   48,
-        0,   45,   45,   45,   45,    0,   46,    0,  105,   42,
-        0,   44,   31,   34,   30,   32,   50,   50,   50,   13,
-       38,   50,   15,   50,   50,    0,    0,   47,    0,  112,
-        0,  111,    0,    0,  114,    0,   93,   93,   90,   90,
-       91,   92,   94,   94,   94,   94,   94,   94,   94,   94,
-       94,   94,   94,   94,   94,   94,   94,   94,   94,   94,
-       62,   94,   94,   94,   94,   87,    0,  115,   93,    0,
+       93,   93,   93,   93,    0,  100,    0,    0,  107,  103,
+       95,    0,    0,  101,  106,  106,  105,   70,   66,   53,
+        9,    0,    6,    0,    0,    5,    0,   32,    0,   47,
+        0,   44,   44,   44,   44,    0,   45,    0,  104,   41,
+        0,   43,   30,   33,   29,   31,   49,   49,   49,   13,
+       37,   49,   15,   49,   49,    0,    0,   46,    0,  111,
+        0,  110,    0,    0,  113,    0,   92,   92,   89,   89,
+       90,   91,   93,   93,   93,   93,   93,   93,   93,   93,
+       93,   93,   93,   93,   93,   93,   93,   93,   93,   93,
+       61,   93,   93,   93,   93,   86,    0,  114,   92,    0,
 
-        0,   87,   94,   94,   94,   94,   94,   94,   94,   94,
-       94,   94,   94,   94,   94,   94,   94,   94,   94,   94,
-       62,   94,   94,   94,   94,    0,    0,    0,    0,    0,
-        0,    0,    0,    0,    0,   43,   16,   50,   17,   50,
-       50,    0,    0,    0,  113,   93,   90,   90,   92,   94,
-       60,   94,   94,   94,   59,   94,   94,   94,   94,   94,
-       94,   94,   94,   94,   94,   94,   94,   94,   58,   94,
-       94,   94,    0,    0,    0,   94,   60,   94,   94,   59,
-       94,   94,   94,   94,   94,   94,   94,   94,   94,   94,
-       94,   94,   94,   58,   94,   94,   94,    0,    0,    0,
+        0,   86,   93,   93,   93,   93,   93,   93,   93,   93,
+       93,   93,   93,   93,   93,   93,   93,   93,   93,   93,
+       61,   93,   93,   93,   93,    0,    0,    0,    0,    0,
+        0,    0,    0,    0,    0,   42,   16,   49,   17,   49,
+       49,    0,    0,    0,  112,   92,   89,   89,   91,   93,
+       59,   93,   93,   93,   58,   93,   93,   93,   93,   93,
+       93,   93,   93,   93,   93,   93,   93,   93,   57,   93,
+       93,   93,    0,    0,    0,   93,   59,   93,   93,   58,
+       93,   93,   93,   93,   93,   93,   93,   93,   93,   93,
+       93,   93,   93,   57,   93,   93,   93,    0,    0,    0,
 
-        0,    0,    0,    0,    0,    0,    0,   50,   50,   12,
-        0,    0,   94,   94,   94,   94,   94,   94,   94,   94,
-       94,   94,   94,   94,   94,   94,   94,   94,   63,   94,
-       94,   94,   64,    0,    0,   94,   94,   94,   94,   94,
-       94,   94,   94,   94,   94,   94,   94,   94,   63,   94,
-       94,   94,   64,    0,    0,   50,   50,   94,   94,   94,
-       94,   94,   94,   94,   94,    0,   80,   94,   94,   94,
-       94,   94,   94,   94,   94,   94,   94,    0,    0,   94,
-       94,   94,   94,   94,   94,   94,   94,   94,   94,   94,
-       94,   94,   94,   94,   50,   50,    0,   85,   94,   94,
+        0,    0,    0,    0,    0,    0,    0,   49,   49,   12,
+        0,    0,   93,   93,   93,   93,   93,   93,   93,   93,
+       93,   93,   93,   93,   93,   93,   93,   93,   62,   93,
+       93,   93,   63,    0,    0,   93,   93,   93,   93,   93,
+       93,   93,   93,   93,   93,   93,   93,   93,   62,   93,
+       93,   93,   63,    0,    0,   49,   49,   93,   93,   93,
+       93,   93,   93,   93,   93,    0,   79,   93,   93,   93,
+       93,   93,   93,   93,   93,   93,   93,    0,    0,   93,
+       93,   93,   93,   93,   93,   93,   93,   93,   93,   93,
+       93,   93,   93,   93,   49,   49,    0,   84,   93,   93,
 
-       94,   94,    2,    0,   75,   94,   94,   94,    0,   81,
-        0,   74,   94,   94,   94,   94,   94,   94,    0,   86,
-        0,   94,   94,    2,   94,   94,   94,   94,   94,   94,
-       50,   50,   94,   94,   65,   94,    0,   84,   94,   94,
-       94,   94,   94,    0,   77,   94,   94,   86,   94,   65,
-       94,   94,   94,   94,   37,   50,   94,    0,   79,   94,
-       94,   94,   94,    0,   78,   94,    0,   76,    0,   73,
-       94,   50,   50,   94,    0,   83,   94,   94,   94,   94,
-       94,   39,   40,   94,   94,    0,   72,   94,   94,   94,
-       50,   94,   94,   94,   94,   94,   41,   61,    0,   82,
+       93,   93,    2,    0,   74,   93,   93,   93,    0,   80,
+        0,   73,   93,   93,   93,   93,   93,   93,    0,   85,
+        0,   93,   93,    2,   93,   93,   93,   93,   93,   93,
+       49,   49,   93,   93,   64,   93,    0,   83,   93,   93,
+       93,   93,   93,    0,   76,   93,   93,   85,   93,   64,
+       93,   93,   93,   93,   36,   49,   93,    0,   78,   93,
+       93,   93,   93,    0,   77,   93,    0,   75,    0,   72,
+       93,   49,   49,   93,    0,   82,   93,   93,   93,   93,
+       93,   38,   39,   93,   93,    0,   71,   93,   93,   93,
+       49,   93,   93,   93,   93,   93,   40,   60,    0,   81,
 
-       94,   94,   94,   94,   94,   94,   94,   94,   94,   94,
-       94,   94,   94,   94,   94,   94,   94,   94,   94,    3,
-       94,   94,   94,   94,   94,   66,    0
+       93,   93,   93,   93,   93,   93,   93,   93,   93,   93,
+       93,   93,   93,   93,   93,   93,   93,   93,   93,    3,
+       93,   93,   93,   93,   93,   65,    0
     } ;
 
 static yyconst YY_CHAR yy_ec[256] =
@@ -1734,15 +1734,14 @@ static yyconst flex_int16_t yy_chk[4663] =
     } ;
 
 /* Table of booleans, true if rule could match eol. */
-static yyconst flex_int32_t yy_rule_can_match_eol[120] =
+static yyconst flex_int32_t yy_rule_can_match_eol[119] =
     {   0,
 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 
-    1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 
-    0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 
-        };
+    0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+    1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 
+    1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0,     };
 
 static yy_state_type yy_last_accepting_state;
 static char *yy_last_accepting_cpos;
@@ -1803,7 +1802,7 @@ static char *
 read_file(const char *const filename)
 {
 	char *content = NULL;
-	int fd;
+	int fd = -1;
 	struct stat sb;
 	ssize_t nread;
 	assert(filename != NULL);
@@ -1829,9 +1828,11 @@ read_file(const char *const filename)
 		goto done;
 	}
 
-	close(fd);
-
-done:	return content;
+done:
+	if(fd != -1) {
+		close(fd);
+	}
+	return content;
 }
 
 static es_str_t* ATTR_NONNULL(1)
@@ -1897,7 +1898,7 @@ expand_backticks(char *const param)
 * wrote this ugly, but the price needed to pay in order to remain
 * compatible to the previous format.
 */
-#line 156 "lexer.l"
+#line 158 "lexer.l"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1933,7 +1934,7 @@ int fileno(FILE *stream);
 #endif
 
 
-#line 1937 "lexer.c"
+#line 1938 "lexer.c"
 
 #define INITIAL 0
 #define INOBJ 1
@@ -2159,11 +2160,11 @@ YY_DECL
 		}
 
 	{
-#line 193 "lexer.l"
+#line 195 "lexer.l"
 
 
  /* keywords */
-#line 2167 "lexer.c"
+#line 2168 "lexer.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -2233,28 +2234,28 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 196 "lexer.l"
+#line 198 "lexer.l"
 { BEGIN EXPR; return IF; }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 197 "lexer.l"
+#line 199 "lexer.l"
 { BEGIN EXPR; return FOREACH; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 198 "lexer.l"
+#line 200 "lexer.l"
 { BEGIN IN_PROCEDURE_CALL; return RELOAD_LOOKUP_TABLE_PROCEDURE; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 199 "lexer.l"
+#line 201 "lexer.l"
 { return yytext[0]; }
 	YY_BREAK
 case 5:
 /* rule 5 can match eol */
 YY_RULE_SETUP
-#line 200 "lexer.l"
+#line 202 "lexer.l"
 {
 				   yytext[yyleng-1] = '\0';
 				   unescapeStr((uchar*)yytext+1, yyleng-2);
@@ -2264,7 +2265,7 @@ YY_RULE_SETUP
 case 6:
 /* rule 6 can match eol */
 YY_RULE_SETUP
-#line 205 "lexer.l"
+#line 207 "lexer.l"
 {
 				   yytext[yyleng-1] = '\0';
 				   unescapeStr((uchar*)yytext+1, yyleng-2);
@@ -2273,493 +2274,491 @@ YY_RULE_SETUP
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 210 "lexer.l"
+#line 212 "lexer.l"
 { return yytext[0]; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 211 "lexer.l"
+#line 213 "lexer.l"
 { BEGIN INITIAL; return yytext[0]; }
 	YY_BREAK
 case 9:
 /* rule 9 can match eol */
 YY_RULE_SETUP
-#line 212 "lexer.l"
+#line 214 "lexer.l"
 {  }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 213 "lexer.l"
+#line 215 "lexer.l"
 { parser_errmsg("invalid character '%s' in expression "
 					        "- is there an invalid escape sequence somewhere?",
 						yytext); }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 216 "lexer.l"
+#line 218 "lexer.l"
 { BEGIN EXPR; return yytext[0]; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 217 "lexer.l"
+#line 219 "lexer.l"
 { BEGIN INITIAL; return THEN; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 218 "lexer.l"
+#line 220 "lexer.l"
 { BEGIN INITIAL; return DO; }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 219 "lexer.l"
+#line 221 "lexer.l"
 { BEGIN INITIAL; return ';'; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 220 "lexer.l"
+#line 222 "lexer.l"
 { return OR; }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 221 "lexer.l"
+#line 223 "lexer.l"
 { return AND; }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 222 "lexer.l"
+#line 224 "lexer.l"
 { return NOT; }
 	YY_BREAK
 case 18:
-#line 224 "lexer.l"
-case 19:
-#line 225 "lexer.l"
-case 20:
 #line 226 "lexer.l"
-case 21:
+case 19:
 #line 227 "lexer.l"
-case 22:
+case 20:
 #line 228 "lexer.l"
-case 23:
+case 21:
 #line 229 "lexer.l"
-case 24:
+case 22:
 #line 230 "lexer.l"
-case 25:
+case 23:
 #line 231 "lexer.l"
-case 26:
+case 24:
 #line 232 "lexer.l"
-case 27:
+case 25:
 #line 233 "lexer.l"
-case 28:
+case 26:
 #line 234 "lexer.l"
+case 27:
+#line 235 "lexer.l"
+case 28:
+YY_RULE_SETUP
+#line 235 "lexer.l"
+{ return yytext[0]; }
+	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 234 "lexer.l"
-{ return yytext[0]; }
+#line 236 "lexer.l"
+{ return CMP_EQ; }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 235 "lexer.l"
-{ return CMP_EQ; }
+#line 237 "lexer.l"
+{ return CMP_LE; }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 236 "lexer.l"
-{ return CMP_LE; }
-	YY_BREAK
-case 32:
-YY_RULE_SETUP
-#line 237 "lexer.l"
+#line 238 "lexer.l"
 { return CMP_GE; }
 	YY_BREAK
+case 32:
+#line 240 "lexer.l"
 case 33:
-#line 239 "lexer.l"
+YY_RULE_SETUP
+#line 240 "lexer.l"
+{ return CMP_NE; }
+	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 239 "lexer.l"
-{ return CMP_NE; }
+#line 241 "lexer.l"
+{ return CMP_LT; }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 240 "lexer.l"
-{ return CMP_LT; }
+#line 242 "lexer.l"
+{ return CMP_GT; }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 241 "lexer.l"
-{ return CMP_GT; }
+#line 243 "lexer.l"
+{ return CMP_CONTAINS; }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 242 "lexer.l"
-{ return CMP_CONTAINS; }
+#line 244 "lexer.l"
+{ return ITERATOR_ASSIGNMENT; }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 243 "lexer.l"
-{ return ITERATOR_ASSIGNMENT; }
+#line 245 "lexer.l"
+{ return CMP_CONTAINSI; }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 244 "lexer.l"
-{ return CMP_CONTAINSI; }
+#line 246 "lexer.l"
+{ return CMP_STARTSWITH; }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 245 "lexer.l"
-{ return CMP_STARTSWITH; }
-	YY_BREAK
-case 41:
-YY_RULE_SETUP
-#line 246 "lexer.l"
+#line 247 "lexer.l"
 { return CMP_STARTSWITHI; }
 	YY_BREAK
+case 41:
+#line 249 "lexer.l"
 case 42:
-#line 248 "lexer.l"
+#line 250 "lexer.l"
 case 43:
-#line 249 "lexer.l"
-case 44:
-YY_RULE_SETUP
-#line 249 "lexer.l"
-{ yylval.n = strtoll(yytext, NULL, 0); return NUMBER; }
-	YY_BREAK
-case 45:
 YY_RULE_SETUP
 #line 250 "lexer.l"
-{ yylval.s = strdup(yytext+1); return VAR; }
+{ yylval.n = strtoll(yytext, NULL, 0); return NUMBER; }
 	YY_BREAK
-case 46:
-/* rule 46 can match eol */
+case 44:
 YY_RULE_SETUP
 #line 251 "lexer.l"
+{ yylval.s = strdup(yytext+1); return VAR; }
+	YY_BREAK
+case 45:
+/* rule 45 can match eol */
+YY_RULE_SETUP
+#line 252 "lexer.l"
 {
 				   yytext[yyleng-1] = '\0';
 				   unescapeStr((uchar*)yytext+1, yyleng-2);
 				   yylval.estr = es_newStrFromBuf(yytext+1, strlen(yytext)-1);
 				   return STRING; }
 	YY_BREAK
-case 47:
-/* rule 47 can match eol */
+case 46:
+/* rule 46 can match eol */
 YY_RULE_SETUP
-#line 256 "lexer.l"
+#line 257 "lexer.l"
 {
 				   yytext[yyleng-1] = '\0';
 				   unescapeStr((uchar*)yytext+1, yyleng-2);
 				   yylval.estr = expand_backticks(yytext+1);
 				   return STRING; }
 	YY_BREAK
-case 48:
-/* rule 48 can match eol */
+case 47:
+/* rule 47 can match eol */
 YY_RULE_SETUP
-#line 261 "lexer.l"
+#line 262 "lexer.l"
 {
 				   yytext[yyleng-1] = '\0';
 				   unescapeStr((uchar*)yytext+1, yyleng-2);
 				   yylval.estr = es_newStrFromBuf(yytext+1, strlen(yytext)-1);
 				   return STRING; }
 	YY_BREAK
-case 49:
-/* rule 49 can match eol */
-YY_RULE_SETUP
-#line 266 "lexer.l"
-
-	YY_BREAK
-case 50:
+case 48:
+/* rule 48 can match eol */
 YY_RULE_SETUP
 #line 267 "lexer.l"
+
+	YY_BREAK
+case 49:
+YY_RULE_SETUP
+#line 268 "lexer.l"
 { yylval.estr = es_newStrFromCStr(yytext, yyleng);
 				  return FUNC; }
 	YY_BREAK
-case 51:
+case 50:
 YY_RULE_SETUP
-#line 269 "lexer.l"
+#line 270 "lexer.l"
 { parser_errmsg("invalid character '%s' in expression "
 					        "- is there an invalid escape sequence somewhere?",
 						yytext); }
 	YY_BREAK
-case 52:
-/* rule 52 can match eol */
-YY_RULE_SETUP
-#line 272 "lexer.l"
-
-	YY_BREAK
-case 53:
+case 51:
+/* rule 51 can match eol */
 YY_RULE_SETUP
 #line 273 "lexer.l"
+
+	YY_BREAK
+case 52:
+YY_RULE_SETUP
+#line 274 "lexer.l"
 { parser_errmsg("invalid character '%s' in 'call' statement"
 					        "- is there an invalid escape sequence somewhere?",
 						yytext); }
 	YY_BREAK
-case 54:
+case 53:
 YY_RULE_SETUP
-#line 276 "lexer.l"
+#line 277 "lexer.l"
 { yylval.estr = es_newStrFromCStr(yytext, yyleng);
 				  BEGIN INITIAL;
 				  return NAME; }
 	YY_BREAK
+case 54:
+YY_RULE_SETUP
+#line 280 "lexer.l"
+{ return '&'; }
+	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 279 "lexer.l"
-{ return '&'; }
+#line 281 "lexer.l"
+{ return '{'; }
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 280 "lexer.l"
-{ return '{'; }
+#line 282 "lexer.l"
+{ return '}'; }
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 281 "lexer.l"
-{ return '}'; }
+#line 283 "lexer.l"
+{ return STOP; }
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 282 "lexer.l"
-{ return STOP; }
+#line 284 "lexer.l"
+{ return ELSE; }
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 283 "lexer.l"
-{ return ELSE; }
+#line 285 "lexer.l"
+{ BEGIN INCALL; return CALL; }
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 284 "lexer.l"
-{ BEGIN INCALL; return CALL; }
+#line 286 "lexer.l"
+{ BEGIN EXPR; return CALL_INDIRECT; }
 	YY_BREAK
 case 61:
 YY_RULE_SETUP
-#line 285 "lexer.l"
-{ BEGIN EXPR; return CALL_INDIRECT; }
+#line 287 "lexer.l"
+{ BEGIN EXPR; return SET; }
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 286 "lexer.l"
-{ BEGIN EXPR; return SET; }
+#line 288 "lexer.l"
+{ BEGIN EXPR; return RESET; }
 	YY_BREAK
 case 63:
 YY_RULE_SETUP
-#line 287 "lexer.l"
-{ BEGIN EXPR; return RESET; }
+#line 289 "lexer.l"
+{ BEGIN EXPR; return UNSET; }
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 288 "lexer.l"
-{ BEGIN EXPR; return UNSET; }
-	YY_BREAK
-case 65:
-YY_RULE_SETUP
-#line 289 "lexer.l"
+#line 290 "lexer.l"
 { return CONTINUE; }
 	YY_BREAK
 /* line number support because the "preprocessor" combines lines and so needs
   * to tell us the real source line.
   */
+case 65:
+YY_RULE_SETUP
+#line 294 "lexer.l"
+{ BEGIN LINENO; }
+	YY_BREAK
 case 66:
 YY_RULE_SETUP
-#line 293 "lexer.l"
-{ BEGIN LINENO; }
+#line 295 "lexer.l"
+{ yylineno = atoi(yytext) - 1; }
 	YY_BREAK
 case 67:
 YY_RULE_SETUP
-#line 294 "lexer.l"
-{ yylineno = atoi(yytext) - 1; }
-	YY_BREAK
-case 68:
-YY_RULE_SETUP
-#line 295 "lexer.l"
+#line 296 "lexer.l"
 { BEGIN INITIAL; }
 	YY_BREAK
-case 69:
-/* rule 69 can match eol */
+case 68:
+/* rule 68 can match eol */
 YY_RULE_SETUP
-#line 296 "lexer.l"
+#line 297 "lexer.l"
 
 	YY_BREAK
 /* $IncludeConfig must be detected as part of CFSYSLINE, because this is
   * always the longest match :-(
   */
-case 70:
-/* rule 70 can match eol */
-YY_RULE_SETUP
-#line 300 "lexer.l"
-
-	YY_BREAK
-case 71:
+case 69:
+/* rule 69 can match eol */
 YY_RULE_SETUP
 #line 301 "lexer.l"
+
+	YY_BREAK
+case 70:
+YY_RULE_SETUP
+#line 302 "lexer.l"
 { if(cnfDoInclude(yytext, 0) != 0)
 					yyterminate();
 				  BEGIN INITIAL; }
 	YY_BREAK
+case 71:
+/* rule 71 can match eol */
+YY_RULE_SETUP
+#line 305 "lexer.l"
+{ yylval.objType = CNFOBJ_MAINQ;
+				  BEGIN INOBJ; return BEGINOBJ; }
+	YY_BREAK
 case 72:
 /* rule 72 can match eol */
 YY_RULE_SETUP
-#line 304 "lexer.l"
-{ yylval.objType = CNFOBJ_MAINQ;
+#line 307 "lexer.l"
+{ yylval.objType = CNFOBJ_TIMEZONE;
 				  BEGIN INOBJ; return BEGINOBJ; }
 	YY_BREAK
 case 73:
 /* rule 73 can match eol */
 YY_RULE_SETUP
-#line 306 "lexer.l"
-{ yylval.objType = CNFOBJ_TIMEZONE;
+#line 309 "lexer.l"
+{ yylval.objType = CNFOBJ_PARSER;
 				  BEGIN INOBJ; return BEGINOBJ; }
 	YY_BREAK
 case 74:
 /* rule 74 can match eol */
 YY_RULE_SETUP
-#line 308 "lexer.l"
-{ yylval.objType = CNFOBJ_PARSER;
+#line 311 "lexer.l"
+{ yylval.objType = CNFOBJ_GLOBAL;
 				  BEGIN INOBJ; return BEGINOBJ; }
 	YY_BREAK
 case 75:
 /* rule 75 can match eol */
 YY_RULE_SETUP
-#line 310 "lexer.l"
-{ yylval.objType = CNFOBJ_GLOBAL;
-				  BEGIN INOBJ; return BEGINOBJ; }
+#line 313 "lexer.l"
+{ yylval.objType = CNFOBJ_TPL;
+				  BEGIN INOBJ; return BEGIN_TPL; }
 	YY_BREAK
 case 76:
 /* rule 76 can match eol */
 YY_RULE_SETUP
-#line 312 "lexer.l"
-{ yylval.objType = CNFOBJ_TPL;
-				  BEGIN INOBJ; return BEGIN_TPL; }
+#line 315 "lexer.l"
+{ yylval.objType = CNFOBJ_RULESET;
+				  BEGIN INOBJ; return BEGIN_RULESET; }
 	YY_BREAK
 case 77:
 /* rule 77 can match eol */
 YY_RULE_SETUP
-#line 314 "lexer.l"
-{ yylval.objType = CNFOBJ_RULESET;
-				  BEGIN INOBJ; return BEGIN_RULESET; }
+#line 317 "lexer.l"
+{ yylval.objType = CNFOBJ_PROPERTY;
+				  BEGIN INOBJ; return BEGIN_PROPERTY; }
 	YY_BREAK
 case 78:
 /* rule 78 can match eol */
 YY_RULE_SETUP
-#line 316 "lexer.l"
-{ yylval.objType = CNFOBJ_PROPERTY;
-				  BEGIN INOBJ; return BEGIN_PROPERTY; }
+#line 319 "lexer.l"
+{ yylval.objType = CNFOBJ_CONSTANT;
+				  BEGIN INOBJ; return BEGIN_CONSTANT; }
 	YY_BREAK
 case 79:
 /* rule 79 can match eol */
 YY_RULE_SETUP
-#line 318 "lexer.l"
-{ yylval.objType = CNFOBJ_CONSTANT;
-				  BEGIN INOBJ; return BEGIN_CONSTANT; }
+#line 321 "lexer.l"
+{ yylval.objType = CNFOBJ_INPUT;
+				  BEGIN INOBJ; return BEGINOBJ; }
 	YY_BREAK
 case 80:
 /* rule 80 can match eol */
 YY_RULE_SETUP
-#line 320 "lexer.l"
-{ yylval.objType = CNFOBJ_INPUT;
+#line 323 "lexer.l"
+{ yylval.objType = CNFOBJ_MODULE;
 				  BEGIN INOBJ; return BEGINOBJ; }
 	YY_BREAK
 case 81:
 /* rule 81 can match eol */
 YY_RULE_SETUP
-#line 322 "lexer.l"
-{ yylval.objType = CNFOBJ_MODULE;
+#line 325 "lexer.l"
+{ yylval.objType = CNFOBJ_LOOKUP_TABLE;
 				  BEGIN INOBJ; return BEGINOBJ; }
 	YY_BREAK
 case 82:
 /* rule 82 can match eol */
 YY_RULE_SETUP
-#line 324 "lexer.l"
-{ yylval.objType = CNFOBJ_LOOKUP_TABLE;
+#line 327 "lexer.l"
+{ yylval.objType = CNFOBJ_DYN_STATS;
 				  BEGIN INOBJ; return BEGINOBJ; }
 	YY_BREAK
 case 83:
 /* rule 83 can match eol */
 YY_RULE_SETUP
-#line 326 "lexer.l"
-{ yylval.objType = CNFOBJ_DYN_STATS;
-				  BEGIN INOBJ; return BEGINOBJ; }
+#line 329 "lexer.l"
+{ BEGIN INOBJ; return BEGIN_INCLUDE; }
 	YY_BREAK
 case 84:
 /* rule 84 can match eol */
 YY_RULE_SETUP
-#line 328 "lexer.l"
-{ BEGIN INOBJ; return BEGIN_INCLUDE; }
+#line 330 "lexer.l"
+{ BEGIN INOBJ; return BEGIN_ACTION; }
 	YY_BREAK
 case 85:
 /* rule 85 can match eol */
 YY_RULE_SETUP
-#line 329 "lexer.l"
-{ BEGIN INOBJ; return BEGIN_ACTION; }
-	YY_BREAK
-case 86:
-/* rule 86 can match eol */
-YY_RULE_SETUP
-#line 330 "lexer.l"
+#line 331 "lexer.l"
 {
 				  yylval.s = strdup(rmLeadingSpace(yytext));
 				  dbgprintf("lexer: propfilt is '%s'\n", yylval.s);
 				  return PROPFILT;
 				  }
 	YY_BREAK
-case 87:
+case 86:
 YY_RULE_SETUP
-#line 335 "lexer.l"
+#line 336 "lexer.l"
 { yylval.s = strdup(rmLeadingSpace(yytext)); return PRIFILT; }
 	YY_BREAK
-case 88:
-#line 337 "lexer.l"
-case 89:
+case 87:
 #line 338 "lexer.l"
+case 88:
+#line 339 "lexer.l"
+case 89:
+/* rule 89 can match eol */
+#line 340 "lexer.l"
 case 90:
 /* rule 90 can match eol */
-#line 339 "lexer.l"
+#line 341 "lexer.l"
 case 91:
 /* rule 91 can match eol */
-#line 340 "lexer.l"
+#line 342 "lexer.l"
 case 92:
 /* rule 92 can match eol */
-#line 341 "lexer.l"
+#line 343 "lexer.l"
 case 93:
 /* rule 93 can match eol */
-#line 342 "lexer.l"
-case 94:
-/* rule 94 can match eol */
 YY_RULE_SETUP
-#line 342 "lexer.l"
+#line 343 "lexer.l"
 { yylval.s = yytext; return LEGACY_ACTION; }
+	YY_BREAK
+case 94:
+YY_RULE_SETUP
+#line 344 "lexer.l"
+{ BEGIN INITIAL; return ENDOBJ; }
 	YY_BREAK
 case 95:
 YY_RULE_SETUP
-#line 343 "lexer.l"
-{ BEGIN INITIAL; return ENDOBJ; }
-	YY_BREAK
-case 96:
-YY_RULE_SETUP
-#line 344 "lexer.l"
+#line 345 "lexer.l"
 { yylval.estr = es_newStrFromCStr(yytext, yyleng);
 				  return NAME; }
 	YY_BREAK
-case 97:
-#line 347 "lexer.l"
-case 98:
+case 96:
 #line 348 "lexer.l"
+case 97:
+#line 349 "lexer.l"
+case 98:
+#line 350 "lexer.l"
 case 99:
-#line 349 "lexer.l"
-case 100:
-YY_RULE_SETUP
-#line 349 "lexer.l"
-{ return(yytext[0]); }
-	YY_BREAK
-case 101:
-/* rule 101 can match eol */
 YY_RULE_SETUP
 #line 350 "lexer.l"
+{ return(yytext[0]); }
+	YY_BREAK
+case 100:
+/* rule 100 can match eol */
+YY_RULE_SETUP
+#line 351 "lexer.l"
 {
 				   yytext[yyleng-1] = '\0';
 				   unescapeStr((uchar*)yytext+1, yyleng-2);
 				   yylval.estr = es_newStrFromBuf(yytext+1, strlen(yytext)-1);
 				   return STRING; }
 	YY_BREAK
-case 102:
-/* rule 102 can match eol */
+case 101:
+/* rule 101 can match eol */
 YY_RULE_SETUP
-#line 355 "lexer.l"
+#line 356 "lexer.l"
 {
 				   yytext[yyleng-1] = '\0';
 				   unescapeStr((uchar*)yytext+1, yyleng-2);
@@ -2768,59 +2767,59 @@ YY_RULE_SETUP
 	YY_BREAK
 /*yylval.estr = es_newStrFromBuf(yytext+1, yyleng-2);
 				  return VALUE; }*/
-case 103:
-YY_RULE_SETUP
-#line 362 "lexer.l"
-{ preCommentState = YY_START; BEGIN COMMENT; }
-	YY_BREAK
-case 104:
+case 102:
 YY_RULE_SETUP
 #line 363 "lexer.l"
 { preCommentState = YY_START; BEGIN COMMENT; }
 	YY_BREAK
-case 105:
+case 103:
 YY_RULE_SETUP
 #line 364 "lexer.l"
 { preCommentState = YY_START; BEGIN COMMENT; }
 	YY_BREAK
-case 106:
+case 104:
 YY_RULE_SETUP
 #line 365 "lexer.l"
-{ BEGIN preCommentState; }
+{ preCommentState = YY_START; BEGIN COMMENT; }
 	YY_BREAK
-case 107:
-/* rule 107 can match eol */
+case 105:
 YY_RULE_SETUP
 #line 366 "lexer.l"
+{ BEGIN preCommentState; }
+	YY_BREAK
+case 106:
+/* rule 106 can match eol */
+YY_RULE_SETUP
+#line 367 "lexer.l"
 
 	YY_BREAK
-case 108:
+case 107:
 *yy_cp = (yy_hold_char); /* undo effects of setting up yytext */
 (yy_c_buf_p) = yy_cp -= 1;
 YY_DO_BEFORE_ACTION; /* set up yytext again */
 YY_RULE_SETUP
-#line 367 "lexer.l"
+#line 368 "lexer.l"
 /* skip comments in input */
 	YY_BREAK
-case 109:
-/* rule 109 can match eol */
-YY_RULE_SETUP
-#line 368 "lexer.l"
-
-	YY_BREAK
-case 110:
+case 108:
+/* rule 108 can match eol */
 YY_RULE_SETUP
 #line 369 "lexer.l"
+
+	YY_BREAK
+case 109:
+YY_RULE_SETUP
+#line 370 "lexer.l"
 { parser_errmsg("invalid character '%s' in object definition "
 					        "- is there an invalid escape sequence somewhere?",
 						yytext); }
 	YY_BREAK
-case 111:
+case 110:
 *yy_cp = (yy_hold_char); /* undo effects of setting up yytext */
 (yy_c_buf_p) = yy_cp -= 1;
 YY_DO_BEFORE_ACTION; /* set up yytext again */
 YY_RULE_SETUP
-#line 372 "lexer.l"
+#line 373 "lexer.l"
 { /* see comment on $IncludeConfig above */
 				  if(!strncasecmp(yytext, "$includeconfig ", 14)) {
 					yyless((yy_size_t)14);
@@ -2833,26 +2832,16 @@ YY_RULE_SETUP
 				  }
 				}
 	YY_BREAK
-case 112:
+case 111:
 *yy_cp = (yy_hold_char); /* undo effects of setting up yytext */
-(yy_c_buf_p) = yy_cp -= 1;
-YY_DO_BEFORE_ACTION; /* set up yytext again */
-YY_RULE_SETUP
-#line 383 "lexer.l"
-{ yylval.s = strdup(yytext); return BSD_TAG_SELECTOR; }
-	YY_BREAK
-case 113:
-/* rule 113 can match eol */
-*yy_cp = (yy_hold_char); /* undo effects of setting up yytext */
-YY_LINENO_REWIND_TO(yy_cp - 1);
 (yy_c_buf_p) = yy_cp -= 1;
 YY_DO_BEFORE_ACTION; /* set up yytext again */
 YY_RULE_SETUP
 #line 384 "lexer.l"
-{ yylval.s = strdup(yytext); return BSD_HOST_SELECTOR; }
+{ yylval.s = strdup(yytext); return BSD_TAG_SELECTOR; }
 	YY_BREAK
-case 114:
-/* rule 114 can match eol */
+case 112:
+/* rule 112 can match eol */
 *yy_cp = (yy_hold_char); /* undo effects of setting up yytext */
 YY_LINENO_REWIND_TO(yy_cp - 1);
 (yy_c_buf_p) = yy_cp -= 1;
@@ -2861,29 +2850,39 @@ YY_RULE_SETUP
 #line 385 "lexer.l"
 { yylval.s = strdup(yytext); return BSD_HOST_SELECTOR; }
 	YY_BREAK
-case 115:
+case 113:
+/* rule 113 can match eol */
 *yy_cp = (yy_hold_char); /* undo effects of setting up yytext */
+YY_LINENO_REWIND_TO(yy_cp - 1);
 (yy_c_buf_p) = yy_cp -= 1;
 YY_DO_BEFORE_ACTION; /* set up yytext again */
 YY_RULE_SETUP
 #line 386 "lexer.l"
 { yylval.s = strdup(yytext); return BSD_HOST_SELECTOR; }
 	YY_BREAK
+case 114:
+*yy_cp = (yy_hold_char); /* undo effects of setting up yytext */
+(yy_c_buf_p) = yy_cp -= 1;
+YY_DO_BEFORE_ACTION; /* set up yytext again */
+YY_RULE_SETUP
+#line 387 "lexer.l"
+{ yylval.s = strdup(yytext); return BSD_HOST_SELECTOR; }
+	YY_BREAK
+case 115:
+/* rule 115 can match eol */
+YY_RULE_SETUP
+#line 388 "lexer.l"
+/* skip comments in input */
+	YY_BREAK
 case 116:
 /* rule 116 can match eol */
 YY_RULE_SETUP
-#line 387 "lexer.l"
-/* skip comments in input */
-	YY_BREAK
-case 117:
-/* rule 117 can match eol */
-YY_RULE_SETUP
-#line 388 "lexer.l"
+#line 389 "lexer.l"
 /* drop whitespace */
 	YY_BREAK
-case 118:
+case 117:
 YY_RULE_SETUP
-#line 389 "lexer.l"
+#line 390 "lexer.l"
 { parser_errmsg("invalid character '%s' "
 					        "- is there an invalid escape sequence somewhere?",
 						yytext); }
@@ -2896,15 +2895,15 @@ case YY_STATE_EOF(LINENO):
 case YY_STATE_EOF(INCALL):
 case YY_STATE_EOF(IN_PROCEDURE_CALL):
 case YY_STATE_EOF(EXPR):
-#line 392 "lexer.l"
+#line 393 "lexer.l"
 { if(popfile() != 0) yyterminate(); }
 	YY_BREAK
-case 119:
+case 118:
 YY_RULE_SETUP
-#line 394 "lexer.l"
+#line 395 "lexer.l"
 YY_FATAL_ERROR( "flex scanner jammed" );
 	YY_BREAK
-#line 2908 "lexer.c"
+#line 2907 "lexer.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -3876,7 +3875,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 394 "lexer.l"
+#line 395 "lexer.l"
 
 
 int

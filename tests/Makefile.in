@@ -131,7 +131,7 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	$(am__append_59) $(am__append_60) \
 @ENABLE_TESTBENCH_TRUE@	$(am__append_61) $(am__append_62) \
 @ENABLE_TESTBENCH_TRUE@	$(am__append_63) $(am__append_64) \
-@ENABLE_TESTBENCH_TRUE@	$(am__append_65)
+@ENABLE_TESTBENCH_TRUE@	$(am__append_65) $(am__append_66)
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_2 = \
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	hostname-getaddrinfo-fail.sh \
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	prop-programname.sh \
@@ -163,134 +163,13 @@ host_triplet = @host@
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	privdropgroup.sh \
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	privdropgroupid.sh \
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	template-json.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	template-pure-json.sh \
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	template-pos-from-to.sh \
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	template-pos-from-to-lowercase.sh \
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	template-pos-from-to-oversize.sh \
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	template-pos-from-to-oversize-lowercase.sh \
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	template-pos-from-to-missing-jsonvar.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_authpriv.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_local0.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_local7.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_mail.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_news.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_ftp.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_ntp.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_uucp.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_invld1.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_invld2.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_invld3.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_invld4_rfc5424.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	compresssp.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	compresssp-stringtpl.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	rawmsg-after-pri.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	rfc5424parser.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pmrfc3164-msgFirstSpace.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pmrfc3164-AtSignsInHostname.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pmrfc3164-AtSignsInHostname_off.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pmrfc3164-tagEndingByColon.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pmrfc3164-defaultTag.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pmrfc3164-json.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	tcp_forwarding_tpl.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	tcp_forwarding_dflt_tpl.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	tcp_forwarding_retries.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	arrayqueue.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	global_vars.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	no-parser-errmsg.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	da-mainmsg-q.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	validation-run.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	msgdup.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	empty-ruleset.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-discard-truncated-msg.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-basic.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-maxFrameSize.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-msg-truncation-on-number.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-msg-truncation-on-number2.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-NUL.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-NUL-rawmsg.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-multiport.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp_incomplete_frame_at_end.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	daqueue-persist.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	daqueue-invld-qi.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	daqueue-dirty-shutdown.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	diskq-rfc5424.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	diskqueue.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	diskqueue-fsync.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	rulesetmultiqueue.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	rulesetmultiqueue-v6.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	manytcp.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	rsf_getenv.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp_conndrop.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp_addtlframedelim.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp_no_octet_counted.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp_spframingfix.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_failover.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_gzip.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_udp_nonstdpt.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_udp_nonstdpt_v6.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imudp_thread_hang.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_udp_nonstdpt_v6.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	asynwr_simple.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	asynwr_simple_2.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	asynwr_timeout.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	asynwr_timeout_2.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	asynwr_small.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	asynwr_tinybuf.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	wr_large_async.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	wr_large_sync.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	asynwr_deadlock.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	asynwr_deadlock_2.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	asynwr_deadlock2.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	asynwr_deadlock4.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	abort-uncleancfg-goodcfg.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	abort-uncleancfg-goodcfg-check.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	abort-uncleancfg-badcfg-check.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	abort-uncleancfg-badcfg-check_1.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	variable_leading_underscore.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	gzipwr_rscript.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	gzipwr_flushInterval.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	gzipwr_flushOnTXEnd.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	gzipwr_large.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	gzipwr_large_dynfile.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	dynfile_invld_async.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	dynfile_invld_sync.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	dynfile_invalid2.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	complex1.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	queue-persist.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pipeaction.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	execonlyonce.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	execonlywhenprevsuspended.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	execonlywhenprevsuspended2.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	execonlywhenprevsuspended3.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	execonlywhenprevsuspended4.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	execonlywhenprevsuspended_multiwrkr.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	execonlywhenprevsuspended-queue.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	execonlywhenprevsuspended-nonsusp.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	execonlywhenprevsuspended-nonsusp-queue.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pipe_noreader.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	dircreate_dflt.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	dircreate_off.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_logger.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_logger_ruleset.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_logger_ruleset_ratelimit.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_logger_err.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_logger_parserchain.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_traillf.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_ccmiddle.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_logger_syssock.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_traillf_syssock.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_ccmiddle_syssock.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	discard-rptdmsg.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	discard-allmark.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	discard.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	stop.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	failover-async.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	failover-double.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	failover-basic.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	failover-rptd.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	failover-no-rptd.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	failover-no-basic.sh \
-@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	rcvr_fail_restore.sh
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	template-const-jsonf.sh
 
 @ENABLE_LIBFAKETIME_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_3 = \
 @ENABLE_LIBFAKETIME_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	now_family_utc.sh \
@@ -467,8 +346,11 @@ host_triplet = @host@
 @ENABLE_OMJOURNAL_TRUE@@ENABLE_TESTBENCH_TRUE@	omjournal-basic-template.sh \
 @ENABLE_OMJOURNAL_TRUE@@ENABLE_TESTBENCH_TRUE@	omjournal-basic-no-template.sh
 
+
+# see https://github.com/rsyslog/rsyslog/issues/2403
+# TODO: re-enable!
+#	omprog-cleanup.sh
 @ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_17 = \
-@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@	omprog-cleanup.sh \
 @ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@	omprog-cleanup-with-outfile.sh \
 @ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@	omprog-noterm-cleanup.sh \
 @ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@	omprog-noterm-default.sh \
@@ -494,9 +376,10 @@ host_triplet = @host@
 #	sndrcv_kafka_fail.sh
 #	sndrcv_kafka_failresume.sh
 @ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_22 = \
-@ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	sndrcv_kafka-vg-sender.sh \
 @ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	sndrcv_kafka-vg-rcvr.sh
 
+# re-enable: (see https://github.com/rsyslog/rsyslog/issues/2434)
+# sndrcv_kafka-vg-sender.sh
 @ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_23 = \
 @ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH_TRUE@	pgsql-basic.sh \
 @ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH_TRUE@	pgsql-basic-cnf6.sh \
@@ -624,32 +507,35 @@ host_triplet = @host@
 @ENABLE_PMNULL_TRUE@@ENABLE_TESTBENCH_TRUE@	pmnull-basic.sh \
 @ENABLE_PMNULL_TRUE@@ENABLE_TESTBENCH_TRUE@	pmnull-withparams.sh
 
-@ENABLE_PMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_41 = \
+@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_41 = \
+@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	omstdout-basic.sh
+
+@ENABLE_PMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_42 = \
 @ENABLE_PMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	pmnormalize-basic.sh \
 @ENABLE_PMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	pmnormalize-rule.sh
 
-@ENABLE_PMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_42 = \
+@ENABLE_PMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_43 = \
 @ENABLE_PMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	pmnormalize-rule-vg.sh
 
-@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_43 = msgvar-concurrency-array.sh \
+@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_44 = msgvar-concurrency-array.sh \
 @ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	msgvar-concurrency-array-event.tags.sh \
 @ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_rule_from_string.sh \
 @ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_rule_from_array.sh
 
-@ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_44 = \
+@ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_45 = \
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_regex_defaulted.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_regex_disabled.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_variable.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_tokenized.sh
 
-@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@LOGNORM_REGEX_SUPPORTED_TRUE@am__append_45 = \
+@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@LOGNORM_REGEX_SUPPORTED_TRUE@am__append_46 = \
 @ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@LOGNORM_REGEX_SUPPORTED_TRUE@	mmnormalize_regex.sh
 
-@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_46 = \
+@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_47 = \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmjsonparse-w-o-cookie.sh \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmjsonparse-w-o-cookie-multi-spaces.sh
 
-@ENABLE_IMPTCP_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_47 = \
+@ENABLE_IMPTCP_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_48 = \
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmjsonparse_simple.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	imptcp-oversize-message-display.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	imptcp-msg-truncation-on-number.sh \
@@ -661,30 +547,30 @@ host_triplet = @host@
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_object_looping.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_nonarray_looping.sh
 
-@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_48 = \
+@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_49 = \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	json_null_array-vg.sh \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	json_object_looping-vg.sh \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	json_array_looping-vg.sh \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	json_object_suicide_in_loop-vg.sh \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	json_null-vg.sh
 
-@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_49 = \
+@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_50 = \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	stop_when_array_has_element.sh \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_null_array.sh \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_null.sh \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_var_cmpr.sh \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_var_case.sh
 
-@ENABLE_MMDBLOOKUP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_50 = \
+@ENABLE_MMDBLOOKUP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_51 = \
 @ENABLE_MMDBLOOKUP_TRUE@@ENABLE_TESTBENCH_TRUE@    mmdb.sh \
 @ENABLE_MMDBLOOKUP_TRUE@@ENABLE_TESTBENCH_TRUE@    mmdb-container.sh \
 @ENABLE_MMDBLOOKUP_TRUE@@ENABLE_TESTBENCH_TRUE@    mmdb-container-empty.sh
 
-@ENABLE_MMDBLOOKUP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_51 = \
+@ENABLE_MMDBLOOKUP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_52 = \
 @ENABLE_MMDBLOOKUP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@    mmdb-vg.sh \
 @ENABLE_MMDBLOOKUP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@    mmdb-multilevel-vg.sh
 
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_52 = \
+@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_53 = \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp_conndrop_tls.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_anon_hostname.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_anon_ipv4.sh \
@@ -692,34 +578,34 @@ host_triplet = @host@
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-tls-basic.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_anon_rebind.sh
 
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_53 = \
+@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_54 = \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imtcp-tls-basic-vg.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imtcp_conndrop_tls-vg.sh
 
-@ENABLE_DISTCHECK_WORKAROUND_FALSE@@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_54 = \
+@ENABLE_DISTCHECK_WORKAROUND_FALSE@@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_55 = \
 @ENABLE_DISTCHECK_WORKAROUND_FALSE@@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	manytcp-too-few-tls-vg.sh
 
-@ENABLE_OMUXSOCK_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_55 = uxsock_simple.sh
-@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_56 = sndrcv_relp.sh \
+@ENABLE_OMUXSOCK_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_56 = uxsock_simple.sh
+@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_57 = sndrcv_relp.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 sndrcv_relp_rebind.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 imrelp-basic.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 imrelp-manyconn.sh
 
-@ENABLE_GNUTLS_TRUE@@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_57 = \
+@ENABLE_GNUTLS_TRUE@@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_58 = \
 @ENABLE_GNUTLS_TRUE@@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@         sndrcv_relp_tls.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@         relp_tls_certificate_not_found.sh
 
-@ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_58 = \
+@ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_59 = \
 @ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_omudpspoof.sh \
 @ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_omudpspoof_nonstdpt.sh
 
-@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_59 = \
+@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_60 = \
 @ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	omod-if-array.sh \
 @ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	threadingmq.sh \
 @ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	threadingmqaq.sh \
 @ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	badqi.sh
 
-@ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_60 = \
+@ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_61 = \
 @ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	tabescape_dflt.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	tabescape_off.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	timestamp.sh \
@@ -728,18 +614,18 @@ host_triplet = @host@
 @ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	parsertest.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	fieldtest.sh
 
-@ENABLE_OMRULESET_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_61 = \
+@ENABLE_OMRULESET_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_62 = \
 @ENABLE_OMRULESET_TRUE@@ENABLE_TESTBENCH_TRUE@	omruleset.sh \
 @ENABLE_OMRULESET_TRUE@@ENABLE_TESTBENCH_TRUE@	omruleset-queue.sh
 
-@ENABLE_PMSNARE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_62 = \
+@ENABLE_PMSNARE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_63 = \
 @ENABLE_PMSNARE_TRUE@@ENABLE_TESTBENCH_TRUE@	pmsnare.sh
 
 
 # random.sh is temporarily disabled as it needs some work
 # to rsyslog core to complete in reasonable time
 #TESTS += random.sh
-@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_63 = \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_64 = \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-basic.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-discard-truncated-line.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-truncate-line.sh \
@@ -774,16 +660,16 @@ host_triplet = @host@
 #	imfile-wildcards-dirs-multi3.sh \
 #	imfile-wildcards-dirs-multi4.sh \
 #
-@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_64 = \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_65 = \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-basic-vg.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-endregex-vg.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-readmode2-vg.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-basic-vgthread.sh
 
-@ENABLE_OMTCL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_65 = \
+@ENABLE_OMTCL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_66 = \
 @ENABLE_OMTCL_TRUE@@ENABLE_TESTBENCH_TRUE@	 omtcl.sh
 
-@ENABLE_GNUTLS_TRUE@am__append_66 = -lgcrypt
+@ENABLE_GNUTLS_TRUE@am__append_67 = -lgcrypt
 subdir = tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_check_define.m4 \
@@ -1664,11 +1550,13 @@ EXTRA_DIST = \
 	privdropgroup.sh \
 	privdropgroupid.sh \
 	template-json.sh \
+	template-pure-json.sh \
 	template-pos-from-to.sh \
 	template-pos-from-to-lowercase.sh \
 	template-pos-from-to-oversize.sh \
 	template-pos-from-to-oversize-lowercase.sh \
 	template-pos-from-to-missing-jsonvar.sh \
+	template-const-jsonf.sh \
 	fac_authpriv.sh \
 	testsuites/fac_authpriv.conf \
 	fac_local0.sh \
@@ -1724,6 +1612,7 @@ EXTRA_DIST = \
 	mmnormalize_rule_from_array.sh \
 	pmnull-basic.sh \
 	pmnull-withparams.sh \
+	omstdout-basic.sh \
 	testsuites/mmnormalize_processing_tests.rulebase \
 	mmnormalize_processing_test1.sh \
 	mmnormalize_processing_test2.sh \
@@ -1960,6 +1849,7 @@ EXTRA_DIST = \
 	testsuites/sndrcv_gzip_rcvr.conf \
 	action-tx-single-processing.sh \
 	action-tx-errfile.sh \
+	testsuites/action-tx-errfile.result \
 	pipeaction.sh \
 	testsuites/pipeaction.conf \
 	omprog-cleanup.sh \
@@ -2399,7 +2289,26 @@ EXTRA_DIST = \
 	testsuites/sample.pmsnare_ccdefault \
 	testsuites/sample.pmsnare_cccstyle \
 	testsuites/sample.pmsnare_ccbackslash \
-	testsuites/sample.pmsnare_modoverride
+	testsuites/sample.pmsnare_modoverride \
+	testsuites/include-std-omfile-action.conf \
+	pgsql-basic.sh \
+	testsuites/pgsql-basic.sql \
+	testsuites/pgsql-basic.conf \
+	testsuites/pgsql-select-msg.sql \
+	testsuites/pgsql-select-syslogtag.sql \
+	pgsql-basic-cnf6.sh \
+	pgsql-basic-threads-cnf6.sh \
+	pgsql-template.sh \
+	testsuites/pgsql-template.conf \
+	pgsql-template-cnf6.sh \
+	pgsql-actq-mt-withpause.sh \
+	pgsql-template-threads-cnf6.sh \
+	pgsql-basic-vg.sh \
+	pgsql-template-vg.sh \
+	pgsql-basic-cnf6-vg.sh \
+	pgsql-template-cnf6-vg.sh \
+	pgsql-actq-mt-withpause-vg.sh \
+	../devtools/prep-mysql-db.sh
 
 ourtail_SOURCES = ourtail.c
 msleep_SOURCES = msleep.c
@@ -2412,7 +2321,7 @@ tcpflood_SOURCES = tcpflood.c
 tcpflood_CFLAGS = $(PTHREADS_CFLAGS) $(RELP_CFLAGS) $(GNUTLS_CFLAGS)
 tcpflood_CPPFLAGS = $(PTHREADS_CFLAGS) $(RELP_CFLAGS) $(GNUTLS_CFLAGS)
 tcpflood_LDADD = $(SOL_LIBS) $(PTHREADS_LIBS) $(RELP_LIBS) \
-	$(GNUTLS_LIBS) $(am__append_66)
+	$(GNUTLS_LIBS) $(am__append_67)
 minitcpsrv_SOURCES = minitcpsrvr.c
 minitcpsrv_LDADD = $(SOL_LIBS)
 syslog_caller_SOURCES = syslog_caller.c
@@ -3100,6 +3009,13 @@ template-json.sh.log: template-json.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+template-pure-json.sh.log: template-pure-json.sh
+	@p='template-pure-json.sh'; \
+	b='template-pure-json.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 template-pos-from-to.sh.log: template-pos-from-to.sh
 	@p='template-pos-from-to.sh'; \
 	b='template-pos-from-to.sh'; \
@@ -3135,856 +3051,9 @@ template-pos-from-to-missing-jsonvar.sh.log: template-pos-from-to-missing-jsonva
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-fac_authpriv.sh.log: fac_authpriv.sh
-	@p='fac_authpriv.sh'; \
-	b='fac_authpriv.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-fac_local0.sh.log: fac_local0.sh
-	@p='fac_local0.sh'; \
-	b='fac_local0.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-fac_local7.sh.log: fac_local7.sh
-	@p='fac_local7.sh'; \
-	b='fac_local7.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-fac_mail.sh.log: fac_mail.sh
-	@p='fac_mail.sh'; \
-	b='fac_mail.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-fac_news.sh.log: fac_news.sh
-	@p='fac_news.sh'; \
-	b='fac_news.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-fac_ftp.sh.log: fac_ftp.sh
-	@p='fac_ftp.sh'; \
-	b='fac_ftp.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-fac_ntp.sh.log: fac_ntp.sh
-	@p='fac_ntp.sh'; \
-	b='fac_ntp.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-fac_uucp.sh.log: fac_uucp.sh
-	@p='fac_uucp.sh'; \
-	b='fac_uucp.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-fac_invld1.sh.log: fac_invld1.sh
-	@p='fac_invld1.sh'; \
-	b='fac_invld1.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-fac_invld2.sh.log: fac_invld2.sh
-	@p='fac_invld2.sh'; \
-	b='fac_invld2.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-fac_invld3.sh.log: fac_invld3.sh
-	@p='fac_invld3.sh'; \
-	b='fac_invld3.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-fac_invld4_rfc5424.sh.log: fac_invld4_rfc5424.sh
-	@p='fac_invld4_rfc5424.sh'; \
-	b='fac_invld4_rfc5424.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-compresssp.sh.log: compresssp.sh
-	@p='compresssp.sh'; \
-	b='compresssp.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-compresssp-stringtpl.sh.log: compresssp-stringtpl.sh
-	@p='compresssp-stringtpl.sh'; \
-	b='compresssp-stringtpl.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-rawmsg-after-pri.sh.log: rawmsg-after-pri.sh
-	@p='rawmsg-after-pri.sh'; \
-	b='rawmsg-after-pri.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-rfc5424parser.sh.log: rfc5424parser.sh
-	@p='rfc5424parser.sh'; \
-	b='rfc5424parser.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pmrfc3164-msgFirstSpace.sh.log: pmrfc3164-msgFirstSpace.sh
-	@p='pmrfc3164-msgFirstSpace.sh'; \
-	b='pmrfc3164-msgFirstSpace.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pmrfc3164-AtSignsInHostname.sh.log: pmrfc3164-AtSignsInHostname.sh
-	@p='pmrfc3164-AtSignsInHostname.sh'; \
-	b='pmrfc3164-AtSignsInHostname.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pmrfc3164-AtSignsInHostname_off.sh.log: pmrfc3164-AtSignsInHostname_off.sh
-	@p='pmrfc3164-AtSignsInHostname_off.sh'; \
-	b='pmrfc3164-AtSignsInHostname_off.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pmrfc3164-tagEndingByColon.sh.log: pmrfc3164-tagEndingByColon.sh
-	@p='pmrfc3164-tagEndingByColon.sh'; \
-	b='pmrfc3164-tagEndingByColon.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pmrfc3164-defaultTag.sh.log: pmrfc3164-defaultTag.sh
-	@p='pmrfc3164-defaultTag.sh'; \
-	b='pmrfc3164-defaultTag.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pmrfc3164-json.sh.log: pmrfc3164-json.sh
-	@p='pmrfc3164-json.sh'; \
-	b='pmrfc3164-json.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tcp_forwarding_tpl.sh.log: tcp_forwarding_tpl.sh
-	@p='tcp_forwarding_tpl.sh'; \
-	b='tcp_forwarding_tpl.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tcp_forwarding_dflt_tpl.sh.log: tcp_forwarding_dflt_tpl.sh
-	@p='tcp_forwarding_dflt_tpl.sh'; \
-	b='tcp_forwarding_dflt_tpl.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tcp_forwarding_retries.sh.log: tcp_forwarding_retries.sh
-	@p='tcp_forwarding_retries.sh'; \
-	b='tcp_forwarding_retries.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-arrayqueue.sh.log: arrayqueue.sh
-	@p='arrayqueue.sh'; \
-	b='arrayqueue.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-global_vars.sh.log: global_vars.sh
-	@p='global_vars.sh'; \
-	b='global_vars.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-no-parser-errmsg.sh.log: no-parser-errmsg.sh
-	@p='no-parser-errmsg.sh'; \
-	b='no-parser-errmsg.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-da-mainmsg-q.sh.log: da-mainmsg-q.sh
-	@p='da-mainmsg-q.sh'; \
-	b='da-mainmsg-q.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-validation-run.sh.log: validation-run.sh
-	@p='validation-run.sh'; \
-	b='validation-run.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-msgdup.sh.log: msgdup.sh
-	@p='msgdup.sh'; \
-	b='msgdup.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-empty-ruleset.sh.log: empty-ruleset.sh
-	@p='empty-ruleset.sh'; \
-	b='empty-ruleset.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imtcp-discard-truncated-msg.sh.log: imtcp-discard-truncated-msg.sh
-	@p='imtcp-discard-truncated-msg.sh'; \
-	b='imtcp-discard-truncated-msg.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imtcp-basic.sh.log: imtcp-basic.sh
-	@p='imtcp-basic.sh'; \
-	b='imtcp-basic.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imtcp-maxFrameSize.sh.log: imtcp-maxFrameSize.sh
-	@p='imtcp-maxFrameSize.sh'; \
-	b='imtcp-maxFrameSize.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imtcp-msg-truncation-on-number.sh.log: imtcp-msg-truncation-on-number.sh
-	@p='imtcp-msg-truncation-on-number.sh'; \
-	b='imtcp-msg-truncation-on-number.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imtcp-msg-truncation-on-number2.sh.log: imtcp-msg-truncation-on-number2.sh
-	@p='imtcp-msg-truncation-on-number2.sh'; \
-	b='imtcp-msg-truncation-on-number2.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imtcp-NUL.sh.log: imtcp-NUL.sh
-	@p='imtcp-NUL.sh'; \
-	b='imtcp-NUL.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imtcp-NUL-rawmsg.sh.log: imtcp-NUL-rawmsg.sh
-	@p='imtcp-NUL-rawmsg.sh'; \
-	b='imtcp-NUL-rawmsg.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imtcp-multiport.sh.log: imtcp-multiport.sh
-	@p='imtcp-multiport.sh'; \
-	b='imtcp-multiport.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imtcp_incomplete_frame_at_end.sh.log: imtcp_incomplete_frame_at_end.sh
-	@p='imtcp_incomplete_frame_at_end.sh'; \
-	b='imtcp_incomplete_frame_at_end.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-daqueue-persist.sh.log: daqueue-persist.sh
-	@p='daqueue-persist.sh'; \
-	b='daqueue-persist.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-daqueue-invld-qi.sh.log: daqueue-invld-qi.sh
-	@p='daqueue-invld-qi.sh'; \
-	b='daqueue-invld-qi.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-daqueue-dirty-shutdown.sh.log: daqueue-dirty-shutdown.sh
-	@p='daqueue-dirty-shutdown.sh'; \
-	b='daqueue-dirty-shutdown.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-diskq-rfc5424.sh.log: diskq-rfc5424.sh
-	@p='diskq-rfc5424.sh'; \
-	b='diskq-rfc5424.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-diskqueue.sh.log: diskqueue.sh
-	@p='diskqueue.sh'; \
-	b='diskqueue.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-diskqueue-fsync.sh.log: diskqueue-fsync.sh
-	@p='diskqueue-fsync.sh'; \
-	b='diskqueue-fsync.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-rulesetmultiqueue.sh.log: rulesetmultiqueue.sh
-	@p='rulesetmultiqueue.sh'; \
-	b='rulesetmultiqueue.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-rulesetmultiqueue-v6.sh.log: rulesetmultiqueue-v6.sh
-	@p='rulesetmultiqueue-v6.sh'; \
-	b='rulesetmultiqueue-v6.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-manytcp.sh.log: manytcp.sh
-	@p='manytcp.sh'; \
-	b='manytcp.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-rsf_getenv.sh.log: rsf_getenv.sh
-	@p='rsf_getenv.sh'; \
-	b='rsf_getenv.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imtcp_conndrop.sh.log: imtcp_conndrop.sh
-	@p='imtcp_conndrop.sh'; \
-	b='imtcp_conndrop.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imtcp_addtlframedelim.sh.log: imtcp_addtlframedelim.sh
-	@p='imtcp_addtlframedelim.sh'; \
-	b='imtcp_addtlframedelim.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imtcp_no_octet_counted.sh.log: imtcp_no_octet_counted.sh
-	@p='imtcp_no_octet_counted.sh'; \
-	b='imtcp_no_octet_counted.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imtcp_spframingfix.sh.log: imtcp_spframingfix.sh
-	@p='imtcp_spframingfix.sh'; \
-	b='imtcp_spframingfix.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-sndrcv.sh.log: sndrcv.sh
-	@p='sndrcv.sh'; \
-	b='sndrcv.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-sndrcv_failover.sh.log: sndrcv_failover.sh
-	@p='sndrcv_failover.sh'; \
-	b='sndrcv_failover.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-sndrcv_gzip.sh.log: sndrcv_gzip.sh
-	@p='sndrcv_gzip.sh'; \
-	b='sndrcv_gzip.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-sndrcv_udp_nonstdpt.sh.log: sndrcv_udp_nonstdpt.sh
-	@p='sndrcv_udp_nonstdpt.sh'; \
-	b='sndrcv_udp_nonstdpt.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-sndrcv_udp_nonstdpt_v6.sh.log: sndrcv_udp_nonstdpt_v6.sh
-	@p='sndrcv_udp_nonstdpt_v6.sh'; \
-	b='sndrcv_udp_nonstdpt_v6.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imudp_thread_hang.sh.log: imudp_thread_hang.sh
-	@p='imudp_thread_hang.sh'; \
-	b='imudp_thread_hang.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-asynwr_simple.sh.log: asynwr_simple.sh
-	@p='asynwr_simple.sh'; \
-	b='asynwr_simple.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-asynwr_simple_2.sh.log: asynwr_simple_2.sh
-	@p='asynwr_simple_2.sh'; \
-	b='asynwr_simple_2.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-asynwr_timeout.sh.log: asynwr_timeout.sh
-	@p='asynwr_timeout.sh'; \
-	b='asynwr_timeout.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-asynwr_timeout_2.sh.log: asynwr_timeout_2.sh
-	@p='asynwr_timeout_2.sh'; \
-	b='asynwr_timeout_2.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-asynwr_small.sh.log: asynwr_small.sh
-	@p='asynwr_small.sh'; \
-	b='asynwr_small.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-asynwr_tinybuf.sh.log: asynwr_tinybuf.sh
-	@p='asynwr_tinybuf.sh'; \
-	b='asynwr_tinybuf.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-wr_large_async.sh.log: wr_large_async.sh
-	@p='wr_large_async.sh'; \
-	b='wr_large_async.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-wr_large_sync.sh.log: wr_large_sync.sh
-	@p='wr_large_sync.sh'; \
-	b='wr_large_sync.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-asynwr_deadlock.sh.log: asynwr_deadlock.sh
-	@p='asynwr_deadlock.sh'; \
-	b='asynwr_deadlock.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-asynwr_deadlock_2.sh.log: asynwr_deadlock_2.sh
-	@p='asynwr_deadlock_2.sh'; \
-	b='asynwr_deadlock_2.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-asynwr_deadlock2.sh.log: asynwr_deadlock2.sh
-	@p='asynwr_deadlock2.sh'; \
-	b='asynwr_deadlock2.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-asynwr_deadlock4.sh.log: asynwr_deadlock4.sh
-	@p='asynwr_deadlock4.sh'; \
-	b='asynwr_deadlock4.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-abort-uncleancfg-goodcfg.sh.log: abort-uncleancfg-goodcfg.sh
-	@p='abort-uncleancfg-goodcfg.sh'; \
-	b='abort-uncleancfg-goodcfg.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-abort-uncleancfg-goodcfg-check.sh.log: abort-uncleancfg-goodcfg-check.sh
-	@p='abort-uncleancfg-goodcfg-check.sh'; \
-	b='abort-uncleancfg-goodcfg-check.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-abort-uncleancfg-badcfg-check.sh.log: abort-uncleancfg-badcfg-check.sh
-	@p='abort-uncleancfg-badcfg-check.sh'; \
-	b='abort-uncleancfg-badcfg-check.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-abort-uncleancfg-badcfg-check_1.sh.log: abort-uncleancfg-badcfg-check_1.sh
-	@p='abort-uncleancfg-badcfg-check_1.sh'; \
-	b='abort-uncleancfg-badcfg-check_1.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-variable_leading_underscore.sh.log: variable_leading_underscore.sh
-	@p='variable_leading_underscore.sh'; \
-	b='variable_leading_underscore.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-gzipwr_rscript.sh.log: gzipwr_rscript.sh
-	@p='gzipwr_rscript.sh'; \
-	b='gzipwr_rscript.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-gzipwr_flushInterval.sh.log: gzipwr_flushInterval.sh
-	@p='gzipwr_flushInterval.sh'; \
-	b='gzipwr_flushInterval.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-gzipwr_flushOnTXEnd.sh.log: gzipwr_flushOnTXEnd.sh
-	@p='gzipwr_flushOnTXEnd.sh'; \
-	b='gzipwr_flushOnTXEnd.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-gzipwr_large.sh.log: gzipwr_large.sh
-	@p='gzipwr_large.sh'; \
-	b='gzipwr_large.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-gzipwr_large_dynfile.sh.log: gzipwr_large_dynfile.sh
-	@p='gzipwr_large_dynfile.sh'; \
-	b='gzipwr_large_dynfile.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-dynfile_invld_async.sh.log: dynfile_invld_async.sh
-	@p='dynfile_invld_async.sh'; \
-	b='dynfile_invld_async.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-dynfile_invld_sync.sh.log: dynfile_invld_sync.sh
-	@p='dynfile_invld_sync.sh'; \
-	b='dynfile_invld_sync.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-dynfile_invalid2.sh.log: dynfile_invalid2.sh
-	@p='dynfile_invalid2.sh'; \
-	b='dynfile_invalid2.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-complex1.sh.log: complex1.sh
-	@p='complex1.sh'; \
-	b='complex1.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-queue-persist.sh.log: queue-persist.sh
-	@p='queue-persist.sh'; \
-	b='queue-persist.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pipeaction.sh.log: pipeaction.sh
-	@p='pipeaction.sh'; \
-	b='pipeaction.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-execonlyonce.sh.log: execonlyonce.sh
-	@p='execonlyonce.sh'; \
-	b='execonlyonce.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-execonlywhenprevsuspended.sh.log: execonlywhenprevsuspended.sh
-	@p='execonlywhenprevsuspended.sh'; \
-	b='execonlywhenprevsuspended.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-execonlywhenprevsuspended2.sh.log: execonlywhenprevsuspended2.sh
-	@p='execonlywhenprevsuspended2.sh'; \
-	b='execonlywhenprevsuspended2.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-execonlywhenprevsuspended3.sh.log: execonlywhenprevsuspended3.sh
-	@p='execonlywhenprevsuspended3.sh'; \
-	b='execonlywhenprevsuspended3.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-execonlywhenprevsuspended4.sh.log: execonlywhenprevsuspended4.sh
-	@p='execonlywhenprevsuspended4.sh'; \
-	b='execonlywhenprevsuspended4.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-execonlywhenprevsuspended_multiwrkr.sh.log: execonlywhenprevsuspended_multiwrkr.sh
-	@p='execonlywhenprevsuspended_multiwrkr.sh'; \
-	b='execonlywhenprevsuspended_multiwrkr.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-execonlywhenprevsuspended-queue.sh.log: execonlywhenprevsuspended-queue.sh
-	@p='execonlywhenprevsuspended-queue.sh'; \
-	b='execonlywhenprevsuspended-queue.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-execonlywhenprevsuspended-nonsusp.sh.log: execonlywhenprevsuspended-nonsusp.sh
-	@p='execonlywhenprevsuspended-nonsusp.sh'; \
-	b='execonlywhenprevsuspended-nonsusp.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-execonlywhenprevsuspended-nonsusp-queue.sh.log: execonlywhenprevsuspended-nonsusp-queue.sh
-	@p='execonlywhenprevsuspended-nonsusp-queue.sh'; \
-	b='execonlywhenprevsuspended-nonsusp-queue.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pipe_noreader.sh.log: pipe_noreader.sh
-	@p='pipe_noreader.sh'; \
-	b='pipe_noreader.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-dircreate_dflt.sh.log: dircreate_dflt.sh
-	@p='dircreate_dflt.sh'; \
-	b='dircreate_dflt.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-dircreate_off.sh.log: dircreate_off.sh
-	@p='dircreate_off.sh'; \
-	b='dircreate_off.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imuxsock_logger.sh.log: imuxsock_logger.sh
-	@p='imuxsock_logger.sh'; \
-	b='imuxsock_logger.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imuxsock_logger_ruleset.sh.log: imuxsock_logger_ruleset.sh
-	@p='imuxsock_logger_ruleset.sh'; \
-	b='imuxsock_logger_ruleset.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imuxsock_logger_ruleset_ratelimit.sh.log: imuxsock_logger_ruleset_ratelimit.sh
-	@p='imuxsock_logger_ruleset_ratelimit.sh'; \
-	b='imuxsock_logger_ruleset_ratelimit.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imuxsock_logger_err.sh.log: imuxsock_logger_err.sh
-	@p='imuxsock_logger_err.sh'; \
-	b='imuxsock_logger_err.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imuxsock_logger_parserchain.sh.log: imuxsock_logger_parserchain.sh
-	@p='imuxsock_logger_parserchain.sh'; \
-	b='imuxsock_logger_parserchain.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imuxsock_traillf.sh.log: imuxsock_traillf.sh
-	@p='imuxsock_traillf.sh'; \
-	b='imuxsock_traillf.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imuxsock_ccmiddle.sh.log: imuxsock_ccmiddle.sh
-	@p='imuxsock_ccmiddle.sh'; \
-	b='imuxsock_ccmiddle.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imuxsock_logger_syssock.sh.log: imuxsock_logger_syssock.sh
-	@p='imuxsock_logger_syssock.sh'; \
-	b='imuxsock_logger_syssock.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imuxsock_traillf_syssock.sh.log: imuxsock_traillf_syssock.sh
-	@p='imuxsock_traillf_syssock.sh'; \
-	b='imuxsock_traillf_syssock.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imuxsock_ccmiddle_syssock.sh.log: imuxsock_ccmiddle_syssock.sh
-	@p='imuxsock_ccmiddle_syssock.sh'; \
-	b='imuxsock_ccmiddle_syssock.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-discard-rptdmsg.sh.log: discard-rptdmsg.sh
-	@p='discard-rptdmsg.sh'; \
-	b='discard-rptdmsg.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-discard-allmark.sh.log: discard-allmark.sh
-	@p='discard-allmark.sh'; \
-	b='discard-allmark.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-discard.sh.log: discard.sh
-	@p='discard.sh'; \
-	b='discard.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-stop.sh.log: stop.sh
-	@p='stop.sh'; \
-	b='stop.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-failover-async.sh.log: failover-async.sh
-	@p='failover-async.sh'; \
-	b='failover-async.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-failover-double.sh.log: failover-double.sh
-	@p='failover-double.sh'; \
-	b='failover-double.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-failover-basic.sh.log: failover-basic.sh
-	@p='failover-basic.sh'; \
-	b='failover-basic.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-failover-rptd.sh.log: failover-rptd.sh
-	@p='failover-rptd.sh'; \
-	b='failover-rptd.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-failover-no-rptd.sh.log: failover-no-rptd.sh
-	@p='failover-no-rptd.sh'; \
-	b='failover-no-rptd.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-failover-no-basic.sh.log: failover-no-basic.sh
-	@p='failover-no-basic.sh'; \
-	b='failover-no-basic.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-rcvr_fail_restore.sh.log: rcvr_fail_restore.sh
-	@p='rcvr_fail_restore.sh'; \
-	b='rcvr_fail_restore.sh'; \
+template-const-jsonf.sh.log: template-const-jsonf.sh
+	@p='template-const-jsonf.sh'; \
+	b='template-const-jsonf.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -5046,13 +4115,6 @@ omjournal-basic-no-template.sh.log: omjournal-basic-no-template.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-omprog-cleanup.sh.log: omprog-cleanup.sh
-	@p='omprog-cleanup.sh'; \
-	b='omprog-cleanup.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
 omprog-cleanup-with-outfile.sh.log: omprog-cleanup-with-outfile.sh
 	@p='omprog-cleanup-with-outfile.sh'; \
 	b='omprog-cleanup-with-outfile.sh'; \
@@ -5126,13 +4188,6 @@ omprog-cleanup-when-unresponsive-vg.sh.log: omprog-cleanup-when-unresponsive-vg.
 sndrcv_kafka.sh.log: sndrcv_kafka.sh
 	@p='sndrcv_kafka.sh'; \
 	b='sndrcv_kafka.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-sndrcv_kafka-vg-sender.sh.log: sndrcv_kafka-vg-sender.sh
-	@p='sndrcv_kafka-vg-sender.sh'; \
-	b='sndrcv_kafka-vg-sender.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -5756,6 +4811,13 @@ pmnull-basic.sh.log: pmnull-basic.sh
 pmnull-withparams.sh.log: pmnull-withparams.sh
 	@p='pmnull-withparams.sh'; \
 	b='pmnull-withparams.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+omstdout-basic.sh.log: omstdout-basic.sh
+	@p='omstdout-basic.sh'; \
+	b='omstdout-basic.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -6640,6 +5702,129 @@ uninstall-am: uninstall-pkglibLTLIBRARIES
 
 .PRECIOUS: Makefile
 
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_authpriv.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_local0.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_local7.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_mail.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_news.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_ftp.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_ntp.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_uucp.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_invld1.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_invld2.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_invld3.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_invld4_rfc5424.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	compresssp.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	compresssp-stringtpl.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	rawmsg-after-pri.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	rfc5424parser.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pmrfc3164-msgFirstSpace.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pmrfc3164-AtSignsInHostname.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pmrfc3164-AtSignsInHostname_off.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pmrfc3164-tagEndingByColon.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pmrfc3164-defaultTag.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pmrfc3164-json.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	tcp_forwarding_tpl.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	tcp_forwarding_dflt_tpl.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	tcp_forwarding_retries.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	arrayqueue.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	global_vars.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	no-parser-errmsg.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	da-mainmsg-q.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	validation-run.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	msgdup.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	empty-ruleset.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-discard-truncated-msg.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-basic.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-maxFrameSize.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-msg-truncation-on-number.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-msg-truncation-on-number2.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-NUL.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-NUL-rawmsg.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-multiport.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp_incomplete_frame_at_end.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	daqueue-persist.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	daqueue-invld-qi.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	daqueue-dirty-shutdown.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	diskq-rfc5424.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	diskqueue.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	diskqueue-fsync.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	rulesetmultiqueue.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	rulesetmultiqueue-v6.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	manytcp.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	rsf_getenv.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp_conndrop.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp_addtlframedelim.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp_no_octet_counted.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp_spframingfix.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_failover.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_gzip.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_udp_nonstdpt.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_udp_nonstdpt_v6.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imudp_thread_hang.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_udp_nonstdpt_v6.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	asynwr_simple.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	asynwr_simple_2.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	asynwr_timeout.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	asynwr_timeout_2.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	asynwr_small.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	asynwr_tinybuf.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	wr_large_async.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	wr_large_sync.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	asynwr_deadlock.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	asynwr_deadlock_2.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	asynwr_deadlock2.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	asynwr_deadlock4.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	abort-uncleancfg-goodcfg.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	abort-uncleancfg-goodcfg-check.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	abort-uncleancfg-badcfg-check.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	abort-uncleancfg-badcfg-check_1.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	variable_leading_underscore.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	gzipwr_rscript.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	gzipwr_flushInterval.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	gzipwr_flushOnTXEnd.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	gzipwr_large.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	gzipwr_large_dynfile.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	dynfile_invld_async.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	dynfile_invld_sync.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	dynfile_invalid2.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	complex1.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	queue-persist.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pipeaction.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	execonlyonce.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	execonlywhenprevsuspended.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	execonlywhenprevsuspended2.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	execonlywhenprevsuspended3.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	execonlywhenprevsuspended4.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	execonlywhenprevsuspended_multiwrkr.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	execonlywhenprevsuspended-queue.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	execonlywhenprevsuspended-nonsusp.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	execonlywhenprevsuspended-nonsusp-queue.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pipe_noreader.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	dircreate_dflt.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	dircreate_off.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_logger.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_logger_ruleset.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_logger_ruleset_ratelimit.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_logger_err.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_logger_parserchain.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_traillf.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_ccmiddle.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_logger_syssock.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_traillf_syssock.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_ccmiddle_syssock.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	discard-rptdmsg.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	discard-allmark.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	discard.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	stop.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	failover-async.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	failover-double.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	failover-basic.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	failover-rptd.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	failover-no-rptd.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	failover-no-basic.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	rcvr_fail_restore.sh
 
 # rtinit tests disabled for the moment - also questionable if they
 # really provide value (after all, everything fails if rtinit fails...)

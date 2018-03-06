@@ -36,7 +36,11 @@
 #include <sys/types.h>
 #include <libestr.h>
 #include <time.h>
+
+#ifdef HAVE_LIBCURL
 #include <curl/curl.h>
+#endif
+
 #include "rsyslog.h"
 #include "rainerscript.h"
 #include "conf.h"
@@ -3355,7 +3359,7 @@ cnfexprEvalCollection(struct cnfexpr *__restrict__ const expr, void *__restrict_
 	return retptr;
 }
 
-inline static void
+static void
 doIndent(int indent)
 {
 	int i;
@@ -4409,7 +4413,7 @@ cnfexprOptimize(struct cnfexpr *expr)
  * first non-NOP entry.
  */
 static struct cnfstmt *
-removeNOPs(struct cnfstmt *root)
+removeNOPs(struct cnfstmt *const root)
 {
 	struct cnfstmt *stmt, *toDel, *prevstmt = NULL;
 	struct cnfstmt *newRoot = NULL;
@@ -4440,8 +4444,7 @@ static void
 cnfstmtOptimizeForeach(struct cnfstmt *stmt)
 {
 	stmt->d.s_foreach.iter->collection = cnfexprOptimize(stmt->d.s_foreach.iter->collection);
-	stmt->d.s_foreach.body = removeNOPs(stmt->d.s_foreach.body);
-	cnfstmtOptimize(stmt->d.s_foreach.body);
+	stmt->d.s_foreach.body = cnfstmtOptimize(stmt->d.s_foreach.body);
 }
 
 
@@ -4453,12 +4456,21 @@ cnfstmtOptimizeIf(struct cnfstmt *stmt)
 	struct cnffunc *func;
 	struct funcData_prifilt *prifilt;
 
+	assert(stmt->nodetype == S_IF);
 	expr = stmt->d.s_if.expr = cnfexprOptimize(stmt->d.s_if.expr);
-	stmt->d.s_if.t_then = removeNOPs(stmt->d.s_if.t_then);
-	stmt->d.s_if.t_else = removeNOPs(stmt->d.s_if.t_else);
-	cnfstmtOptimize(stmt->d.s_if.t_then);
-	cnfstmtOptimize(stmt->d.s_if.t_else);
+	stmt->d.s_if.t_then = cnfstmtOptimize(stmt->d.s_if.t_then);
+	stmt->d.s_if.t_else = cnfstmtOptimize(stmt->d.s_if.t_else);
 
+	if(stmt->d.s_if.t_then == NULL && stmt->d.s_if.t_else == NULL) {
+		/* pointless if, probably constructed by config mgmt system */
+		DBGPRINTF("optimizer: if with both empty then and else - remove\n");
+		cnfexprDestruct(stmt->d.s_if.expr);
+		/* set to NOP, this will be removed in later stage */
+		stmt->nodetype = S_NOP;
+		goto done;
+	}
+
+	assert(stmt->nodetype == S_IF);
 	if(stmt->d.s_if.expr->nodetype == 'F') {
 		func = (struct cnffunc*)expr;
 		   if(func->fID == CNFFUNC_PRIFILT) {
@@ -4480,6 +4492,7 @@ cnfstmtOptimizeIf(struct cnfstmt *stmt)
 			cnfstmtOptimizePRIFilt(stmt);
 		}
 	}
+done:	return;
 }
 
 static void
@@ -4502,8 +4515,7 @@ cnfstmtOptimizePRIFilt(struct cnfstmt *stmt)
 	int isAlways = 1;
 	struct cnfstmt *subroot, *last;
 
-	stmt->d.s_prifilt.t_then = removeNOPs(stmt->d.s_prifilt.t_then);
-	cnfstmtOptimize(stmt->d.s_prifilt.t_then);
+	stmt->d.s_prifilt.t_then = cnfstmtOptimize(stmt->d.s_prifilt.t_then);
 
 	for(i = 0; i <= LOG_NFACILITIES; i++)
 		if(stmt->d.s_prifilt.pmask[i] != 0xff) {
@@ -4577,12 +4589,13 @@ done:
 	return;
 }
 /* (recursively) optimize a statement */
-void
+struct cnfstmt *
 cnfstmtOptimize(struct cnfstmt *root)
 {
 	struct cnfstmt *stmt;
 	if(root == NULL) goto done;
 	for(stmt = root ; stmt != NULL ; stmt = stmt->next) {
+		DBGPRINTF("optimizing cnfstmt type %d\n", (int) stmt->nodetype);
 		switch(stmt->nodetype) {
 		case S_IF:
 			cnfstmtOptimizeIf(stmt);
@@ -4594,8 +4607,7 @@ cnfstmtOptimize(struct cnfstmt *root)
 			cnfstmtOptimizePRIFilt(stmt);
 			break;
 		case S_PROPFILT:
-			stmt->d.s_propfilt.t_then = removeNOPs(stmt->d.s_propfilt.t_then);
-			cnfstmtOptimize(stmt->d.s_propfilt.t_then);
+			stmt->d.s_propfilt.t_then = cnfstmtOptimize(stmt->d.s_propfilt.t_then);
 			break;
 		case S_SET:
 			stmt->d.s_set.expr = cnfexprOptimize(stmt->d.s_set.expr);
@@ -4612,19 +4624,22 @@ cnfstmtOptimize(struct cnfstmt *root)
 			break;
 		case S_UNSET: /* nothing to do */
 			break;
-        case S_RELOAD_LOOKUP_TABLE:
-            cnfstmtOptimizeReloadLookupTable(stmt);
+		case S_RELOAD_LOOKUP_TABLE:
+			cnfstmtOptimizeReloadLookupTable(stmt);
 			break;
 		case S_NOP:
-			DBGPRINTF("optimizer error: we see a NOP, how come?\n");
+			LogError(0, RS_RET_INTERNAL_ERROR,
+				"optimizer error: we see a NOP, how come?");
 			break;
 		default:
-			DBGPRINTF("error: unknown stmt type %u during optimizer run\n",
+			LogError(0, RS_RET_INTERNAL_ERROR,
+				"internal error: unknown stmt type %u during optimizer run\n",
 				(unsigned) stmt->nodetype);
 			break;
 		}
 	}
-done:	return;
+	root = removeNOPs(root);
+done:	return root;
 }
 
 
