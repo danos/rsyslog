@@ -122,25 +122,31 @@ case $1 in
 		echo "------------------------------------------------------------"
 		echo "Test: $0"
 		echo "------------------------------------------------------------"
+		# we assume TZ is set, else most test will fail. So let's ensure
+		# this really is the case
+		if [ -z $TZ ]; then
+			echo "testbench: TZ env var not set, setting it to UTC"
+			export TZ=UTC
+		fi
+
 		cp $srcdir/testsuites/diag-common.conf diag-common.conf
 		cp $srcdir/testsuites/diag-common2.conf diag-common2.conf
 		rm -f rsyslogd.started work-*.conf rsyslog.random.data
 		rm -f rsyslogd2.started work-*.conf
 		rm -f log log* # RSyslog debug output 
-		rm -f work rsyslog.out.log rsyslog2.out.log rsyslog.out.log.save # common work files
+		rm -f work rsyslog.out.* rsyslog2.out.log # common work files
 		rm -rf test-spool test-logdir stat-file1
-		rm -f rsyslog.out.*.log work-presort rsyslog.pipe
+		rm -f work-presort rsyslog.pipe
 		rm -f -r rsyslog.input.*
 		rm -f rsyslog.input rsyslog.empty rsyslog.input.* imfile-state* omkafka-failed.data
 		rm -f testconf.conf HOSTNAME
 		rm -f rsyslog.errorfile tmp.qi
-		rm -f core.* vghttp://www.rsyslog.com/testbench/echo-get.phpcore.* core*
+		rm -f core.* vgcore.* core*
 		# Note: rsyslog.action.*.include must NOT be deleted, as it
 		# is used to setup some parameters BEFORE calling init. This
 		# happens in chained test scripts. Delete on exit is fine,
 		# though.
 		mkdir test-spool
-		ulimit -c 4000000000
 		# note: TCPFLOOD_EXTRA_OPTS MUST NOT be unset in init, because
 		# some tests need to set it BEFORE calling init to accomodate
 		# their generic test drivers.
@@ -158,7 +164,6 @@ case $1 in
    'exit')	# cleanup
 		# detect any left-over hanging instance
 		nhanging=0
-		#for pid in $(ps -eo pid,cmd|grep '/tools/[r]syslogd' |sed -e 's/\( *\)\([0-9]*\).*/\2/');
 		for pid in $(ps -eo pid,args|grep '/tools/[r]syslogd' |sed -e 's/\( *\)\([0-9]*\).*/\2/');
 		do
 			echo "ERROR: left-over instance $pid, killing it"
@@ -174,9 +179,9 @@ case $1 in
 		# now real cleanup
 		rm -f rsyslogd.started work-*.conf diag-common.conf
    		rm -f rsyslogd2.started diag-common2.conf rsyslog.action.*.include
-		rm -f work rsyslog.out.log rsyslog2.out.log rsyslog.out.log.save # common work files
+		rm -f work rsyslog.out.* rsyslog2.out.log # common work files
 		rm -rf test-spool test-logdir stat-file1
-		rm -f rsyslog.out.*.log rsyslog.random.data work-presort rsyslog.pipe
+		rm -f rsyslog.random.data work-presort rsyslog.pipe
 		rm -f -r rsyslog.input.*
 		rm -f rsyslog.input rsyslog.conf.tlscert stat-file1 rsyslog.empty rsyslog.input.* imfile-state*
 		rm -f testconf.conf
@@ -187,6 +192,14 @@ case $1 in
 		;;
    'check-url-access')   # check if we can access the URL - will exit 77 when not OK
 		rsyslog_testbench_test_url_access $2
+		;;
+   'check-command-available')   # check if command $2 is available - will exit 77 when not OK
+		command -v $2
+		if [ $? -ne 0 ] ; then
+			echo Testbench requires unavailable command: $2
+			echo skipping this test
+			exit 77
+		fi
 		;;
    'es-init')   # initialize local Elasticsearch *testbench* instance for the next
                 # test. NOTE: do NOT put anything useful on that instance!
@@ -248,7 +261,7 @@ case $1 in
 		    echo "ERROR: config file '$CONF_FILE' not found!"
 		    exit 1
 		fi
-		valgrind $RS_TEST_VALGRIND_EXTRA_OPTS $RS_TESTBENCH_VALGRIND_EXTRA_OPTS --gen-suppressions=all --log-fd=1 --error-exitcode=10 --malloc-fill=ff --free-fill=fe --leak-check=$RS_TESTBENCH_LEAK_CHECK ../tools/rsyslogd -C -n -irsyslog$3.pid -M../runtime/.libs:../.libs -f$CONF_FILE &
+		LD_PRELOAD=$RSYSLOG_PRELOAD valgrind $RS_TEST_VALGRIND_EXTRA_OPTS $RS_TESTBENCH_VALGRIND_EXTRA_OPTS --gen-suppressions=all --log-fd=1 --error-exitcode=10 --malloc-fill=ff --free-fill=fe --leak-check=$RS_TESTBENCH_LEAK_CHECK ../tools/rsyslogd -C -n -irsyslog$3.pid -M../runtime/.libs:../.libs -f$CONF_FILE &
 		. $srcdir/diag.sh wait-startup-pid $3
 		;;
    'startup-vg') # start rsyslogd with default params under valgrind control. $2 is the config file name to use
@@ -509,6 +522,17 @@ case $1 in
 		  . $srcdir/diag.sh error-exit 1
     fi
     ;;
+   'grep-check') # grep for "$EXPECTED" present in rsyslog.log - env var must be set
+		 # before this method is called
+		grep "$EXPECTED" rsyslog.out.log > /dev/null
+		if [ $? -eq 1 ]; then
+		  echo "GREP FAIL: rsyslog.out.log content:"
+		  cat rsyslog.out.log
+		  echo "GREP FAIL: expected text not found:"
+		  echo "$EXPECTED"
+		. $srcdir/diag.sh error-exit 1
+		fi;
+		;;
    'seq-check') # do the usual sequence check to see if everything was properly received. $2 is the instance.
 		rm -f work
 		cp rsyslog.out.log work-presort
@@ -535,13 +559,54 @@ case $1 in
 		fi
 		rm -f work2
 		;;
-   'content-check') 
+   'content-cmp')
+		echo "$2" | cmp - rsyslog.out.log
+		if [ "$?" -ne "0" ]; then
+		    echo content-cmp failed
+		    echo EXPECTED:
+		    echo $2
+		    echo ACTUAL:
+		    cat rsyslog.out.log
+		    . $srcdir/diag.sh error-exit 1
+		fi
+		;;
+   'content-check')
 		cat rsyslog.out.log | grep -qF "$2"
 		if [ "$?" -ne "0" ]; then
 		    echo content-check failed to find "'$2'", content is
 		    cat rsyslog.out.log
 		    . $srcdir/diag.sh error-exit 1
 		fi
+		;;
+   'wait-file-lines') 
+		# $2 filename, $3 expected nbr of lines, $4 nbr of tries
+		if [ "$4" == "" ]; then
+			timeoutend=1
+		else
+			timeoutend=$4
+		fi
+		timecounter=0
+
+		while [  $timecounter -lt $timeoutend ]; do
+			let timecounter=timecounter+1
+
+			count=$(wc -l < rsyslog.out.log)
+			if [ $count -eq $3 ]; then
+				echo wait-file-lines success, have $3 lines
+				break
+			else
+				if [ "x$timecounter" == "x$timeoutend" ]; then
+					echo wait-file-lines failed, expected $3 got $count
+					. $srcdir/diag.sh shutdown-when-empty
+					. $srcdir/diag.sh wait-shutdown
+					. $srcdir/diag.sh error-exit 1
+				else
+					echo wait-file-lines not yet there, currently $count lines
+					./msleep 200
+				fi
+			fi
+		done
+		unset count
 		;;
    'content-check-with-count') 
 		# content check variables for Timeout
@@ -553,12 +618,11 @@ case $1 in
 		timecounter=0
 
 		while [  $timecounter -lt $timeoutend ]; do
-#			echo content-check-with-count loop $timecounter
 			let timecounter=timecounter+1
 
 			count=$(cat rsyslog.out.log | grep -F "$2" | wc -l)
 
-			if [ "x$count" == "x$3" ]; then
+			if [ $count -eq $3 ]; then
 				echo content-check-with-count success, \"$2\" occured $3 times
 				break
 			else
@@ -566,12 +630,12 @@ case $1 in
 					. $srcdir/diag.sh shutdown-when-empty # shut down rsyslogd
 					. $srcdir/diag.sh wait-shutdown	# Shutdown rsyslog instance on error 
 
-					echo content-check-with-count failed, expected \"$2\" to occure $3 times, but found it $count times
+					echo content-check-with-count failed, expected \"$2\" to occur $3 times, but found it $count times
 					echo file rsyslog.out.log content is:
-					cat rsyslog.out.log
+					sort < rsyslog.out.log
 					. $srcdir/diag.sh error-exit 1
 				else
-					echo content-check-with-count failed, trying again ...
+					echo content-check-with-count have $count, wait for $3 times $2...
 					./msleep 1000
 				fi
 			fi
@@ -1090,9 +1154,6 @@ case $1 in
 			gdb ../tools/rsyslogd $CORE -batch -x gdb.in
 			CORE=
 			rm gdb.in
-		else
-			echo no core file found, cannot provide additional info
-			ls -l core*
 		fi
 		if [[ "$3" == 'stacktrace' || ( ! -e IN_AUTO_DEBUG &&  "$USE_AUTO_DEBUG" == 'on' ) ]]; then
 			if [ -e core* ]

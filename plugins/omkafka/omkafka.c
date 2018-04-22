@@ -93,7 +93,7 @@ static unsigned clockTopicAccess = 0;
 #ifndef HAVE_ATOMIC_BUILTINS
 static pthread_mutex_t mutClock;
 #endif
-static inline uint64
+static uint64
 getClockTopicAccess(void)
 {
 #if HAVE_ATOMIC_BUILTINS64
@@ -142,6 +142,7 @@ typedef struct _instanceData {
 	int fixedPartition;
 	int nPartitions;
 	uint32_t currPartition;
+	pthread_mutex_t mutCurrPartition;
 	int nConfParams;
 	struct kafka_params *confParams;
 	int nTopicConfParams;
@@ -817,7 +818,7 @@ do_rd_kafka_destroy(instanceData *const __restrict__ pData)
 # if RD_KAFKA_VERSION < 0x00090001
 	/* Wait for kafka being destroyed in old API */
 	if (rd_kafka_wait_destroyed(10000) < 0)	{
-		LogError(0, RS_RET_ER, "omkafka: rd_kafka_destroy did not finish after grace timeout (10s)!");
+		LogError(0, RS_RET_ERR, "omkafka: rd_kafka_destroy did not finish after grace timeout (10s)!");
 	} else {
 		DBGPRINTF("omkafka: rd_kafka_destroy successfully finished\n");
 	}
@@ -1216,6 +1217,7 @@ CODESTARTcreateInstance
 	CHKiRet(pthread_mutex_init(&pData->mutErrFile, NULL));
 	CHKiRet(pthread_rwlock_init(&pData->rkLock, NULL));
 	CHKiRet(pthread_mutex_init(&pData->mutDynCache, NULL));
+	CHKiRet(pthread_mutex_init(&pData->mutCurrPartition, NULL));
 finalize_it:
 ENDcreateInstance
 
@@ -1278,6 +1280,7 @@ CODESTARTfreeInstance
 	pthread_mutex_destroy(&pData->mut_doAction);
 	pthread_mutex_destroy(&pData->mutErrFile);
 	pthread_mutex_destroy(&pData->mutDynCache);
+	pthread_mutex_destroy(&pData->mutCurrPartition);
 ENDfreeInstance
 
 BEGINfreeWrkrInstance

@@ -30,11 +30,11 @@ check_PROGRAMS = $(TESTRUNS) ourtail nettester tcpflood chkseq msleep randomgen 
 if ENABLE_IMJOURNAL
 check_PROGRAMS += journal_print
 endif
-TESTS = $(TESTRUNS) 
+TESTS = $(TESTRUNS)
 #TESTS = $(TESTRUNS) cfg.sh
 
 TESTS +=  \
-	empty-hostname.sh 
+	empty-hostname.sh
 
 if ENABLE_TESTBENCH1
 TESTS +=  \
@@ -68,11 +68,13 @@ TESTS +=  \
 	privdropgroup.sh \
 	privdropgroupid.sh \
 	template-json.sh \
+	template-pure-json.sh \
 	template-pos-from-to.sh \
 	template-pos-from-to-lowercase.sh \
 	template-pos-from-to-oversize.sh \
 	template-pos-from-to-oversize-lowercase.sh \
 	template-pos-from-to-missing-jsonvar.sh \
+	template-const-jsonf.sh \
 	fac_authpriv.sh \
 	fac_local0.sh \
 	fac_local7.sh \
@@ -219,14 +221,61 @@ TESTS += \
 	mmnormalize_processing_test4.sh
 endif
 endif
+
+if ENABLE_PGSQL
+if ENABLE_PGSQL_TESTS
+TESTS += \
+	pgsql-basic.sh \
+	pgsql-basic-cnf6.sh \
+	pgsql-basic-threads-cnf6.sh \
+	pgsql-template.sh \
+	pgsql-template-cnf6.sh \
+	pgsql-actq-mt-withpause.sh \
+	pgsql-template-threads-cnf6.sh
+if HAVE_VALGRIND
+TESTS += \
+	pgsql-basic-vg.sh \
+	pgsql-template-vg.sh \
+	pgsql-basic-cnf6-vg.sh \
+	pgsql-template-cnf6-vg.sh \
+	pgsql-actq-mt-withpause-vg.sh
 endif
+endif
+endif
+
+if ENABLE_MYSQL_TESTS
+TESTS +=  \
+	mysql-basic.sh \
+	mysql-basic-cnf6.sh \
+	mysql-asyn.sh \
+	mysql-actq-mt.sh \
+	mysql-actq-mt-withpause.sh \
+	action-tx-single-processing.sh \
+	action-tx-errfile.sh
+if HAVE_VALGRIND
+TESTS +=  \
+	mysql-basic-vg.sh \
+	mysql-asyn-vg.sh \
+	mysql-actq-mt-withpause-vg.sh
+endif
+if ENABLE_OMLIBDBI
+TESTS +=  \
+	libdbi-basic.sh \
+	libdbi-asyn.sh
+if HAVE_VALGRIND
+TESTS +=  \
+	libdbi-basic-vg.sh
+endif
+endif
+endif
+
+endif #  ENABLE_TESTBENCH2
 
 if ENABLE_TESTBENCH2
 TESTS +=  \
 	rscript_contains.sh \
 	rscript_bare_var_root.sh \
 	rscript_bare_var_root-empty.sh \
-	rscript_http_request.sh \
 	rscript_ipv42num.sh \
 	rscript_field.sh \
 	rscript_stop.sh \
@@ -268,6 +317,7 @@ TESTS +=  \
 	rscript_parse_json.sh \
 	rscript_previous_action_suspended.sh \
 	rscript_str2num_negative.sh \
+	rscript-config_enable-on.sh \
 	mmanon_random_32_ipv4.sh \
 	mmanon_random_cons_32_ipv4.sh \
 	mmanon_recognize_ipv4.sh \
@@ -304,8 +354,24 @@ TESTS +=  \
 	lookup_table_bad_configs.sh \
 	lookup_table_rscript_reload.sh \
 	lookup_table_rscript_reload_without_stub.sh \
+	include-obj-text-from-file.sh \
 	multiple_lookup_tables.sh
-endif
+if ENABLE_FMHTTP
+TESTS +=  \
+	rscript_http_request.sh
+endif # ENABLE_FMHTTP
+if HAVE_VALGRIND
+TESTS +=  \
+	include-obj-outside-control-flow-vg.sh \
+	include-obj-in-if-vg.sh \
+	include-obj-text-vg.sh \
+	rscript_parse_json-vg.sh \
+	rscript_backticks-vg.sh \
+	rscript-config_enable-off-vg.sh \
+	prop-jsonmesg-vg.sh
+endif # HAVE_VALGRIND
+
+endif # ENABLE_TESTBENCH2
 
 if HAVE_VALGRIND
 TESTS +=  \
@@ -313,7 +379,6 @@ TESTS +=  \
 	mmexternal-InvldProg-vg.sh \
 	internal-errmsg-memleak-vg.sh \
 	rscript_set_memleak-vg.sh \
-	rscript_http_request-vg.sh \
 	no-parser-vg.sh \
 	discard-rptdmsg-vg.sh \
 	discard-allmark-vg.sh \
@@ -338,6 +403,10 @@ TESTS +=  \
 	multiple_lookup_tables-vg.sh \
 	fac_local0-vg.sh \
 	rscript_trim-vg.sh
+if ENABLE_FMHTTP
+TESTS +=  \
+	rscript_http_request-vg.sh
+endif # ENABLE_FMHTTP
 endif # HAVE_VALGRIND
 
 if ENABLE_ROOT_TESTS
@@ -359,14 +428,16 @@ TESTS +=  \
 endif
 endif
 
-if ENABLE_IMJOURNAL
-TESTS +=  \
-	imjournal-basic.sh
-if HAVE_VALGRIND
-TESTS +=  \
-	imjournal-basic-vg.sh
-endif
-endif
+# disable temporarily due to issues
+# see: https://github.com/rsyslog/rsyslog/issues/2564
+#if ENABLE_IMJOURNAL
+#TESTS +=  \
+#	imjournal-basic.sh
+#if HAVE_VALGRIND
+#TESTS +=  \
+#	imjournal-basic-vg.sh
+#endif
+#endif
 
 if ENABLE_OMJOURNAL
 TESTS +=  \
@@ -377,24 +448,33 @@ TESTS +=  \
 endif
 
 if ENABLE_OMPROG
+# see https://github.com/rsyslog/rsyslog/issues/2403
+# TODO: re-enable!
+#	omprog-cleanup.sh
+#	omprog-noterm-cleanup.sh
+#	omprog-noterm-default.sh
+#	omprog-cleanup-with-outfile.sh
+# linux:
+#	omprog-noterm-unresponsive.sh
+# valgrind:
+#	omprog-noterm-cleanup-vg.sh
+#	omprog-cleanup-vg.sh
 TESTS +=  \
-	omprog-cleanup.sh \
-	omprog-cleanup-with-outfile.sh \
-	omprog-noterm-cleanup.sh \
-	omprog-noterm-default.sh
-if OS_LINUX
-TESTS += \
-	omprog-cleanup-when-unresponsive.sh \
-	omprog-noterm-unresponsive.sh
-endif
+	omprog-feedback.sh \
+	omprog-transactions.sh \
+	omprog-transactions-failed-messages.sh \
+	omprog-transactions-failed-commits.sh
+#if OS_LINUX
+#TESTS += \
+#	omprog-cleanup-when-unresponsive.sh
+#endif
 if HAVE_VALGRIND
 TESTS +=  \
-	omprog-cleanup-vg.sh \
-	omprog-noterm-cleanup-vg.sh
-if OS_LINUX
-TESTS += \
-	omprog-cleanup-when-unresponsive-vg.sh
-endif
+	omprog-multiparam-vg.sh
+#if OS_LINUX
+#TESTS += \
+	#omprog-cleanup-when-unresponsive-vg.sh
+#endif
 endif
 endif
 
@@ -402,67 +482,20 @@ if ENABLE_OMKAFKA
 if ENABLE_IMKAFKA
 if ENABLE_KAFKA_TESTS
 TESTS += \
-	sndrcv_kafka.sh 
+	sndrcv_kafka.sh
 # Tests below need to be stable first!
 #	sndrcv_kafka_multi.sh
 #	sndrcv_kafka_fail.sh
 #	sndrcv_kafka_failresume.sh
 if HAVE_VALGRIND
 TESTS += \
-	sndrcv_kafka-vg-sender.sh \
 	sndrcv_kafka-vg-rcvr.sh
+# re-enable: (see https://github.com/rsyslog/rsyslog/issues/2434)
+# sndrcv_kafka-vg-sender.sh
 endif
 endif
 endif
 endif
-
-if ENABLE_PGSQL
-if ENABLE_PGSQL_TESTS
-TESTS += \
-	pgsql-basic.sh \
-	pgsql-basic-cnf6.sh \
-	pgsql-basic-threads-cnf6.sh \
-	pgsql-template.sh \
-	pgsql-template-cnf6.sh \
-	pgsql-actq-mt-withpause.sh \
-	pgsql-template-threads-cnf6.sh
-if HAVE_VALGRIND
-TESTS += \
-	pgsql-basic-vg.sh \
-	pgsql-template-vg.sh \
-	pgsql-basic-cnf6-vg.sh \
-	pgsql-template-cnf6-vg.sh \
-	pgsql-actq-mt-withpause-vg.sh
-endif
-endif
-endif
-
-if ENABLE_MYSQL_TESTS
-TESTS +=  \
-	mysql-basic.sh \
-	mysql-basic-cnf6.sh \
-	mysql-asyn.sh \
-	mysql-actq-mt.sh \
-	mysql-actq-mt-withpause.sh \
-	action-tx-single-processing.sh \
-	action-tx-errfile.sh
-if HAVE_VALGRIND
-TESTS +=  \
-	mysql-basic-vg.sh \
-	mysql-asyn-vg.sh \
-	mysql-actq-mt-withpause-vg.sh 
-endif
-if ENABLE_OMLIBDBI
-TESTS +=  \
-	libdbi-basic.sh \
-	libdbi-asyn.sh
-if HAVE_VALGRIND
-TESTS +=  \
-	libdbi-basic-vg.sh
-endif
-endif
-endif
-
 if ENABLE_IMPSTATS
 TESTS +=  \
 	impstats-hup.sh \
@@ -528,7 +561,7 @@ TESTS +=  \
 	es-basic-errfile-empty.sh \
 	es-basic-errfile-popul.sh \
 	es-bulk-errfile-empty.sh \
-	es-bulk-errfile-popul.sh 
+	es-bulk-errfile-popul.sh
 if HAVE_VALGRIND
 TESTS += \
 	es-basic-vgthread.sh
@@ -568,6 +601,11 @@ if ENABLE_PMNULL
 TESTS +=  \
 	pmnull-basic.sh \
 	pmnull-withparams.sh
+endif
+
+if ENABLE_OMSTDOUT
+TESTS +=  \
+	omstdout-basic.sh
 endif
 
 if ENABLE_PMNORMALIZE
@@ -718,7 +756,7 @@ endif
 if ENABLE_EXTENDED_TESTS
 # random.sh is temporarily disabled as it needs some work
 # to rsyslog core to complete in reasonable time
-#TESTS += random.sh 
+#TESTS += random.sh
 endif
 
 if ENABLE_IMFILE
@@ -731,6 +769,7 @@ TESTS += \
 	imfile-error-not-repeated.sh \
 	imfile-truncate.sh \
 	imfile-readmode2.sh \
+	imfile-readmode2-polling.sh \
 	imfile-readmode2-with-persists-data-during-stop.sh \
 	imfile-readmode2-with-persists.sh \
 	imfile-endregex.sh \
@@ -746,21 +785,21 @@ TESTS += \
 	imfile-wildcards.sh \
 	imfile-wildcards-dirs.sh \
 	imfile-wildcards-dirs2.sh \
+	imfile-wildcards-dirs-multi.sh \
+	imfile-wildcards-dirs-multi2.sh \
+	imfile-wildcards-dirs-multi3.sh \
+	imfile-wildcards-dirs-multi4.sh \
+	imfile-wildcards-dirs-multi5.sh \
+	imfile-wildcards-dirs-multi5-polling.sh \
+	imfile-old-state-file.sh \
+	imfile-rename-while-stopped.sh \
 	imfile-rename.sh
-
-# TEMPORARILY disable some imfile tests because refactoring 
-# is needed to get them to work 100% all the time.
-# alorbach, 2018-01-05
-#	imfile-wildcards-dirs-multi.sh \
-#	imfile-wildcards-dirs-multi2.sh \
-#	imfile-wildcards-dirs-multi3.sh \
-#	imfile-wildcards-dirs-multi4.sh \
-#
 
 if HAVE_VALGRIND
 TESTS += \
 	imfile-basic-vg.sh \
 	imfile-endregex-vg.sh \
+	imfile-readmode0-vg.sh \
 	imfile-readmode2-vg.sh \
 	imfile-basic-vgthread.sh
 endif
@@ -770,7 +809,7 @@ if ENABLE_OMTCL
 TESTS += \
 	 omtcl.sh
 endif
- 
+
 endif # if ENABLE_TESTBENCH
 
 TESTS_ENVIRONMENT = RSYSLOG_MODDIR='$(abs_top_builddir)'/runtime/.libs/
@@ -914,6 +953,12 @@ EXTRA_DIST= \
 	testsuites/diskqueue.conf \
 	arrayqueue.sh \
 	testsuites/arrayqueue.conf \
+	include-obj-text-from-file.sh \
+	include-obj-outside-control-flow-vg.sh \
+	include-obj-in-if-vg.sh \
+	include-obj-text-vg.sh \
+	rscript-config_enable-off-vg.sh \
+	rscript-config_enable-on.sh \
 	rscript_http_request.sh \
 	rscript_http_request-vg.sh \
 	rscript_bare_var_root.sh \
@@ -959,6 +1004,8 @@ EXTRA_DIST= \
 	rscript_is_time.sh \
 	rscript_script_error.sh \
 	rscript_parse_json.sh \
+	rscript_parse_json-vg.sh \
+	rscript_backticks-vg.sh \
 	rscript_previous_action_suspended.sh \
 	rscript_str2num_negative.sh \
 	mmanon_random_32_ipv4.sh \
@@ -1010,6 +1057,7 @@ EXTRA_DIST= \
 	testsuites/localvar-concurrency.conf \
 	exec_tpl-concurrency.sh \
 	testsuites/exec_tpl-concurrency.conf \
+	prop-jsonmesg-vg.sh \
 	prop-all-json-concurrency.sh \
 	testsuites/prop-all-json-concurrency.conf \
 	no-parser-errmsg.sh \
@@ -1027,11 +1075,13 @@ EXTRA_DIST= \
 	privdropgroup.sh \
 	privdropgroupid.sh \
 	template-json.sh \
+	template-pure-json.sh \
 	template-pos-from-to.sh \
 	template-pos-from-to-lowercase.sh \
 	template-pos-from-to-oversize.sh \
 	template-pos-from-to-oversize-lowercase.sh \
 	template-pos-from-to-missing-jsonvar.sh \
+	template-const-jsonf.sh \
 	fac_authpriv.sh \
 	testsuites/fac_authpriv.conf \
 	fac_local0.sh \
@@ -1087,6 +1137,7 @@ EXTRA_DIST= \
 	mmnormalize_rule_from_array.sh \
 	pmnull-basic.sh \
 	pmnull-withparams.sh \
+	omstdout-basic.sh \
 	testsuites/mmnormalize_processing_tests.rulebase \
 	mmnormalize_processing_test1.sh \
 	mmnormalize_processing_test2.sh \
@@ -1323,6 +1374,7 @@ EXTRA_DIST= \
 	testsuites/sndrcv_gzip_rcvr.conf \
 	action-tx-single-processing.sh \
 	action-tx-errfile.sh \
+	testsuites/action-tx-errfile.result \
 	pipeaction.sh \
 	testsuites/pipeaction.conf \
 	omprog-cleanup.sh \
@@ -1334,6 +1386,11 @@ EXTRA_DIST= \
 	omprog-noterm-cleanup-vg.sh \
 	omprog-noterm-default.sh \
 	omprog-noterm-unresponsive.sh \
+	omprog-feedback.sh \
+	omprog-transactions.sh \
+	omprog-transactions-failed-messages.sh \
+	omprog-transactions-failed-commits.sh \
+	omprog-multiparam-vg.sh \
 	testsuites/omprog-cleanup.conf \
 	testsuites/omprog-noterm.conf \
 	testsuites/omprog-noterm-default.conf \
@@ -1343,6 +1400,12 @@ EXTRA_DIST= \
 	testsuites/omprog-cleanup-unresponsive.conf \
 	testsuites/omprog-test-bin.sh \
 	testsuites/term-ignoring-script.sh \
+	testsuites/omprog-feedback.conf \
+	testsuites/omprog-feedback-bin.sh \
+	testsuites/omprog-transactions-bin.sh \
+	testsuites/omprog-transactions.conf \
+	testsuites/omprog-transactions-failed-messages.conf \
+	testsuites/omprog-transactions-failed-commits.conf \
 	pipe_noreader.sh \
 	testsuites/pipe_noreader.conf \
 	uxsock_simple.sh \
@@ -1392,7 +1455,10 @@ EXTRA_DIST= \
 	testsuites/complex1.conf \
 	random.sh \
 	testsuites/random.conf \
+	testsuites/imfile-old-state-file_imfile-state_.-rsyslog.input \
+	imfile-readmode0-vg.sh \
 	imfile-readmode2.sh \
+	imfile-readmode2-polling.sh \
 	imfile-readmode2-vg.sh \
 	imfile-readmode2-with-persists-data-during-stop.sh \
 	imfile-readmode2-with-persists.sh \
@@ -1428,8 +1494,11 @@ EXTRA_DIST= \
 	imfile-wildcards-dirs-multi2.sh \
 	imfile-wildcards-dirs-multi3.sh \
 	imfile-wildcards-dirs-multi4.sh \
+	imfile-wildcards-dirs-multi5.sh \
+	imfile-wildcards-dirs-multi5-polling.sh \
+	imfile-old-state-file.sh \
+	imfile-rename-while-stopped.sh \
 	imfile-rename.sh \
-	testsuites/imfile-wildcards.conf \
 	testsuites/imfile-wildcards-simple.conf \
 	testsuites/imfile-wildcards-dirs.conf \
 	testsuites/imfile-wildcards-dirs-multi.conf \
@@ -1758,8 +1827,27 @@ EXTRA_DIST= \
 	testsuites/sample.pmsnare_ccdefault \
 	testsuites/sample.pmsnare_cccstyle \
 	testsuites/sample.pmsnare_ccbackslash \
-	testsuites/sample.pmsnare_modoverride
-	
+	testsuites/sample.pmsnare_modoverride \
+	testsuites/include-std-omfile-action.conf \
+	pgsql-basic.sh \
+	testsuites/pgsql-basic.sql \
+	testsuites/pgsql-basic.conf \
+	testsuites/pgsql-select-msg.sql \
+	testsuites/pgsql-select-syslogtag.sql \
+	pgsql-basic-cnf6.sh \
+	pgsql-basic-threads-cnf6.sh \
+	pgsql-template.sh \
+	testsuites/pgsql-template.conf \
+	pgsql-template-cnf6.sh \
+	pgsql-actq-mt-withpause.sh \
+	pgsql-template-threads-cnf6.sh \
+	pgsql-basic-vg.sh \
+	pgsql-template-vg.sh \
+	pgsql-basic-cnf6-vg.sh \
+	pgsql-template-cnf6-vg.sh \
+	pgsql-actq-mt-withpause-vg.sh \
+	../devtools/prep-mysql-db.sh
+
 ourtail_SOURCES = ourtail.c
 msleep_SOURCES = msleep.c
 omrelp_dflt_port_SOURCES = omrelp_dflt_port.c

@@ -1,3 +1,21 @@
+rsyslog (8.34.0-1) unstable; urgency=medium
+
+  * New upstream version 8.34.0
+  * Fix configure switch for atomic operations
+  * Disable fmhttp function module.
+    http_requrest is now implemented as a loadable function module, but
+    since we disable libcurl support, disable fmhttp as well.
+
+ -- Michael Biebl <biebl@debian.org>  Fri, 06 Apr 2018 21:40:49 +0200
+
+rsyslog (8.33.1-1) unstable; urgency=medium
+
+  * New upstream version 8.33.1
+  * Rebase patches
+  * Drop old upgrade code from pre-jessie
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 06 Mar 2018 18:52:11 +0100
+
 rsyslog (8.32.0-1~bpo9+1) stretch-backports; urgency=medium
 
   * Rebuild for stretch-backports.

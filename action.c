@@ -183,8 +183,7 @@ typedef struct configSettings_s {
 } configSettings_t;
 
 
-configSettings_t cs;					/* our current config settings */
-configSettings_t cs_save;				/* our saved (scope!) config settings */
+static configSettings_t cs;					/* our current config settings */
 
 /* the counter below counts actions created. It is used to obtain unique IDs for the action. They
  * should not be relied on for any long-term activity (e.g. disk queue names!), but they are nice
@@ -661,7 +660,7 @@ static rsRetVal getReturnCode(action_t * const pThis, wti_t * const pWti)
 /* set the action to a new state
  * rgerhards, 2007-08-02
  */
-static inline void
+static void
 actionSetState(action_t * const pThis, wti_t * const pWti, uint8_t newState)
 {
 	setActionState(pWti, pThis, newState);

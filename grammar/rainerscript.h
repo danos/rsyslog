@@ -1,6 +1,6 @@
 /* rsyslog rainerscript definitions
  *
- * Copyright 2011-2016 Rainer Gerhards
+ * Copyright 2011-2018 Rainer Gerhards
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -248,15 +248,33 @@ enum cnffuncid {
 	CNFFUNC_IS_TIME
 };
 
+typedef struct cnffunc cnffunc_t;
+typedef void (*rscriptFuncPtr) (cnffunc_t *, struct svar *, void *, wti_t *);
+
 struct cnffunc {
 	unsigned nodetype;
 	es_str_t *fname;
 	unsigned short nParams;
-	enum cnffuncid fID; /* function ID for built-ins, 0 means use name */
+	rscriptFuncPtr fPtr;
 	void *funcdata;	/* global data for function-specific use (e.g. compiled regex) */
 	uint8_t destructable_funcdata;
 	struct cnfexpr *expr[];
 } __attribute__((aligned (8)));
+
+
+struct scriptFunct {
+	const char *fname;
+	unsigned short minParams;
+	unsigned short maxParams;
+	rscriptFuncPtr fPtr;
+	rsRetVal (*initFunc) (struct cnffunc *);
+	void (*destruct) (struct cnffunc *);
+	/* currently no optimizer entrypoint, may be added later.
+	 * Since the optimizer needs metadata about functions, it does
+	 * not seem practical to add such a function at the current state
+	 */
+};
+
 
 /* future extensions
 struct x {
@@ -306,6 +324,8 @@ struct funcData_prifilt {
 #define RS_SCRIPT_EOK		0
 #define RS_SCRIPT_EINVAL	1
 
+void varFreeMembers(const struct svar *r);
+rsRetVal addMod2List(const int version, struct scriptFunct *functArray);
 int cnfParseBuffer(char *buf, unsigned lenBuf);
 void readConfFile(FILE *fp, es_str_t **str);
 struct objlst* objlstNew(struct cnfobj *obj);
@@ -313,6 +333,7 @@ void objlstDestruct(struct objlst *lst);
 void objlstPrint(struct objlst *lst);
 struct nvlst* nvlstNewArray(struct cnfarray *ar);
 struct nvlst* nvlstNewStr(es_str_t *value);
+struct nvlst* nvlstNewStrBackticks(es_str_t *const value);
 struct nvlst* nvlstSetName(struct nvlst *lst, es_str_t *name);
 void nvlstDestruct(struct nvlst *lst);
 void nvlstPrint(struct nvlst *lst);
@@ -332,7 +353,7 @@ struct cnfstringval* cnfstringvalNew(es_str_t *estr);
 struct cnfvar* cnfvarNew(char *name);
 struct cnffunc * cnffuncNew(es_str_t *fname, struct cnffparamlst* paramlst);
 struct cnffparamlst * cnffparamlstNew(struct cnfexpr *expr, struct cnffparamlst *next);
-int cnfDoInclude(char *name);
+int cnfDoInclude(const char *name, const int optional);
 int cnfparamGetIdx(struct cnfparamblk *params, const char *name);
 struct cnfparamvals* nvlstGetParams(struct nvlst *lst, struct cnfparamblk *params,
 	       struct cnfparamvals *vals);
@@ -357,7 +378,7 @@ struct cnfstmt * cnfstmtNewCall(es_str_t *name);
 struct cnfstmt * cnfstmtNewContinue(void);
 struct cnfstmt * cnfstmtNewReloadLookupTable(struct cnffparamlst *fparams);
 void cnfstmtDestructLst(struct cnfstmt *root);
-void cnfstmtOptimize(struct cnfstmt *root);
+struct cnfstmt *cnfstmtOptimize(struct cnfstmt *root);
 struct cnfarray* cnfarrayNew(es_str_t *val);
 struct cnfarray* cnfarrayDup(struct cnfarray *old);
 struct cnfarray* cnfarrayAdd(struct cnfarray *ar, es_str_t *val);
@@ -367,6 +388,7 @@ rsRetVal initRainerscript(void);
 void unescapeStr(uchar *s, int len);
 const char * tokenval2str(int tok);
 uchar* var2CString(struct svar *__restrict__ const r, int *__restrict__ const bMustFree);
+void includeProcessCnf(struct nvlst *const lst);
 
 /* debug helper */
 void cstrPrint(const char *text, es_str_t *estr);

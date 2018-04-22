@@ -54,6 +54,7 @@ override_dh_auto_configure:
 		--enable-imdiag \
 		--disable-generate-man-pages \
 		--disable-libcurl \
+		--disable-fmhttp \
 		--without-valgrind-testbench \
 		--with-systemdsystemunitdir=/lib/systemd/system
 

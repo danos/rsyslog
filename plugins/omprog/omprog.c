@@ -36,11 +36,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
-#if defined(__FreeBSD__) || defined(__APPLE__)
 #include <sys/wait.h>
-#else
-#include <wait.h>
-#endif
 #if defined(__linux__) && defined(_GNU_SOURCE)
 #include <sys/syscall.h>
 #include <sys/types.h>
@@ -277,6 +273,7 @@ openPipe(wrkrInstanceData_t *pWrkrData)
 			pWrkrData->fdPipeErr = pipeStderr[0];
 		}
 		else {
+			close(pipeStderr[0]);
 			pWrkrData->fdPipeErr = -1;
 		}
 	} else if (pWrkrData->pData->outputFileName != NULL) {
@@ -452,14 +449,14 @@ doForceKillSubprocess(subprocess_timeout_desc_t *subpTimeOut, int do_kill, pid_t
 #endif
 
 static void
-waitForChild(wrkrInstanceData_t *pWrkrData, long timeout_ms)
+waitForChild(wrkrInstanceData_t *pWrkrData, const long timeout_ms)
 {
 	int status;
 	int ret;
 
 #if defined(__linux__) && defined(_GNU_SOURCE)
 	subprocess_timeout_desc_t subpTimeOut;
-	int timeoutSetupStatus;
+	int timeoutSetupStatus = 0;
 	int waitpid_interrupted;
 
 	if (timeout_ms > 0)

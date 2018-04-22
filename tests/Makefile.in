@@ -161,11 +161,13 @@ host_triplet = @host@
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	privdropgroup.sh \
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	privdropgroupid.sh \
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	template-json.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	template-pure-json.sh \
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	template-pos-from-to.sh \
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	template-pos-from-to-lowercase.sh \
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	template-pos-from-to-oversize.sh \
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	template-pos-from-to-oversize-lowercase.sh \
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	template-pos-from-to-missing-jsonvar.sh \
+@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	template-const-jsonf.sh \
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_authpriv.sh \
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_local0.sh \
 @ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_local7.sh \
@@ -311,11 +313,47 @@ host_triplet = @host@
 @ENABLE_LIBFAKETIME_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_processing_test3.sh \
 @ENABLE_LIBFAKETIME_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_processing_test4.sh
 
-@ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_5 = \
+@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_5 = \
+@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pgsql-basic.sh \
+@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pgsql-basic-cnf6.sh \
+@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pgsql-basic-threads-cnf6.sh \
+@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pgsql-template.sh \
+@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pgsql-template-cnf6.sh \
+@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pgsql-actq-mt-withpause.sh \
+@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	pgsql-template-threads-cnf6.sh
+
+@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_6 = \
+@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	pgsql-basic-vg.sh \
+@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	pgsql-template-vg.sh \
+@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	pgsql-basic-cnf6-vg.sh \
+@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	pgsql-template-cnf6-vg.sh \
+@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	pgsql-actq-mt-withpause-vg.sh
+
+@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_7 = \
+@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	mysql-basic.sh \
+@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	mysql-basic-cnf6.sh \
+@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	mysql-asyn.sh \
+@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	mysql-actq-mt.sh \
+@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	mysql-actq-mt-withpause.sh \
+@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	action-tx-single-processing.sh \
+@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	action-tx-errfile.sh
+
+@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_8 = \
+@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	mysql-basic-vg.sh \
+@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	mysql-asyn-vg.sh \
+@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	mysql-actq-mt-withpause-vg.sh
+
+@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_OMLIBDBI_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_9 = \
+@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_OMLIBDBI_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	libdbi-basic.sh \
+@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_OMLIBDBI_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@	libdbi-asyn.sh
+
+@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_OMLIBDBI_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_10 = \
+@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_OMLIBDBI_TRUE@@ENABLE_TESTBENCH1_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	libdbi-basic-vg.sh
+
+@ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_11 = \
 @ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_contains.sh \
 @ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_bare_var_root.sh \
 @ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_bare_var_root-empty.sh \
-@ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_http_request.sh \
 @ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_ipv42num.sh \
 @ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_field.sh \
 @ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_stop.sh \
@@ -357,6 +395,7 @@ host_triplet = @host@
 @ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_parse_json.sh \
 @ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_previous_action_suspended.sh \
 @ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_str2num_negative.sh \
+@ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript-config_enable-on.sh \
 @ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@	mmanon_random_32_ipv4.sh \
 @ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@	mmanon_random_cons_32_ipv4.sh \
 @ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@	mmanon_recognize_ipv4.sh \
@@ -393,14 +432,26 @@ host_triplet = @host@
 @ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@	lookup_table_bad_configs.sh \
 @ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@	lookup_table_rscript_reload.sh \
 @ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@	lookup_table_rscript_reload_without_stub.sh \
+@ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@	include-obj-text-from-file.sh \
 @ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@	multiple_lookup_tables.sh
 
-@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_6 = \
+@ENABLE_FMHTTP_TRUE@@ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_12 = \
+@ENABLE_FMHTTP_TRUE@@ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_http_request.sh
+
+@ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_13 = \
+@ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	include-obj-outside-control-flow-vg.sh \
+@ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	include-obj-in-if-vg.sh \
+@ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	include-obj-text-vg.sh \
+@ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	rscript_parse_json-vg.sh \
+@ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	rscript_backticks-vg.sh \
+@ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	rscript-config_enable-off-vg.sh \
+@ENABLE_TESTBENCH2_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	prop-jsonmesg-vg.sh
+
+@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_14 = \
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	mmexternal-SegFault-vg.sh \
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	mmexternal-InvldProg-vg.sh \
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	internal-errmsg-memleak-vg.sh \
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	rscript_set_memleak-vg.sh \
-@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	rscript_http_request-vg.sh \
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	no-parser-vg.sh \
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	discard-rptdmsg-vg.sh \
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	discard-allmark-vg.sh \
@@ -426,96 +477,80 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	fac_local0-vg.sh \
 @ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	rscript_trim-vg.sh
 
-@ENABLE_ROOT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_7 = \
+@ENABLE_FMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_15 = \
+@ENABLE_FMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	rscript_http_request-vg.sh
+
+@ENABLE_ROOT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_16 = \
 @ENABLE_ROOT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_udp.sh \
 @ENABLE_ROOT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_logger_root.sh \
 @ENABLE_ROOT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_traillf_root.sh \
 @ENABLE_ROOT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imuxsock_ccmiddle_root.sh \
 @ENABLE_ROOT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imklog_permitnonkernelfacility_root.sh
 
-@ENABLE_IP_TRUE@@ENABLE_ROOT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_8 = tcp_forwarding_ns_tpl.sh
-@ENABLE_RELP_TRUE@@ENABLE_ROOT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_9 = sndrcv_relp_dflt_pt.sh
-@ENABLE_ROOT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_10 = \
+@ENABLE_IP_TRUE@@ENABLE_ROOT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_17 = tcp_forwarding_ns_tpl.sh
+@ENABLE_RELP_TRUE@@ENABLE_ROOT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_18 = sndrcv_relp_dflt_pt.sh
+@ENABLE_ROOT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_19 = \
 @ENABLE_ROOT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	mmexternal-SegFault-empty-jroot-vg.sh
 
-@ENABLE_IMJOURNAL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_11 = \
-@ENABLE_IMJOURNAL_TRUE@@ENABLE_TESTBENCH_TRUE@	imjournal-basic.sh
 
-@ENABLE_IMJOURNAL_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_12 = \
-@ENABLE_IMJOURNAL_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imjournal-basic-vg.sh
-
-@ENABLE_OMJOURNAL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_13 = \
+# disable temporarily due to issues
+# see: https://github.com/rsyslog/rsyslog/issues/2564
+#if ENABLE_IMJOURNAL
+#TESTS +=  \
+#	imjournal-basic.sh
+#if HAVE_VALGRIND
+#TESTS +=  \
+#	imjournal-basic-vg.sh
+#endif
+#endif
+@ENABLE_OMJOURNAL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_20 = \
 @ENABLE_OMJOURNAL_TRUE@@ENABLE_TESTBENCH_TRUE@	omjournal-abort-template.sh \
 @ENABLE_OMJOURNAL_TRUE@@ENABLE_TESTBENCH_TRUE@	omjournal-abort-no-template.sh \
 @ENABLE_OMJOURNAL_TRUE@@ENABLE_TESTBENCH_TRUE@	omjournal-basic-template.sh \
 @ENABLE_OMJOURNAL_TRUE@@ENABLE_TESTBENCH_TRUE@	omjournal-basic-no-template.sh
 
-@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_14 = \
-@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@	omprog-cleanup.sh \
-@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@	omprog-cleanup-with-outfile.sh \
-@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@	omprog-noterm-cleanup.sh \
-@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@	omprog-noterm-default.sh
 
-@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@@OS_LINUX_TRUE@am__append_15 = \
-@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@@OS_LINUX_TRUE@	omprog-cleanup-when-unresponsive.sh \
-@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@@OS_LINUX_TRUE@	omprog-noterm-unresponsive.sh
+# see https://github.com/rsyslog/rsyslog/issues/2403
+# TODO: re-enable!
+#	omprog-cleanup.sh
+#	omprog-noterm-cleanup.sh
+#	omprog-noterm-default.sh
+#	omprog-cleanup-with-outfile.sh
+# linux:
+#	omprog-noterm-unresponsive.sh
+# valgrind:
+#	omprog-noterm-cleanup-vg.sh
+#	omprog-cleanup-vg.sh
+@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_21 = \
+@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@	omprog-feedback.sh \
+@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@	omprog-transactions.sh \
+@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@	omprog-transactions-failed-messages.sh \
+@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@	omprog-transactions-failed-commits.sh
 
-@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_16 = \
-@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	omprog-cleanup-vg.sh \
-@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	omprog-noterm-cleanup-vg.sh
+#if OS_LINUX
+#TESTS += \
+#	omprog-cleanup-when-unresponsive.sh
+#endif
+@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_22 = \
+@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	omprog-multiparam-vg.sh
 
-@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@@OS_LINUX_TRUE@am__append_17 = \
-@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@@OS_LINUX_TRUE@	omprog-cleanup-when-unresponsive-vg.sh
-
-@ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_18 = \
-@ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_kafka.sh 
+#if OS_LINUX
+#TESTS += \
+#	#omprog-cleanup-when-unresponsive-vg.sh
+#endif
+@ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_23 = \
+@ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_kafka.sh
 
 # Tests below need to be stable first!
 #	sndrcv_kafka_multi.sh
 #	sndrcv_kafka_fail.sh
 #	sndrcv_kafka_failresume.sh
-@ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_19 = \
-@ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	sndrcv_kafka-vg-sender.sh \
+@ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_24 = \
 @ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	sndrcv_kafka-vg-rcvr.sh
 
-@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_20 = \
-@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH_TRUE@	pgsql-basic.sh \
-@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH_TRUE@	pgsql-basic-cnf6.sh \
-@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH_TRUE@	pgsql-basic-threads-cnf6.sh \
-@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH_TRUE@	pgsql-template.sh \
-@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH_TRUE@	pgsql-template-cnf6.sh \
-@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH_TRUE@	pgsql-actq-mt-withpause.sh \
-@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH_TRUE@	pgsql-template-threads-cnf6.sh
-
-@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_21 = \
-@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	pgsql-basic-vg.sh \
-@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	pgsql-template-vg.sh \
-@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	pgsql-basic-cnf6-vg.sh \
-@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	pgsql-template-cnf6-vg.sh \
-@ENABLE_PGSQL_TESTS_TRUE@@ENABLE_PGSQL_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	pgsql-actq-mt-withpause-vg.sh
-
-@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_22 = \
-@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	mysql-basic.sh \
-@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	mysql-basic-cnf6.sh \
-@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	mysql-asyn.sh \
-@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	mysql-actq-mt.sh \
-@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	mysql-actq-mt-withpause.sh \
-@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	action-tx-single-processing.sh \
-@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	action-tx-errfile.sh
-
-@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_23 = \
-@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	mysql-basic-vg.sh \
-@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	mysql-asyn-vg.sh \
-@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	mysql-actq-mt-withpause-vg.sh 
-
-@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_OMLIBDBI_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_24 = \
-@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_OMLIBDBI_TRUE@@ENABLE_TESTBENCH_TRUE@	libdbi-basic.sh \
-@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_OMLIBDBI_TRUE@@ENABLE_TESTBENCH_TRUE@	libdbi-asyn.sh
-
-@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_OMLIBDBI_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_25 = \
-@ENABLE_MYSQL_TESTS_TRUE@@ENABLE_OMLIBDBI_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	libdbi-basic-vg.sh
-
-@ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_26 = \
+# re-enable: (see https://github.com/rsyslog/rsyslog/issues/2434)
+# sndrcv_kafka-vg-sender.sh
+@ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_25 = \
 @ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@	impstats-hup.sh \
 @ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@	dynstats.sh \
 @ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@	dynstats_overflow.sh \
@@ -531,7 +566,7 @@ host_triplet = @host@
 @ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@	dynstats_reset_without_pstats_reset.sh \
 @ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@	dynstats_prevent_premature_eviction.sh
 
-@ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_27 = \
+@ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_26 = \
 @ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	dynstats-vg.sh \
 @ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	dynstats_reset-vg.sh \
 @ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	dynstats_overflow-vg.sh \
@@ -543,7 +578,7 @@ host_triplet = @host@
 
 # note that some tests simply USE imptcp, but they also
 # need to be disabled if we do not have this module
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_28 = \
+@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_27 = \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	manyptcp.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	imptcp_large.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	imptcp-connection-msg-disabled.sh \
@@ -561,10 +596,10 @@ host_triplet = @host@
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_random.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_replace.sh
 
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_29 = \
+@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_28 = \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imptcp_conndrop-vg.sh
 
-@ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_30 = \
+@ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_29 = \
 @ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	es-basic.sh \
 @ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	es-basic-es6.0.sh \
 @ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	es-basic-server.sh \
@@ -574,36 +609,39 @@ host_triplet = @host@
 @ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	es-basic-errfile-empty.sh \
 @ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	es-basic-errfile-popul.sh \
 @ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	es-bulk-errfile-empty.sh \
-@ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	es-bulk-errfile-popul.sh 
+@ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	es-bulk-errfile-popul.sh
 
-@ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_31 = \
+@ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_30 = \
 @ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	es-basic-vgthread.sh
 
-@ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_32 = \
+@ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_31 = \
 @ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	es-bulk-errfile-popul-def-format.sh \
 @ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	es-bulk-errfile-popul-erronly.sh \
 @ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	es-bulk-errfile-popul-erronly-interleaved.sh \
 @ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	es-bulk-errfile-popul-def-interleaved.sh
 
-@ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_33 = \
+@ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_32 = \
 @ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	es-basic-vg.sh \
 @ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	es-basic-bulk-vg.sh \
 @ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	es-basic-ha-vg.sh
 
-@ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_34 = \
+@ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_33 = \
 @ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@	mmpstrucdata.sh \
 @ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@	mmpstrucdata-case.sh
 
-@ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_35 = \
+@ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_34 = \
 @ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	mmpstrucdata-vg.sh \
 @ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	mmpstrucdata-invalid-vg.sh
 
-@ENABLE_MMRM1STSPACE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_36 = \
+@ENABLE_MMRM1STSPACE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_35 = \
 @ENABLE_MMRM1STSPACE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmrm1stspace-basic.sh
 
-@ENABLE_PMNULL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_37 = \
+@ENABLE_PMNULL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_36 = \
 @ENABLE_PMNULL_TRUE@@ENABLE_TESTBENCH_TRUE@	pmnull-basic.sh \
 @ENABLE_PMNULL_TRUE@@ENABLE_TESTBENCH_TRUE@	pmnull-withparams.sh
+
+@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_37 = \
+@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	omstdout-basic.sh
 
 @ENABLE_PMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_38 = \
 @ENABLE_PMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	pmnormalize-basic.sh \
@@ -719,7 +757,7 @@ host_triplet = @host@
 
 # random.sh is temporarily disabled as it needs some work
 # to rsyslog core to complete in reasonable time
-#TESTS += random.sh 
+#TESTS += random.sh
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_60 = \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-basic.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-discard-truncated-line.sh \
@@ -729,6 +767,7 @@ host_triplet = @host@
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-error-not-repeated.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-truncate.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-readmode2.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-readmode2-polling.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-readmode2-with-persists-data-during-stop.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-readmode2-with-persists.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-endregex.sh \
@@ -744,20 +783,20 @@ host_triplet = @host@
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-wildcards.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-wildcards-dirs.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-wildcards-dirs2.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-wildcards-dirs-multi.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-wildcards-dirs-multi2.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-wildcards-dirs-multi3.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-wildcards-dirs-multi4.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-wildcards-dirs-multi5.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-wildcards-dirs-multi5-polling.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-old-state-file.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-rename-while-stopped.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-rename.sh
 
-
-# TEMPORARILY disable some imfile tests because refactoring 
-# is needed to get them to work 100% all the time.
-# alorbach, 2018-01-05
-#	imfile-wildcards-dirs-multi.sh \
-#	imfile-wildcards-dirs-multi2.sh \
-#	imfile-wildcards-dirs-multi3.sh \
-#	imfile-wildcards-dirs-multi4.sh \
-#
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_61 = \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-basic-vg.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-endregex-vg.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-readmode0-vg.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-readmode2-vg.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-basic-vgthread.sh
 
@@ -1523,6 +1562,12 @@ EXTRA_DIST = \
 	testsuites/diskqueue.conf \
 	arrayqueue.sh \
 	testsuites/arrayqueue.conf \
+	include-obj-text-from-file.sh \
+	include-obj-outside-control-flow-vg.sh \
+	include-obj-in-if-vg.sh \
+	include-obj-text-vg.sh \
+	rscript-config_enable-off-vg.sh \
+	rscript-config_enable-on.sh \
 	rscript_http_request.sh \
 	rscript_http_request-vg.sh \
 	rscript_bare_var_root.sh \
@@ -1568,6 +1613,8 @@ EXTRA_DIST = \
 	rscript_is_time.sh \
 	rscript_script_error.sh \
 	rscript_parse_json.sh \
+	rscript_parse_json-vg.sh \
+	rscript_backticks-vg.sh \
 	rscript_previous_action_suspended.sh \
 	rscript_str2num_negative.sh \
 	mmanon_random_32_ipv4.sh \
@@ -1619,6 +1666,7 @@ EXTRA_DIST = \
 	testsuites/localvar-concurrency.conf \
 	exec_tpl-concurrency.sh \
 	testsuites/exec_tpl-concurrency.conf \
+	prop-jsonmesg-vg.sh \
 	prop-all-json-concurrency.sh \
 	testsuites/prop-all-json-concurrency.conf \
 	no-parser-errmsg.sh \
@@ -1636,11 +1684,13 @@ EXTRA_DIST = \
 	privdropgroup.sh \
 	privdropgroupid.sh \
 	template-json.sh \
+	template-pure-json.sh \
 	template-pos-from-to.sh \
 	template-pos-from-to-lowercase.sh \
 	template-pos-from-to-oversize.sh \
 	template-pos-from-to-oversize-lowercase.sh \
 	template-pos-from-to-missing-jsonvar.sh \
+	template-const-jsonf.sh \
 	fac_authpriv.sh \
 	testsuites/fac_authpriv.conf \
 	fac_local0.sh \
@@ -1696,6 +1746,7 @@ EXTRA_DIST = \
 	mmnormalize_rule_from_array.sh \
 	pmnull-basic.sh \
 	pmnull-withparams.sh \
+	omstdout-basic.sh \
 	testsuites/mmnormalize_processing_tests.rulebase \
 	mmnormalize_processing_test1.sh \
 	mmnormalize_processing_test2.sh \
@@ -1932,6 +1983,7 @@ EXTRA_DIST = \
 	testsuites/sndrcv_gzip_rcvr.conf \
 	action-tx-single-processing.sh \
 	action-tx-errfile.sh \
+	testsuites/action-tx-errfile.result \
 	pipeaction.sh \
 	testsuites/pipeaction.conf \
 	omprog-cleanup.sh \
@@ -1943,6 +1995,11 @@ EXTRA_DIST = \
 	omprog-noterm-cleanup-vg.sh \
 	omprog-noterm-default.sh \
 	omprog-noterm-unresponsive.sh \
+	omprog-feedback.sh \
+	omprog-transactions.sh \
+	omprog-transactions-failed-messages.sh \
+	omprog-transactions-failed-commits.sh \
+	omprog-multiparam-vg.sh \
 	testsuites/omprog-cleanup.conf \
 	testsuites/omprog-noterm.conf \
 	testsuites/omprog-noterm-default.conf \
@@ -1952,6 +2009,12 @@ EXTRA_DIST = \
 	testsuites/omprog-cleanup-unresponsive.conf \
 	testsuites/omprog-test-bin.sh \
 	testsuites/term-ignoring-script.sh \
+	testsuites/omprog-feedback.conf \
+	testsuites/omprog-feedback-bin.sh \
+	testsuites/omprog-transactions-bin.sh \
+	testsuites/omprog-transactions.conf \
+	testsuites/omprog-transactions-failed-messages.conf \
+	testsuites/omprog-transactions-failed-commits.conf \
 	pipe_noreader.sh \
 	testsuites/pipe_noreader.conf \
 	uxsock_simple.sh \
@@ -2001,7 +2064,10 @@ EXTRA_DIST = \
 	testsuites/complex1.conf \
 	random.sh \
 	testsuites/random.conf \
+	testsuites/imfile-old-state-file_imfile-state_.-rsyslog.input \
+	imfile-readmode0-vg.sh \
 	imfile-readmode2.sh \
+	imfile-readmode2-polling.sh \
 	imfile-readmode2-vg.sh \
 	imfile-readmode2-with-persists-data-during-stop.sh \
 	imfile-readmode2-with-persists.sh \
@@ -2037,8 +2103,11 @@ EXTRA_DIST = \
 	imfile-wildcards-dirs-multi2.sh \
 	imfile-wildcards-dirs-multi3.sh \
 	imfile-wildcards-dirs-multi4.sh \
+	imfile-wildcards-dirs-multi5.sh \
+	imfile-wildcards-dirs-multi5-polling.sh \
+	imfile-old-state-file.sh \
+	imfile-rename-while-stopped.sh \
 	imfile-rename.sh \
-	testsuites/imfile-wildcards.conf \
 	testsuites/imfile-wildcards-simple.conf \
 	testsuites/imfile-wildcards-dirs.conf \
 	testsuites/imfile-wildcards-dirs-multi.conf \
@@ -2367,7 +2436,26 @@ EXTRA_DIST = \
 	testsuites/sample.pmsnare_ccdefault \
 	testsuites/sample.pmsnare_cccstyle \
 	testsuites/sample.pmsnare_ccbackslash \
-	testsuites/sample.pmsnare_modoverride
+	testsuites/sample.pmsnare_modoverride \
+	testsuites/include-std-omfile-action.conf \
+	pgsql-basic.sh \
+	testsuites/pgsql-basic.sql \
+	testsuites/pgsql-basic.conf \
+	testsuites/pgsql-select-msg.sql \
+	testsuites/pgsql-select-syslogtag.sql \
+	pgsql-basic-cnf6.sh \
+	pgsql-basic-threads-cnf6.sh \
+	pgsql-template.sh \
+	testsuites/pgsql-template.conf \
+	pgsql-template-cnf6.sh \
+	pgsql-actq-mt-withpause.sh \
+	pgsql-template-threads-cnf6.sh \
+	pgsql-basic-vg.sh \
+	pgsql-template-vg.sh \
+	pgsql-basic-cnf6-vg.sh \
+	pgsql-template-cnf6-vg.sh \
+	pgsql-actq-mt-withpause-vg.sh \
+	../devtools/prep-mysql-db.sh
 
 ourtail_SOURCES = ourtail.c
 msleep_SOURCES = msleep.c
@@ -3068,6 +3156,13 @@ template-json.sh.log: template-json.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+template-pure-json.sh.log: template-pure-json.sh
+	@p='template-pure-json.sh'; \
+	b='template-pure-json.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 template-pos-from-to.sh.log: template-pos-from-to.sh
 	@p='template-pos-from-to.sh'; \
 	b='template-pos-from-to.sh'; \
@@ -3099,6 +3194,13 @@ template-pos-from-to-oversize-lowercase.sh.log: template-pos-from-to-oversize-lo
 template-pos-from-to-missing-jsonvar.sh.log: template-pos-from-to-missing-jsonvar.sh
 	@p='template-pos-from-to-missing-jsonvar.sh'; \
 	b='template-pos-from-to-missing-jsonvar.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+template-const-jsonf.sh.log: template-const-jsonf.sh
+	@p='template-const-jsonf.sh'; \
+	b='template-const-jsonf.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -4076,6 +4178,181 @@ mmnormalize_processing_test4.sh.log: mmnormalize_processing_test4.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+pgsql-basic.sh.log: pgsql-basic.sh
+	@p='pgsql-basic.sh'; \
+	b='pgsql-basic.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+pgsql-basic-cnf6.sh.log: pgsql-basic-cnf6.sh
+	@p='pgsql-basic-cnf6.sh'; \
+	b='pgsql-basic-cnf6.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+pgsql-basic-threads-cnf6.sh.log: pgsql-basic-threads-cnf6.sh
+	@p='pgsql-basic-threads-cnf6.sh'; \
+	b='pgsql-basic-threads-cnf6.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+pgsql-template.sh.log: pgsql-template.sh
+	@p='pgsql-template.sh'; \
+	b='pgsql-template.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+pgsql-template-cnf6.sh.log: pgsql-template-cnf6.sh
+	@p='pgsql-template-cnf6.sh'; \
+	b='pgsql-template-cnf6.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+pgsql-actq-mt-withpause.sh.log: pgsql-actq-mt-withpause.sh
+	@p='pgsql-actq-mt-withpause.sh'; \
+	b='pgsql-actq-mt-withpause.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+pgsql-template-threads-cnf6.sh.log: pgsql-template-threads-cnf6.sh
+	@p='pgsql-template-threads-cnf6.sh'; \
+	b='pgsql-template-threads-cnf6.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+pgsql-basic-vg.sh.log: pgsql-basic-vg.sh
+	@p='pgsql-basic-vg.sh'; \
+	b='pgsql-basic-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+pgsql-template-vg.sh.log: pgsql-template-vg.sh
+	@p='pgsql-template-vg.sh'; \
+	b='pgsql-template-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+pgsql-basic-cnf6-vg.sh.log: pgsql-basic-cnf6-vg.sh
+	@p='pgsql-basic-cnf6-vg.sh'; \
+	b='pgsql-basic-cnf6-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+pgsql-template-cnf6-vg.sh.log: pgsql-template-cnf6-vg.sh
+	@p='pgsql-template-cnf6-vg.sh'; \
+	b='pgsql-template-cnf6-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+pgsql-actq-mt-withpause-vg.sh.log: pgsql-actq-mt-withpause-vg.sh
+	@p='pgsql-actq-mt-withpause-vg.sh'; \
+	b='pgsql-actq-mt-withpause-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mysql-basic.sh.log: mysql-basic.sh
+	@p='mysql-basic.sh'; \
+	b='mysql-basic.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mysql-basic-cnf6.sh.log: mysql-basic-cnf6.sh
+	@p='mysql-basic-cnf6.sh'; \
+	b='mysql-basic-cnf6.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mysql-asyn.sh.log: mysql-asyn.sh
+	@p='mysql-asyn.sh'; \
+	b='mysql-asyn.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mysql-actq-mt.sh.log: mysql-actq-mt.sh
+	@p='mysql-actq-mt.sh'; \
+	b='mysql-actq-mt.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mysql-actq-mt-withpause.sh.log: mysql-actq-mt-withpause.sh
+	@p='mysql-actq-mt-withpause.sh'; \
+	b='mysql-actq-mt-withpause.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+action-tx-single-processing.sh.log: action-tx-single-processing.sh
+	@p='action-tx-single-processing.sh'; \
+	b='action-tx-single-processing.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+action-tx-errfile.sh.log: action-tx-errfile.sh
+	@p='action-tx-errfile.sh'; \
+	b='action-tx-errfile.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mysql-basic-vg.sh.log: mysql-basic-vg.sh
+	@p='mysql-basic-vg.sh'; \
+	b='mysql-basic-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mysql-asyn-vg.sh.log: mysql-asyn-vg.sh
+	@p='mysql-asyn-vg.sh'; \
+	b='mysql-asyn-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mysql-actq-mt-withpause-vg.sh.log: mysql-actq-mt-withpause-vg.sh
+	@p='mysql-actq-mt-withpause-vg.sh'; \
+	b='mysql-actq-mt-withpause-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+libdbi-basic.sh.log: libdbi-basic.sh
+	@p='libdbi-basic.sh'; \
+	b='libdbi-basic.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+libdbi-asyn.sh.log: libdbi-asyn.sh
+	@p='libdbi-asyn.sh'; \
+	b='libdbi-asyn.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+libdbi-basic-vg.sh.log: libdbi-basic-vg.sh
+	@p='libdbi-basic-vg.sh'; \
+	b='libdbi-basic-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 rscript_contains.sh.log: rscript_contains.sh
 	@p='rscript_contains.sh'; \
 	b='rscript_contains.sh'; \
@@ -4093,13 +4370,6 @@ rscript_bare_var_root.sh.log: rscript_bare_var_root.sh
 rscript_bare_var_root-empty.sh.log: rscript_bare_var_root-empty.sh
 	@p='rscript_bare_var_root-empty.sh'; \
 	b='rscript_bare_var_root-empty.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-rscript_http_request.sh.log: rscript_http_request.sh
-	@p='rscript_http_request.sh'; \
-	b='rscript_http_request.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -4391,6 +4661,13 @@ rscript_str2num_negative.sh.log: rscript_str2num_negative.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+rscript-config_enable-on.sh.log: rscript-config_enable-on.sh
+	@p='rscript-config_enable-on.sh'; \
+	b='rscript-config_enable-on.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 mmanon_random_32_ipv4.sh.log: mmanon_random_32_ipv4.sh
 	@p='mmanon_random_32_ipv4.sh'; \
 	b='mmanon_random_32_ipv4.sh'; \
@@ -4643,9 +4920,72 @@ lookup_table_rscript_reload_without_stub.sh.log: lookup_table_rscript_reload_wit
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+include-obj-text-from-file.sh.log: include-obj-text-from-file.sh
+	@p='include-obj-text-from-file.sh'; \
+	b='include-obj-text-from-file.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 multiple_lookup_tables.sh.log: multiple_lookup_tables.sh
 	@p='multiple_lookup_tables.sh'; \
 	b='multiple_lookup_tables.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+rscript_http_request.sh.log: rscript_http_request.sh
+	@p='rscript_http_request.sh'; \
+	b='rscript_http_request.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+include-obj-outside-control-flow-vg.sh.log: include-obj-outside-control-flow-vg.sh
+	@p='include-obj-outside-control-flow-vg.sh'; \
+	b='include-obj-outside-control-flow-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+include-obj-in-if-vg.sh.log: include-obj-in-if-vg.sh
+	@p='include-obj-in-if-vg.sh'; \
+	b='include-obj-in-if-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+include-obj-text-vg.sh.log: include-obj-text-vg.sh
+	@p='include-obj-text-vg.sh'; \
+	b='include-obj-text-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+rscript_parse_json-vg.sh.log: rscript_parse_json-vg.sh
+	@p='rscript_parse_json-vg.sh'; \
+	b='rscript_parse_json-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+rscript_backticks-vg.sh.log: rscript_backticks-vg.sh
+	@p='rscript_backticks-vg.sh'; \
+	b='rscript_backticks-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+rscript-config_enable-off-vg.sh.log: rscript-config_enable-off-vg.sh
+	@p='rscript-config_enable-off-vg.sh'; \
+	b='rscript-config_enable-off-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+prop-jsonmesg-vg.sh.log: prop-jsonmesg-vg.sh
+	@p='prop-jsonmesg-vg.sh'; \
+	b='prop-jsonmesg-vg.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -4674,13 +5014,6 @@ internal-errmsg-memleak-vg.sh.log: internal-errmsg-memleak-vg.sh
 rscript_set_memleak-vg.sh.log: rscript_set_memleak-vg.sh
 	@p='rscript_set_memleak-vg.sh'; \
 	b='rscript_set_memleak-vg.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-rscript_http_request-vg.sh.log: rscript_http_request-vg.sh
-	@p='rscript_http_request-vg.sh'; \
-	b='rscript_http_request-vg.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -4853,6 +5186,13 @@ rscript_trim-vg.sh.log: rscript_trim-vg.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+rscript_http_request-vg.sh.log: rscript_http_request-vg.sh
+	@p='rscript_http_request-vg.sh'; \
+	b='rscript_http_request-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 sndrcv_udp.sh.log: sndrcv_udp.sh
 	@p='sndrcv_udp.sh'; \
 	b='sndrcv_udp.sh'; \
@@ -4909,20 +5249,6 @@ mmexternal-SegFault-empty-jroot-vg.sh.log: mmexternal-SegFault-empty-jroot-vg.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imjournal-basic.sh.log: imjournal-basic.sh
-	@p='imjournal-basic.sh'; \
-	b='imjournal-basic.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-imjournal-basic-vg.sh.log: imjournal-basic-vg.sh
-	@p='imjournal-basic-vg.sh'; \
-	b='imjournal-basic-vg.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
 omjournal-abort-template.sh.log: omjournal-abort-template.sh
 	@p='omjournal-abort-template.sh'; \
 	b='omjournal-abort-template.sh'; \
@@ -4951,65 +5277,37 @@ omjournal-basic-no-template.sh.log: omjournal-basic-no-template.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-omprog-cleanup.sh.log: omprog-cleanup.sh
-	@p='omprog-cleanup.sh'; \
-	b='omprog-cleanup.sh'; \
+omprog-feedback.sh.log: omprog-feedback.sh
+	@p='omprog-feedback.sh'; \
+	b='omprog-feedback.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-omprog-cleanup-with-outfile.sh.log: omprog-cleanup-with-outfile.sh
-	@p='omprog-cleanup-with-outfile.sh'; \
-	b='omprog-cleanup-with-outfile.sh'; \
+omprog-transactions.sh.log: omprog-transactions.sh
+	@p='omprog-transactions.sh'; \
+	b='omprog-transactions.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-omprog-noterm-cleanup.sh.log: omprog-noterm-cleanup.sh
-	@p='omprog-noterm-cleanup.sh'; \
-	b='omprog-noterm-cleanup.sh'; \
+omprog-transactions-failed-messages.sh.log: omprog-transactions-failed-messages.sh
+	@p='omprog-transactions-failed-messages.sh'; \
+	b='omprog-transactions-failed-messages.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-omprog-noterm-default.sh.log: omprog-noterm-default.sh
-	@p='omprog-noterm-default.sh'; \
-	b='omprog-noterm-default.sh'; \
+omprog-transactions-failed-commits.sh.log: omprog-transactions-failed-commits.sh
+	@p='omprog-transactions-failed-commits.sh'; \
+	b='omprog-transactions-failed-commits.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-omprog-cleanup-when-unresponsive.sh.log: omprog-cleanup-when-unresponsive.sh
-	@p='omprog-cleanup-when-unresponsive.sh'; \
-	b='omprog-cleanup-when-unresponsive.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-omprog-noterm-unresponsive.sh.log: omprog-noterm-unresponsive.sh
-	@p='omprog-noterm-unresponsive.sh'; \
-	b='omprog-noterm-unresponsive.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-omprog-cleanup-vg.sh.log: omprog-cleanup-vg.sh
-	@p='omprog-cleanup-vg.sh'; \
-	b='omprog-cleanup-vg.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-omprog-noterm-cleanup-vg.sh.log: omprog-noterm-cleanup-vg.sh
-	@p='omprog-noterm-cleanup-vg.sh'; \
-	b='omprog-noterm-cleanup-vg.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-omprog-cleanup-when-unresponsive-vg.sh.log: omprog-cleanup-when-unresponsive-vg.sh
-	@p='omprog-cleanup-when-unresponsive-vg.sh'; \
-	b='omprog-cleanup-when-unresponsive-vg.sh'; \
+omprog-multiparam-vg.sh.log: omprog-multiparam-vg.sh
+	@p='omprog-multiparam-vg.sh'; \
+	b='omprog-multiparam-vg.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -5021,191 +5319,9 @@ sndrcv_kafka.sh.log: sndrcv_kafka.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-sndrcv_kafka-vg-sender.sh.log: sndrcv_kafka-vg-sender.sh
-	@p='sndrcv_kafka-vg-sender.sh'; \
-	b='sndrcv_kafka-vg-sender.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
 sndrcv_kafka-vg-rcvr.sh.log: sndrcv_kafka-vg-rcvr.sh
 	@p='sndrcv_kafka-vg-rcvr.sh'; \
 	b='sndrcv_kafka-vg-rcvr.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pgsql-basic.sh.log: pgsql-basic.sh
-	@p='pgsql-basic.sh'; \
-	b='pgsql-basic.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pgsql-basic-cnf6.sh.log: pgsql-basic-cnf6.sh
-	@p='pgsql-basic-cnf6.sh'; \
-	b='pgsql-basic-cnf6.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pgsql-basic-threads-cnf6.sh.log: pgsql-basic-threads-cnf6.sh
-	@p='pgsql-basic-threads-cnf6.sh'; \
-	b='pgsql-basic-threads-cnf6.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pgsql-template.sh.log: pgsql-template.sh
-	@p='pgsql-template.sh'; \
-	b='pgsql-template.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pgsql-template-cnf6.sh.log: pgsql-template-cnf6.sh
-	@p='pgsql-template-cnf6.sh'; \
-	b='pgsql-template-cnf6.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pgsql-actq-mt-withpause.sh.log: pgsql-actq-mt-withpause.sh
-	@p='pgsql-actq-mt-withpause.sh'; \
-	b='pgsql-actq-mt-withpause.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pgsql-template-threads-cnf6.sh.log: pgsql-template-threads-cnf6.sh
-	@p='pgsql-template-threads-cnf6.sh'; \
-	b='pgsql-template-threads-cnf6.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pgsql-basic-vg.sh.log: pgsql-basic-vg.sh
-	@p='pgsql-basic-vg.sh'; \
-	b='pgsql-basic-vg.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pgsql-template-vg.sh.log: pgsql-template-vg.sh
-	@p='pgsql-template-vg.sh'; \
-	b='pgsql-template-vg.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pgsql-basic-cnf6-vg.sh.log: pgsql-basic-cnf6-vg.sh
-	@p='pgsql-basic-cnf6-vg.sh'; \
-	b='pgsql-basic-cnf6-vg.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pgsql-template-cnf6-vg.sh.log: pgsql-template-cnf6-vg.sh
-	@p='pgsql-template-cnf6-vg.sh'; \
-	b='pgsql-template-cnf6-vg.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pgsql-actq-mt-withpause-vg.sh.log: pgsql-actq-mt-withpause-vg.sh
-	@p='pgsql-actq-mt-withpause-vg.sh'; \
-	b='pgsql-actq-mt-withpause-vg.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-mysql-basic.sh.log: mysql-basic.sh
-	@p='mysql-basic.sh'; \
-	b='mysql-basic.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-mysql-basic-cnf6.sh.log: mysql-basic-cnf6.sh
-	@p='mysql-basic-cnf6.sh'; \
-	b='mysql-basic-cnf6.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-mysql-asyn.sh.log: mysql-asyn.sh
-	@p='mysql-asyn.sh'; \
-	b='mysql-asyn.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-mysql-actq-mt.sh.log: mysql-actq-mt.sh
-	@p='mysql-actq-mt.sh'; \
-	b='mysql-actq-mt.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-mysql-actq-mt-withpause.sh.log: mysql-actq-mt-withpause.sh
-	@p='mysql-actq-mt-withpause.sh'; \
-	b='mysql-actq-mt-withpause.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-action-tx-single-processing.sh.log: action-tx-single-processing.sh
-	@p='action-tx-single-processing.sh'; \
-	b='action-tx-single-processing.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-action-tx-errfile.sh.log: action-tx-errfile.sh
-	@p='action-tx-errfile.sh'; \
-	b='action-tx-errfile.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-mysql-basic-vg.sh.log: mysql-basic-vg.sh
-	@p='mysql-basic-vg.sh'; \
-	b='mysql-basic-vg.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-mysql-asyn-vg.sh.log: mysql-asyn-vg.sh
-	@p='mysql-asyn-vg.sh'; \
-	b='mysql-asyn-vg.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-mysql-actq-mt-withpause-vg.sh.log: mysql-actq-mt-withpause-vg.sh
-	@p='mysql-actq-mt-withpause-vg.sh'; \
-	b='mysql-actq-mt-withpause-vg.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-libdbi-basic.sh.log: libdbi-basic.sh
-	@p='libdbi-basic.sh'; \
-	b='libdbi-basic.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-libdbi-asyn.sh.log: libdbi-asyn.sh
-	@p='libdbi-asyn.sh'; \
-	b='libdbi-asyn.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-libdbi-basic-vg.sh.log: libdbi-basic-vg.sh
-	@p='libdbi-basic-vg.sh'; \
-	b='libdbi-basic-vg.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -5647,6 +5763,13 @@ pmnull-basic.sh.log: pmnull-basic.sh
 pmnull-withparams.sh.log: pmnull-withparams.sh
 	@p='pmnull-withparams.sh'; \
 	b='pmnull-withparams.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+omstdout-basic.sh.log: omstdout-basic.sh
+	@p='omstdout-basic.sh'; \
+	b='omstdout-basic.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -6204,6 +6327,13 @@ imfile-readmode2.sh.log: imfile-readmode2.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imfile-readmode2-polling.sh.log: imfile-readmode2-polling.sh
+	@p='imfile-readmode2-polling.sh'; \
+	b='imfile-readmode2-polling.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 imfile-readmode2-with-persists-data-during-stop.sh.log: imfile-readmode2-with-persists-data-during-stop.sh
 	@p='imfile-readmode2-with-persists-data-during-stop.sh'; \
 	b='imfile-readmode2-with-persists-data-during-stop.sh'; \
@@ -6309,6 +6439,62 @@ imfile-wildcards-dirs2.sh.log: imfile-wildcards-dirs2.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imfile-wildcards-dirs-multi.sh.log: imfile-wildcards-dirs-multi.sh
+	@p='imfile-wildcards-dirs-multi.sh'; \
+	b='imfile-wildcards-dirs-multi.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imfile-wildcards-dirs-multi2.sh.log: imfile-wildcards-dirs-multi2.sh
+	@p='imfile-wildcards-dirs-multi2.sh'; \
+	b='imfile-wildcards-dirs-multi2.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imfile-wildcards-dirs-multi3.sh.log: imfile-wildcards-dirs-multi3.sh
+	@p='imfile-wildcards-dirs-multi3.sh'; \
+	b='imfile-wildcards-dirs-multi3.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imfile-wildcards-dirs-multi4.sh.log: imfile-wildcards-dirs-multi4.sh
+	@p='imfile-wildcards-dirs-multi4.sh'; \
+	b='imfile-wildcards-dirs-multi4.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imfile-wildcards-dirs-multi5.sh.log: imfile-wildcards-dirs-multi5.sh
+	@p='imfile-wildcards-dirs-multi5.sh'; \
+	b='imfile-wildcards-dirs-multi5.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imfile-wildcards-dirs-multi5-polling.sh.log: imfile-wildcards-dirs-multi5-polling.sh
+	@p='imfile-wildcards-dirs-multi5-polling.sh'; \
+	b='imfile-wildcards-dirs-multi5-polling.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imfile-old-state-file.sh.log: imfile-old-state-file.sh
+	@p='imfile-old-state-file.sh'; \
+	b='imfile-old-state-file.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imfile-rename-while-stopped.sh.log: imfile-rename-while-stopped.sh
+	@p='imfile-rename-while-stopped.sh'; \
+	b='imfile-rename-while-stopped.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 imfile-rename.sh.log: imfile-rename.sh
 	@p='imfile-rename.sh'; \
 	b='imfile-rename.sh'; \
@@ -6326,6 +6512,13 @@ imfile-basic-vg.sh.log: imfile-basic-vg.sh
 imfile-endregex-vg.sh.log: imfile-endregex-vg.sh
 	@p='imfile-endregex-vg.sh'; \
 	b='imfile-endregex-vg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+imfile-readmode0-vg.sh.log: imfile-readmode0-vg.sh
+	@p='imfile-readmode0-vg.sh'; \
+	b='imfile-readmode0-vg.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

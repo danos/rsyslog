@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([rsyslog],[8.32.0],[rsyslog@lists.adiscon.com])
+AC_INIT([rsyslog],[8.34.0],[rsyslog@lists.adiscon.com])
 
 # AIXPORT START: Detect the underlying OS
 unamestr=$(uname)
@@ -123,7 +123,6 @@ case "${host}" in
   ;;
 esac
 AM_CONDITIONAL(OS_APPLE, test x$os_type == xapple)
-AM_CONDITIONAL(xOS_LINUX, test x$os_type == xlinux)
 AM_CONDITIONAL(OS_LINUX, test x$os_type == xlinux)
 
 # Running from git source?
@@ -246,9 +245,28 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM(, return __builtin_expect(main != 0, 1))],
                 AC_MSG_RESULT([yes])],
                [AC_MSG_RESULT([no])])
 
+
+
 # check for availability of atomic operations
-RS_ATOMIC_OPERATIONS
-RS_ATOMIC_OPERATIONS_64BIT
+# Note: this switch is primarily for the testbench, so that we can try
+# to build w/o automic operations on systems that actually support them.
+# Usually, atomic operations should be used when available as this
+# speeds up processig.
+# note that when automic operations are enabled but not available, they
+# will silently NOT be used!
+AC_ARG_ENABLE(regexp,
+        [AS_HELP_STRING([--enable-atomic-operations],[Enable atomic operation support @<:@default=yes@:>@])],
+        [case "${enableval}" in
+         yes) enable_atomic_operations="yes" ;;
+          no) enable_atomic_operations="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-atomic-operations) ;;
+         esac],
+        [enable_atomic_operations=yes]
+)
+if test "$enable_atomic_operations" = "yes"; then
+	RS_ATOMIC_OPERATIONS
+	RS_ATOMIC_OPERATIONS_64BIT
+fi
 
 # fall back to POSIX sems for atomic operations (cpu expensive)
 AC_CHECK_HEADERS([semaphore.h sys/syscall.h])
@@ -453,6 +471,8 @@ if test "$enable_libcurl" = "yes"; then
 		[ AC_DEFINE(HAVE_LIBCURL, 1, [libcurl present]) ]
 	)
 fi
+
+AM_CONDITIONAL(ENABLE_LIBCURL, test "x${enable_libcurl}" = "xyes")
 
 # klog
 AC_ARG_ENABLE(klog,
@@ -1070,6 +1090,18 @@ AC_ARG_ENABLE(mail,
 AM_CONDITIONAL(ENABLE_MAIL, test x$enable_mail = xyes)
 
 
+AC_ARG_ENABLE(fmhttp,
+        [AS_HELP_STRING([--enable-fmhttp],[Enable fmhttp @<:@default=yes@:>@])],
+        [case "${enableval}" in
+         yes) enable_fmhttp="yes" ;;
+          no) enable_fmhttp="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-fmhttp) ;;
+         esac],
+        [enable_fmhttp=yes]
+)
+AM_CONDITIONAL(ENABLE_FMHTTP, test x$enable_fmhttp = xyes)
+
+
 # imdiag support
 # This is a core testbench tool. You need to enable it if you want to
 # use not only a small subset of the testbench.
@@ -1285,6 +1317,19 @@ if test "x$enable_mmrfc5424addhmac" = "xyes"; then
 #AC_CHECK_HEADERS([openssl/crypto.h openssl/x509.h openssl/pem.h openssl/ssl.h openssl/err.h],[],[AC_MSG_ERROR([OpenSSL headers required])])
 fi
 AM_CONDITIONAL(ENABLE_MMRFC5424ADDHMAC, test x$enable_mmrfc5424addhmac = xyes)
+
+
+# experimental omfile-hardened module
+AC_ARG_ENABLE(omfile-hardened,
+        [AS_HELP_STRING([--enable-omfile-hardened],[Enable omfile-hardened support @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_omfile_hardened="yes" ;;
+          no) enable_omfile_hardened="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-omfile-hardened) ;;
+         esac],
+        [enable_omfile_hardened=no]
+)
+AM_CONDITIONAL(ENABLE_OMFILE_HARDENED, test x$enable_omfile_hardened = xyes)
 
 
 # RELP support
@@ -2084,6 +2129,25 @@ AM_CONDITIONAL(ENABLE_OMTCL, test x$enable_omtcl = xyes)
 
 # END TCL SUPPORT
 
+# mmkubernetes - Kubernetes metadata support
+
+AC_ARG_ENABLE(mmkubernetes,
+        [AS_HELP_STRING([--enable-mmkubernetes],
+            [Enable compilation of the mmkubernetes module @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_mmkubernetes="yes" ;;
+          no) enable_mmkubernetes="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-mmkubernetes) ;;
+         esac],
+        [enable_mmkubernetes=no]
+)
+if test "x$enable_mmkubernetes" = "xyes"; then
+        PKG_CHECK_MODULES([CURL], [libcurl])
+fi
+AM_CONDITIONAL(ENABLE_MMKUBERNETES, test x$enable_mmkubernetes = xyes)
+
+# END Kubernetes metadata support
+
 # man pages
 have_to_generate_man_pages="no"
 git_src_have_to_generate_man_pages="yes" # default to use when building from git source
@@ -2181,6 +2245,7 @@ AC_CONFIG_FILES([Makefile \
 		plugins/omrelp/Makefile \
 		plugins/omlibdbi/Makefile \
 		plugins/ommail/Makefile \
+		plugins/fmhttp/Makefile \
 		plugins/omsnmp/Makefile \
 		plugins/omudpspoof/Makefile \
 		plugins/ommongodb/Makefile \
@@ -2214,6 +2279,8 @@ AC_CONFIG_FILES([Makefile \
 		contrib/omhttpfs/Makefile \
 		contrib/omamqp1/Makefile \
 		contrib/omtcl/Makefile \
+		contrib/omfile-hardened/Makefile \
+		contrib/mmkubernetes/Makefile \
 		tests/Makefile])
 AC_OUTPUT
 
@@ -2252,6 +2319,7 @@ echo "    imkafka module will be compiled:          $enable_imkafka"
 echo
 echo "---{ output plugins }---"
 echo "    Mail support enabled:                     $enable_mail"
+echo "    omfile-hardened module will be compiled:  $enable_omfile_hardened"
 echo "    omprog module will be compiled:           $enable_omprog"
 echo "    omstdout module will be compiled:         $enable_omstdout"
 echo "    omjournal module will be compiled:        $enable_omjournal"
@@ -2291,6 +2359,7 @@ echo "    mmsequence enabled:                       $enable_mmsequence"
 echo "    mmdblookup enabled:                       $enable_mmdblookup"
 echo "    mmfields enabled:                         $enable_mmfields"
 echo "    mmrm1stspace module enabled:              $enable_mmrm1stspace"
+echo "    mmkubernetes enabled:                     $enable_mmkubernetes"
 echo
 echo "---{ database support }---"
 echo "    MySql support enabled:                    $enable_mysql"
@@ -2304,6 +2373,9 @@ echo "    GnuTLS network stream driver enabled:     $enable_gnutls"
 echo "    GSSAPI Kerberos 5 support enabled:        $enable_gssapi_krb5"
 echo "    RELP support enabled:                     $enable_relp"
 echo "    SNMP support enabled:                     $enable_snmp"
+echo
+echo "---{ function modules }---"
+echo "    fmhttp enabled:                           $enable_fmhttp"
 echo
 echo "---{ debugging support }---"
 echo "    Testbench enabled:                        $enable_testbench"
