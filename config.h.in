@@ -129,9 +129,6 @@
 /* jemalloc support is integrated. */
 #undef HAVE_JEMALLOC
 
-/* libcurl present */
-#undef HAVE_LIBCURL
-
 /* Define to 1 if you have the <libgen.h> header file. */
 #undef HAVE_LIBGEN_H
 
@@ -146,6 +143,9 @@
 
 /* libsystemd present */
 #undef HAVE_LIBSYSTEMD
+
+/* Define if ln_loadSamplesFromString exists. */
+#undef HAVE_LOADSAMPLESFROMSTRING
 
 /* Define to 1 if you have the <locale.h> header file. */
 #undef HAVE_LOCALE_H
@@ -218,6 +218,9 @@
 
 /* Define to 1 if you have the `regcomp' function. */
 #undef HAVE_REGCOMP
+
+/* Define if relpSrvSetOversizeMode exists. */
+#undef HAVE_RELPSRVSETOVERSIZEMODE
 
 /* Define to 1 if you have the <resolv.h> header file. */
 #undef HAVE_RESOLV_H
@@ -405,6 +408,9 @@
 /* new systemd present */
 #undef NEW_JOURNAL
 
+/* Define if ln_loadSamplesFromString does not exist. */
+#undef NO_LOADSAMPLESFROMSTRING
+
 /* Indicator for a AIX OS */
 #undef OS_AIX
 
@@ -479,6 +485,9 @@
 
 /* Define if you want to use GSSAPI */
 #undef USE_GSSAPI
+
+/* Using XXHASH for hash64. */
+#undef USE_HASH_XXHASH
 
 /* Define if you want to enable libuuid support */
 #undef USE_LIBUUID

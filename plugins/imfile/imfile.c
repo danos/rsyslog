@@ -603,7 +603,7 @@ done:	return;
 }
 #else
 static void ATTR_NONNULL()
-fen_setupWatch(act_obj_t *const __attribute__((unused)) act)
+fen_setupWatch(act_obj_t *const act __attribute__((unused)))
 {
 	DBGPRINTF("fen_setupWatch: DUMMY CALLED - not on Solaris?");
 }
@@ -1724,8 +1724,12 @@ BEGINsetModCnf
 	int i;
 CODESTARTsetModCnf
 	/* new style config has different default! */
-#if defined(OS_SOLARIS) && defined (HAVE_PORT_SOURCE_FILE) /* use FEN on Solaris! */
-	loadModConf->opMode = OPMODE_FEN;
+#if defined(OS_SOLARIS)
+	#if defined (HAVE_PORT_SOURCE_FILE) /* use FEN on Solaris if available */
+		loadModConf->opMode = OPMODE_FEN;
+	#else
+		loadModConf->opMode = OPMODE_POLLING;
+	#endif
 #else
 	loadModConf->opMode = OPMODE_INOTIFY;
 #endif
@@ -2287,7 +2291,7 @@ static rsRetVal ATTR_NONNULL()
 atomicWriteStateFile(const char *fn, const char *content)
 {
 	DEFiRet;
-	const int fd = open(fn, O_CLOEXEC | O_NOCTTY | O_WRONLY | O_CREAT, 0600);
+	const int fd = open(fn, O_CLOEXEC | O_NOCTTY | O_WRONLY | O_CREAT | O_TRUNC, 0600);
 	if(fd < 0) {
 		LogError(errno, RS_RET_IO_ERROR, "imfile: cannot open state file '%s' for "
 			"persisting file state - some data will probably be duplicated "

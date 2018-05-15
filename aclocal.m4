@@ -1,6 +1,6 @@
-# generated automatically by aclocal 1.15 -*- Autoconf -*-
+# generated automatically by aclocal 1.15.1 -*- Autoconf -*-
 
-# Copyright (C) 1996-2014 Free Software Foundation, Inc.
+# Copyright (C) 1996-2017 Free Software Foundation, Inc.
 
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -20,13 +20,13 @@ You have another version of autoconf.  It may work, but is not guaranteed to.
 If you have problems, you may need to regenerate the build system entirely.
 To do so, use the procedure documented by the package, typically 'autoreconf'.])])
 
-# ===========================================================================
-#  http://www.gnu.org/software/autoconf-archive/ax_append_compile_flags.html
-# ===========================================================================
+# ============================================================================
+#  https://www.gnu.org/software/autoconf-archive/ax_append_compile_flags.html
+# ============================================================================
 #
 # SYNOPSIS
 #
-#   AX_APPEND_COMPILE_FLAGS([FLAG1 FLAG2 ...], [FLAGS-VARIABLE], [EXTRA-FLAGS])
+#   AX_APPEND_COMPILE_FLAGS([FLAG1 FLAG2 ...], [FLAGS-VARIABLE], [EXTRA-FLAGS], [INPUT])
 #
 # DESCRIPTION
 #
@@ -41,6 +41,8 @@ To do so, use the procedure documented by the package, typically 'autoreconf'.])
 #   flags (e.g. CFLAGS) when the check is done.  The check is thus made with
 #   the flags: "CFLAGS EXTRA-FLAGS FLAG".  This can for example be used to
 #   force the compiler to issue an error when a bad flag is given.
+#
+#   INPUT gives an alternative input source to AC_COMPILE_IFELSE.
 #
 #   NOTE: This macro depends on the AX_APPEND_FLAG and
 #   AX_CHECK_COMPILE_FLAG. Please keep this macro in sync with
@@ -61,7 +63,7 @@ To do so, use the procedure documented by the package, typically 'autoreconf'.])
 #   Public License for more details.
 #
 #   You should have received a copy of the GNU General Public License along
-#   with this program. If not, see <http://www.gnu.org/licenses/>.
+#   with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 #   As a special exception, the respective Autoconf Macro's copyright owner
 #   gives unlimited permission to copy, distribute and modify the configure
@@ -76,18 +78,18 @@ To do so, use the procedure documented by the package, typically 'autoreconf'.])
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-#serial 4
+#serial 6
 
 AC_DEFUN([AX_APPEND_COMPILE_FLAGS],
 [AX_REQUIRE_DEFINED([AX_CHECK_COMPILE_FLAG])
 AX_REQUIRE_DEFINED([AX_APPEND_FLAG])
 for flag in $1; do
-  AX_CHECK_COMPILE_FLAG([$flag], [AX_APPEND_FLAG([$flag], [$2])], [], [$3])
+  AX_CHECK_COMPILE_FLAG([$flag], [AX_APPEND_FLAG([$flag], [$2])], [], [$3], [$4])
 done
 ])dnl AX_APPEND_COMPILE_FLAGS
 
 # ===========================================================================
-#      http://www.gnu.org/software/autoconf-archive/ax_append_flag.html
+#      https://www.gnu.org/software/autoconf-archive/ax_append_flag.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -122,7 +124,7 @@ done
 #   Public License for more details.
 #
 #   You should have received a copy of the GNU General Public License along
-#   with this program. If not, see <http://www.gnu.org/licenses/>.
+#   with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 #   As a special exception, the respective Autoconf Macro's copyright owner
 #   gives unlimited permission to copy, distribute and modify the configure
@@ -137,7 +139,7 @@ done
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-#serial 6
+#serial 7
 
 AC_DEFUN([AX_APPEND_FLAG],
 [dnl
@@ -159,12 +161,12 @@ AS_VAR_POPDEF([FLAGS])dnl
 ])dnl AX_APPEND_FLAG
 
 # ===========================================================================
-#   http://www.gnu.org/software/autoconf-archive/ax_append_link_flags.html
+#   https://www.gnu.org/software/autoconf-archive/ax_append_link_flags.html
 # ===========================================================================
 #
 # SYNOPSIS
 #
-#   AX_APPEND_LINK_FLAGS([FLAG1 FLAG2 ...], [FLAGS-VARIABLE], [EXTRA-FLAGS])
+#   AX_APPEND_LINK_FLAGS([FLAG1 FLAG2 ...], [FLAGS-VARIABLE], [EXTRA-FLAGS], [INPUT])
 #
 # DESCRIPTION
 #
@@ -178,6 +180,8 @@ AS_VAR_POPDEF([FLAGS])dnl
 #   when the check is done.  The check is thus made with the flags: "LDFLAGS
 #   EXTRA-FLAGS FLAG".  This can for example be used to force the linker to
 #   issue an error when a bad flag is given.
+#
+#   INPUT gives an alternative input source to AC_COMPILE_IFELSE.
 #
 #   NOTE: This macro depends on the AX_APPEND_FLAG and AX_CHECK_LINK_FLAG.
 #   Please keep this macro in sync with AX_APPEND_COMPILE_FLAGS.
@@ -197,7 +201,7 @@ AS_VAR_POPDEF([FLAGS])dnl
 #   Public License for more details.
 #
 #   You should have received a copy of the GNU General Public License along
-#   with this program. If not, see <http://www.gnu.org/licenses/>.
+#   with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 #   As a special exception, the respective Autoconf Macro's copyright owner
 #   gives unlimited permission to copy, distribute and modify the configure
@@ -212,18 +216,18 @@ AS_VAR_POPDEF([FLAGS])dnl
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-#serial 4
+#serial 6
 
 AC_DEFUN([AX_APPEND_LINK_FLAGS],
 [AX_REQUIRE_DEFINED([AX_CHECK_LINK_FLAG])
 AX_REQUIRE_DEFINED([AX_APPEND_FLAG])
 for flag in $1; do
-  AX_CHECK_LINK_FLAG([$flag], [AX_APPEND_FLAG([$flag], [m4_default([$2], [LDFLAGS])])], [], [$3])
+  AX_CHECK_LINK_FLAG([$flag], [AX_APPEND_FLAG([$flag], [m4_default([$2], [LDFLAGS])])], [], [$3], [$4])
 done
 ])dnl AX_APPEND_LINK_FLAGS
 
 # ===========================================================================
-#   http://www.gnu.org/software/autoconf-archive/ax_check_compile_flag.html
+#  https://www.gnu.org/software/autoconf-archive/ax_check_compile_flag.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -264,7 +268,7 @@ done
 #   Public License for more details.
 #
 #   You should have received a copy of the GNU General Public License along
-#   with this program. If not, see <http://www.gnu.org/licenses/>.
+#   with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 #   As a special exception, the respective Autoconf Macro's copyright owner
 #   gives unlimited permission to copy, distribute and modify the configure
@@ -279,7 +283,7 @@ done
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-#serial 4
+#serial 5
 
 AC_DEFUN([AX_CHECK_COMPILE_FLAG],
 [AC_PREREQ(2.64)dnl for _AC_LANG_PREFIX and AS_VAR_IF
@@ -298,7 +302,7 @@ AS_VAR_POPDEF([CACHEVAR])dnl
 ])dnl AX_CHECK_COMPILE_FLAGS
 
 # ===========================================================================
-#    http://www.gnu.org/software/autoconf-archive/ax_check_link_flag.html
+#    https://www.gnu.org/software/autoconf-archive/ax_check_link_flag.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -339,7 +343,7 @@ AS_VAR_POPDEF([CACHEVAR])dnl
 #   Public License for more details.
 #
 #   You should have received a copy of the GNU General Public License along
-#   with this program. If not, see <http://www.gnu.org/licenses/>.
+#   with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 #   As a special exception, the respective Autoconf Macro's copyright owner
 #   gives unlimited permission to copy, distribute and modify the configure
@@ -354,7 +358,7 @@ AS_VAR_POPDEF([CACHEVAR])dnl
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-#serial 4
+#serial 5
 
 AC_DEFUN([AX_CHECK_LINK_FLAG],
 [AC_PREREQ(2.64)dnl for _AC_LANG_PREFIX and AS_VAR_IF
@@ -373,7 +377,7 @@ AS_VAR_POPDEF([CACHEVAR])dnl
 ])dnl AX_CHECK_LINK_FLAGS
 
 # ===========================================================================
-#     http://www.gnu.org/software/autoconf-archive/ax_compiler_flags.html
+#    https://www.gnu.org/software/autoconf-archive/ax_compiler_flags.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -475,7 +479,7 @@ AS_VAR_POPDEF([CACHEVAR])dnl
 #   and this notice are preserved.  This file is offered as-is, without any
 #   warranty.
 
-#serial 13
+#serial 14
 
 # _AX_COMPILER_FLAGS_LANG([LANGNAME])
 m4_defun([_AX_COMPILER_FLAGS_LANG],
@@ -531,9 +535,9 @@ AC_DEFUN([AX_COMPILER_FLAGS],[
     AX_COMPILER_FLAGS_GIR([WARN_SCANNERFLAGS],[$ax_compiler_flags_is_release])
 ])dnl AX_COMPILER_FLAGS
 
-# ============================================================================
-#  http://www.gnu.org/software/autoconf-archive/ax_compiler_flags_cflags.html
-# ============================================================================
+# =============================================================================
+#  https://www.gnu.org/software/autoconf-archive/ax_compiler_flags_cflags.html
+# =============================================================================
 #
 # SYNOPSIS
 #
@@ -558,7 +562,7 @@ AC_DEFUN([AX_COMPILER_FLAGS],[
 #   and this notice are preserved.  This file is offered as-is, without any
 #   warranty.
 
-#serial 11
+#serial 14
 
 AC_DEFUN([AX_COMPILER_FLAGS_CFLAGS],[
     AC_REQUIRE([AC_PROG_SED])
@@ -567,7 +571,7 @@ AC_DEFUN([AX_COMPILER_FLAGS_CFLAGS],[
     AX_REQUIRE_DEFINED([AX_CHECK_COMPILE_FLAG])
 
     # Variable names
-    m4_define(ax_warn_cflags_variable,
+    m4_define([ax_warn_cflags_variable],
               [m4_normalize(ifelse([$1],,[WARN_CFLAGS],[$1]))])
 
     AC_LANG_PUSH([C])
@@ -581,6 +585,13 @@ AC_DEFUN([AX_COMPILER_FLAGS_CFLAGS],[
         ax_compiler_flags_test="-Werror=unknown-warning-option"
     ],[
         ax_compiler_flags_test=""
+    ])
+
+    # Check that -Wno-suggest-attribute=format is supported
+    AX_CHECK_COMPILE_FLAG([-Wno-suggest-attribute=format],[
+        ax_compiler_no_suggest_attribute_flags="-Wno-suggest-attribute=format"
+    ],[
+        ax_compiler_no_suggest_attribute_flags=""
     ])
 
     # Base flags
@@ -641,7 +652,7 @@ AC_DEFUN([AX_COMPILER_FLAGS_CFLAGS],[
         AX_APPEND_FLAG([-Werror],ax_warn_cflags_variable)
 
         AX_APPEND_COMPILE_FLAGS([ dnl
-            -Wno-suggest-attribute=format dnl
+            [$ax_compiler_no_suggest_attribute_flags] dnl
         ],ax_warn_cflags_variable,[$ax_compiler_flags_test])
     ])
 
@@ -666,7 +677,7 @@ AC_DEFUN([AX_COMPILER_FLAGS_CFLAGS],[
 ])dnl AX_COMPILER_FLAGS
 
 # ===========================================================================
-#   http://www.gnu.org/software/autoconf-archive/ax_compiler_flags_gir.html
+#  https://www.gnu.org/software/autoconf-archive/ax_compiler_flags_gir.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -693,13 +704,13 @@ AC_DEFUN([AX_COMPILER_FLAGS_CFLAGS],[
 #   and this notice are preserved.  This file is offered as-is, without any
 #   warranty.
 
-#serial 4
+#serial 6
 
 AC_DEFUN([AX_COMPILER_FLAGS_GIR],[
     AX_REQUIRE_DEFINED([AX_APPEND_FLAG])
 
     # Variable names
-    m4_define(ax_warn_scannerflags_variable,
+    m4_define([ax_warn_scannerflags_variable],
               [m4_normalize(ifelse([$1],,[WARN_SCANNERFLAGS],[$1]))])
 
     # Base flags
@@ -726,9 +737,9 @@ AC_DEFUN([AX_COMPILER_FLAGS_GIR],[
     AC_SUBST(ax_warn_scannerflags_variable)
 ])dnl AX_COMPILER_FLAGS
 
-# =============================================================================
-#  http://www.gnu.org/software/autoconf-archive/ax_compiler_flags_ldflags.html
-# =============================================================================
+# ==============================================================================
+#  https://www.gnu.org/software/autoconf-archive/ax_compiler_flags_ldflags.html
+# ==============================================================================
 #
 # SYNOPSIS
 #
@@ -753,15 +764,16 @@ AC_DEFUN([AX_COMPILER_FLAGS_GIR],[
 #   and this notice are preserved.  This file is offered as-is, without any
 #   warranty.
 
-#serial 5
+#serial 8
 
 AC_DEFUN([AX_COMPILER_FLAGS_LDFLAGS],[
     AX_REQUIRE_DEFINED([AX_APPEND_LINK_FLAGS])
     AX_REQUIRE_DEFINED([AX_APPEND_FLAG])
     AX_REQUIRE_DEFINED([AX_CHECK_COMPILE_FLAG])
+    AX_REQUIRE_DEFINED([AX_CHECK_LINK_FLAG])
 
     # Variable names
-    m4_define(ax_warn_ldflags_variable,
+    m4_define([ax_warn_ldflags_variable],
               [m4_normalize(ifelse([$1],,[WARN_LDFLAGS],[$1]))])
 
     # Always pass -Werror=unknown-warning-option to get Clang to fail on bad
@@ -775,9 +787,25 @@ AC_DEFUN([AX_COMPILER_FLAGS_LDFLAGS],[
         ax_compiler_flags_test=""
     ])
 
+    # macOS linker does not have --as-needed
+    AX_CHECK_LINK_FLAG([-Wl,--no-as-needed], [
+        ax_compiler_flags_as_needed_option="-Wl,--no-as-needed"
+    ], [
+        ax_compiler_flags_as_needed_option=""
+    ])
+
+    # macOS linker speaks with a different accent
+    ax_compiler_flags_fatal_warnings_option=""
+    AX_CHECK_LINK_FLAG([-Wl,--fatal-warnings], [
+        ax_compiler_flags_fatal_warnings_option="-Wl,--fatal-warnings"
+    ])
+    AX_CHECK_LINK_FLAG([-Wl,-fatal_warnings], [
+        ax_compiler_flags_fatal_warnings_option="-Wl,-fatal_warnings"
+    ])
+
     # Base flags
     AX_APPEND_LINK_FLAGS([ dnl
-        -Wl,--no-as-needed dnl
+        $ax_compiler_flags_as_needed_option dnl
         $3 dnl
     ],ax_warn_ldflags_variable,[$ax_compiler_flags_test])
 
@@ -794,7 +822,7 @@ AC_DEFUN([AX_COMPILER_FLAGS_LDFLAGS],[
         # suggest-attribute=format is disabled because it gives too many false
         # positives
         AX_APPEND_LINK_FLAGS([ dnl
-            -Wl,--fatal-warnings dnl
+            $ax_compiler_flags_fatal_warnings_option dnl
         ],ax_warn_ldflags_variable,[$ax_compiler_flags_test])
     ])
 
@@ -803,7 +831,7 @@ AC_DEFUN([AX_COMPILER_FLAGS_LDFLAGS],[
 ])dnl AX_COMPILER_FLAGS
 
 # ===========================================================================
-#       http://www.gnu.org/software/autoconf-archive/ax_is_release.html
+#      https://www.gnu.org/software/autoconf-archive/ax_is_release.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -830,6 +858,10 @@ AC_DEFUN([AX_COMPILER_FLAGS_LDFLAGS],[
 #    * micro-version:  ax_is_release will be 'no' if the micro version number
 #                      in $PACKAGE_VERSION is odd; this assumes
 #                      $PACKAGE_VERSION follows the 'major.minor.micro' scheme
+#    * dash-version:   ax_is_release will be 'no' if there is a dash '-'
+#                      in $PACKAGE_VERSION, for example 1.2-pre3, 1.2.42-a8b9
+#                      or 2.0-dirty (in particular this is suitable for use
+#                      with git-version-gen)
 #    * always:         ax_is_release will always be 'yes'
 #    * never:          ax_is_release will always be 'no'
 #
@@ -838,12 +870,13 @@ AC_DEFUN([AX_COMPILER_FLAGS_LDFLAGS],[
 # LICENSE
 #
 #   Copyright (c) 2015 Philip Withnall <philip@tecnocode.co.uk>
+#   Copyright (c) 2016 Collabora Ltd.
 #
 #   Copying and distribution of this file, with or without modification, are
 #   permitted in any medium without royalty provided the copyright notice
 #   and this notice are preserved.
 
-#serial 3
+#serial 7
 
 AC_DEFUN([AX_IS_RELEASE],[
     AC_BEFORE([AC_INIT],[$0])
@@ -851,7 +884,7 @@ AC_DEFUN([AX_IS_RELEASE],[
     m4_case([$1],
       [git-directory],[
         # $is_release = (.git directory does not exist)
-        AS_IF([test -d .git],[ax_is_release=no],[ax_is_release=yes])
+        AS_IF([test -d ${srcdir}/.git],[ax_is_release=no],[ax_is_release=yes])
       ],
       [minor-version],[
         # $is_release = ($minor_version is even)
@@ -865,15 +898,21 @@ AC_DEFUN([AX_IS_RELEASE],[
         AS_IF([test "$(( $micro_version % 2 ))" -ne 0],
               [ax_is_release=no],[ax_is_release=yes])
       ],
+      [dash-version],[
+        # $is_release = ($PACKAGE_VERSION has a dash)
+        AS_CASE([$PACKAGE_VERSION],
+                [*-*], [ax_is_release=no],
+                [*], [ax_is_release=yes])
+      ],
       [always],[ax_is_release=yes],
       [never],[ax_is_release=no],
       [
-        AC_MSG_ERROR([Invalid policy. Valid policies: git-directory, minor-version.])
+        AC_MSG_ERROR([Invalid policy. Valid policies: git-directory, minor-version, micro-version, dash-version, always, never.])
       ])
 ])
 
 # ===========================================================================
-#       http://www.gnu.org/software/autoconf-archive/ax_prog_java.html
+#       https://www.gnu.org/software/autoconf-archive/ax_prog_java.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -959,7 +998,7 @@ AC_DEFUN([AX_IS_RELEASE],[
 #   Public License for more details.
 #
 #   You should have received a copy of the GNU General Public License along
-#   with this program. If not, see <http://www.gnu.org/licenses/>.
+#   with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 #   As a special exception, the respective Autoconf Macro's copyright owner
 #   gives unlimited permission to copy, distribute and modify the configure
@@ -974,7 +1013,7 @@ AC_DEFUN([AX_IS_RELEASE],[
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-#serial 9
+#serial 10
 
 AU_ALIAS([AC_PROG_JAVA], [AX_PROG_JAVA])
 AC_DEFUN([AX_PROG_JAVA],[
@@ -989,7 +1028,7 @@ AC_PROVIDE([$0])dnl
 ])
 
 # ===========================================================================
-#    http://www.gnu.org/software/autoconf-archive/ax_prog_java_works.html
+#    https://www.gnu.org/software/autoconf-archive/ax_prog_java_works.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -1022,7 +1061,7 @@ AC_PROVIDE([$0])dnl
 #   Public License for more details.
 #
 #   You should have received a copy of the GNU General Public License along
-#   with this program. If not, see <http://www.gnu.org/licenses/>.
+#   with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 #   As a special exception, the respective Autoconf Macro's copyright owner
 #   gives unlimited permission to copy, distribute and modify the configure
@@ -1037,57 +1076,16 @@ AC_PROVIDE([$0])dnl
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-#serial 9
+#serial 11
 
 AU_ALIAS([AC_PROG_JAVA_WORKS], [AX_PROG_JAVA_WORKS])
 AC_DEFUN([AX_PROG_JAVA_WORKS], [
-AC_PATH_PROG(UUDECODE, uudecode, [no])
-if test x$UUDECODE != xno; then
-AC_CACHE_CHECK([if uudecode can decode base 64 file], ac_cv_prog_uudecode_base64, [
-dnl /**
-dnl  * Test.java: used to test if java compiler works.
-dnl  */
-dnl public class Test
-dnl {
-dnl
-dnl public static void
-dnl main( String[] argv )
-dnl {
-dnl     System.exit (0);
-dnl }
-dnl
-dnl }
-cat << \EOF > Test.uue
-begin-base64 644 Test.class
-yv66vgADAC0AFQcAAgEABFRlc3QHAAQBABBqYXZhL2xhbmcvT2JqZWN0AQAE
-bWFpbgEAFihbTGphdmEvbGFuZy9TdHJpbmc7KVYBAARDb2RlAQAPTGluZU51
-bWJlclRhYmxlDAAKAAsBAARleGl0AQAEKEkpVgoADQAJBwAOAQAQamF2YS9s
-YW5nL1N5c3RlbQEABjxpbml0PgEAAygpVgwADwAQCgADABEBAApTb3VyY2VG
-aWxlAQAJVGVzdC5qYXZhACEAAQADAAAAAAACAAkABQAGAAEABwAAACEAAQAB
-AAAABQO4AAyxAAAAAQAIAAAACgACAAAACgAEAAsAAQAPABAAAQAHAAAAIQAB
-AAEAAAAFKrcAErEAAAABAAgAAAAKAAIAAAAEAAQABAABABMAAAACABQ=
-====
-EOF
-if $UUDECODE Test.uue; then
-        ac_cv_prog_uudecode_base64=yes
-else
-        echo "configure: __oline__: uudecode had trouble decoding base 64 file 'Test.uue'" >&AS_MESSAGE_LOG_FD
-        echo "configure: failed file was:" >&AS_MESSAGE_LOG_FD
-        cat Test.uue >&AS_MESSAGE_LOG_FD
-        ac_cv_prog_uudecode_base64=no
-fi
-rm -f Test.uue])
-fi
-if test x$ac_cv_prog_uudecode_base64 != xyes; then
-        rm -f Test.class
-        AC_MSG_WARN([I have to compile Test.class from scratch])
         if test x$ac_cv_prog_javac_works = xno; then
                 AC_MSG_ERROR([Cannot compile java source. $JAVAC does not work properly])
         fi
         if test x$ac_cv_prog_javac_works = x; then
                 AX_PROG_JAVAC
         fi
-fi
 AC_CACHE_CHECK(if $JAVA works, ac_cv_prog_java_works, [
 JAVA_TEST=Test.java
 CLASS_TEST=Test.class
@@ -1101,7 +1099,6 @@ public static void main (String args[]) {
 } }
 EOF
 changequote([, ])dnl
-if test x$ac_cv_prog_uudecode_base64 != xyes; then
         if AC_TRY_COMMAND($JAVAC $JAVACFLAGS $JAVA_TEST) && test -s $CLASS_TEST; then
                 :
         else
@@ -1109,7 +1106,6 @@ if test x$ac_cv_prog_uudecode_base64 != xyes; then
           cat $JAVA_TEST >&AS_MESSAGE_LOG_FD
           AC_MSG_ERROR(The Java compiler $JAVAC failed (see config.log, check the CLASSPATH?))
         fi
-fi
 if AC_TRY_COMMAND($JAVA -classpath . $JAVAFLAGS $TEST) >/dev/null 2>&1; then
   ac_cv_prog_java_works=yes
 else
@@ -1117,14 +1113,14 @@ else
   cat $JAVA_TEST >&AS_MESSAGE_LOG_FD
   AC_MSG_ERROR(The Java VM $JAVA failed (see config.log, check the CLASSPATH?))
 fi
-rm -fr $JAVA_TEST $CLASS_TEST Test.uue
+rm -f $JAVA_TEST $CLASS_TEST
 ])
 AC_PROVIDE([$0])dnl
 ]
 )
 
 # ===========================================================================
-#       http://www.gnu.org/software/autoconf-archive/ax_prog_javac.html
+#      https://www.gnu.org/software/autoconf-archive/ax_prog_javac.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -1174,7 +1170,7 @@ AC_PROVIDE([$0])dnl
 #   Public License for more details.
 #
 #   You should have received a copy of the GNU General Public License along
-#   with this program. If not, see <http://www.gnu.org/licenses/>.
+#   with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 #   As a special exception, the respective Autoconf Macro's copyright owner
 #   gives unlimited permission to copy, distribute and modify the configure
@@ -1189,7 +1185,7 @@ AC_PROVIDE([$0])dnl
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-#serial 7
+#serial 8
 
 AU_ALIAS([AC_PROG_JAVAC], [AX_PROG_JAVAC])
 AC_DEFUN([AX_PROG_JAVAC],[
@@ -1204,7 +1200,7 @@ AC_PROVIDE([$0])dnl
 ])
 
 # ===========================================================================
-#    http://www.gnu.org/software/autoconf-archive/ax_prog_javac_works.html
+#   https://www.gnu.org/software/autoconf-archive/ax_prog_javac_works.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -1237,7 +1233,7 @@ AC_PROVIDE([$0])dnl
 #   Public License for more details.
 #
 #   You should have received a copy of the GNU General Public License along
-#   with this program. If not, see <http://www.gnu.org/licenses/>.
+#   with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 #   As a special exception, the respective Autoconf Macro's copyright owner
 #   gives unlimited permission to copy, distribute and modify the configure
@@ -1252,7 +1248,7 @@ AC_PROVIDE([$0])dnl
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-#serial 6
+#serial 7
 
 AU_ALIAS([AC_PROG_JAVAC_WORKS], [AX_PROG_JAVAC_WORKS])
 AC_DEFUN([AX_PROG_JAVAC_WORKS],[
@@ -1277,7 +1273,7 @@ AC_PROVIDE([$0])dnl
 ])
 
 # ===========================================================================
-#    http://www.gnu.org/software/autoconf-archive/ax_require_defined.html
+#    https://www.gnu.org/software/autoconf-archive/ax_require_defined.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -1308,7 +1304,7 @@ AC_PROVIDE([$0])dnl
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 1
+#serial 2
 
 AC_DEFUN([AX_REQUIRE_DEFINED], [dnl
   m4_ifndef([$1], [m4_fatal([macro ]$1[ is not defined; is a m4 file missing?])])
@@ -1590,7 +1586,7 @@ AS_VAR_COPY([$1], [pkg_cv_][$1])
 AS_VAR_IF([$1], [""], [$5], [$4])dnl
 ])dnl PKG_CHECK_VAR
 
-# Copyright (C) 2002-2014 Free Software Foundation, Inc.
+# Copyright (C) 2002-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1605,7 +1601,7 @@ AC_DEFUN([AM_AUTOMAKE_VERSION],
 [am__api_version='1.15'
 dnl Some users find AM_AUTOMAKE_VERSION and mistake it for a way to
 dnl require some minimum version.  Point them to the right macro.
-m4_if([$1], [1.15], [],
+m4_if([$1], [1.15.1], [],
       [AC_FATAL([Do not call $0, use AM_INIT_AUTOMAKE([$1]).])])dnl
 ])
 
@@ -1621,14 +1617,14 @@ m4_define([_AM_AUTOCONF_VERSION], [])
 # Call AM_AUTOMAKE_VERSION and AM_AUTOMAKE_VERSION so they can be traced.
 # This function is AC_REQUIREd by AM_INIT_AUTOMAKE.
 AC_DEFUN([AM_SET_CURRENT_AUTOMAKE_VERSION],
-[AM_AUTOMAKE_VERSION([1.15])dnl
+[AM_AUTOMAKE_VERSION([1.15.1])dnl
 m4_ifndef([AC_AUTOCONF_VERSION],
   [m4_copy([m4_PACKAGE_VERSION], [AC_AUTOCONF_VERSION])])dnl
 _AM_AUTOCONF_VERSION(m4_defn([AC_AUTOCONF_VERSION]))])
 
 # AM_AUX_DIR_EXPAND                                         -*- Autoconf -*-
 
-# Copyright (C) 2001-2014 Free Software Foundation, Inc.
+# Copyright (C) 2001-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1680,7 +1676,7 @@ am_aux_dir=`cd "$ac_aux_dir" && pwd`
 
 # AM_CONDITIONAL                                            -*- Autoconf -*-
 
-# Copyright (C) 1997-2014 Free Software Foundation, Inc.
+# Copyright (C) 1997-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1711,7 +1707,7 @@ AC_CONFIG_COMMANDS_PRE(
 Usually this means the macro was only invoked conditionally.]])
 fi])])
 
-# Copyright (C) 1999-2014 Free Software Foundation, Inc.
+# Copyright (C) 1999-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1902,7 +1898,7 @@ _AM_SUBST_NOTMAKE([am__nodep])dnl
 
 # Generate code to set up dependency tracking.              -*- Autoconf -*-
 
-# Copyright (C) 1999-2014 Free Software Foundation, Inc.
+# Copyright (C) 1999-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1978,7 +1974,7 @@ AC_DEFUN([AM_OUTPUT_DEPENDENCY_COMMANDS],
 
 # Do all the work for Automake.                             -*- Autoconf -*-
 
-# Copyright (C) 1996-2014 Free Software Foundation, Inc.
+# Copyright (C) 1996-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -2175,7 +2171,7 @@ for _am_header in $config_headers :; do
 done
 echo "timestamp for $_am_arg" >`AS_DIRNAME(["$_am_arg"])`/stamp-h[]$_am_stamp_count])
 
-# Copyright (C) 2001-2014 Free Software Foundation, Inc.
+# Copyright (C) 2001-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -2196,7 +2192,7 @@ if test x"${install_sh+set}" != xset; then
 fi
 AC_SUBST([install_sh])])
 
-# Copyright (C) 2003-2014 Free Software Foundation, Inc.
+# Copyright (C) 2003-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -2217,7 +2213,7 @@ AC_SUBST([am__leading_dot])])
 
 # Check to see how 'make' treats includes.	            -*- Autoconf -*-
 
-# Copyright (C) 2001-2014 Free Software Foundation, Inc.
+# Copyright (C) 2001-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -2267,7 +2263,7 @@ rm -f confinc confmf
 
 # Fake the existence of programs that GNU maintainers use.  -*- Autoconf -*-
 
-# Copyright (C) 1997-2014 Free Software Foundation, Inc.
+# Copyright (C) 1997-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -2306,7 +2302,7 @@ fi
 
 # Helper functions for option handling.                     -*- Autoconf -*-
 
-# Copyright (C) 2001-2014 Free Software Foundation, Inc.
+# Copyright (C) 2001-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -2335,7 +2331,7 @@ AC_DEFUN([_AM_SET_OPTIONS],
 AC_DEFUN([_AM_IF_OPTION],
 [m4_ifset(_AM_MANGLE_OPTION([$1]), [$2], [$3])])
 
-# Copyright (C) 1999-2014 Free Software Foundation, Inc.
+# Copyright (C) 1999-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -2382,7 +2378,7 @@ AC_LANG_POP([C])])
 # For backward compatibility.
 AC_DEFUN_ONCE([AM_PROG_CC_C_O], [AC_REQUIRE([AC_PROG_CC])])
 
-# Copyright (C) 2001-2014 Free Software Foundation, Inc.
+# Copyright (C) 2001-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -2401,7 +2397,7 @@ AC_DEFUN([AM_RUN_LOG],
 
 # Check to make sure that the build environment is sane.    -*- Autoconf -*-
 
-# Copyright (C) 1996-2014 Free Software Foundation, Inc.
+# Copyright (C) 1996-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -2482,7 +2478,7 @@ AC_CONFIG_COMMANDS_PRE(
 rm -f conftest.file
 ])
 
-# Copyright (C) 2009-2014 Free Software Foundation, Inc.
+# Copyright (C) 2009-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -2542,7 +2538,7 @@ AC_SUBST([AM_BACKSLASH])dnl
 _AM_SUBST_NOTMAKE([AM_BACKSLASH])dnl
 ])
 
-# Copyright (C) 2001-2014 Free Software Foundation, Inc.
+# Copyright (C) 2001-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -2570,7 +2566,7 @@ fi
 INSTALL_STRIP_PROGRAM="\$(install_sh) -c -s"
 AC_SUBST([INSTALL_STRIP_PROGRAM])])
 
-# Copyright (C) 2006-2014 Free Software Foundation, Inc.
+# Copyright (C) 2006-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -2589,7 +2585,7 @@ AC_DEFUN([AM_SUBST_NOTMAKE], [_AM_SUBST_NOTMAKE($@)])
 
 # Check how to create a tarball.                            -*- Autoconf -*-
 
-# Copyright (C) 2004-2014 Free Software Foundation, Inc.
+# Copyright (C) 2004-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,

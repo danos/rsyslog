@@ -5,7 +5,8 @@
 . $srcdir/diag.sh generate-conf
 . $srcdir/diag.sh add-conf '
 $MaxMessageSize 128
-global(processInternalMessages="on")
+global(processInternalMessages="on"
+	oversizemsg.input.mode="accept")
 module(load="../plugins/imptcp/.libs/imptcp")
 input(type="imptcp" port="13514" ruleset="ruleset1")
 
@@ -35,7 +36,7 @@ echo '<120> 2011-03-01T11:22:12Z host msgnum:1
 <120> 2011-03-01T11:22:12Z host msgnum:1
 2000000010<120> 2011-03-01T11:22:12Z host msgnum:1
 4000000000<120> 2011-03-01T11:22:12Z host msgnum:1
-<120> 2011-03-01T11:22:12Z host msgnum:1' | cmp rsyslog.out.log
+<120> 2011-03-01T11:22:12Z host msgnum:1' | cmp - rsyslog.out.log
 if [ ! $? -eq 0 ]; then
   echo "invalid response generated, rsyslog.out.log is:"
   cat rsyslog.out.log

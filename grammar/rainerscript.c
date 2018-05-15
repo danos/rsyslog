@@ -1380,7 +1380,7 @@ done:
  * was never documented.
  * rgerhards, 2015-11-12
  */
-static long long
+long long
 var2Number(struct svar *r, int *bSuccess)
 {
 	long long n = 0;
@@ -1668,7 +1668,7 @@ static void
 doFunc_exec_template(struct cnffunc *__restrict__ const func,
 	struct svar *__restrict__ const ret,
 	void *const usrptr,
-	wti_t *__restrict__ const pWti)
+	wti_t *const pWti __attribute__((unused)))
 {
 	smsg_t *const pMsg = (smsg_t*) usrptr;
 	rsRetVal localRet;
@@ -2314,7 +2314,7 @@ static void ATTR_NONNULL()
 doFunct_Prifilt(struct cnffunc *__restrict__ const func,
 	struct svar *__restrict__ const ret,
 	void *__restrict__ const usrptr,
-	wti_t *__restrict__ const pWti)
+	wti_t *const pWti __attribute__((unused)))
 {
 	struct funcData_prifilt *pPrifilt;
 
@@ -2631,9 +2631,9 @@ doFunct_IsTime(struct cnffunc *__restrict__ const func,
 }
 
 static void ATTR_NONNULL()
-doFunct_ScriptError(struct cnffunc *__restrict__ const func,
+doFunct_ScriptError(struct cnffunc *const func __attribute__((unused)),
 	struct svar *__restrict__ const ret,
-	void *__restrict__ const usrptr,
+	void *const usrptr __attribute__((unused)),
 	wti_t *__restrict__ const pWti)
 {
 	ret->datatype = 'N';
@@ -2642,9 +2642,9 @@ doFunct_ScriptError(struct cnffunc *__restrict__ const func,
 }
 
 static void ATTR_NONNULL()
-doFunct_PreviousActionSuspended(struct cnffunc *__restrict__ const func,
+doFunct_PreviousActionSuspended(struct cnffunc *const func __attribute__((unused)),
 	struct svar *__restrict__ const ret,
-	void *__restrict__ const usrptr,
+	void *const usrptr __attribute__((unused)),
 	wti_t *__restrict__ const pWti)
 {
 	ret->datatype = 'N';
@@ -4263,6 +4263,7 @@ cnfstmtNewCall(es_str_t *name)
 	struct cnfstmt* cnfstmt;
 	if((cnfstmt = cnfstmtNew(S_CALL)) != NULL) {
 		cnfstmt->d.s_call.name = name;
+		cnfstmt->d.s_call.ruleset = NULL;
 	}
 	return cnfstmt;
 }
@@ -4999,6 +5000,9 @@ cnfstmtOptimize(struct cnfstmt *root)
 		case S_CALL:
 			cnfstmtOptimizeCall(stmt);
 			break;
+		case S_CALL_INDIRECT:
+			stmt->d.s_call_ind.expr = cnfexprOptimize(stmt->d.s_call_ind.expr);
+			break;
 		case S_STOP:
 			if(stmt->next != NULL)
 				parser_errmsg("STOP is followed by unreachable statements!\n");
@@ -5055,7 +5059,8 @@ funcName2Ptr(char *const fname, const unsigned short nParams)
 }
 
 rsRetVal
-addMod2List(const int version, struct scriptFunct *functArray)
+addMod2List(const int __attribute__((unused)) version, struct scriptFunct *functArray)
+/*version currently not used, might be needed later for versin check*/
 {
 	DEFiRet;
 	struct modListNode *newNode;
@@ -5070,7 +5075,6 @@ addMod2List(const int version, struct scriptFunct *functArray)
 				functArray[i].fname);
 		}
 	i++;
-	dbgprintf("TTTTTTT: i: %d, name: %s\n", i, functArray[i-1].fname);
 	}
 	newNode->modFcts = functArray;
 

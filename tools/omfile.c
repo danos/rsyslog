@@ -17,7 +17,7 @@
  * pipes. These have been moved to ompipe, to reduced the entanglement
  * between the two different functionalities. -- rgerhards
  *
- * Copyright 2007-2017 Adiscon GmbH.
+ * Copyright 2007-2018 Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
@@ -95,7 +95,7 @@ DEFobjCurrIf(statsobj)
  * That should be sufficient (and even than, there would no really bad effect ;)).
  * The variable below is the global counter/clock.
  */
-#if HAVE_ATOMIC_BUILTINS64
+#ifdef HAVE_ATOMIC_BUILTINS64
 static uint64 clockFileAccess = 0;
 #else
 static unsigned clockFileAccess = 0;
@@ -107,7 +107,7 @@ static pthread_mutex_t mutClock;
 static uint64
 getClockFileAccess(void)
 {
-#if HAVE_ATOMIC_BUILTINS64
+#ifdef HAVE_ATOMIC_BUILTINS64
 	return ATOMIC_INC_AND_FETCH_uint64(&clockFileAccess, &mutClock);
 #else
 	return ATOMIC_INC_AND_FETCH_unsigned(&clockFileAccess, &mutClock);
@@ -1323,9 +1323,22 @@ CODESTARTnewActInst
 		}
 	}
 
-	if(pData->fname == NULL) {
+	if(pData->fname == NULL || *pData->fname == '\0') {
 		parser_errmsg("omfile: either the \"file\" or "
 				"\"dynfile\" parameter must be given");
+		ABORT_FINALIZE(RS_RET_MISSING_CNFPARAMS);
+	}
+
+	int allWhiteSpace = 1;
+	for(const char *p = (const char*) pData->fname ; *p ; ++p) {
+		if(!isspace(*p)) {
+			allWhiteSpace = 0;
+			break;
+		}
+	}
+	if(allWhiteSpace) {
+		parser_errmsg("omfile: \"file\" or \"dynfile\" parameter "
+			"consist only of whitespace - this is not permitted");
 		ABORT_FINALIZE(RS_RET_MISSING_CNFPARAMS);
 	}
 

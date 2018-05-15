@@ -13,7 +13,7 @@
  *
  * For details, visit doc/debug.html
  *
- * Copyright 2008-2016 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2008-2018 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -62,6 +62,7 @@
 DEFobjCurrIf(obj)
 int Debug = DEBUG_OFF;		/* debug flag  - read-only after startup */
 int debugging_on = 0;	 /* read-only, except on sig USR1 */
+int dbgTimeoutToStderr = 0;
 static int bLogFuncFlow = 0; /* shall the function entry and exit be logged to the debug log? */
 static int bLogAllocFree = 0; /* shall calls to (m/c)alloc and free be logged to the debug log? */
 static int bPrintFuncDBOnExit = 0; /* shall the function entry and exit be logged to the debug log? */
@@ -307,7 +308,7 @@ dbgFuncDBRemoveMutexLock(dbgFuncDB_t *pFuncDB, pthread_mutex_t *pmut)
  * (what "relevant" means is determinded by various ways)
  */
 void
-dbgOutputTID(char* name)
+dbgOutputTID(char* name __attribute__((unused)))
 {
 #	if defined(HAVE_SYSCALL) && defined(HAVE_SYS_gettid)
 	if(bOutputTidToStderr)
@@ -1449,6 +1450,11 @@ rsRetVal dbgClassInit(void)
 	sigaddset(&sigSet, SIGUSR2);
 	pthread_sigmask(SIG_UNBLOCK, &sigSet, NULL);
 
+	const char *dbgto2stderr = getenv("RSYSLOG_DEBUG_TIMEOUTS_TO_STDERR");
+	dbgTimeoutToStderr = (dbgto2stderr != NULL && !strcmp(dbgto2stderr, "on")) ? 1 : 0;
+	if(dbgTimeoutToStderr) {
+		fprintf(stderr, "rsyslogd: NOTE: RSYSLOG_DEBUG_TIMEOUTS_TO_STDERR activated\n");
+	}
 	dbgGetRuntimeOptions(); /* init debug system from environment */
 	pszAltDbgFileName = getenv("RSYSLOG_DEBUGLOG");
 

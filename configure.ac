@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([rsyslog],[8.34.0],[rsyslog@lists.adiscon.com])
+AC_INIT([rsyslog],[8.35.0],[rsyslog@lists.adiscon.com])
 
 # AIXPORT START: Detect the underlying OS
 unamestr=$(uname)
@@ -59,7 +59,12 @@ then
 	m4_ifdef([AX_IS_RELEASE], [
 		AX_IS_RELEASE([git-directory])
 		m4_ifdef([AX_COMPILER_FLAGS], [
-			AX_COMPILER_FLAGS()
+			AX_COMPILER_FLAGS(,,,,[-Wunused-parameter -Wmissing-field-initializers])
+			# unfortunately, AX_COMPILER_FLAGS does not provide a way to override
+			# the default -Wno-error=warning" flags. So we do this via sed below.
+			# Note: we *really* want to have this error out during CI testing!
+			# rgerhards, 2018-05-09
+			WARN_CFLAGS="$(echo "$WARN_CFLAGS" | sed s/-Wno-error=/-W/g)"
 		], [
 			CFLAGS="$CFLAGS -W -Wall -Wformat-security -Wshadow -Wcast-align -Wpointer-arith -Wmissing-format-attribute -g"
 			AC_MSG_WARN([missing AX_COMPILER_FLAGS macro, not using it])
@@ -254,7 +259,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM(, return __builtin_expect(main != 0, 1))],
 # speeds up processig.
 # note that when automic operations are enabled but not available, they
 # will silently NOT be used!
-AC_ARG_ENABLE(regexp,
+AC_ARG_ENABLE(atomic-operations,
         [AS_HELP_STRING([--enable-atomic-operations],[Enable atomic operation support @<:@default=yes@:>@])],
         [case "${enableval}" in
          yes) enable_atomic_operations="yes" ;;
@@ -319,7 +324,6 @@ if test "$enable_regexp" = "yes"; then
         AC_DEFINE(FEATURE_REGEXP, 1, [Regular expressions support enabled.])
 fi
 
-
 # zlib support
 PKG_CHECK_MODULES([ZLIB], [zlib], [found_zlib=yes], [found_zlib=no])
 AS_IF([test "x$found_zlib" = "xno"], [
@@ -330,6 +334,42 @@ AS_IF([test "x$found_zlib" = "xno"], [
         ZLIB_LIBS="-lz"
         AC_SUBST(ZLIB_LIBS)
 ])
+
+
+#hash implementations header checks
+AC_ARG_ENABLE(fmhash,
+	[AS_HELP_STRING([--enable-fmhash],[Enable fmhash support @<:@default=yes@:>@])],
+        [case "${enableval}" in
+         yes) enable_fmhash="yes" ;;
+          no) enable_fmhash="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-fmhash) ;;
+         esac],
+	[enable_fmhash=yes]
+)
+
+AC_ARG_ENABLE(fmhash-xxhash,
+	[AS_HELP_STRING([--enable-fmhash-xxhash],[Enable xxhash in fmhash support @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_fmhash_xxhash="yes" ;;
+          no) enable_fmhash_xxhash="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-fmhash-xxhash) ;;
+         esac],
+	[enable_fmhash_xxhash=no]
+)
+
+AM_CONDITIONAL(ENABLE_FMHASH, [test "x$enable_fmhash" = "xyes" || test "x$enable_fmhash_xxhash" = "xyes"])
+
+AM_CONDITIONAL(ENABLE_FMHASH_XXHASH, test x$enable_fmhash_xxhash = xyes)
+if test "$enable_fmhash_xxhash" = "yes"; then  
+	AC_CHECK_LIB([xxhash], [XXH64], [
+		AC_CHECK_HEADER([xxhash.h], [
+			AC_DEFINE(USE_HASH_XXHASH, 1,
+				  [Using XXHASH for hash64.])
+			HASH_XXHASH_LIBS="-lxxhash"
+			AC_SUBST(HASH_XXHASH_LIBS)], 
+			[AC_MSG_ERROR([Unable to add XXHASH support for hash64.])])
+	])
+fi
 
 
 #gssapi
@@ -454,25 +494,6 @@ if test "$rsyslog_have_pthread_setschedparam" = "yes" -a "$rsyslog_have_sched_h"
 	AC_SUBST(IMUDP_LIBS)
 	LIBS=$save_LIBS
 fi
-
-
-# use libcurl?
-AC_ARG_ENABLE(libcurl,
-        [AS_HELP_STRING([--enable-libcurl],[Enable libcurl mode @<:@default=yes@:>@])],
-        [case "${enableval}" in
-          yes) enable_libcurl="yes" ;;
-           no) enable_libcurl="no" ;;
-           *) AC_MSG_ERROR(bad value ${enableval} for --enable-libcurl) ;;
-         esac],
-        [enable_libcurl="yes"]
-)
-if test "$enable_libcurl" = "yes"; then
-	PKG_CHECK_MODULES([CURL], [libcurl], 
-		[ AC_DEFINE(HAVE_LIBCURL, 1, [libcurl present]) ]
-	)
-fi
-
-AM_CONDITIONAL(ENABLE_LIBCURL, test "x${enable_libcurl}" = "xyes")
 
 # klog
 AC_ARG_ENABLE(klog,
@@ -1099,6 +1120,9 @@ AC_ARG_ENABLE(fmhttp,
          esac],
         [enable_fmhttp=yes]
 )
+if test "$enable_fmhttp" = "yes"; then
+        PKG_CHECK_MODULES([CURL], [libcurl])
+fi
 AM_CONDITIONAL(ENABLE_FMHTTP, test x$enable_fmhttp = xyes)
 
 
@@ -1345,6 +1369,17 @@ AC_ARG_ENABLE(relp,
 if test "x$enable_relp" = "xyes"; then
 	PKG_CHECK_MODULES(RELP, relp >= 1.2.14)
 	AC_DEFINE([ENABLE_RELP], [1], [Indicator that RELP is present])
+        save_CFLAGS="$CFLAGS"
+        save_LIBS="$LIBS"
+
+        CFLAGS="$CFLAGS $RELP_CFLAGS"
+        LIBS="$LIBS $RELP_LIBS"
+
+        AC_CHECK_FUNC([relpSrvSetOversizeMode],
+                      [AC_DEFINE([HAVE_RELPSRVSETOVERSIZEMODE], [1], [Define if relpSrvSetOversizeMode exists.])])
+
+        CFLAGS="$save_CFLAGS"
+        LIBS="$save_LIBS"
 fi
 AM_CONDITIONAL(ENABLE_RELP, test x$enable_relp = xyes)
 
@@ -2143,6 +2178,20 @@ AC_ARG_ENABLE(mmkubernetes,
 )
 if test "x$enable_mmkubernetes" = "xyes"; then
         PKG_CHECK_MODULES([CURL], [libcurl])
+        PKG_CHECK_MODULES(LIBLOGNORM, lognorm >= 2.0.3)
+
+        save_CFLAGS="$CFLAGS"
+        save_LIBS="$LIBS"
+
+        CFLAGS="$CFLAGS $LIBLOGNORM_CFLAGS"
+        LIBS="$LIBS $LIBLOGNORM_LIBS"
+
+        AC_CHECK_FUNC([ln_loadSamplesFromString],
+                      [AC_DEFINE([HAVE_LOADSAMPLESFROMSTRING], [1], [Define if ln_loadSamplesFromString exists.])],
+                      [AC_DEFINE([NO_LOADSAMPLESFROMSTRING], [1], [Define if ln_loadSamplesFromString does not exist.])])
+
+        CFLAGS="$save_CFLAGS"
+        LIBS="$save_LIBS"
 fi
 AM_CONDITIONAL(ENABLE_MMKUBERNETES, test x$enable_mmkubernetes = xyes)
 
@@ -2261,6 +2310,7 @@ AC_CONFIG_FILES([Makefile \
 		plugins/mmsnmptrapd/Makefile \
 		plugins/pmlastmsg/Makefile \
 		plugins/mmdblookup/Makefile \
+		contrib/fmhash/Makefile \
 		contrib/pmsnare/Makefile \
 		contrib/pmpanngfw/Makefile \
 		contrib/pmaixforwardedfrom/Makefile \
@@ -2303,6 +2353,7 @@ echo "    liblogging-stdlog support enabled:        $enable_liblogging_stdlog"
 echo "    libsystemd enabled:                       $enable_libsystemd"
 echo "    libcurl enabled:                          $enable_libcurl"
 echo "    kafka static linking enabled:             $enable_kafka_static"
+echo "    atomic operations enabled:                $enable_atomic_operations"
 echo
 echo "---{ input plugins }---"
 echo "    Klog functionality enabled:               $enable_klog ($os_type)"
@@ -2376,6 +2427,8 @@ echo "    SNMP support enabled:                     $enable_snmp"
 echo
 echo "---{ function modules }---"
 echo "    fmhttp enabled:                           $enable_fmhttp"
+echo "    fmhash enabled:                           $enable_fmhash"
+echo "    fmhash with xxhash enabled:               $enable_fmhash_xxhash"
 echo
 echo "---{ debugging support }---"
 echo "    Testbench enabled:                        $enable_testbench"
