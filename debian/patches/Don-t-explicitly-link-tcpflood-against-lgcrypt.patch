@@ -9,10 +9,10 @@ We rely on GnuTLS to pull that library dependency in.
  1 file changed, 3 deletions(-)
 
 diff --git a/tests/Makefile.am b/tests/Makefile.am
-index 5368efe..7c8d6d1 100644
+index b4fd0c4..5b8aee5 100644
 --- a/tests/Makefile.am
 +++ b/tests/Makefile.am
-@@ -1861,9 +1861,6 @@ tcpflood_SOURCES = tcpflood.c
+@@ -1917,9 +1917,6 @@ tcpflood_SOURCES = tcpflood.c
  tcpflood_CFLAGS = $(PTHREADS_CFLAGS) $(RELP_CFLAGS) $(GNUTLS_CFLAGS)
  tcpflood_CPPFLAGS = $(PTHREADS_CFLAGS) $(RELP_CFLAGS) $(GNUTLS_CFLAGS)
  tcpflood_LDADD = $(SOL_LIBS) $(PTHREADS_LIBS) $(RELP_LIBS) $(GNUTLS_LIBS)
