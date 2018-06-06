@@ -1,2 +1,3 @@
 Don-t-create-a-database.patch
 Don-t-explicitly-link-tcpflood-against-lgcrypt.patch
+rsyslog.service.in-move-LimitNOFILE-to-correct-section.patch
