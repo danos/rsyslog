@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([rsyslog],[8.35.0],[rsyslog@lists.adiscon.com])
+AC_INIT([rsyslog],[8.36.0],[rsyslog@lists.adiscon.com])
 
 # AIXPORT START: Detect the underlying OS
 unamestr=$(uname)
@@ -933,16 +933,38 @@ AM_CONDITIONAL(ENABLE_ELASTICSEARCH, test x$enable_elasticsearch = xyes)
 
 # capability to enable elasticsearch testbench tests. This requries that an ES test
 # environment is present on the local (127.0.0.1) machine. 
+# we support a "minimal" mode to take care of travis where we cannot run all tests
+# due to runtime constraints
 AC_ARG_ENABLE(elasticsearch_tests,
-        [AS_HELP_STRING([--enable-elasticsearch-tests],[enable MySQL specific tests in testbench @<:@default=no@:>@])],
+        [AS_HELP_STRING([--enable-elasticsearch-tests],[enable Elasticsearch specific tests in testbench @<:@default=no@:>@])],
         [case "${enableval}" in
          yes) enable_elasticsearch_tests="yes" ;;
           no) enable_elasticsearch_tests="no" ;;
+         minimal) enable_elasticsearch_tests="minimal" ;;
            *) AC_MSG_ERROR(bad value ${enableval} for --enable-elasticsearch-tests) ;;
          esac],
         [enable_elasticsearch_tests=no]
 )
 AM_CONDITIONAL(ENABLE_ELASTICSEARCH_TESTS, test x$enable_elasticsearch_tests = xyes)
+AM_CONDITIONAL(ENABLE_ELASTICSEARCH_TESTS_MINIMAL, test x$enable_elasticsearch_tests = xminimal -o x$enable_elasticsearch_tests = xyes)
+
+
+# openssl support
+AC_ARG_ENABLE(openssl,
+        [AS_HELP_STRING([--enable-openssl],[Enable openssl support @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_openssl="yes" ;;
+          no) enable_openssl="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-openssl) ;;
+         esac],
+        [enable_openssl=no]
+)
+if test "x$enable_openssl" = "xyes"; then
+	PKG_CHECK_MODULES(OPENSSL, openssl)
+	AC_DEFINE([ENABLE_OPENSSL], [1], [Indicator that openssl is present])
+	save_libs=$LIBS
+fi
+AM_CONDITIONAL(ENABLE_OPENSSL, test x$enable_openssl = xyes)
 
 
 # GnuTLS support
@@ -1409,13 +1431,13 @@ AM_CONDITIONAL(ENABLE_KSI_LS12, test x$enable_ksi_ls12 = xyes)
 
 # liblogging-stdlog support
 AC_ARG_ENABLE(liblogging-stdlog,
-        [AS_HELP_STRING([--enable-liblogging-stdlog],[Enable liblogging-stdlog support @<:@default=yes@:>@])],
+        [AS_HELP_STRING([--enable-liblogging-stdlog],[Enable liblogging-stdlog support @<:@default=no@:>@])],
         [case "${enableval}" in
          yes) enable_liblogging_stdlog="yes" ;;
           no) enable_liblogging_stdlog="no" ;;
            *) AC_MSG_ERROR(bad value ${enableval} for --enable-liblogging-stdlog) ;;
          esac],
-        [enable_liblogging_stdlog=yes]
+        [enable_liblogging_stdlog=no]
 )
 if test "x$enable_liblogging_stdlog" = "xyes"; then
         PKG_CHECK_MODULES(LIBLOGGING_STDLOG, liblogging-stdlog >= 1.0.3,
@@ -2420,6 +2442,7 @@ echo "    mongodb support enabled:                  $enable_ommongodb"
 echo "    hiredis support enabled:                  $enable_omhiredis"
 echo
 echo "---{ protocol support }---"
+echo "    openssl network stream driver enabled:    $enable_openssl"
 echo "    GnuTLS network stream driver enabled:     $enable_gnutls"
 echo "    GSSAPI Kerberos 5 support enabled:        $enable_gssapi_krb5"
 echo "    RELP support enabled:                     $enable_relp"
@@ -2437,6 +2460,7 @@ echo "    Testbench2 enabled:                       $enable_testbench2"
 echo "    Testbench libfaketime tests enabled:      $enable_libfaketime"
 echo "    Extended Testbench enabled:               $enable_extended_tests"
 echo "    MySQL Tests enabled:                      $enable_mysql_tests"
+echo "    Elasticsearch Tests:                      $enable_elasticsearch_tests"
 echo "    PostgreSQL Tests enabled:                 $enable_pgsql_tests"
 echo "    Kafka Tests enabled:                      $enable_kafka_tests"
 echo "    Debug mode enabled:                       $enable_debug"

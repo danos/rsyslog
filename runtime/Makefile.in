@@ -105,25 +105,30 @@ sbin_PROGRAMS =
 @ENABLE_INET_TRUE@	lmnsd_ptcp.la
 
 #
+# openssl netstream driver
+# 
+@ENABLE_OPENSSL_TRUE@am__append_3 = lmnsd_ossl.la
+
+#
 # GnuTLS netstream driver
 # 
-@ENABLE_GNUTLS_TRUE@am__append_3 = lmnsd_gtls.la
+@ENABLE_GNUTLS_TRUE@am__append_4 = lmnsd_gtls.la
 
 #
 # support library for libgcrypt
 #
-@ENABLE_LIBGCRYPT_TRUE@am__append_4 = libgcry.la
-@ENABLE_LIBGCRYPT_TRUE@am__append_5 = lmcry_gcry.la
+@ENABLE_LIBGCRYPT_TRUE@am__append_5 = libgcry.la
+@ENABLE_LIBGCRYPT_TRUE@am__append_6 = lmcry_gcry.la
 
 #
 # gssapi support
 # 
-@ENABLE_GSSAPI_TRUE@am__append_6 = lmgssutil.la
+@ENABLE_GSSAPI_TRUE@am__append_7 = lmgssutil.la
 
 #
 # support library for Guardtime KSI-LS12
 #
-@ENABLE_KSI_LS12_TRUE@am__append_7 = lmsig_ksi_ls12.la
+@ENABLE_KSI_LS12_TRUE@am__append_8 = lmsig_ksi_ls12.la
 subdir = runtime
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_check_define.m4 \
@@ -254,6 +259,18 @@ lmnsd_gtls_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(lmnsd_gtls_la_LDFLAGS) $(LDFLAGS) -o $@
 @ENABLE_GNUTLS_TRUE@am_lmnsd_gtls_la_rpath = -rpath $(pkglibdir)
+@ENABLE_OPENSSL_TRUE@lmnsd_ossl_la_DEPENDENCIES =  \
+@ENABLE_OPENSSL_TRUE@	$(am__DEPENDENCIES_1)
+am__lmnsd_ossl_la_SOURCES_DIST = nsd_ossl.c nsd_ossl.h nsdsel_ossl.c \
+	nsdsel_ossl.h
+@ENABLE_OPENSSL_TRUE@am_lmnsd_ossl_la_OBJECTS =  \
+@ENABLE_OPENSSL_TRUE@	lmnsd_ossl_la-nsd_ossl.lo \
+@ENABLE_OPENSSL_TRUE@	lmnsd_ossl_la-nsdsel_ossl.lo
+lmnsd_ossl_la_OBJECTS = $(am_lmnsd_ossl_la_OBJECTS)
+lmnsd_ossl_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(lmnsd_ossl_la_LDFLAGS) $(LDFLAGS) -o $@
+@ENABLE_OPENSSL_TRUE@am_lmnsd_ossl_la_rpath = -rpath $(pkglibdir)
 lmnsd_ptcp_la_DEPENDENCIES =
 am__lmnsd_ptcp_la_SOURCES_DIST = nsd_ptcp.c nsd_ptcp.h nsdsel_ptcp.c \
 	nsdsel_ptcp.h nsdpoll_ptcp.c nsdpoll_ptcp.h
@@ -354,15 +371,17 @@ am__v_CCLD_1 =
 SOURCES = $(libgcry_la_SOURCES) $(librsyslog_la_SOURCES) \
 	$(lmcry_gcry_la_SOURCES) $(lmgssutil_la_SOURCES) \
 	$(lmnet_la_SOURCES) $(lmnetstrms_la_SOURCES) \
-	$(lmnsd_gtls_la_SOURCES) $(lmnsd_ptcp_la_SOURCES) \
-	$(lmregexp_la_SOURCES) $(lmsig_ksi_ls12_la_SOURCES) \
-	$(lmstrmsrv_la_SOURCES) $(lmtcpclt_la_SOURCES) \
-	$(lmtcpsrv_la_SOURCES) $(lmzlibw_la_SOURCES)
+	$(lmnsd_gtls_la_SOURCES) $(lmnsd_ossl_la_SOURCES) \
+	$(lmnsd_ptcp_la_SOURCES) $(lmregexp_la_SOURCES) \
+	$(lmsig_ksi_ls12_la_SOURCES) $(lmstrmsrv_la_SOURCES) \
+	$(lmtcpclt_la_SOURCES) $(lmtcpsrv_la_SOURCES) \
+	$(lmzlibw_la_SOURCES)
 DIST_SOURCES = $(am__libgcry_la_SOURCES_DIST) $(librsyslog_la_SOURCES) \
 	$(am__lmcry_gcry_la_SOURCES_DIST) \
 	$(am__lmgssutil_la_SOURCES_DIST) $(am__lmnet_la_SOURCES_DIST) \
 	$(am__lmnetstrms_la_SOURCES_DIST) \
 	$(am__lmnsd_gtls_la_SOURCES_DIST) \
+	$(am__lmnsd_ossl_la_SOURCES_DIST) \
 	$(am__lmnsd_ptcp_la_SOURCES_DIST) \
 	$(am__lmregexp_la_SOURCES_DIST) \
 	$(am__lmsig_ksi_ls12_la_SOURCES_DIST) \
@@ -605,14 +624,14 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 man_MANS = 
-noinst_LTLIBRARIES = librsyslog.la $(am__append_4)
+noinst_LTLIBRARIES = librsyslog.la $(am__append_5)
 
 #
 # zlib support
 # 
 pkglib_LTLIBRARIES = $(am__append_1) lmzlibw.la $(am__append_2) \
-	$(am__append_3) $(am__append_5) $(am__append_6) lmtcpsrv.la \
-	lmtcpclt.la $(am__append_7)
+	$(am__append_3) $(am__append_4) $(am__append_6) \
+	$(am__append_7) lmtcpsrv.la lmtcpclt.la $(am__append_8)
 #pkglib_LTLIBRARIES = librsyslog.la
 librsyslog_la_SOURCES = \
 	rsyslog.c \
@@ -768,6 +787,10 @@ lmzlibw_la_LIBADD =
 @ENABLE_INET_TRUE@lmnsd_ptcp_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_CFLAGS)
 @ENABLE_INET_TRUE@lmnsd_ptcp_la_LDFLAGS = -module -avoid-version $(LIBLOGGING_STDLOG_LIBS)
 @ENABLE_INET_TRUE@lmnsd_ptcp_la_LIBADD = 
+@ENABLE_OPENSSL_TRUE@lmnsd_ossl_la_SOURCES = nsd_ossl.c nsd_ossl.h nsdsel_ossl.c  nsdsel_ossl.h
+@ENABLE_OPENSSL_TRUE@lmnsd_ossl_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(OPENSSL_CFLAGS)
+@ENABLE_OPENSSL_TRUE@lmnsd_ossl_la_LDFLAGS = -module -avoid-version
+@ENABLE_OPENSSL_TRUE@lmnsd_ossl_la_LIBADD = $(OPENSSL_LIBS)
 @ENABLE_GNUTLS_TRUE@lmnsd_gtls_la_SOURCES = nsd_gtls.c nsd_gtls.h nsdsel_gtls.c  nsdsel_gtls.h
 @ENABLE_GNUTLS_TRUE@lmnsd_gtls_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(GNUTLS_CFLAGS)
 @ENABLE_GNUTLS_TRUE@lmnsd_gtls_la_LDFLAGS = -module -avoid-version
@@ -931,6 +954,9 @@ lmnetstrms.la: $(lmnetstrms_la_OBJECTS) $(lmnetstrms_la_DEPENDENCIES) $(EXTRA_lm
 lmnsd_gtls.la: $(lmnsd_gtls_la_OBJECTS) $(lmnsd_gtls_la_DEPENDENCIES) $(EXTRA_lmnsd_gtls_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(lmnsd_gtls_la_LINK) $(am_lmnsd_gtls_la_rpath) $(lmnsd_gtls_la_OBJECTS) $(lmnsd_gtls_la_LIBADD) $(LIBS)
 
+lmnsd_ossl.la: $(lmnsd_ossl_la_OBJECTS) $(lmnsd_ossl_la_DEPENDENCIES) $(EXTRA_lmnsd_ossl_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(lmnsd_ossl_la_LINK) $(am_lmnsd_ossl_la_rpath) $(lmnsd_ossl_la_OBJECTS) $(lmnsd_ossl_la_LIBADD) $(LIBS)
+
 lmnsd_ptcp.la: $(lmnsd_ptcp_la_OBJECTS) $(lmnsd_ptcp_la_DEPENDENCIES) $(EXTRA_lmnsd_ptcp_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(lmnsd_ptcp_la_LINK) $(am_lmnsd_ptcp_la_rpath) $(lmnsd_ptcp_la_OBJECTS) $(lmnsd_ptcp_la_LIBADD) $(LIBS)
 
@@ -1057,6 +1083,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmnetstrms_la-nssel.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmnsd_gtls_la-nsd_gtls.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmnsd_gtls_la-nsdsel_gtls.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmnsd_ossl_la-nsd_ossl.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmnsd_ossl_la-nsdsel_ossl.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmnsd_ptcp_la-nsd_ptcp.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmnsd_ptcp_la-nsdpoll_ptcp.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmnsd_ptcp_la-nsdsel_ptcp.Plo@am__quote@
@@ -1430,6 +1458,20 @@ lmnsd_gtls_la-nsdsel_gtls.lo: nsdsel_gtls.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='nsdsel_gtls.c' object='lmnsd_gtls_la-nsdsel_gtls.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lmnsd_gtls_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lmnsd_gtls_la-nsdsel_gtls.lo `test -f 'nsdsel_gtls.c' || echo '$(srcdir)/'`nsdsel_gtls.c
+
+lmnsd_ossl_la-nsd_ossl.lo: nsd_ossl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lmnsd_ossl_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lmnsd_ossl_la-nsd_ossl.lo -MD -MP -MF $(DEPDIR)/lmnsd_ossl_la-nsd_ossl.Tpo -c -o lmnsd_ossl_la-nsd_ossl.lo `test -f 'nsd_ossl.c' || echo '$(srcdir)/'`nsd_ossl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lmnsd_ossl_la-nsd_ossl.Tpo $(DEPDIR)/lmnsd_ossl_la-nsd_ossl.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='nsd_ossl.c' object='lmnsd_ossl_la-nsd_ossl.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lmnsd_ossl_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lmnsd_ossl_la-nsd_ossl.lo `test -f 'nsd_ossl.c' || echo '$(srcdir)/'`nsd_ossl.c
+
+lmnsd_ossl_la-nsdsel_ossl.lo: nsdsel_ossl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lmnsd_ossl_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lmnsd_ossl_la-nsdsel_ossl.lo -MD -MP -MF $(DEPDIR)/lmnsd_ossl_la-nsdsel_ossl.Tpo -c -o lmnsd_ossl_la-nsdsel_ossl.lo `test -f 'nsdsel_ossl.c' || echo '$(srcdir)/'`nsdsel_ossl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lmnsd_ossl_la-nsdsel_ossl.Tpo $(DEPDIR)/lmnsd_ossl_la-nsdsel_ossl.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='nsdsel_ossl.c' object='lmnsd_ossl_la-nsdsel_ossl.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lmnsd_ossl_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lmnsd_ossl_la-nsdsel_ossl.lo `test -f 'nsdsel_ossl.c' || echo '$(srcdir)/'`nsdsel_ossl.c
 
 lmnsd_ptcp_la-nsd_ptcp.lo: nsd_ptcp.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lmnsd_ptcp_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lmnsd_ptcp_la-nsd_ptcp.lo -MD -MP -MF $(DEPDIR)/lmnsd_ptcp_la-nsd_ptcp.Tpo -c -o lmnsd_ptcp_la-nsd_ptcp.lo `test -f 'nsd_ptcp.c' || echo '$(srcdir)/'`nsd_ptcp.c
