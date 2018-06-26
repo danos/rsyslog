@@ -1,3 +1,9 @@
+rsyslog (8.36.0-1) UNRELEASED; urgency=medium
+
+  * New upstream version 8.36.0
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 26 Jun 2018 17:52:19 +0200
+
 rsyslog (8.35.0-1) unstable; urgency=medium
 
   * New upstream version 8.35.0
