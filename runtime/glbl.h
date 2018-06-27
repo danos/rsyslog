@@ -38,6 +38,10 @@
 #include "prop.h"
 
 #define glblGetIOBufSize() 4096 /* size of the IO buffer, e.g. for strm class */
+#define glblOversizeMsgInputMode_Truncate 0
+#define glblOversizeMsgInputMode_Split 1
+#define glblOversizeMsgInputMode_Accept 2
+
 
 extern pid_t glbl_ourpid;
 extern int bProcessInternalMessages;
@@ -123,6 +127,16 @@ extern size_t glblDbgFilesNum;
 extern int glblDbgWhitelist;
 extern int glblPermitCtlC;
 
+/* Developer options enable some strange things for developer-only testing.
+ * These should never be enabled in a user build, except if explicitly told
+ * by a developer. The options are acutally flags, so they should be powers
+ * of two. Flag assignment may change between versions, **backward
+ * compatibility is NOT necessary**.
+ * rgerhards, 2018-04-28
+ */
+#define DEV_OPTION_KEEP_RUNNING_ON_HARD_CONF_ERROR 1
+extern uint64_t glblDevOptions;
+
 #define glblGetOurPid() glbl_ourpid
 #define glblSetOurPid(pid) { glbl_ourpid = (pid); }
 
@@ -137,5 +151,8 @@ tzinfo_t* glblFindTimezoneInfo(char *id);
 int GetGnuTLSLoglevel(void);
 int glblGetMaxLine(void);
 int bs_arrcmp_glblDbgFiles(const void *s1, const void *s2);
+uchar* glblGetOversizeMsgErrorFile(void);
+int glblGetOversizeMsgInputMode(void);
+int glblReportOversizeMessage(void);
 
 #endif /* #ifndef GLBL_H_INCLUDED */

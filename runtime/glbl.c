@@ -7,7 +7,7 @@
  *
  * Module begun 2008-04-16 by Rainer Gerhards
  *
- * Copyright 2008-2017 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2008-2018 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -85,6 +85,9 @@ static uchar *stdlog_chanspec = NULL;
 static int bParseHOSTNAMEandTAG = 1;	/* parser modification (based on startup params!) */
 static int bPreserveFQDN = 0;		/* should FQDNs always be preserved? */
 static int iMaxLine = 8096;		/* maximum length of a syslog message */
+static uchar * oversizeMsgErrorFile = NULL;		/* File where oversize messages are written to */
+static int oversizeMsgInputMode = 0;	/* Mode which oversize messages will be forwarded */
+static int reportOversizeMsg = 1;	/* shall error messages be generated for oversize messages? */
 static int iGnuTLSLoglevel = 0;
 static int iDefPFFamily = PF_UNSPEC;     /* protocol family (IPv4, IPv6 or both) */
 static int bDropMalPTRMsgs = 0;/* Drop messages which have malicious PTR records during DNS lookup */
@@ -128,6 +131,8 @@ size_t glblDbgFilesNum = 0;
 int glblDbgWhitelist = 1;
 int glblPermitCtlC = 0;
 
+uint64_t glblDevOptions = 0; /* to be used by developers only */
+
 pid_t glbl_ourpid;
 #ifndef HAVE_ATOMIC_BUILTINS
 static DEF_ATOMIC_HELPER_MUT(mutTerminateInputs);
@@ -155,6 +160,9 @@ static struct cnfparamdescr cnfparamdescr[] = {
         { "defaultnetstreamdrivercertfile", eCmdHdlrString, 0 },
 	{ "defaultnetstreamdriver", eCmdHdlrString, 0 },
 	{ "maxmessagesize", eCmdHdlrSize, 0 },
+	{ "oversizemsg.errorfile", eCmdHdlrGetWord, 0 },
+	{ "oversizemsg.report", eCmdHdlrBinary, 0 },
+	{ "oversizemsg.input.mode", eCmdHdlrGetWord, 0 },
 	{ "action.reportsuspension", eCmdHdlrBinary, 0 },
 	{ "action.reportsuspensioncontinuation", eCmdHdlrBinary, 0 },
 	{ "parser.controlcharacterescapeprefix", eCmdHdlrGetChar, 0 },
@@ -182,6 +190,7 @@ static struct cnfparamdescr cnfparamdescr[] = {
 	{ "environment", eCmdHdlrArray, 0 },
 	{ "processinternalmessages", eCmdHdlrBinary, 0 },
 	{ "umask", eCmdHdlrFileCreateMode, 0 },
+	{ "internal.developeronly.options", eCmdHdlrInt, 0 },
 	{ "internalmsg.ratelimit.interval", eCmdHdlrPositiveInt, 0 },
 	{ "internalmsg.ratelimit.burst", eCmdHdlrPositiveInt, 0 },
 	{ "errormessagestostderr.maxnumber", eCmdHdlrPositiveInt, 0 },
@@ -216,6 +225,7 @@ glblGetMaxLine(void)
 {
 	return(iMaxLine);
 }
+
 
 int
 GetGnuTLSLoglevel(void)
@@ -415,6 +425,8 @@ setMaxLine(const int64_t iNew)
 	}
 }
 
+
+
 static rsRetVal
 legacySetMaxMessageSize(void __attribute__((unused)) *pVal, int64_t iNew)
 {
@@ -438,6 +450,22 @@ setDebugLevel(void __attribute__((unused)) *pVal, int level)
 	dbgSetDebugLevel(level);
 	dbgprintf("debug level %d set via config file\n", level);
 	dbgprintf("This is rsyslog version " VERSION "\n");
+	RETiRet;
+}
+
+static rsRetVal ATTR_NONNULL()
+setOversizeMsgInputMode(const uchar *const mode)
+{
+	DEFiRet;
+	if(!strcmp((char*)mode, "truncate")) {
+		oversizeMsgInputMode = glblOversizeMsgInputMode_Truncate;
+	} else if(!strcmp((char*)mode, "split")) {
+		oversizeMsgInputMode = glblOversizeMsgInputMode_Split;
+	} else if(!strcmp((char*)mode, "accept")) {
+		oversizeMsgInputMode = glblOversizeMsgInputMode_Accept;
+	} else {
+		oversizeMsgInputMode = glblOversizeMsgInputMode_Truncate;
+	}
 	RETiRet;
 }
 
@@ -547,6 +575,29 @@ done:
 	return(pszRet);
 }
 
+
+/* return the name of the file where oversize messages are written to
+ */
+uchar*
+glblGetOversizeMsgErrorFile(void)
+{
+	return oversizeMsgErrorFile;
+}
+
+
+/* return the mode with which oversize messages will be put forward
+ */
+int
+glblGetOversizeMsgInputMode(void)
+{
+	return oversizeMsgInputMode;
+}
+
+int
+glblReportOversizeMessage(void)
+{
+	return reportOversizeMsg;
+}
 
 /* set our local domain name. Free previous domain, if it was already set.
  */
@@ -796,6 +847,9 @@ static rsRetVal resetConfigVariables(uchar __attribute__((unused)) *pp, void __a
 	pszDfltNetstrmDrvrCertFile = NULL;
 	free(LocalHostNameOverride);
 	LocalHostNameOverride = NULL;
+	free(oversizeMsgErrorFile);
+	oversizeMsgErrorFile = NULL;
+	oversizeMsgInputMode = glblOversizeMsgInputMode_Accept;
 	free(pszWorkDir);
 	pszWorkDir = NULL;
 	bDropMalPTRMsgs = 0;
@@ -803,6 +857,7 @@ static rsRetVal resetConfigVariables(uchar __attribute__((unused)) *pp, void __a
 	iMaxLine = 8192;
 	cCCEscapeChar = '#';
 	bDropTrailingLF = 1;
+	reportOversizeMsg = 1;
 	bEscapeCCOnRcv = 1; /* default is to escape control characters */
 	bSpaceLFOnRcv = 0;
 	bEscape8BitChars = 0; /* default is not to escape control characters */
@@ -1002,6 +1057,8 @@ glblProcessCnf(struct cnfobj *o)
 			continue;
 		if(!strcmp(paramblk.descr[i].name, "processinternalmessages")) {
 			bProcessInternalMessages = (int) cnfparamvals[i].val.d.n;
+		} else if(!strcmp(paramblk.descr[i].name, "internal.developeronly.options")) {
+		        glblDevOptions = (uint64_t) cnfparamvals[i].val.d.n;
 		} else if(!strcmp(paramblk.descr[i].name, "stdlog.channelspec")) {
 #ifndef HAVE_LIBLOGGING_STDLOG
 			LogError(0, RS_RET_ERR, "rsyslog wasn't "
@@ -1192,6 +1249,15 @@ glblDoneLoadCnf(void)
 			bActionReportSuspensionCont = (int) cnfparamvals[i].val.d.n;
 		} else if(!strcmp(paramblk.descr[i].name, "maxmessagesize")) {
 			setMaxLine(cnfparamvals[i].val.d.n);
+		} else if(!strcmp(paramblk.descr[i].name, "oversizemsg.errorfile")) {
+			free(oversizeMsgErrorFile);
+			oversizeMsgErrorFile = (uchar*)es_str2cstr(cnfparamvals[i].val.d.estr, NULL);
+		} else if(!strcmp(paramblk.descr[i].name, "oversizemsg.report")) {
+			reportOversizeMsg = (int) cnfparamvals[i].val.d.n;
+		} else if(!strcmp(paramblk.descr[i].name, "oversizemsg.input.mode")) {
+			const char *const tmp = es_str2cstr(cnfparamvals[i].val.d.estr, NULL);
+			setOversizeMsgInputMode((uchar*) tmp);
+			free((void*)tmp);
 		} else if(!strcmp(paramblk.descr[i].name, "debug.onshutdown")) {
 			glblDebugOnShutdown = (int) cnfparamvals[i].val.d.n;
 			LogError(0, RS_RET_OK, "debug: onShutdown set to %d", glblDebugOnShutdown);
@@ -1370,6 +1436,7 @@ BEGINObjClassExit(glbl, OBJ_IS_CORE_MODULE) /* class, version */
 	free(LocalDomain);
 	free(LocalHostName);
 	free(LocalHostNameOverride);
+	free(oversizeMsgErrorFile);
 	free(LocalFQDNName);
 	freeTimezoneInfo();
 	objRelease(prop, CORE_COMPONENT);

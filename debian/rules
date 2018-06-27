@@ -28,7 +28,6 @@ override_dh_auto_configure:
 		--enable-imfile \
 		--enable-impstats \
 		--enable-klog \
-		--enable-liblogging-stdlog \
 		--enable-gssapi-krb5 \
 		--enable-gnutls \
 		--enable-relp \
@@ -53,8 +52,8 @@ override_dh_auto_configure:
 		--enable-testbench \
 		--enable-imdiag \
 		--disable-generate-man-pages \
-		--disable-libcurl \
 		--disable-fmhttp \
+		--disable-liblogging-stdlog \
 		--without-valgrind-testbench \
 		--with-systemdsystemunitdir=/lib/systemd/system
 

@@ -26,7 +26,8 @@ liboverride_getaddrinfo_la_LDFLAGS = -avoid-version -shared
 check_PROGRAMS = $(TESTRUNS) ourtail nettester tcpflood chkseq msleep randomgen \
 	diagtalker uxsockrcvr syslog_caller inputfilegen minitcpsrv \
 	omrelp_dflt_port \
-	mangle_qi
+	mangle_qi \
+	have_relpSrvSetOversizeMode
 if ENABLE_IMJOURNAL
 check_PROGRAMS += journal_print
 endif
@@ -58,6 +59,8 @@ TESTS +=  \
 	invalid_nested_include.sh \
 	omfwd-keepalive.sh \
 	omfile-read-only-errmsg.sh \
+	omfile-null-filename.sh \
+	omfile-whitespace-filename.sh \
 	omfile-read-only.sh \
 	omfile_both_files_set.sh \
 	msgvar-concurrency.sh \
@@ -122,6 +125,7 @@ TESTS +=  \
 	diskq-rfc5424.sh \
 	diskqueue.sh \
 	diskqueue-fsync.sh \
+	diskqueue-full.sh \
 	rulesetmultiqueue.sh \
 	rulesetmultiqueue-v6.sh \
 	manytcp.sh \
@@ -318,6 +322,9 @@ TESTS +=  \
 	rscript_previous_action_suspended.sh \
 	rscript_str2num_negative.sh \
 	rscript-config_enable-on.sh \
+	rs-cnum.sh \
+	rs-substring.sh \
+	rs-int2hex.sh \
 	mmanon_random_32_ipv4.sh \
 	mmanon_random_cons_32_ipv4.sh \
 	mmanon_recognize_ipv4.sh \
@@ -378,6 +385,7 @@ TESTS +=  \
 	mmexternal-SegFault-vg.sh \
 	mmexternal-InvldProg-vg.sh \
 	internal-errmsg-memleak-vg.sh \
+	glbl-oversizeMsg-log-vg.sh \
 	rscript_set_memleak-vg.sh \
 	no-parser-vg.sh \
 	discard-rptdmsg-vg.sh \
@@ -448,33 +456,23 @@ TESTS +=  \
 endif
 
 if ENABLE_OMPROG
-# see https://github.com/rsyslog/rsyslog/issues/2403
-# TODO: re-enable!
-#	omprog-cleanup.sh
-#	omprog-noterm-cleanup.sh
-#	omprog-noterm-default.sh
-#	omprog-cleanup-with-outfile.sh
-# linux:
-#	omprog-noterm-unresponsive.sh
-# valgrind:
-#	omprog-noterm-cleanup-vg.sh
-#	omprog-cleanup-vg.sh
 TESTS +=  \
+	omprog-defaults.sh \
 	omprog-feedback.sh \
+	omprog-close-unresponsive.sh \
+	omprog-close-unresponsive-noterm.sh \
+	omprog-restart-terminated.sh \
+	omprog-restart-terminated-outfile.sh \
 	omprog-transactions.sh \
 	omprog-transactions-failed-messages.sh \
 	omprog-transactions-failed-commits.sh
-#if OS_LINUX
-#TESTS += \
-#	omprog-cleanup-when-unresponsive.sh
-#endif
 if HAVE_VALGRIND
 TESTS +=  \
-	omprog-multiparam-vg.sh
-#if OS_LINUX
-#TESTS += \
-	#omprog-cleanup-when-unresponsive-vg.sh
-#endif
+	omprog-defaults-vg.sh \
+	omprog-feedback-vg.sh \
+	omprog-close-unresponsive-vg.sh \
+	omprog-restart-terminated-vg.sh \
+	omprog-transactions-vg.sh
 endif
 endif
 
@@ -529,6 +527,8 @@ if ENABLE_IMPTCP
 # need to be disabled if we do not have this module
 TESTS +=  \
 	manyptcp.sh \
+	imptcp_framing_regex.sh \
+	imptcp_framing_regex-oversize.sh \
 	imptcp_large.sh \
 	imptcp-connection-msg-disabled.sh \
 	imptcp-connection-msg-received.sh \
@@ -543,29 +543,42 @@ TESTS +=  \
 	imptcp-NUL.sh \
 	imptcp-NUL-rawmsg.sh \
 	rscript_random.sh \
+	rscript_hash32.sh \
+	rscript_hash64.sh \
 	rscript_replace.sh
 if HAVE_VALGRIND
 TESTS +=  \
 	imptcp_conndrop-vg.sh
+if ENABLE_FMHASH
+TESTS +=  \
+	rscript_hash32-vg.sh \
+	rscript_hash64-vg.sh
+endif # ENABLE_FMHASH
+endif # HAVE_VALGRIND
+endif
+
+if ENABLE_ELASTICSEARCH_TESTS_MINIMAL
+TESTS +=  \
+	es-basic.sh \
+	es-basic-es6.0.sh \
+	es-basic-bulk.sh
+if HAVE_VALGRIND
+TESTS += \
+	es-basic-vg.sh \
+	es-basic-vgthread.sh
 endif
 endif
 
 if ENABLE_ELASTICSEARCH_TESTS
 TESTS +=  \
-	es-basic.sh \
-	es-basic-es6.0.sh \
 	es-basic-server.sh \
 	es-basic-ha.sh \
-	es-basic-bulk.sh \
 	es-maxbytes-bulk.sh \
 	es-basic-errfile-empty.sh \
 	es-basic-errfile-popul.sh \
 	es-bulk-errfile-empty.sh \
-	es-bulk-errfile-popul.sh
-if HAVE_VALGRIND
-TESTS += \
-	es-basic-vgthread.sh
-endif
+	es-bulk-errfile-popul.sh \
+	es-writeoperation.sh
 if ENABLE_IMFILE
 TESTS +=  \
 	es-bulk-errfile-popul-def-format.sh \
@@ -575,7 +588,6 @@ TESTS +=  \
 endif
 if HAVE_VALGRIND
 TESTS +=  \
-	es-basic-vg.sh \
 	es-basic-bulk-vg.sh \
 	es-basic-ha-vg.sh
 endif
@@ -642,6 +654,11 @@ if ENABLE_MMJSONPARSE
 TESTS += \
 	mmjsonparse-w-o-cookie.sh \
 	mmjsonparse-w-o-cookie-multi-spaces.sh
+if ENABLE_IMPSTATS
+TESTS += \
+	mmjsonparse-invalid-containerName.sh \
+	wtpShutdownAll-assertionFailure.sh
+endif
 if ENABLE_IMPTCP
 TESTS +=  \
 	mmjsonparse_simple.sh \
@@ -650,6 +667,8 @@ TESTS +=  \
 	imptcp-msg-truncation-on-number2.sh \
 	imptcp-maxFrameSize-parameter.sh \
 	mmjsonparse_cim.sh \
+	mmjsonparse_cim2.sh \
+	mmjsonparse_localvar.sh \
 	json_array_subscripting.sh \
 	json_array_looping.sh \
 	json_object_looping.sh \
@@ -702,6 +721,22 @@ endif
 endif
 endif
 
+if ENABLE_OPENSSL
+TESTS +=  \
+	imtcp-tls-ossl-basic.sh \
+	sndrcv_tls_ossl_anon_ipv4.sh \
+	sndrcv_tls_ossl_anon_ipv6.sh \
+	sndrcv_tls_ossl_anon_rebind.sh \
+	imtcp-tls-ossl-x509valid.sh \
+	imtcp-tls-ossl-x509name.sh \
+	imtcp-tls-ossl-x509fingerprint.sh
+if HAVE_VALGRIND
+TESTS += \
+	imtcp-tls-ossl-basic-vg.sh
+endif
+endif
+
+
 if ENABLE_OMUXSOCK
 TESTS += uxsock_simple.sh
 endif
@@ -710,7 +745,14 @@ if ENABLE_RELP
 TESTS += sndrcv_relp.sh \
 	 sndrcv_relp_rebind.sh \
 	 imrelp-basic.sh \
-	 imrelp-manyconn.sh
+	 imrelp-manyconn.sh \
+	 imrelp-maxDataSize-error.sh \
+	 imrelp-long-msg.sh \
+	 imrelp-oversizeMode-truncate.sh \
+	 imrelp-oversizeMode-accept.sh \
+	 glbl-oversizeMsg-log.sh \
+	 glbl-oversizeMsg-truncate.sh \
+	 glbl-oversizeMsg-split.sh
 if ENABLE_GNUTLS
 TESTS += \
          sndrcv_relp_tls.sh \
@@ -782,6 +824,9 @@ TESTS += \
 	imfile-endregex-timeout-with-shutdown.sh \
 	imfile-endregex-timeout-with-shutdown-polling.sh \
 	imfile-persist-state-1.sh \
+	imfile-freshStartTail1.sh \
+	imfile-freshStartTail2.sh \
+	imfile-freshStartTail3.sh \
 	imfile-wildcards.sh \
 	imfile-wildcards-dirs.sh \
 	imfile-wildcards-dirs2.sh \
@@ -793,7 +838,8 @@ TESTS += \
 	imfile-wildcards-dirs-multi5-polling.sh \
 	imfile-old-state-file.sh \
 	imfile-rename-while-stopped.sh \
-	imfile-rename.sh
+	imfile-rename.sh \
+	glbl-oversizeMsg-truncate-imfile.sh
 
 if HAVE_VALGRIND
 TESTS += \
@@ -810,6 +856,15 @@ TESTS += \
 	 omtcl.sh
 endif
 
+if ENABLE_MMKUBERNETES
+TESTS += \
+	mmkubernetes-basic.sh
+if HAVE_VALGRIND
+TESTS += \
+	mmkubernetes-basic-vg.sh
+endif
+endif
+
 endif # if ENABLE_TESTBENCH
 
 TESTS_ENVIRONMENT = RSYSLOG_MODDIR='$(abs_top_builddir)'/runtime/.libs/
@@ -818,6 +873,7 @@ test_files = testbench.h runtime-dummy.c
 
 EXTRA_DIST= \
 	internal-errmsg-memleak-vg.sh \
+	glbl-oversizeMsg-log-vg.sh \
 	empty-hostname.sh \
 	hostname-getaddrinfo-fail.sh \
 	hostname-with-slash-pmrfc5424.sh \
@@ -949,6 +1005,7 @@ EXTRA_DIST= \
 	rsf_getenv.sh \
 	testsuites/rsf_getenv.conf \
 	diskq-rfc5424.sh \
+	diskqueue-full.sh \
 	diskqueue.sh \
 	testsuites/diskqueue.conf \
 	arrayqueue.sh \
@@ -1008,6 +1065,9 @@ EXTRA_DIST= \
 	rscript_backticks-vg.sh \
 	rscript_previous_action_suspended.sh \
 	rscript_str2num_negative.sh \
+	rs-cnum.sh \
+	rs-int2hex.sh \
+	rs-substring.sh \
 	mmanon_random_32_ipv4.sh \
 	mmanon_random_cons_32_ipv4.sh \
 	mmanon_recognize_ipv4.sh \
@@ -1043,6 +1103,8 @@ EXTRA_DIST= \
 	testsuites/stop-msgvar.conf \
 	omfwd-keepalive.sh \
 	omfile-read-only-errmsg.sh \
+	omfile-null-filename.sh \
+	omfile-whitespace-filename.sh \
 	omfile-read-only.sh \
 	omfile_both_files_set.sh \
 	msgvar-concurrency.sh \
@@ -1168,6 +1230,8 @@ EXTRA_DIST= \
 	mmjsonparse-w-o-cookie.sh \
 	mmjsonparse-w-o-cookie-multi-spaces.sh \
 	mmjsonparse_simple.sh \
+	mmjsonparse-invalid-containerName.sh \
+	wtpShutdownAll-assertionFailure.sh \
 	imptcp-oversize-message-display.sh \
 	imptcp-msg-truncation-on-number.sh \
 	imptcp-msg-truncation-on-number2.sh \
@@ -1175,6 +1239,8 @@ EXTRA_DIST= \
 	testsuites/mmjsonparse_simple.conf \
 	mmjsonparse_cim.sh \
 	testsuites/mmjsonparse_cim.conf \
+	mmjsonparse_cim2.sh \
+	mmjsonparse_localvar.sh \
 	mmdb.sh \
 	mmdb.rb \
 	test.mmdb \
@@ -1194,25 +1260,15 @@ EXTRA_DIST= \
 	es-basic-es6.0.sh \
 	es-basic.sh \
 	es-basic-vgthread.sh \
-	testsuites/es-basic.conf \
 	es-basic-bulk.sh \
-	testsuites/es-basic-bulk.conf \
 	es-basic-errfile-empty.sh \
-	testsuites/es-basic-errfile-empty.conf \
 	es-basic-errfile-popul.sh \
-	testsuites/es-basic-errfile-popul.conf \
 	es-bulk-errfile-empty.sh \
-	testsuites/es-bulk-errfile-empty.conf \
 	es-bulk-errfile-popul.sh \
-	testsuites/es-bulk-errfile-popul.conf \
 	es-bulk-errfile-popul-def-format.sh \
-	testsuites/es-bulk-errfile-popul-def-format.conf \
 	es-bulk-errfile-popul-erronly.sh \
-	testsuites/es-bulk-errfile-popul-erronly.conf \
 	es-bulk-errfile-popul-erronly-interleaved.sh \
-	testsuites/es-bulk-errfile-popul-erronly-interleaved.conf \
 	es-bulk-errfile-popul-def-interleaved.sh \
-	testsuites/es-bulk-errfile-popul-def-interleaved.conf \
 	es-basic-vg.sh \
 	es-basic-bulk-vg.sh \
 	es-basic-ha-vg.sh \
@@ -1244,12 +1300,30 @@ EXTRA_DIST= \
 	testsuites/udp-msgreduc-vg.conf \
 	manytcp-too-few-tls-vg.sh \
 	testsuites/manytcp-too-few-tls.conf \
+	imtcp-tls-ossl-basic.sh \
+	sndrcv_tls_ossl_anon_ipv4.sh \
+	testsuites/sndrcv_tls_ossl_anon_ipv4_sender.conf \
+	testsuites/sndrcv_tls_ossl_anon_ipv4_rcvr.conf \
+	sndrcv_tls_ossl_anon_ipv6.sh \
+	testsuites/sndrcv_tls_ossl_anon_ipv6_sender.conf \
+	testsuites/sndrcv_tls_ossl_anon_ipv6_rcvr.conf \
+	sndrcv_tls_ossl_anon_rebind.sh \
+	testsuites/sndrcv_tls_ossl_anon_rebind_sender.conf \
+	testsuites/sndrcv_tls_ossl_anon_rebind_rcvr.conf \
+	imtcp-tls-ossl-x509valid.sh \
+	imtcp-tls-ossl-x509name.sh \
+	imtcp-tls-ossl-x509fingerprint.sh \
+	imtcp-tls-ossl-basic-vg.sh \
 	manytcp.sh \
 	testsuites/manytcp.conf \
 	manyptcp.sh \
 	testsuites/manyptcp.conf \
 	imptcp-NUL.sh \
 	imptcp-NUL-rawmsg.sh \
+	imptcp_framing_regex.sh \
+	testsuites/imptcp_framing_regex.testdata \
+	imptcp_framing_regex-oversize.sh \
+	testsuites/imptcp_framing_regex-oversize.testdata \
 	imptcp_large.sh \
 	imptcp-connection-msg-disabled.sh \
 	imptcp-connection-msg-received.sh \
@@ -1339,6 +1413,13 @@ EXTRA_DIST= \
 	testsuites/sndrcv_rcvr.conf \
 	imrelp-basic.sh \
 	imrelp-manyconn.sh \
+	imrelp-maxDataSize-error.sh \
+	imrelp-long-msg.sh \
+	imrelp-oversizeMode-truncate.sh \
+	imrelp-oversizeMode-accept.sh \
+	glbl-oversizeMsg-log.sh \
+	glbl-oversizeMsg-truncate.sh \
+	glbl-oversizeMsg-split.sh \
 	sndrcv_relp.sh \
 	testsuites/sndrcv_relp_sender.conf \
 	testsuites/sndrcv_relp_rcvr.conf \
@@ -1377,35 +1458,34 @@ EXTRA_DIST= \
 	testsuites/action-tx-errfile.result \
 	pipeaction.sh \
 	testsuites/pipeaction.conf \
-	omprog-cleanup.sh \
-	omprog-cleanup-vg.sh \
-	omprog-cleanup-with-outfile.sh \
-	omprog-cleanup-when-unresponsive.sh \
-	omprog-cleanup-when-unresponsive-vg.sh \
-	omprog-noterm-cleanup.sh \
-	omprog-noterm-cleanup-vg.sh \
-	omprog-noterm-default.sh \
-	omprog-noterm-unresponsive.sh \
+	omprog-defaults.sh \
+	omprog-defaults-vg.sh \
 	omprog-feedback.sh \
+	omprog-feedback-vg.sh \
+	omprog-close-unresponsive.sh \
+	omprog-close-unresponsive-vg.sh \
+	omprog-close-unresponsive-noterm.sh \
+	omprog-restart-terminated.sh \
+	omprog-restart-terminated-vg.sh \
+	omprog-restart-terminated-outfile.sh \
 	omprog-transactions.sh \
+	omprog-transactions-vg.sh \
 	omprog-transactions-failed-messages.sh \
 	omprog-transactions-failed-commits.sh \
-	omprog-multiparam-vg.sh \
-	testsuites/omprog-cleanup.conf \
-	testsuites/omprog-noterm.conf \
-	testsuites/omprog-noterm-default.conf \
-	testsuites/omprog-noterm-unresponsive.conf \
-	testsuites/omprog-noterm.sh \
-	testsuites/omprog-cleanup-outfile.conf \
-	testsuites/omprog-cleanup-unresponsive.conf \
-	testsuites/omprog-test-bin.sh \
-	testsuites/term-ignoring-script.sh \
+	testsuites/omprog-defaults.conf \
+	testsuites/omprog-defaults-bin.sh \
 	testsuites/omprog-feedback.conf \
 	testsuites/omprog-feedback-bin.sh \
-	testsuites/omprog-transactions-bin.sh \
+	testsuites/omprog-close-unresponsive.conf \
+	testsuites/omprog-close-unresponsive-noterm.conf \
+	testsuites/omprog-close-unresponsive-bin.sh \
+	testsuites/omprog-restart-terminated.conf \
+	testsuites/omprog-restart-terminated-outfile.conf \
+	testsuites/omprog-restart-terminated-bin.sh \
 	testsuites/omprog-transactions.conf \
 	testsuites/omprog-transactions-failed-messages.conf \
 	testsuites/omprog-transactions-failed-commits.conf \
+	testsuites/omprog-transactions-bin.sh \
 	pipe_noreader.sh \
 	testsuites/pipe_noreader.conf \
 	uxsock_simple.sh \
@@ -1486,6 +1566,9 @@ EXTRA_DIST= \
 	imfile-endregex-timeout-with-shutdown.sh \
 	imfile-endregex-timeout-with-shutdown-polling.sh \
 	imfile-persist-state-1.sh \
+	imfile-freshStartTail1.sh \
+	imfile-freshStartTail2.sh \
+	imfile-freshStartTail3.sh \
 	imfile-truncate.sh \
 	imfile-wildcards.sh \
 	imfile-wildcards-dirs.sh \
@@ -1499,6 +1582,7 @@ EXTRA_DIST= \
 	imfile-old-state-file.sh \
 	imfile-rename-while-stopped.sh \
 	imfile-rename.sh \
+	glbl-oversizeMsg-truncate-imfile.sh \
 	testsuites/imfile-wildcards-simple.conf \
 	testsuites/imfile-wildcards-dirs.conf \
 	testsuites/imfile-wildcards-dirs-multi.conf \
@@ -1683,6 +1767,12 @@ EXTRA_DIST= \
 	testsuites/tokenized_input \
 	rscript_random.sh \
 	testsuites/rscript_random.conf \
+	rscript_hash32.sh \
+	rscript_hash32-vg.sh \
+	testsuites/rscript_hash32.conf \
+	rscript_hash64.sh \
+	rscript_hash64-vg.sh \
+	testsuites/rscript_hash64.conf \
 	rscript_replace.sh \
 	testsuites/rscript_replace.conf \
 	rscript_replace_complex.sh \
@@ -1846,23 +1936,36 @@ EXTRA_DIST= \
 	pgsql-basic-cnf6-vg.sh \
 	pgsql-template-cnf6-vg.sh \
 	pgsql-actq-mt-withpause-vg.sh \
-	../devtools/prep-mysql-db.sh
+	../devtools/prep-mysql-db.sh \
+	mmkubernetes-basic.sh \
+	mmkubernetes-basic-vg.sh \
+	mmkubernetes_test_server.py \
+	mmkubernetes-basic.out.json \
+	es-writeoperation.sh
 
 ourtail_SOURCES = ourtail.c
 msleep_SOURCES = msleep.c
 omrelp_dflt_port_SOURCES = omrelp_dflt_port.c
 mangle_qi_SOURCES = mangle_qi.c
 chkseq_SOURCES = chkseq.c
+have_relpSrvSetOversizeMode = have_relpSrvSetOversizeMode.c
 
 uxsockrcvr_SOURCES = uxsockrcvr.c
 uxsockrcvr_LDADD = $(SOL_LIBS)
 
 tcpflood_SOURCES = tcpflood.c
-tcpflood_CFLAGS = $(PTHREADS_CFLAGS) $(RELP_CFLAGS) $(GNUTLS_CFLAGS)
-tcpflood_CPPFLAGS = $(PTHREADS_CFLAGS) $(RELP_CFLAGS) $(GNUTLS_CFLAGS)
-tcpflood_LDADD = $(SOL_LIBS) $(PTHREADS_LIBS) $(RELP_LIBS) $(GNUTLS_LIBS)
+tcpflood_CFLAGS = $(PTHREADS_CFLAGS) $(RELP_CFLAGS)
+tcpflood_CPPFLAGS = $(PTHREADS_CFLAGS) $(RELP_CFLAGS)
+tcpflood_LDADD = $(SOL_LIBS) $(PTHREADS_LIBS) $(RELP_LIBS)
 if ENABLE_GNUTLS
-tcpflood_LDADD += -lgcrypt
+tcpflood_CFLAGS += $(GNUTLS_CFLAGS)
+tcpflood_CPPFLAGS += $(GNUTLS_CFLAGS)
+tcpflood_LDADD += $(GNUTLS_LIBS) -lgcrypt
+endif
+if ENABLE_OPENSSL
+tcpflood_CFLAGS += $(OPENSSL_CFLAGS)
+tcpflood_CPPFLAGS += $(OPENSSL_CFLAGS)
+tcpflood_LDADD += $(OPENSSL_LIBS)
 endif
 
 minitcpsrv_SOURCES = minitcpsrvr.c

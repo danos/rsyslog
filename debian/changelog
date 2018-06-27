@@ -1,3 +1,25 @@
+rsyslog (8.36.0-1) unstable; urgency=medium
+
+  * New upstream version 8.36.0
+  * Rebase patches
+  * Disable liblogging-stdlog support.
+    This functionality is scheduled to be removed upstream in one of the
+    upcoming releases.
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 26 Jun 2018 19:29:08 +0200
+
+rsyslog (8.35.0-1) unstable; urgency=medium
+
+  * New upstream version 8.35.0
+  * Rebase patches
+  * Drop obsolete --disable-libcurl configure switch
+  * rsyslog.service: move LimitNOFILE to correct section
+  * Drop versioned init-system-helpers dependency.
+    The version in stable is recent enough and init-system-helpers is
+    Essential, so the dependency is no longer needed.
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 06 Jun 2018 17:13:45 +0200
+
 rsyslog (8.34.0-1~bpo9+1) stretch-backports; urgency=medium
 
   * Rebuild for stretch-backports.

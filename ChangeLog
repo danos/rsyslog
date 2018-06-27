@@ -1,4 +1,395 @@
 ------------------------------------------------------------------------------
+Version 8.36.0 [v8-stable] 2018-06-26
+- build system change:
+  Liblogging-stdlog was introduced to provide a broader ability to send rsyslog
+  internal logs to different sources. However, most distros did not pick up
+  that capability and so instead we do a regular syslog() call. We assume that
+  the actual functionality is never used in practice, so we plan to retire it.
+  That makes building rsyslog from source easier.
+  The plan is to disable use of liblogging-stdlog by default during
+  configure. So users (and distros!) can still opt-in to have it enabled if
+  they desire.
+  A couple of releases later, we want to completely remove the functionality,
+  except if there has desire been shown in the meantime which justifies to keep
+  liblogging-stdlog.
+  This version disabled liblogging-stdlog by default. We now also
+  emit a warning message ("liblogging-stdlog will go away") so that users
+  know what is going on and my react.
+  closes https://github.com/rsyslog/rsyslog/issues/2705
+  see also https://github.com/rsyslog/rsyslog/issues/2706
+- add openssl driver alongside GnuTLS one for TLS communication
+  The openssl driver is curently experimental. It will become the new preferred
+  driver as it permits us to provide much better end-user error message than
+  we could provide with GnuTLS. It is also less picky with certificate files
+  and provides specific error messages if there are certificate problems.
+  closes: https://github.com/rsyslog/rsyslog/issues/1390
+  closes: https://github.com/rsyslog/rsyslog/issues/1840
+  closes: https://github.com/rsyslog/rsyslog/issues/1352
+  closes: https://github.com/rsyslog/rsyslog/issues/1702
+  closes: https://github.com/rsyslog/rsyslog/issues/2547
+- GnuTLS TLS driver: support intermediate certificates
+  this is necessary for certificate chains
+  Thanks to Arne Nordmark for providing the patch.
+  closes https://github.com/rsyslog/rsyslog/issues/2762
+- omelasticsearch: write op types; bulk rejection retries
+  * Add support for a 'create' write operation type in addition to
+    the default 'index'.  Using create allows specifying a unique id
+    for each record, and allows duplicate document detection.
+  * Add support for checking each record returned in a bulk index
+    request response.  Allow specifying a ruleset to send each failed
+    record to.  Add a local variable `omes` which contains the
+    information in the error response, so that users can control how
+    to handle responses e.g. retry, or send to an error file.
+  * Add support for response stats - count successes, duplicates, and
+    different types of failures.
+  * Add testing for bulk index rejections.
+  Thanks to Richard Megginson for the patch.
+- lookup tables: reload message now with "info" severity (was "error")
+  thanks to Adam Chalkley for the patch
+- imptcp: add support for regex-based framing
+  for complex multi-line messages (XML in particular), the multiLine method
+  does not work well. We now have a capability to specify via a regex when
+  a frame starts (and the previous thus ends).
+  adds imptcp input parameter "framing.delimiter.regex"
+- imjournal: add statistics counter
+  following statistics counter are now supported by imjournal
+  - submitted = total number of messages submitted for processing
+  closes https://github.com/rsyslog/rsyslog/issues/2549
+- config: permit 4-digit file creation modes
+  permit 4-digit file creation modes (actually 5 with the leading zero) so
+  that the setgid bit can also be set (and anything else on that position.
+  closes https://github.com/rsyslog/rsyslog/issues/1092
+- ommongodb: add possibility to ignore some insertion error code
+  new config parameter "allowed_error_codes", which will be ignored if
+  they happen. For example, 11000 DuplicateKey in case of collection
+  containing a unique field.
+  Thanks to Hugo Soszynski for contributing this work
+- omprog: simplify 'plugin-with-feedback.py' example
+  Make the skeleton easier to understand by removing transaction support.
+  Also, transaction failures did not work as explained in the skeleton,
+  because of issue #2420. In the future, a 'plugin-with-transactions.py'
+  example can be added, ideally once the issue is solved.
+  Thanks to Joan Sala for contributing this.
+- core: misadressing when writing disk queue files
+  when writing disk queue files during shutdown, access to freed
+  memory can occur under these circumstances:
+  - action A is processing data, but could not complete it
+    most importantly, the current in-process batch needs not to
+    be totally completed. Most probable cause for this scenario
+    is a suspended action in retry mode.
+  - action A is called from a ruleset RA which
+    - does not have a queue assigned
+    - where RA is called from a ruleset RO which is bound
+      to the input from which the message originated
+    - RO must be defined before RA inside the expanded config
+  - Disk queues (or the disk part of a DA queue) must be utilized by A
+  When re-injecting the unprocessed messages from A into the disk queue, the
+  name of ruleset RO is accessed (for persisting to disk). However, RO is
+  already destructed at this point in time.
+  The patch changes the shutdown processing of rulesets, so that all
+  shutdown processing is done before any ruleset data is destructed. This
+  ensures that all data items which potentially need to be accessed
+  remain valid as long as some part may potentially try to access them.
+  This follows a the approach used in
+     https://github.com/rsyslog/rsyslog/pull/1857
+  where obviously that part of the problem was not noticed.
+  see also https://github.com/rsyslog/rsyslog/issues/1122
+  closes https://github.com/rsyslog/rsyslog/issues/2742
+- core: fix message loss on target unavailibility during shutdown
+  Triggering condition:
+  - action queue in disk mode (or DA)
+  - batch is being processed by failed action in retry mode
+  - rsyslog is shut down without resuming action
+  In these cases messages may be lost by not properly writing them
+  back to the disk queue.
+  closes https://github.com/rsyslog/rsyslog/issues/2760
+- imrelp bugfix: error message "librelp too old" is always emitted ...
+  ... even if librelp is current. The codition check was actually missing.
+  This commit adds it.
+  closes https://github.com/rsyslog/rsyslog/issues/2712
+- imrelp: segfault on startup when cert without priv key is configured
+  closes https://github.com/rsyslog/rsyslog/issues/2747
+- omrelp bugfix: segfault on first message sent when authmode was wrong
+  A segfault could occur if the authmode was configured to an invalid value.
+  This is now caught during config processing and an error is reported.
+  closes https://github.com/rsyslog/rsyslog/issues/2743
+- imfile bugfix: double-free on module shutdown
+  detected by code review, not seen in practice
+- imfile/core bugfix: potential misadressing in string copy routine
+  This can be exposed via imfile, as follows:
+  - use a regex to process multiline messages
+  - configure timeouts
+  - make sure imfile reads a partial message
+  - wait so that at least one timeout occurs
+  - add the message termination sequence
+  This leads to a misadressing, which may have no obvious effects potentially
+  up to a segfault.
+  closes https://github.com/rsyslog/rsyslog/issues/2661
+- imfile bugfix: if freshStartTail is set some initial file lines missing
+  When the option is set and a new file is created after rsyslog startup,
+  freshStartTail is also applied to it. That is data written quickly to it
+  (before rsyslog can process it) will potentially be discarded. If so,
+  and how much, depends on the timing between rsyslog and the logging process.
+  This problem is most likely to be seen in polling mode, where a relatively
+  long time may be required for rsyslog to find the new file.
+  This is changed so that now freshStartTail only applies to files that
+  are already-existing during rsyslog's initial processing of the file
+  monitors. HOWEVER, depending on the number and location (network?) of
+  existing files, this initial startup processing may take some time as
+  well. If another process creates a new file at exactly the time of
+  startup processing and writes data to it, rsyslog might detect this
+  file and it's data as prexisting and may skip it. This race is inevitable.
+  So when freshStartTail is used, some risk of data loss exists. The same
+  holds true if between the last shutdown of rsyslog and its restart log
+  file content has been added. This is no rsyslog bug if it occurs.
+  As such, the rsyslog team advises against activating the freshStartTail
+  option.
+  closes https://github.com/rsyslog/rsyslog/issues/2464
+- core: fix undefined behaviour (unsigned computation may lead to value < 0)
+  This was detected by LLVM UBSAN. On some platforms re-setting the rawmsg
+  inside the message object could lead to invalid computation due to the
+  fact the the computation was carried out as unsigned and only then
+  converted to integer.
+  No known problem in practice.
+- CI/QA:
+  - improved Elasticsearch tests so they can now be run without system-
+    installed ES service; also enables us to specify specific ES versions
+    and should now make the tests executable inside a container
+------------------------------------------------------------------------------
+Version 8.35.0 [v8-stable] 2018-05-15
+- imptcp: add ability to configure socket backlog
+  this can be useful under heavy load.
+  For a detailled discussion see https://github.com/rsyslog/rsyslog/pull/2561
+  Thanks to Maxime Graff for implementing this.
+- omfile: do not permit filename that only consists of whitespace
+- fmhash: new hash function module
+  implements hash32() and hash64() functions
+  Thanks to Harshvardhan Shrivastava for implementing these
+- some better error messages
+- imklog: add ratelimiting capability
+  On Linux kernel logs are ratelimited only for messages using
+  printk_ratelimit().  Some logs do not use this facility, so
+  we ratelimit kernel ourselves.
+  Thanks to Berend De Schouwer for the patch.
+- omkafka: added impstats counters for librdkafka returned statistics
+  Adds:
+  * statscallback counters
+  * librdkafka failure and error counters
+  * acked message counter
+  Thanks to Abdul Waheed for implementing this.
+- imudp
+  * use rsyslog message rate-limiter instead of home-grown one
+    imudp introduced it's own (feature-limited) rate-limiting capability for
+    message on disallowed senders before we had central rate-limiters
+    inside rsyslog. Also, that code evolved from running on a single
+    thread to running on multiple threads, which introduced data races
+    and so made unreliable.
+    Now we removed the old rate-limiting capability and depend on the
+    system rate limiter for internal rsyslog messages.
+    closes https://github.com/rsyslog/rsyslog/issues/2467
+  * add stats counter "disallowed"
+    counts the number of messages discarded due to being received from
+    disallowed senders
+    see also https://github.com/rsyslog/rsyslog/issues/2467
+- imrelp: add parameter "oversizeMode"
+  Permits to instruct librelp how to handle oversize messages. The new default
+  is to truncate messages. Previously, the connection was aborted, what often
+  lead to stuck messages at the sender side. Now, there are three options passed
+  down to librelp:
+  * abort - same behavior as previously, connection is aborted on error
+  * truncate - do not abort but instead truncate oversize message to
+               configured max size
+  * accept - accept all oversize messages (note: this can cause security issues,
+             see doc for details)
+  see also https://github.com/rsyslog/rsyslog/pull/1525#issuecomment-384179393
+  see also https://github.com/rsyslog/rsyslog/issues/2190
+  closes https://github.com/rsyslog/rsyslog/issues/2633
+  closes https://github.com/rsyslog/rsyslog/issues/1741
+  closes https://github.com/rsyslog/rsyslog/issues/1782
+  closes https://github.com/rsyslog/rsyslog/issues/2496
+- core: consistent handling of oversize input messages
+  In the community we frequently discuss handling of oversize messages.
+  David Lang rightfully suggested to create a central capability inside
+  rsyslog core to handle them.
+  We need to make a distinction between input and output messages. Also,
+  input messages frequently need to have some size restrictions done at
+  a lower layer (e.g. protocol layer) for security reasons. Nevertheless,
+  we should have a central capability
+  * for cases where it need not be handled at a lower level
+  * as a safeguard when a module invalidly emits it (imfile is an example,
+    see https://github.com/rsyslog/rsyslog/pull/2632 for a try to fix it
+    on the module level - we will replace that with the new capability
+    described here).
+  The central capability works on message submission, and so cannot be
+  circumvented. It has these capabilities:
+  * overisze message handling modes:
+    - truncate message
+    - split message
+      this is of questionable use, but also often requested. In that mode,
+      the oversize message content is split into multiple messages. Usually,
+      this ends up with message segments where all but the first is lost
+      anyhow as the regular filter rules do not match the other fragments.
+      As it is requested, we still implemented it.
+    - accept message as is, even if oversize
+      This may be required for some cases. Most importantly, it makes
+      quite some sense when writing messages to file, where oversize
+      does not matter (accept from a DoS PoV).
+  * report message to a special "oversize message log file" (not via the
+    regular engine, as that would obviously cause another oversize message)
+  This commit, as the title says, handles oversize INPUT messages.
+  see also https://github.com/rsyslog/rsyslog/issues/2190
+  closes https://github.com/rsyslog/rsyslog/issues/2681
+  closes https://github.com/rsyslog/rsyslog/issues/498
+  Note: this commit adds global parameters:
+   * "oversizemsg.errorfile",
+     is used to specify the location of the oversize message log file.
+   * "oversizemsg.report",
+     is used to control if an error shall be reported when an oversize
+     message is seen. The default it "on".
+   * add global parameter "oversizemsg.input.mode"
+     is used to specify the mode with which oversized messages will
+     be handled.
+- omfwd: add support for bind-to-address for UDP
+  To allow the same source address to be used regardless of the egress
+  interface taken, an option is added for an address to bind the datagram
+  socket to. Similarly to imudp, it is necessary to add an ipfreebind
+  option which is set by default, so as to avoid an excess of errors at
+  startup before the network interface has come up. This enhancement
+  allows a usecase on networking devices, by which a source interface
+  that is typically a loopback is specified, on which an address to bind
+  to is configured. This is so that the same source address is used for
+  all packets from rsyslog.
+  Thanks to Mike Manning for the patch.
+- template systemd service file proposes higher permitted file handle limit
+  Especially on busy systems the default are too low. Please keep in mind
+  that on a very busy system even the now-proposed setting may be too low.
+  Thanks to github user jvymazal for the patch.
+- imuxsock: replace select() call by poll()
+  While extremely unlikely, imuxsock could abort if a file descriptor
+  > 1024 was received during the startup phase (never occured in
+  practice, but theoretically could if imfile monitored a large number
+  of files and were loaded before imuxsock - and maybe other
+  strange cases).
+  see also https://github.com/rsyslog/rsyslog/issues/2615
+- nsdsel_ptcp: replace select() by poll()
+  This removes us of problems with fds > 1024. The performance will
+  probably also increase in most cases.
+  Note this is not a replacement for the epoll drivers, but a general
+  stability improvement when epoll() is not available for some reason.
+  see also https://github.com/rsyslog/rsyslog/issues/2615
+  closes https://github.com/rsyslog/rsyslog/issues/1728
+  closes https://github.com/rsyslog/rsyslog/issues/1459
+- omprog: refactor tests, fix child closing issues
+  Refactor omprog tests. Fix sync issues in these tests by
+  using the feedback mode (confirmMessages=on) to synchronize
+  the test with the external program. Closes #2403 (I hope)
+  Fix omprog not properly closing child process when
+  signalOnClose=on. Needed for the new tests. Closes #2599
+  Fix omprog not waiting for the child process to terminate
+  when signalOnClose=off. Needed for the new tests. Closes #2600
+  Close all fds before executing the child even when valgrind
+  is enabled (--enable-valgrind). Needed for the new tests.
+  Fix memory leak when the xxxTransactionMark parameters were
+  used.
+  Thanks to Joan Sala for the patch.
+- core: config optimizer did not handle call_indirect
+  This also caused the emission of an "internal error" error message
+  closes https://github.com/rsyslog/rsyslog/issues/2665
+- debug support: add capability to print testbench-specific timeout reports
+  done by setting RSYSLOG_DEBUG_TIMEOUTS_TO_STDERR to "on"
+  this is by default activated inside the testbench
+- mmgrok: fix potential segfault
+  The modules used strtok(), which is not thread-safe. So it will potentially
+  segfault when multiple instances are spawned (what e.g. happens on busy
+  systems).
+  This patch replaces strtok() with its thread-safe counterpart
+  strtok_r().
+  see also https://github.com/rsyslog/rsyslog/issues/1359
+- imrelp bugfix: maxDataSize could be set lower than maxMessageSize
+  maxDataSize specifies the length which will still be accepted
+  It previously could be set to any value, including values lower than the
+  configured rsyslog max message size, which makes no sense. Now this is
+  checked an error message is emitted if the size is set too low.
+- build system bugfix: build broken if liblogging-stdlog installed in custom path
+  Thanks to Dirk Hörner for the patch.
+- core bugfix: segfault on queue shutdown
+  if a ruleset queue is in direct mode, a segfault can occur during
+  rsyslog shutdown. The root cause is that a direct queue does not
+  have an associated worker thread pool, but the ruleset destructor
+  does not anticipate that and tries to destruct the worker thread
+  pool. It needs to do this itself, as otherwise we get a race
+  between rulesets on shutdown.
+  This was a regression from
+    https://github.com/rsyslog/rsyslog/commit/3fbd901b3e6300010
+  closes https://github.com/rsyslog/rsyslog/issues/2480
+- imfile bugfix: statefiles contain invalid JSON
+  When imfile rewrites state files, it does not truncate previous
+  content. If the new content is smaller than the existing one, the
+  existing part will not be overwritten, resulting in invalid json.
+  That in turn can lead to some other failures.
+  closes https://github.com/rsyslog/rsyslog/issues/2662
+- omfile bugfix: segfault if empty filename was given
+  closes https://github.com/rsyslog/rsyslog/issues/2417
+- fix build issues when atomic operations are not present
+  for details, see https://github.com/rsyslog/rsyslog/pull/2604
+- lmsig_ksils12 bugfix: build and static analyzer issues
+  The module had a couple of problems building as well as some potential
+  errors detected by clang static analyzer. These have been fixed.
+  Thanks to Allan Park for the patch.
+  closes https://github.com/rsyslog/rsyslog/issues/2517
+- impstats bugfix: segfault if bound to non-existing ruleset
+  segfault happens during shutdown; up until unload of impstats,
+  rsyslog works correctly, except that no pstats are emitted. This
+  can be considered to be expected, because the error message
+  indicates the default ruleset is used instead. This is what
+  now actually happens.
+  closes https://github.com/rsyslog/rsyslog/issues/2645
+- mmjsonparse bugfix: invalid container name was not detected
+  in debug builds, this will trigger an assertion. In production
+  builds, an rsyslog internal error is logged, but rsyslog
+  continues to run.
+  closes https://github.com/rsyslog/rsyslog/issues/2584
+- mmkubernetes bugfixes: fix lnrules, add defaults, add test
+  - Fix lnrules for CONTAINER_NAME
+  - Add pkg check for lognorm >= 2.0.3 so we can set the macro
+    to enable ln_loadSamplesFromString
+  - Add some reasonable default values for parameters, such as
+    kubernetesurl https://kubernetes.default.svc.cluster.local:443
+  - Clean up sample.conf configuration file
+  Thanks to Richard Megginson for the patch set.
+- build system bugfix: --enable-atomic-operations did not work
+  closes https://github.com/rsyslog/rsyslog/pull/2604
+- bugfix: rsyslog aborts on startup when specific config errors are made 
+  The following errors must be made in rsyslog.conf:
+  * no action present
+  * a call statement is used on an undefined ruleset
+  In this case, rsyslog emits an error message on the missing actions and
+  then segfaults. Depending on memory layout, it may also continue to run
+  but do nothing except accepting messages as no action is configured.
+  This patch make rsyslog properly terminate after the error message. It
+  is a change in behavior, but there really is no reason why a defunct
+  instance should be kept running.
+  closes https://github.com/rsyslog/rsyslog/issues/2399
+- build system: remove no longer needed --enable-libcurl configure switch
+  The --enable-libcurl switch was added to be able to disable libcurl
+  functionality inside the rsyslog core, see 46f4f43. As libcurl is no
+  longer used inside the core (due to introducing function modules),
+  --enable-libcurl needs to be removed.
+  closes https://github.com/rsyslog/rsyslog/issues/2628
+- QA/CI
+  * fixed races in some tests; root cause was that default enq timeout was too
+    low - we may also see in the future that other tests also need adjustment
+    (note that this is not a code problem but rather slow CI environments,
+    so increasing the timeout to get to a stable test state is the absoulutely
+    correct thing to do)
+  * enabled some additional useful compiler warnings
+  * new test for diskqueue hitting configured disk space limit
+  * new tests for omfile
+  * added tests for mmkubernetes
+  * added tests for some script functions that were missing them
+  * made far more test compatible with FreeBSD, so that we now have fuller
+    coverage there
+------------------------------------------------------------------------------
 Version 8.34.0 [v8-stable] 2018-04-03
 - mmkubernetes: new module
   Thanks to Richard Megginson and Peter Portante for contributing the module.

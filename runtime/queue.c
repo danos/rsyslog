@@ -1181,7 +1181,8 @@ tryShutdownWorkersWithinQueueTimeout(qqueue_t *const pThis)
 	iRetLocal = wtpShutdownAll(pThis->pWtpReg, wtpState_SHUTDOWN, &tTimeout);
 	if(iRetLocal == RS_RET_TIMED_OUT) {
 		LogMsg(0, RS_RET_TIMED_OUT, LOG_INFO,
-			"%s: regular queue shutdown timed out on primary queue (this is OK, timeout was %d)",
+			"%s: regular queue shutdown timed out on primary queue "
+			"(this is OK, timeout was %d)",
 			objGetName((obj_t*) pThis), pThis->toQShutdown);
 	} else {
 		DBGOPRINT((obj_t*) pThis, "regular queue workers shut down.\n");
@@ -1301,6 +1302,8 @@ cancelWorkers(qqueue_t *pThis)
 	rsRetVal iRetLocal;
 	DEFiRet;
 
+	assert(pThis->qType != QUEUETYPE_DIRECT);
+
 	/* Now queue workers should have terminated. If not, we need to cancel them as we have applied
 	 * all timeout setting. If any worker in any queue still executes, its consumer is possibly
 	 * long-running and cancelling is the only way to get rid of it.
@@ -1360,10 +1363,14 @@ qqueueShutdownWorkers(qqueue_t *const pThis)
 {
 	DEFiRet;
 
+	if(pThis->qType == QUEUETYPE_DIRECT) {
+		FINALIZE;
+	}
+
 	ISOBJ_TYPE_assert(pThis, qqueue);
 	ASSERT(pThis->pqParent == NULL); /* detect invalid calling sequence */
 
-	DBGOPRINT((obj_t*) pThis, "initiating worker thread shutdown sequence\n");
+	DBGOPRINT((obj_t*) pThis, "initiating worker thread shutdown sequence %p\n", pThis);
 
 	CHKiRet(tryShutdownWorkersWithinQueueTimeout(pThis));
 
@@ -1659,6 +1666,7 @@ DeleteProcessedBatch(qqueue_t *pThis, batch_t *pBatch)
 
 	for(i = 0 ; i < pBatch->nElem ; ++i) {
 		pMsg = pBatch->pElem[i].pMsg;
+		DBGPRINTF("DeleteProcessedBatch: etry %d state %d\n", i, pBatch->eltState[i]);
 		if(   pBatch->eltState[i] == BATCH_STATE_RDY
 		   || pBatch->eltState[i] == BATCH_STATE_SUB) {
 			localRet = doEnqSingleObj(pThis, eFLOWCTL_NO_DELAY, MsgAddRef(pMsg));
@@ -1771,6 +1779,8 @@ DequeueConsumableElements(qqueue_t *pThis, wti_t *pWti, int *piRemainingQueueSiz
 	/* it is sufficient to persist only when the bulk of work is done */
 	qqueueChkPersist(pThis, nDequeued+nDiscarded+nDeleted);
 
+	DBGOPRINT((obj_t*) pThis, "dequeued %d consumable elements, szlog %d sz phys %d\n",
+		nDequeued, getLogicalQueueSize(pThis), getPhysicalQueueSize(pThis));
 	pWti->batch.nElem = nDequeued;
 	pWti->batch.nElemDeq = nDequeued + nDiscarded;
 	pWti->batch.deqID = getNextDeqID(pThis);
@@ -2927,8 +2937,19 @@ doEnqSingleObj(qqueue_t *pThis, flowControl_t flowCtlType, smsg_t *pMsg)
 				ABORT_FINALIZE(RS_RET_FORCE_TERM);
 			}
 			timeoutComp(&t, pThis->toEnq);
-			if(pthread_cond_timedwait(&pThis->notFull, pThis->mut, &t) != 0) {
+			const int r = pthread_cond_timedwait(&pThis->notFull, pThis->mut, &t);
+			if(dbgTimeoutToStderr && r != 0) {
+				fprintf(stderr, "%lld: queue timeout(%dms), error %d%s, "
+					"lost message %s\n", (long long) time(NULL), pThis->toEnq,
+					r, ( r == ETIMEDOUT) ? "[ETIMEDOUT]" : "", pMsg->pszRawMsg);
+			}
+			if(r == ETIMEDOUT) {
 				DBGOPRINT((obj_t*) pThis, "doEnqSingleObject: cond timeout, dropping message!\n");
+				STATSCOUNTER_INC(pThis->ctrFDscrd, pThis->mutCtrFDscrd);
+				msgDestruct(&pMsg);
+				ABORT_FINALIZE(RS_RET_QUEUE_FULL);
+			} else if(r != 0) {
+				DBGOPRINT((obj_t*) pThis, "doEnqSingleObject: cond error %d, dropping message!\n", r);
 				STATSCOUNTER_INC(pThis->ctrFDscrd, pThis->mutCtrFDscrd);
 				msgDestruct(&pMsg);
 				ABORT_FINALIZE(RS_RET_QUEUE_FULL);

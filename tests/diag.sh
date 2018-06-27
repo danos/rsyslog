@@ -42,6 +42,8 @@
 #export RSYSLOG_DEBUGLOG="log"
 TB_TIMEOUT_STARTSTOP=400 # timeout for start/stop rsyslogd in tenths (!) of a second 400 => 40 sec
 # note that 40sec for the startup should be sufficient even on very slow machines. we changed this from 2min on 2017-12-12
+export RSYSLOG_DEBUG_TIMEOUTS_TO_STDERR="on"  # we want to know when we loose messages due to timeouts
+
 
 function rsyslog_testbench_test_url_access() {
     local missing_requirements=
@@ -69,8 +71,8 @@ dep_zk_url=http://www-us.apache.org/dist/zookeeper/zookeeper-3.4.10/zookeeper-3.
 dep_zk_cached_file=$dep_cache_dir/zookeeper-3.4.10.tar.gz
 dep_kafka_url=http://www-us.apache.org/dist/kafka/0.10.2.1/kafka_2.12-0.10.2.1.tgz
 if [ -z "$ES_DOWNLOAD" ]; then
-	dep_es_url=https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.6.3.tar.gz
-	dep_es_cached_file=$dep_cache_dir/elasticsearch-5.6.3.tar.gz
+	dep_es_url=https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.6.9.tar.gz
+	dep_es_cached_file=$dep_cache_dir/elasticsearch-5.6.9.tar.gz
 else
 	dep_es_url="https://artifacts.elastic.co/downloads/elasticsearch/$ES_DOWNLOAD"
 	dep_es_cached_file="$dep_cache_dir/$ES_DOWNLOAD"
@@ -140,7 +142,7 @@ case $1 in
 		rm -f -r rsyslog.input.*
 		rm -f rsyslog.input rsyslog.empty rsyslog.input.* imfile-state* omkafka-failed.data
 		rm -f testconf.conf HOSTNAME
-		rm -f rsyslog.errorfile tmp.qi
+		rm -f rsyslog.errorfile tmp.qi nocert
 		rm -f core.* vgcore.* core*
 		# Note: rsyslog.action.*.include must NOT be deleted, as it
 		# is used to setup some parameters BEFORE calling init. This
@@ -185,7 +187,7 @@ case $1 in
 		rm -f -r rsyslog.input.*
 		rm -f rsyslog.input rsyslog.conf.tlscert stat-file1 rsyslog.empty rsyslog.input.* imfile-state*
 		rm -f testconf.conf
-		rm -f rsyslog.errorfile tmp.qi
+		rm -f rsyslog.errorfile tmp.qi nocert
 		rm -f HOSTNAME imfile-state:.-rsyslog.input
 		unset TCPFLOOD_EXTRA_OPTS
 		echo  -------------------------------------------------------------------------------
@@ -197,13 +199,19 @@ case $1 in
 		command -v $2
 		if [ $? -ne 0 ] ; then
 			echo Testbench requires unavailable command: $2
-			echo skipping this test
+			exit 77
+		fi
+		;;
+   'check-ipv6-available')   # check if IPv6  - will exit 77 when not OK
+		ifconfig -a |grep ::1
+		if [ $? -ne 0 ] ; then
+			echo this test requires an active IPv6 stack, which we do not have here
 			exit 77
 		fi
 		;;
    'es-init')   # initialize local Elasticsearch *testbench* instance for the next
                 # test. NOTE: do NOT put anything useful on that instance!
-		curl -XDELETE localhost:9200/rsyslog_testbench
+		curl --silent -XDELETE localhost:${ES_PORT:-9200}/rsyslog_testbench
 		;;
    'es-getdata') # read data from ES to a local file so that we can process
 		if [ "x$3" == "x" ]; then
@@ -215,7 +223,7 @@ case $1 in
    		# it with out regular tooling.
 		# Note: param 2 MUST be number of records to read (ES does
 		# not return the full set unless you tell it explicitely).
-		curl localhost:$es_get_port/rsyslog_testbench/_search?size=$2 > work
+		curl --silent localhost:$es_get_port/rsyslog_testbench/_search?size=$2 > work
 		python $srcdir/es_response_get_msgnum.py > rsyslog.out.log
 		;;
    'getpid')
@@ -338,9 +346,9 @@ case $1 in
 		done
 		echo "rsyslogd$2 startup msg seen, pid " `cat rsyslog$2.pid`
 		;;
-   'wait-pid-termination')  # wait for the pid in pid file $2 to terminate, abort on timeout
+   'wait-pid-termination')  # wait for the pid in pid $2 to terminate, abort on timeout
 		i=0
-		out_pid=`cat $2`
+		out_pid=$2
 		if [[ "x$out_pid" == "x" ]]
 		then
 			terminated=1
@@ -680,9 +688,9 @@ case $1 in
 		done
 		echo "dyn-stats reset for bucket ${3} registered"
 		;;
-   'content-check')
+   'content-check-regex')
 		# this does a content check which permits regex
-		grep "$2" $3
+		grep "$2" $3 -q
 		if [ "$?" -ne "0" ]; then
 		    echo "----------------------------------------------------------------------"
 		    echo content-check failed to find "'$2'" inside "'$3'"
@@ -925,14 +933,19 @@ case $1 in
 		fi
 		if [ -d $dep_work_dir/es ]; then
 			if [ -e $dep_work_es_pidfile ]; then
-				kill -SIGTERM $(cat $dep_work_es_pidfile)
-				. $srcdir/diag.sh wait-pid-termination $dep_work_es_pidfile
+				es_pid = $(cat $dep_work_es_pidfile)
+				kill -SIGTERM $es_pid
+				. $srcdir/diag.sh wait-pid-termination $es_pid
 			fi
 		fi
 		rm -rf $dep_work_dir/es
 		echo TEST USES ELASTICSEARCH BINARY $dep_es_cached_file
 		(cd $dep_work_dir && tar -zxf $dep_es_cached_file --xform $dep_es_dir_xform_pattern --show-transformed-names) > /dev/null
-		cp $srcdir/testsuites/$dep_work_es_config $dep_work_dir/es/config/elasticsearch.yml
+		if [ -n "${ES_PORT:-}" ] ; then
+			sed "s/^http.port:.*\$/http.port: ${ES_PORT}/" $srcdir/testsuites/$dep_work_es_config > $dep_work_dir/es/config/elasticsearch.yml
+		else
+			cp $srcdir/testsuites/$dep_work_es_config $dep_work_dir/es/config/elasticsearch.yml
+		fi
 
 		if [ ! -d $dep_work_dir/es/data ]; then
 				echo "Creating elastic search directories"
@@ -967,8 +980,8 @@ case $1 in
 		timeseconds=0
 		# Loop until elasticsearch port is reachable or until
 		# timeout is reached!
-		until [ "`curl --silent --show-error --connect-timeout 1 http://localhost:19200 | grep 'rsyslog-testbench'`" != "" ]; do
-			echo "--- waiting for startup: 1 ( $timeseconds ) seconds"
+		until [ "`curl --silent --show-error --connect-timeout 1 http://localhost:${ES_PORT:-19200} | grep 'rsyslog-testbench'`" != "" ]; do
+			echo "--- waiting for ES startup: $timeseconds seconds"
 			./msleep 1000
 			let "timeseconds = $timeseconds + 1"
 
@@ -978,6 +991,7 @@ case $1 in
 			fi
 		done
 		./msleep 2000
+		echo ES startup succeeded
 		;;
 	 'dump-kafka-serverlog')
 		if [ "x$2" == "x" ]; then
@@ -1040,18 +1054,16 @@ case $1 in
 			dep_work_es_pidfile="es$2.pid"
 		fi
 		if [ -e $dep_work_es_pidfile ]; then
-			(cd $srcdir && kill $(cat $dep_work_es_pidfile) )
-			. $srcdir/diag.sh wait-pid-termination $dep_work_es_pidfile
+			es_pid=$(cat $dep_work_es_pidfile)
+			printf "stopping ES with pid %d\n" $es_pid
+			kill -SIGTERM $es_pid
+			. $srcdir/diag.sh wait-pid-termination $es_pid
 		fi
 		;;
 	 'cleanup-elasticsearch')
-		if [ "x$2" == "x" ]; then
-			dep_work_dir=$(readlink -f $srcdir/.dep_wrk)
-			dep_work_es_pidfile="es.pid"
-		else
-			dep_work_dir=$(readlink -f $srcdir/$2)
-			dep_work_es_pidfile="es$2.pid"
-		fi
+		dep_work_dir=$(readlink -f $srcdir/.dep_wrk)
+		dep_work_es_pidfile="es.pid"
+		. $srcdir/diag.sh stop-elasticsearch
 		rm -f $dep_work_es_pidfile
 		rm -rf $dep_work_dir/es
 		;;

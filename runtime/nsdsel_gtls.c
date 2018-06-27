@@ -1,7 +1,7 @@
 /* nsdsel_gtls.c
  *
  * An implementation of the nsd select() interface for GnuTLS.
- * 
+ *
  * Copyright (C) 2008-2016 Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
@@ -9,11 +9,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -41,14 +41,13 @@
 
 /* static data */
 DEFobjStaticHelpers
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(glbl)
 DEFobjCurrIf(nsdsel_ptcp)
 
 static rsRetVal
 gtlsHasRcvInBuffer(nsd_gtls_t *pThis)
 {
-	/* we have a valid receive buffer one such is allocated and 
+	/* we have a valid receive buffer one such is allocated and
 	 * NOT exhausted!
 	 */
 	DBGPRINTF("hasRcvInBuffer on nsd %p: pszRcvBuf %p, lenRcvBuf %d\n", pThis,
@@ -108,7 +107,7 @@ finalize_it:
 }
 
 
-/* perform the select()  piNumReady returns how many descriptors are ready for IO 
+/* perform the select()  piNumReady returns how many descriptors are ready for IO
  * TODO: add timeout!
  */
 static rsRetVal
@@ -175,7 +174,7 @@ doRetry(nsd_gtls_t *pNsd)
 		pNsd->rtryCall = gtlsRtry_None; /* we are done */
 	} else if(gnuRet != GNUTLS_E_AGAIN && gnuRet != GNUTLS_E_INTERRUPTED) {
 		uchar *pErr = gtlsStrerror(gnuRet);
-		errmsg.LogError(0, RS_RET_GNUTLS_ERR, "unexpected GnuTLS error %d in %s:%d: %s\n",
+		LogError(0, RS_RET_GNUTLS_ERR, "unexpected GnuTLS error %d in %s:%d: %s\n",
 		gnuRet, __FILE__, __LINE__, pErr); \
 		free(pErr);
 		pNsd->rtryCall = gtlsRtry_None; /* we are also done... ;) */
@@ -184,7 +183,7 @@ doRetry(nsd_gtls_t *pNsd)
 	/* if we are interrupted once again (else case), we do not need to
 	 * change our status because we are already setup for retries.
 	 */
-		
+
 finalize_it:
 	if(iRet != RS_RET_OK && iRet != RS_RET_CLOSED && iRet != RS_RET_RETRY)
 		pNsd->bAbortConn = 1; /* request abort */
@@ -275,7 +274,6 @@ BEGINObjClassExit(nsdsel_gtls, OBJ_IS_CORE_MODULE) /* CHANGE class also in END M
 CODESTARTObjClassExit(nsdsel_gtls)
 	/* release objects we no longer need */
 	objRelease(glbl, CORE_COMPONENT);
-	objRelease(errmsg, CORE_COMPONENT);
 	objRelease(nsdsel_ptcp, LM_NSD_PTCP_FILENAME);
 ENDObjClassExit(nsdsel_gtls)
 
@@ -286,7 +284,6 @@ ENDObjClassExit(nsdsel_gtls)
  */
 BEGINObjClassInit(nsdsel_gtls, 1, OBJ_IS_CORE_MODULE) /* class, version */
 	/* request objects we use */
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 	CHKiRet(objUse(glbl, CORE_COMPONENT));
 	CHKiRet(objUse(nsdsel_ptcp, LM_NSD_PTCP_FILENAME));
 

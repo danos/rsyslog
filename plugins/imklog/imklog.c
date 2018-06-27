@@ -21,7 +21,7 @@
  * To test under Linux:
  * echo test1 > /dev/kmsg
  *
- * Copyright (C) 2008-2017 Adiscon GmbH
+ * Copyright (C) 2008-2018 Adiscon GmbH
  *
  * This file is part of rsyslog.
  *
@@ -51,6 +51,7 @@
 
 #include "dirty.h"
 #include "cfsysline.h"
+#include "parserif.h"
 #include "obj.h"
 #include "msg.h"
 #include "module-template.h"
@@ -83,6 +84,8 @@ typedef struct configSettings_s {
 	int iFacilIntMsg; /* the facility to use for internal messages (set by driver) */
 	uchar *pszPath;
 	int console_log_level; /* still used for BSD */
+	int ratelimitInterval;
+	int ratelimitBurst;
 } configSettings_t;
 static configSettings_t cs;
 
@@ -97,7 +100,9 @@ static struct cnfparamdescr modpdescr[] = {
 	{ "consoleloglevel", eCmdHdlrInt, 0 },
 	{ "parsekerneltimestamp", eCmdHdlrBinary, 0 },
 	{ "keepkerneltimestamp", eCmdHdlrBinary, 0 },
-	{ "internalmsgfacility", eCmdHdlrFacility, 0 }
+	{ "internalmsgfacility", eCmdHdlrFacility, 0 },
+	{ "ratelimitinterval", eCmdHdlrInt, 0 },
+	{ "ratelimitburst", eCmdHdlrInt, 0 }
 };
 static struct cnfparamblk modpblk =
 	{ CNFPARAMBLK_VERSION,
@@ -127,7 +132,11 @@ initConfigSettings(void)
  * rgerhards, 2008-04-12
  */
 static rsRetVal
-enqMsg(uchar *const __restrict__ msg, uchar* pszTag, const syslog_pri_t pri, struct timeval *tp)
+enqMsg(uchar *const __restrict__ msg,
+       uchar* pszTag,
+       const syslog_pri_t pri,
+       struct timeval *tp,
+       ratelimit_t *ratelimiter)
 {
 	struct syslogTime st;
 	smsg_t *pMsg;
@@ -151,9 +160,7 @@ enqMsg(uchar *const __restrict__ msg, uchar* pszTag, const syslog_pri_t pri, str
 	MsgSetHOSTNAME(pMsg, glbl.GetLocalHostName(), ustrlen(glbl.GetLocalHostName()));
 	MsgSetTAG(pMsg, pszTag, ustrlen(pszTag));
 	msgSetPRI(pMsg, pri);
-	/* note: we do NOT use rate-limiting, as the kernel itself does rate-limiting */
-	CHKiRet(submitMsg2(pMsg));
-
+	ratelimitAddMsg(ratelimiter, NULL, pMsg);
 finalize_it:
 	RETiRet;
 }
@@ -253,7 +260,7 @@ rsRetVal Syslog(modConfData_t *pModConf, syslog_pri_t priority, uchar *pMsg, str
 	if(pModConf->bPermitNonKernel == 0 && pri2fac(priority) != LOG_KERN)
 		FINALIZE; /* silently ignore */
 
-	iRet = enqMsg((uchar*)pMsg, (uchar*) "kernel:", priority, tp);
+	iRet = enqMsg((uchar*)pMsg, (uchar*) "kernel:", priority, tp, pModConf->ratelimiter);
 
 finalize_it:
 	RETiRet;
@@ -301,6 +308,8 @@ CODESTARTbeginCnfLoad
 	pModConf->bKeepKernelStamp = 0;
 	pModConf->iFacilIntMsg = klogFacilIntMsg();
 	loadModConf->configSetViaV2Method = 0;
+	pModConf->ratelimitBurst = 10000; /* arbitrary high limit */
+	pModConf->ratelimitInterval = 0; /* off */
 	bLegacyCnfModGlobalsPermitted = 1;
 	/* init legacy config vars */
 	initConfigSettings();
@@ -338,9 +347,14 @@ CODESTARTsetModCnf
 			loadModConf->console_log_level= (int) pvals[i].val.d.n;
 		} else if(!strcmp(modpblk.descr[i].name, "internalmsgfacility")) {
 			loadModConf->iFacilIntMsg = (int) pvals[i].val.d.n;
+		} else if(!strcmp(modpblk.descr[i].name, "ratelimitburst")) {
+			loadModConf->ratelimitBurst = (int) pvals[i].val.d.n;
+		} else if(!strcmp(modpblk.descr[i].name, "ratelimitinterval")) {
+			loadModConf->ratelimitInterval = (int) pvals[i].val.d.n;
 		} else {
-			dbgprintf("imklog: program error, non-handled "
-			  "param '%s' in beginCnfLoad\n", modpblk.descr[i].name);
+			LogMsg(0, RS_RET_INTERNAL_ERROR, LOG_WARNING,
+				"imklog: RSYSLOG BUG, non-handled param '%s' in "
+				"beginCnfLoad\n", modpblk.descr[i].name);
 		}
 	}
 
@@ -391,6 +405,11 @@ ENDactivateCnfPrePrivDrop
 
 BEGINactivateCnf
 CODESTARTactivateCnf
+	CHKiRet(ratelimitNew(&runModConf->ratelimiter, "imklog", NULL));
+        ratelimitSetLinuxLike(runModConf->ratelimiter,
+			      runModConf->ratelimitInterval,
+			      runModConf->ratelimitBurst);
+finalize_it:
 ENDactivateCnf
 
 
@@ -408,6 +427,7 @@ ENDwillRun
 
 BEGINafterRun
 CODESTARTafterRun
+	ratelimitDestruct(runModConf->ratelimiter);
         iRet = klogAfterRun(runModConf);
 ENDafterRun
 

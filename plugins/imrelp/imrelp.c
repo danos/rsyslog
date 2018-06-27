@@ -4,18 +4,18 @@
  *
  * File begun on 2008-03-13 by RGerhards
  *
- * Copyright 2008-2016 Adiscon GmbH.
+ * Copyright 2008-2018 Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -49,6 +49,7 @@
 #include "glbl.h"
 #include "statsobj.h"
 #include "srUtils.h"
+#include "parserif.h"
 
 MODULE_TYPE_INPUT
 MODULE_TYPE_NOKEEP
@@ -86,8 +87,10 @@ struct instanceConf_s {
 	sbool bKeepAlive;		/* support keep-alive packets */
 	sbool bEnableTLS;
 	sbool bEnableTLSZip;
+	sbool bEnableLstn;		/* flag to permit disabling of listener in error case */
 	int dhBits;
 	size_t maxDataSize;
+	int oversizeMode;
 	uchar *pristring;		/* GnuTLS priority string (NULL if not to be provided) */
 	uchar *authmode;		/* TLS auth mode */
 	uchar *caCertFile;
@@ -145,6 +148,7 @@ static struct cnfparamdescr inppdescr[] = {
 	{ "keepalive.time", eCmdHdlrInt, 0 },
 	{ "keepalive.interval", eCmdHdlrInt, 0 },
 	{ "maxdatasize", eCmdHdlrSize, 0 },
+	{ "oversizemode", eCmdHdlrString, 0 },
 	{ "tls", eCmdHdlrBinary, 0 },
 	{ "tls.permittedpeer", eCmdHdlrArray, 0 },
 	{ "tls.authmode", eCmdHdlrString, 0 },
@@ -277,6 +281,7 @@ createInstance(instanceConf_t **pinst)
 	inst->iKeepAliveTime = 0;
 	inst->bEnableTLS = 0;
 	inst->bEnableTLSZip = 0;
+	inst->bEnableLstn = 0;
 	inst->dhBits = 0;
 	inst->pristring = NULL;
 	inst->authmode = NULL;
@@ -284,7 +289,10 @@ createInstance(instanceConf_t **pinst)
 	inst->caCertFile = NULL;
 	inst->myCertFile = NULL;
 	inst->myPrivKeyFile = NULL;
-	inst->maxDataSize = glbl.GetMaxLine();
+	inst->maxDataSize = 0;
+#ifdef HAVE_RELPSRVSETOVERSIZEMODE
+	inst->oversizeMode = RELP_OVERSIZE_TRUNCATE;
+#endif
 
 	/* node created, let's add to config */
 	if(loadModConf->tail == NULL) {
@@ -310,7 +318,7 @@ std_checkRuleset_genErrMsg(__attribute__((unused)) modConfData_t *modConf, insta
 }
 
 
-/* This function is called when a new listener instance shall be added to 
+/* This function is called when a new listener instance shall be added to
  * the current config object via the legacy config system. It just shuffles
  * all parameters to the listener in-memory instance.
  * rgerhards, 2011-05-04
@@ -350,6 +358,12 @@ addListner(modConfData_t __attribute__((unused)) *modConf, instanceConf_t *inst)
 	uchar statname[64];
 	int i;
 	DEFiRet;
+
+	if(!inst->bEnableLstn) {
+		DBGPRINTF("listener not started because it is disabled by config error\n");
+		FINALIZE;
+	}
+
 	if(pRelpEngine == NULL) {
 		CHKiRet(relpEngineConstruct(&pRelpEngine));
 		CHKiRet(relpEngineSetDbgprint(pRelpEngine, (void (*)(char *, ...))imrelp_dbgprintf));
@@ -367,6 +381,10 @@ addListner(modConfData_t __attribute__((unused)) *modConf, instanceConf_t *inst)
 	CHKiRet(relpEngineListnerConstruct(pRelpEngine, &pSrv));
 	CHKiRet(relpSrvSetLstnPort(pSrv, inst->pszBindPort));
 	CHKiRet(relpSrvSetMaxDataSize(pSrv, inst->maxDataSize));
+
+#ifdef HAVE_RELPSRVSETOVERSIZEMODE
+	CHKiRet(relpSrvSetOversizeMode(pSrv, inst->oversizeMode));
+#endif
 	inst->pszInputName = ustrdup((inst->pszInputName == NULL) ?  UCHAR_CONSTANT("imrelp") : inst->pszInputName);
 	CHKiRet(prop.Construct(&inst->pInputName));
 	CHKiRet(prop.SetString(inst->pInputName, inst->pszInputName, ustrlen(inst->pszInputName)));
@@ -461,7 +479,7 @@ finalize_it:
 
 BEGINnewInpInst
 	struct cnfparamvals *pvals;
-	instanceConf_t *inst;
+	instanceConf_t *inst = NULL;
 	int i,j;
 	FILE *fp;
 CODESTARTnewInpInst
@@ -489,6 +507,24 @@ CODESTARTnewInpInst
 			inst->pszBindRuleset = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
 		} else if(!strcmp(inppblk.descr[i].name, "maxdatasize")) {
 			inst->maxDataSize = (size_t) pvals[i].val.d.n;
+		} else if(!strcmp(inppblk.descr[i].name, "oversizemode")) {
+#ifdef HAVE_RELPSRVSETOVERSIZEMODE
+			char *mode = es_str2cstr(pvals[i].val.d.estr, NULL);
+			if(!strcmp(mode, "abort")) {
+				inst->oversizeMode = RELP_OVERSIZE_ABORT;
+			} else if(!strcmp(mode, "truncate")) {
+				inst->oversizeMode = RELP_OVERSIZE_TRUNCATE;
+			} else if(!strcmp(mode, "accept")) {
+				inst->oversizeMode = RELP_OVERSIZE_ACCEPT;
+			} else {
+				parser_errmsg("imrelp: wrong oversizeMode parameter "
+					"value %s, using default: truncate\n", mode);
+				inst->oversizeMode = RELP_OVERSIZE_TRUNCATE;
+			}
+#else
+			parser_errmsg("imrelp: parameter oversizeMode is not available in "
+				"this relp version and is therefore disabled.");
+#endif
 		} else if(!strcmp(inppblk.descr[i].name, "keepalive")) {
 			inst->bKeepAlive = (sbool) pvals[i].val.d.n;
 		} else if(!strcmp(inppblk.descr[i].name, "keepalive.probes")) {
@@ -555,9 +591,31 @@ CODESTARTnewInpInst
 			  "param '%s'\n", inppblk.descr[i].name);
 		}
 	}
+
+	if(inst->myCertFile  != NULL && inst->myPrivKeyFile == NULL) {
+		LogError(0, RS_RET_ERR, "imrelp: certificate file given but no corresponding "
+			"private key file - this is invalid, listener cannot be started");
+		ABORT_FINALIZE(RS_RET_ERR);
+	}
+	if(inst->myCertFile  == NULL && inst->myPrivKeyFile != NULL) {
+		LogError(0, RS_RET_ERR, "imrelp: private key file given but no corresponding "
+			"certificate file - this is invalid, listener cannot be started");
+		ABORT_FINALIZE(RS_RET_ERR);
+	}
+
+	inst->bEnableLstn = -1; /* all ok, ready to start up */
+
 finalize_it:
 CODE_STD_FINALIZERnewInpInst
 	cnfparamvalsDestruct(pvals, &inppblk);
+	if(iRet != RS_RET_OK) {
+		if(inst != NULL) {
+			free(inst->myCertFile);
+			inst->myCertFile = NULL;
+			free(inst->myPrivKeyFile);
+			inst->myPrivKeyFile = NULL;
+		}
+	}
 ENDnewInpInst
 
 
@@ -629,13 +687,31 @@ ENDendCnfLoad
 
 BEGINcheckCnf
 	instanceConf_t *inst;
+	size_t maxMessageSize;
 CODESTARTcheckCnf
 	for(inst = pModConf->root ; inst != NULL ; inst = inst->next) {
 		if(inst->pszBindRuleset == NULL && pModConf->pszBindRuleset != NULL) {
 			CHKmalloc(inst->pszBindRuleset = ustrdup(pModConf->pszBindRuleset));
 		}
 		std_checkRuleset(pModConf, inst);
+
+
+		if(inst->maxDataSize == 0) {
+			/* We set default value for maxDataSize here because
+			 * otherwise the maxMessageSize isn't set.
+			 */
+			inst->maxDataSize = glbl.GetMaxLine();
+		}
+		maxMessageSize = (size_t)glbl.GetMaxLine();
+		if(inst->maxDataSize < maxMessageSize) {
+			errmsg.LogError(0, RS_RET_INVALID_PARAMS, "error: "
+					"maxDataSize (%zu) is smaller than global parameter "
+					"maxMessageSize (%zu) - global parameter will be used.",
+					inst->maxDataSize, maxMessageSize);
+			inst->maxDataSize = maxMessageSize;
+		}
 	}
+
 finalize_it:
 ENDcheckCnf
 
@@ -669,10 +745,12 @@ CODESTARTfreeCnf
 		free(inst->pszInputName);
 		free(inst->pristring);
 		free(inst->authmode);
-		prop.Destruct(&inst->pInputName);
-		statsobj.Destruct(&(inst->data.stats));
 		for(i = 0 ; i <  inst->permittedPeers.nmemb ; ++i) {
 			free(inst->permittedPeers.name[i]);
+		}
+		if(inst->bEnableLstn) {
+			prop.Destruct(&inst->pInputName);
+			statsobj.Destruct(&(inst->data.stats));
 		}
 		del = inst;
 		inst = inst->next;
@@ -783,6 +861,11 @@ CODEmodInit_QueryRegCFSLineHdlr
 	CHKiRet(objUse(net, LM_NET_FILENAME));
 	CHKiRet(objUse(ruleset, CORE_COMPONENT));
 	CHKiRet(objUse(statsobj, CORE_COMPONENT));
+
+	#ifndef HAVE_RELPSRVSETOVERSIZEMODE
+		LogMsg(0, RS_RET_OK_WARN, LOG_WARNING, "imrelp: librelp too old, oversizemode "
+			"defaults to \"abort\"");
+	#endif
 
 	/* register config file handlers */
 	CHKiRet(regCfSysLineHdlr2((uchar*)"inputrelpserverbindruleset", 0, eCmdHdlrGetWord,

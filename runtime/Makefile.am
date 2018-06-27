@@ -133,6 +133,7 @@ lmzlibw_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_CFLA
 lmzlibw_la_LDFLAGS = -module -avoid-version $(LIBLOGGING_STDLOG_LIBS)
 lmzlibw_la_LIBADD =
 
+
 if ENABLE_INET
 pkglib_LTLIBRARIES += lmnet.la lmnetstrms.la
 #
@@ -170,6 +171,17 @@ lmnsd_ptcp_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_C
 lmnsd_ptcp_la_LDFLAGS = -module -avoid-version $(LIBLOGGING_STDLOG_LIBS)
 lmnsd_ptcp_la_LIBADD =
 endif # if ENABLE_INET
+
+#
+# openssl netstream driver
+# 
+if ENABLE_OPENSSL
+pkglib_LTLIBRARIES += lmnsd_ossl.la
+lmnsd_ossl_la_SOURCES = nsd_ossl.c nsd_ossl.h nsdsel_ossl.c  nsdsel_ossl.h
+lmnsd_ossl_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(OPENSSL_CFLAGS)
+lmnsd_ossl_la_LDFLAGS = -module -avoid-version
+lmnsd_ossl_la_LIBADD = $(OPENSSL_LIBS)
+endif
 
 #
 # GnuTLS netstream driver

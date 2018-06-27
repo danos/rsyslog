@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([rsyslog],[8.34.0],[rsyslog@lists.adiscon.com])
+AC_INIT([rsyslog],[8.36.0],[rsyslog@lists.adiscon.com])
 
 # AIXPORT START: Detect the underlying OS
 unamestr=$(uname)
@@ -59,7 +59,12 @@ then
 	m4_ifdef([AX_IS_RELEASE], [
 		AX_IS_RELEASE([git-directory])
 		m4_ifdef([AX_COMPILER_FLAGS], [
-			AX_COMPILER_FLAGS()
+			AX_COMPILER_FLAGS(,,,,[-Wunused-parameter -Wmissing-field-initializers])
+			# unfortunately, AX_COMPILER_FLAGS does not provide a way to override
+			# the default -Wno-error=warning" flags. So we do this via sed below.
+			# Note: we *really* want to have this error out during CI testing!
+			# rgerhards, 2018-05-09
+			WARN_CFLAGS="$(echo "$WARN_CFLAGS" | sed s/-Wno-error=/-W/g)"
 		], [
 			CFLAGS="$CFLAGS -W -Wall -Wformat-security -Wshadow -Wcast-align -Wpointer-arith -Wmissing-format-attribute -g"
 			AC_MSG_WARN([missing AX_COMPILER_FLAGS macro, not using it])
@@ -254,7 +259,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM(, return __builtin_expect(main != 0, 1))],
 # speeds up processig.
 # note that when automic operations are enabled but not available, they
 # will silently NOT be used!
-AC_ARG_ENABLE(regexp,
+AC_ARG_ENABLE(atomic-operations,
         [AS_HELP_STRING([--enable-atomic-operations],[Enable atomic operation support @<:@default=yes@:>@])],
         [case "${enableval}" in
          yes) enable_atomic_operations="yes" ;;
@@ -319,7 +324,6 @@ if test "$enable_regexp" = "yes"; then
         AC_DEFINE(FEATURE_REGEXP, 1, [Regular expressions support enabled.])
 fi
 
-
 # zlib support
 PKG_CHECK_MODULES([ZLIB], [zlib], [found_zlib=yes], [found_zlib=no])
 AS_IF([test "x$found_zlib" = "xno"], [
@@ -330,6 +334,42 @@ AS_IF([test "x$found_zlib" = "xno"], [
         ZLIB_LIBS="-lz"
         AC_SUBST(ZLIB_LIBS)
 ])
+
+
+#hash implementations header checks
+AC_ARG_ENABLE(fmhash,
+	[AS_HELP_STRING([--enable-fmhash],[Enable fmhash support @<:@default=yes@:>@])],
+        [case "${enableval}" in
+         yes) enable_fmhash="yes" ;;
+          no) enable_fmhash="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-fmhash) ;;
+         esac],
+	[enable_fmhash=yes]
+)
+
+AC_ARG_ENABLE(fmhash-xxhash,
+	[AS_HELP_STRING([--enable-fmhash-xxhash],[Enable xxhash in fmhash support @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_fmhash_xxhash="yes" ;;
+          no) enable_fmhash_xxhash="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-fmhash-xxhash) ;;
+         esac],
+	[enable_fmhash_xxhash=no]
+)
+
+AM_CONDITIONAL(ENABLE_FMHASH, [test "x$enable_fmhash" = "xyes" || test "x$enable_fmhash_xxhash" = "xyes"])
+
+AM_CONDITIONAL(ENABLE_FMHASH_XXHASH, test x$enable_fmhash_xxhash = xyes)
+if test "$enable_fmhash_xxhash" = "yes"; then  
+	AC_CHECK_LIB([xxhash], [XXH64], [
+		AC_CHECK_HEADER([xxhash.h], [
+			AC_DEFINE(USE_HASH_XXHASH, 1,
+				  [Using XXHASH for hash64.])
+			HASH_XXHASH_LIBS="-lxxhash"
+			AC_SUBST(HASH_XXHASH_LIBS)], 
+			[AC_MSG_ERROR([Unable to add XXHASH support for hash64.])])
+	])
+fi
 
 
 #gssapi
@@ -454,25 +494,6 @@ if test "$rsyslog_have_pthread_setschedparam" = "yes" -a "$rsyslog_have_sched_h"
 	AC_SUBST(IMUDP_LIBS)
 	LIBS=$save_LIBS
 fi
-
-
-# use libcurl?
-AC_ARG_ENABLE(libcurl,
-        [AS_HELP_STRING([--enable-libcurl],[Enable libcurl mode @<:@default=yes@:>@])],
-        [case "${enableval}" in
-          yes) enable_libcurl="yes" ;;
-           no) enable_libcurl="no" ;;
-           *) AC_MSG_ERROR(bad value ${enableval} for --enable-libcurl) ;;
-         esac],
-        [enable_libcurl="yes"]
-)
-if test "$enable_libcurl" = "yes"; then
-	PKG_CHECK_MODULES([CURL], [libcurl], 
-		[ AC_DEFINE(HAVE_LIBCURL, 1, [libcurl present]) ]
-	)
-fi
-
-AM_CONDITIONAL(ENABLE_LIBCURL, test "x${enable_libcurl}" = "xyes")
 
 # klog
 AC_ARG_ENABLE(klog,
@@ -912,16 +933,38 @@ AM_CONDITIONAL(ENABLE_ELASTICSEARCH, test x$enable_elasticsearch = xyes)
 
 # capability to enable elasticsearch testbench tests. This requries that an ES test
 # environment is present on the local (127.0.0.1) machine. 
+# we support a "minimal" mode to take care of travis where we cannot run all tests
+# due to runtime constraints
 AC_ARG_ENABLE(elasticsearch_tests,
-        [AS_HELP_STRING([--enable-elasticsearch-tests],[enable MySQL specific tests in testbench @<:@default=no@:>@])],
+        [AS_HELP_STRING([--enable-elasticsearch-tests],[enable Elasticsearch specific tests in testbench @<:@default=no@:>@])],
         [case "${enableval}" in
          yes) enable_elasticsearch_tests="yes" ;;
           no) enable_elasticsearch_tests="no" ;;
+         minimal) enable_elasticsearch_tests="minimal" ;;
            *) AC_MSG_ERROR(bad value ${enableval} for --enable-elasticsearch-tests) ;;
          esac],
         [enable_elasticsearch_tests=no]
 )
 AM_CONDITIONAL(ENABLE_ELASTICSEARCH_TESTS, test x$enable_elasticsearch_tests = xyes)
+AM_CONDITIONAL(ENABLE_ELASTICSEARCH_TESTS_MINIMAL, test x$enable_elasticsearch_tests = xminimal -o x$enable_elasticsearch_tests = xyes)
+
+
+# openssl support
+AC_ARG_ENABLE(openssl,
+        [AS_HELP_STRING([--enable-openssl],[Enable openssl support @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_openssl="yes" ;;
+          no) enable_openssl="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-openssl) ;;
+         esac],
+        [enable_openssl=no]
+)
+if test "x$enable_openssl" = "xyes"; then
+	PKG_CHECK_MODULES(OPENSSL, openssl)
+	AC_DEFINE([ENABLE_OPENSSL], [1], [Indicator that openssl is present])
+	save_libs=$LIBS
+fi
+AM_CONDITIONAL(ENABLE_OPENSSL, test x$enable_openssl = xyes)
 
 
 # GnuTLS support
@@ -1099,6 +1142,9 @@ AC_ARG_ENABLE(fmhttp,
          esac],
         [enable_fmhttp=yes]
 )
+if test "$enable_fmhttp" = "yes"; then
+        PKG_CHECK_MODULES([CURL], [libcurl])
+fi
 AM_CONDITIONAL(ENABLE_FMHTTP, test x$enable_fmhttp = xyes)
 
 
@@ -1345,6 +1391,17 @@ AC_ARG_ENABLE(relp,
 if test "x$enable_relp" = "xyes"; then
 	PKG_CHECK_MODULES(RELP, relp >= 1.2.14)
 	AC_DEFINE([ENABLE_RELP], [1], [Indicator that RELP is present])
+        save_CFLAGS="$CFLAGS"
+        save_LIBS="$LIBS"
+
+        CFLAGS="$CFLAGS $RELP_CFLAGS"
+        LIBS="$LIBS $RELP_LIBS"
+
+        AC_CHECK_FUNC([relpSrvSetOversizeMode],
+                      [AC_DEFINE([HAVE_RELPSRVSETOVERSIZEMODE], [1], [Define if relpSrvSetOversizeMode exists.])])
+
+        CFLAGS="$save_CFLAGS"
+        LIBS="$save_LIBS"
 fi
 AM_CONDITIONAL(ENABLE_RELP, test x$enable_relp = xyes)
 
@@ -1374,13 +1431,13 @@ AM_CONDITIONAL(ENABLE_KSI_LS12, test x$enable_ksi_ls12 = xyes)
 
 # liblogging-stdlog support
 AC_ARG_ENABLE(liblogging-stdlog,
-        [AS_HELP_STRING([--enable-liblogging-stdlog],[Enable liblogging-stdlog support @<:@default=yes@:>@])],
+        [AS_HELP_STRING([--enable-liblogging-stdlog],[Enable liblogging-stdlog support @<:@default=no@:>@])],
         [case "${enableval}" in
          yes) enable_liblogging_stdlog="yes" ;;
           no) enable_liblogging_stdlog="no" ;;
            *) AC_MSG_ERROR(bad value ${enableval} for --enable-liblogging-stdlog) ;;
          esac],
-        [enable_liblogging_stdlog=yes]
+        [enable_liblogging_stdlog=no]
 )
 if test "x$enable_liblogging_stdlog" = "xyes"; then
         PKG_CHECK_MODULES(LIBLOGGING_STDLOG, liblogging-stdlog >= 1.0.3,
@@ -2143,6 +2200,20 @@ AC_ARG_ENABLE(mmkubernetes,
 )
 if test "x$enable_mmkubernetes" = "xyes"; then
         PKG_CHECK_MODULES([CURL], [libcurl])
+        PKG_CHECK_MODULES(LIBLOGNORM, lognorm >= 2.0.3)
+
+        save_CFLAGS="$CFLAGS"
+        save_LIBS="$LIBS"
+
+        CFLAGS="$CFLAGS $LIBLOGNORM_CFLAGS"
+        LIBS="$LIBS $LIBLOGNORM_LIBS"
+
+        AC_CHECK_FUNC([ln_loadSamplesFromString],
+                      [AC_DEFINE([HAVE_LOADSAMPLESFROMSTRING], [1], [Define if ln_loadSamplesFromString exists.])],
+                      [AC_DEFINE([NO_LOADSAMPLESFROMSTRING], [1], [Define if ln_loadSamplesFromString does not exist.])])
+
+        CFLAGS="$save_CFLAGS"
+        LIBS="$save_LIBS"
 fi
 AM_CONDITIONAL(ENABLE_MMKUBERNETES, test x$enable_mmkubernetes = xyes)
 
@@ -2261,6 +2332,7 @@ AC_CONFIG_FILES([Makefile \
 		plugins/mmsnmptrapd/Makefile \
 		plugins/pmlastmsg/Makefile \
 		plugins/mmdblookup/Makefile \
+		contrib/fmhash/Makefile \
 		contrib/pmsnare/Makefile \
 		contrib/pmpanngfw/Makefile \
 		contrib/pmaixforwardedfrom/Makefile \
@@ -2303,6 +2375,7 @@ echo "    liblogging-stdlog support enabled:        $enable_liblogging_stdlog"
 echo "    libsystemd enabled:                       $enable_libsystemd"
 echo "    libcurl enabled:                          $enable_libcurl"
 echo "    kafka static linking enabled:             $enable_kafka_static"
+echo "    atomic operations enabled:                $enable_atomic_operations"
 echo
 echo "---{ input plugins }---"
 echo "    Klog functionality enabled:               $enable_klog ($os_type)"
@@ -2369,6 +2442,7 @@ echo "    mongodb support enabled:                  $enable_ommongodb"
 echo "    hiredis support enabled:                  $enable_omhiredis"
 echo
 echo "---{ protocol support }---"
+echo "    openssl network stream driver enabled:    $enable_openssl"
 echo "    GnuTLS network stream driver enabled:     $enable_gnutls"
 echo "    GSSAPI Kerberos 5 support enabled:        $enable_gssapi_krb5"
 echo "    RELP support enabled:                     $enable_relp"
@@ -2376,6 +2450,8 @@ echo "    SNMP support enabled:                     $enable_snmp"
 echo
 echo "---{ function modules }---"
 echo "    fmhttp enabled:                           $enable_fmhttp"
+echo "    fmhash enabled:                           $enable_fmhash"
+echo "    fmhash with xxhash enabled:               $enable_fmhash_xxhash"
 echo
 echo "---{ debugging support }---"
 echo "    Testbench enabled:                        $enable_testbench"
@@ -2384,6 +2460,7 @@ echo "    Testbench2 enabled:                       $enable_testbench2"
 echo "    Testbench libfaketime tests enabled:      $enable_libfaketime"
 echo "    Extended Testbench enabled:               $enable_extended_tests"
 echo "    MySQL Tests enabled:                      $enable_mysql_tests"
+echo "    Elasticsearch Tests:                      $enable_elasticsearch_tests"
 echo "    PostgreSQL Tests enabled:                 $enable_pgsql_tests"
 echo "    Kafka Tests enabled:                      $enable_kafka_tests"
 echo "    Debug mode enabled:                       $enable_debug"

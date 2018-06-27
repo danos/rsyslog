@@ -603,7 +603,7 @@ done:	return;
 }
 #else
 static void ATTR_NONNULL()
-fen_setupWatch(act_obj_t *const __attribute__((unused)) act)
+fen_setupWatch(act_obj_t *const act __attribute__((unused)))
 {
 	DBGPRINTF("fen_setupWatch: DUMMY CALLED - not on Solaris?");
 }
@@ -1724,8 +1724,12 @@ BEGINsetModCnf
 	int i;
 CODESTARTsetModCnf
 	/* new style config has different default! */
-#if defined(OS_SOLARIS) && defined (HAVE_PORT_SOURCE_FILE) /* use FEN on Solaris! */
-	loadModConf->opMode = OPMODE_FEN;
+#if defined(OS_SOLARIS)
+	#if defined (HAVE_PORT_SOURCE_FILE) /* use FEN on Solaris if available */
+		loadModConf->opMode = OPMODE_FEN;
+	#else
+		loadModConf->opMode = OPMODE_POLLING;
+	#endif
 #else
 	loadModConf->opMode = OPMODE_INOTIFY;
 #endif
@@ -1872,8 +1876,6 @@ CODESTARTfreeCnf
 	fs_node_destroy(pModConf->conf_tree);
 	//move_list_destruct(pModConf);
 	for(inst = pModConf->root ; inst != NULL ; ) {
-		if(inst->startRegex != NULL)
-			regfree(&inst->end_preg);
 		free(inst->pszBindRuleset);
 		free(inst->pszFileName);
 		free(inst->pszTag);
@@ -1890,11 +1892,35 @@ CODESTARTfreeCnf
 ENDfreeCnf
 
 
+/* initial poll run, to be used for all modes. Depending on mode, it does some
+ * further initializations (e.g. watches in inotify mode). Most importantly,
+ * it processes already-existing files, which would not otherwise be picked
+ * up in notifcation modes (inotfiy, FEN). Also, when freshStartTail is set,
+ * this run assumes that all previous existing data exists and needs not
+ * to be considered.
+ * Note: there is a race on files created *during* the run, but that race is
+ * inevitable (and thus freshStartTail is actually broken, but users still seem
+ * to want it...).
+ * rgerhards, 2018-05-17
+ */
+static void
+do_initial_poll_run(void)
+{
+	fs_node_walk(runModConf->conf_tree, poll_tree);
+
+	/* fresh start done, so disable freshStartTail for files that now will be created */
+	for(instanceConf_t *inst = runModConf->root ; inst != NULL ; inst = inst->next) {
+		inst->freshStartTail = 0;
+	}
+}
+
+
 /* Monitor files in polling mode. */
 static rsRetVal
 doPolling(void)
 {
 	DEFiRet;
+	do_initial_poll_run();
 	while(glbl.GetGlobalInputTermState() == 0) {
 		DBGPRINTF("doPolling: new poll run\n");
 		do {
@@ -2059,8 +2085,7 @@ do_inotify(void)
 	}
 	DBGPRINTF("inotify fd %d\n", ino_fd);
 
-	/* do watch initialization */
-	fs_node_walk(runModConf->conf_tree, poll_tree);
+	do_initial_poll_run();
 
 	while(glbl.GetGlobalInputTermState() == 0) {
 		if(runModConf->haveReadTimeouts) {
@@ -2178,8 +2203,7 @@ do_fen(void)
 		return RS_RET_FEN_INIT_FAILED;
 	}
 
-	/* do watch initialization */
-	fs_node_walk(runModConf->conf_tree, poll_tree);
+	do_initial_poll_run();
 
 	DBGPRINTF("do_fen ENTER monitoring loop \n");
 	while(glbl.GetGlobalInputTermState() == 0) {
@@ -2287,7 +2311,7 @@ static rsRetVal ATTR_NONNULL()
 atomicWriteStateFile(const char *fn, const char *content)
 {
 	DEFiRet;
-	const int fd = open(fn, O_CLOEXEC | O_NOCTTY | O_WRONLY | O_CREAT, 0600);
+	const int fd = open(fn, O_CLOEXEC | O_NOCTTY | O_WRONLY | O_CREAT | O_TRUNC, 0600);
 	if(fd < 0) {
 		LogError(errno, RS_RET_IO_ERROR, "imfile: cannot open state file '%s' for "
 			"persisting file state - some data will probably be duplicated "

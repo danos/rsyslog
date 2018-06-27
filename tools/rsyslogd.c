@@ -119,7 +119,6 @@ DEFobjCurrIf(prop)
 DEFobjCurrIf(parser)
 DEFobjCurrIf(ruleset)
 DEFobjCurrIf(net)
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(rsconf)
 DEFobjCurrIf(module)
 DEFobjCurrIf(datetime)
@@ -276,7 +275,7 @@ writePidFile(void)
 		ABORT_FINALIZE(RS_RET_ERR);
 	}
 	if(fprintf(fp, "%d", (int) glblGetOurPid()) < 0) {
-		errmsg.LogError(errno, iRet, "rsyslog: error writing pid file");
+		LogError(errno, iRet, "rsyslog: error writing pid file");
 	}
 	fclose(fp);
 	if(tmpPidFile != PidFile) {
@@ -591,8 +590,6 @@ rsyslogd_InitGlobalClasses(void)
 	/* Now tell the system which classes we need ourselfs */
 	pErrObj = "glbl";
 	CHKiRet(objUse(glbl,     CORE_COMPONENT));
-	pErrObj = "errmsg";
-	CHKiRet(objUse(errmsg,   CORE_COMPONENT));
 	pErrObj = "module";
 	CHKiRet(objUse(module,   CORE_COMPONENT));
 	pErrObj = "datetime";
@@ -730,7 +727,7 @@ rsRetVal createMainQueue(qqueue_t **ppQueue, uchar *pszQueueName, struct nvlst *
 	CHKiRet_Hdlr(qqueueConstruct(ppQueue, ourConf->globals.mainQ.MainMsgQueType,
 	ourConf->globals.mainQ.iMainMsgQueueNumWorkers, ourConf->globals.mainQ.iMainMsgQueueSize, msgConsumer)) {
 		/* no queue is fatal, we need to give up in that case... */
-		errmsg.LogError(0, iRet, "could not create (ruleset) main message queue"); \
+		LogError(0, iRet, "could not create (ruleset) main message queue"); \
 	}
 	/* name our main queue object (it's not fatal if it fails...) */
 	obj.SetName((obj_t*) (*ppQueue), pszQueueName);
@@ -739,12 +736,12 @@ rsRetVal createMainQueue(qqueue_t **ppQueue, uchar *pszQueueName, struct nvlst *
 		/* ... set some properties ... */
 	#	define setQPROP(func, directive, data) \
 		CHKiRet_Hdlr(func(*ppQueue, data)) { \
-			errmsg.LogError(0, NO_ERRCODE, "Invalid " #directive ", error %d. Ignored, " \
+			LogError(0, NO_ERRCODE, "Invalid " #directive ", error %d. Ignored, " \
 			"running with default setting", iRet); \
 		}
 	#	define setQPROPstr(func, directive, data) \
 		CHKiRet_Hdlr(func(*ppQueue, data, (data == NULL)? 0 : strlen((char*) data))) { \
-			errmsg.LogError(0, NO_ERRCODE, "Invalid " #directive ", error %d. Ignored, " \
+			LogError(0, NO_ERRCODE, "Invalid " #directive ", error %d. Ignored, " \
 			"running with default setting", iRet); \
 		}
 
@@ -758,7 +755,7 @@ rsRetVal createMainQueue(qqueue_t **ppQueue, uchar *pszQueueName, struct nvlst *
 						 ++qfn_renamenum, ourConf->globals.mainQ.pszMainMsgQFName,  
 						 (pszQueueName == NULL) ? "NONAME" : (char*)pszQueueName);
 					qfname = ustrdup(qfrenamebuf);
-					errmsg.LogError(0, NO_ERRCODE, "Error: queue file name '%s' already in use "
+					LogError(0, NO_ERRCODE, "Error: queue file name '%s' already in use "
 						" - using '%s' instead", ourConf->globals.mainQ.pszMainMsgQFName,
 						qfname);
 					break;
@@ -824,7 +821,7 @@ startMainQueue(qqueue_t *pQueue)
 	DEFiRet;
 	CHKiRet_Hdlr(qqueueStart(pQueue)) {
 		/* no queue is fatal, we need to give up in that case... */
-		errmsg.LogError(0, iRet, "could not start (ruleset) main message queue"); \
+		LogError(0, iRet, "could not start (ruleset) main message queue"); \
 	}
 	RETiRet;
 }
@@ -862,6 +859,19 @@ logmsgInternal_doWrite(smsg_t *pMsg)
 		const int pri = getPRIi(pMsg);
 		uchar *const msg = getMSG(pMsg);
 #		ifdef HAVE_LIBLOGGING_STDLOG
+		/* the "emit only once" rate limiter is quick and dirty and not
+		 * thread safe. However, that's no problem for the current intend
+		 * and it is not justified to create more robust code for the
+		 * functionality. -- rgerhards, 2018-05-14
+		 */
+		static warnmsg_emitted = 0;
+		if(warnmsg_emitted == 0) {
+			stdlog_log(stdlog_hdl, LOG_WARNING, "%s",
+				"RSYSLOG WARNING: liblogging-stdlog "
+				"functionality will go away soon. For details see "
+				"https://github.com/rsyslog/rsyslog/issues/2706");
+			warnmsg_emitted = 1;
+		}
 		stdlog_log(stdlog_hdl, pri2sev(pri), "%s", (char*)msg);
 #		else
 		syslog(pri, "%s", msg);
@@ -985,6 +995,45 @@ submitMsg(smsg_t *pMsg)
 	return submitMsgWithDfltRatelimiter(pMsg);
 }
 
+
+static rsRetVal ATTR_NONNULL()
+splitOversizeMessage(smsg_t *const pMsg)
+{
+	DEFiRet;
+	const char *rawmsg;
+	int nsegments;
+	int len_rawmsg;
+	const int maxlen = glblGetMaxLine();
+	ISOBJ_TYPE_assert(pMsg, msg);
+
+	getRawMsg(pMsg, (uchar**) &rawmsg, &len_rawmsg);
+	nsegments = len_rawmsg / maxlen;
+	const int len_last_segment = len_rawmsg % maxlen;
+	DBGPRINTF("splitting oversize message, size %d, segment size %d, "
+		"nsegments %d, bytes in last fragment %d\n",
+		len_rawmsg, maxlen, nsegments, len_last_segment);
+
+	smsg_t *pMsg_seg;
+
+	/* process full segments */
+	for(int i = 0 ; i < nsegments ; ++i) {
+		CHKmalloc(pMsg_seg = MsgDup(pMsg));
+		MsgSetRawMsg(pMsg_seg, rawmsg + (i * maxlen), maxlen);
+		submitMsg2(pMsg_seg);
+	}
+
+	/* if necessary, write partial last segment */
+	if(len_last_segment != 0) {
+		CHKmalloc(pMsg_seg = MsgDup(pMsg));
+		MsgSetRawMsg(pMsg_seg, rawmsg + (nsegments * maxlen), len_last_segment);
+		submitMsg2(pMsg_seg);
+	}
+
+finalize_it:
+	RETiRet;
+}
+
+
 /* submit a message to the main message queue.   This is primarily
  * a hook to prevent the need for callers to know about the main message queue
  * rgerhards, 2008-02-13
@@ -997,6 +1046,34 @@ submitMsg2(smsg_t *pMsg)
 	DEFiRet;
 
 	ISOBJ_TYPE_assert(pMsg, msg);
+
+	if(getRawMsgLen(pMsg) > glblGetMaxLine()){
+		uchar *rawmsg;
+		int dummy;
+		getRawMsg(pMsg, &rawmsg, &dummy);
+		if(glblReportOversizeMessage()) {
+			LogMsg(0, RS_RET_OVERSIZE_MSG, LOG_WARNING,
+				"message too long (%d) with configured size %d, begin of "
+				"message is: %.80s",
+				getRawMsgLen(pMsg), glblGetMaxLine(), rawmsg);
+		}
+		writeOversizeMessageLog(pMsg);
+		if(glblGetOversizeMsgInputMode() == glblOversizeMsgInputMode_Split) {
+			splitOversizeMessage(pMsg);
+			/* we have submitted the message segments recursively, so we
+			 * can just deleted the original msg object and terminate.
+			 */
+			msgDestruct(&pMsg);
+			FINALIZE;
+		} else if(glblGetOversizeMsgInputMode() == glblOversizeMsgInputMode_Truncate) {
+			MsgTruncateToMaxSize(pMsg);
+		} else {
+			/* in "accept" mode, we do nothing, simply because "accept" means
+			 * to use as-is.
+			 */
+			assert(glblGetOversizeMsgInputMode() == glblOversizeMsgInputMode_Accept);
+		}
+	}
 
 	pRuleset = MsgGetRuleset(pMsg);
 	pQueue = (pRuleset == NULL) ? pMsgQueue : ruleset.GetRulesetQueue(pRuleset);
@@ -1018,13 +1095,12 @@ finalize_it:
  * for multi_submit_t. All messages need to go into the SAME queue!
  * rgerhards, 2009-06-16
  */
-rsRetVal
-multiSubmitMsg2(multi_submit_t *pMultiSub)
+rsRetVal ATTR_NONNULL()
+multiSubmitMsg2(multi_submit_t *const pMultiSub)
 {
 	qqueue_t *pQueue;
 	ruleset_t *pRuleset;
 	DEFiRet;
-	assert(pMultiSub != NULL);
 
 	if(pMultiSub->nElem == 0)
 		FINALIZE;
@@ -1455,6 +1531,23 @@ initAll(int argc, char **argv)
 
 	resetErrMsgsFlag();
 	localRet = rsconf.Load(&ourConf, ConfFile);
+
+	/* check for "hard" errors that needs us to abort in any case */
+	if(   (localRet == RS_RET_CONF_FILE_NOT_FOUND)
+	   || (localRet == RS_RET_NO_ACTIONS) ) {
+		/* for extreme testing, we keep the ability to let rsyslog continue
+		 * even on hard config errors. Note that this may lead to segfaults
+		 * or other malfunction further down the road.
+		 */
+		if((glblDevOptions & DEV_OPTION_KEEP_RUNNING_ON_HARD_CONF_ERROR) == 1) {
+			fprintf(stderr, "rsyslogd: NOTE: developer-only option set to keep rsyslog "
+				"running where it should abort - this can lead to "
+				"more problems later in the run.\n");
+		} else {
+			ABORT_FINALIZE(localRet);
+		}
+	}
+
 	glbl.GenerateLocalHostNameProperty();
 
 	if(hadErrMsgs()) {
@@ -1665,6 +1758,7 @@ doHUP(void)
 	ruleset.IterateAllActions(ourConf, doHUPActions, NULL);
 	modDoHUP();
 	lookupDoHUP();
+	errmsgDoHUP();
 }
 
 /* rsyslogdDoDie() is a signal handler. If called, it sets the bFinished variable
