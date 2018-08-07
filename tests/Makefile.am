@@ -23,7 +23,7 @@ liboverride_getaddrinfo_la_CFLAGS =
 liboverride_getaddrinfo_la_LDFLAGS = -avoid-version -shared
 
 # TODO: reenable TESTRUNS = rt_init rscript
-check_PROGRAMS = $(TESTRUNS) ourtail nettester tcpflood chkseq msleep randomgen \
+check_PROGRAMS = $(TESTRUNS) ourtail tcpflood chkseq msleep randomgen \
 	diagtalker uxsockrcvr syslog_caller inputfilegen minitcpsrv \
 	omrelp_dflt_port \
 	mangle_qi \
@@ -32,13 +32,10 @@ if ENABLE_IMJOURNAL
 check_PROGRAMS += journal_print
 endif
 TESTS = $(TESTRUNS)
-#TESTS = $(TESTRUNS) cfg.sh
 
+if ENABLE_DEFAULT_TESTS
 TESTS +=  \
-	empty-hostname.sh
-
-if ENABLE_TESTBENCH1
-TESTS +=  \
+	empty-hostname.sh \
 	hostname-getaddrinfo-fail.sh \
 	prop-programname.sh \
 	prop-programname-with-slashes.sh \
@@ -201,82 +198,7 @@ TESTS +=  \
 	failover-rptd.sh \
 	failover-no-rptd.sh \
 	failover-no-basic.sh \
-	rcvr_fail_restore.sh
-if ENABLE_LIBFAKETIME
-TESTS +=  \
-	now_family_utc.sh \
-	now-utc.sh \
-	now-utc-ymd.sh \
-	now-utc-casecmp.sh \
-	timegenerated-ymd.sh \
-	timegenerated-uxtimestamp.sh \
-	timegenerated-uxtimestamp-invld.sh \
-	timegenerated-dateordinal.sh \
-	timegenerated-dateordinal-invld.sh \
-	timegenerated-utc.sh \
-	timegenerated-utc-legacy.sh \
-	timereported-utc.sh \
-	timereported-utc-legacy.sh
-if ENABLE_MMNORMALIZE
-TESTS += \
-	mmnormalize_processing_test1.sh \
-	mmnormalize_processing_test2.sh \
-	mmnormalize_processing_test3.sh \
-	mmnormalize_processing_test4.sh
-endif
-endif
-
-if ENABLE_PGSQL
-if ENABLE_PGSQL_TESTS
-TESTS += \
-	pgsql-basic.sh \
-	pgsql-basic-cnf6.sh \
-	pgsql-basic-threads-cnf6.sh \
-	pgsql-template.sh \
-	pgsql-template-cnf6.sh \
-	pgsql-actq-mt-withpause.sh \
-	pgsql-template-threads-cnf6.sh
-if HAVE_VALGRIND
-TESTS += \
-	pgsql-basic-vg.sh \
-	pgsql-template-vg.sh \
-	pgsql-basic-cnf6-vg.sh \
-	pgsql-template-cnf6-vg.sh \
-	pgsql-actq-mt-withpause-vg.sh
-endif
-endif
-endif
-
-if ENABLE_MYSQL_TESTS
-TESTS +=  \
-	mysql-basic.sh \
-	mysql-basic-cnf6.sh \
-	mysql-asyn.sh \
-	mysql-actq-mt.sh \
-	mysql-actq-mt-withpause.sh \
-	action-tx-single-processing.sh \
-	action-tx-errfile.sh
-if HAVE_VALGRIND
-TESTS +=  \
-	mysql-basic-vg.sh \
-	mysql-asyn-vg.sh \
-	mysql-actq-mt-withpause-vg.sh
-endif
-if ENABLE_OMLIBDBI
-TESTS +=  \
-	libdbi-basic.sh \
-	libdbi-asyn.sh
-if HAVE_VALGRIND
-TESTS +=  \
-	libdbi-basic-vg.sh
-endif
-endif
-endif
-
-endif #  ENABLE_TESTBENCH2
-
-if ENABLE_TESTBENCH2
-TESTS +=  \
+	rcvr_fail_restore.sh \
 	rscript_contains.sh \
 	rscript_bare_var_root.sh \
 	rscript_bare_var_root-empty.sh \
@@ -363,10 +285,22 @@ TESTS +=  \
 	lookup_table_rscript_reload_without_stub.sh \
 	include-obj-text-from-file.sh \
 	multiple_lookup_tables.sh
-if ENABLE_FMHTTP
-TESTS +=  \
-	rscript_http_request.sh
-endif # ENABLE_FMHTTP
+	parsertest-parse1.sh \
+	parsertest-parse1-udp.sh \
+	parsertest-parse2.sh \
+	parsertest-parse2-udp.sh \
+	parsertest-parse_8bit_escape.sh \
+	parsertest-parse_8bit_escape-udp.sh \
+	parsertest-parse3.sh \
+	parsertest-parse3-udp.sh \
+	parsertest-parse_invld_regex.sh \
+	parsertest-parse_invld_regex-udp.sh \
+	parsertest-parse-3164-buggyday.sh \
+	parsertest-parse-3164-buggyday-udp.sh \
+	parsertest-parse-nodate.sh \
+	parsertest-parse-nodate-udp.sh \
+	parsertest-snare_ccoff_udp.sh \
+	parsertest-snare_ccoff_udp2.sh
 if HAVE_VALGRIND
 TESTS +=  \
 	include-obj-outside-control-flow-vg.sh \
@@ -375,13 +309,7 @@ TESTS +=  \
 	rscript_parse_json-vg.sh \
 	rscript_backticks-vg.sh \
 	rscript-config_enable-off-vg.sh \
-	prop-jsonmesg-vg.sh
-endif # HAVE_VALGRIND
-
-endif # ENABLE_TESTBENCH2
-
-if HAVE_VALGRIND
-TESTS +=  \
+	prop-jsonmesg-vg.sh \
 	mmexternal-SegFault-vg.sh \
 	mmexternal-InvldProg-vg.sh \
 	internal-errmsg-memleak-vg.sh \
@@ -410,12 +338,94 @@ TESTS +=  \
 	lookup_table_rscript_reload_without_stub-vg.sh \
 	multiple_lookup_tables-vg.sh \
 	fac_local0-vg.sh \
+	badqi.sh \
+	threadingmq.sh \
+	threadingmqaq.sh \
 	rscript_trim-vg.sh
+endif # HAVE_VALGRIND
+endif # ENABLE_DEFAULT_TESTS
+
+if ENABLE_LIBFAKETIME
+TESTS +=  \
+	now_family_utc.sh \
+	now-utc.sh \
+	now-utc-ymd.sh \
+	now-utc-casecmp.sh \
+	timegenerated-ymd.sh \
+	timegenerated-uxtimestamp.sh \
+	timegenerated-uxtimestamp-invld.sh \
+	timegenerated-dateordinal.sh \
+	timegenerated-dateordinal-invld.sh \
+	timegenerated-utc.sh \
+	timegenerated-utc-legacy.sh \
+	timereported-utc.sh \
+	timereported-utc-legacy.sh
+# now come faketime tests that utilize mmnormalize - aka "no endif here"
+if ENABLE_MMNORMALIZE
+TESTS += \
+	mmnormalize_processing_test1.sh \
+	mmnormalize_processing_test2.sh \
+	mmnormalize_processing_test3.sh \
+	mmnormalize_processing_test4.sh
+endif
+endif
+
+if ENABLE_PGSQL
+if ENABLE_PGSQL_TESTS
+TESTS += \
+	pgsql-basic.sh \
+	pgsql-basic-cnf6.sh \
+	pgsql-basic-threads-cnf6.sh \
+	pgsql-template.sh \
+	pgsql-template-cnf6.sh \
+	pgsql-actq-mt-withpause.sh \
+	pgsql-template-threads-cnf6.sh
+if HAVE_VALGRIND
+TESTS += \
+	pgsql-basic-vg.sh \
+	pgsql-template-vg.sh \
+	pgsql-basic-cnf6-vg.sh \
+	pgsql-template-cnf6-vg.sh \
+	pgsql-actq-mt-withpause-vg.sh
+endif
+endif
+endif
+
+if ENABLE_MYSQL_TESTS
+TESTS +=  \
+	mysql-basic.sh \
+	mysql-basic-cnf6.sh \
+	mysql-asyn.sh \
+	mysql-actq-mt.sh \
+	mysql-actq-mt-withpause.sh \
+	action-tx-single-processing.sh \
+	action-tx-errfile.sh
+if HAVE_VALGRIND
+TESTS +=  \
+	mysql-basic-vg.sh \
+	mysql-asyn-vg.sh \
+	mysql-actq-mt-withpause-vg.sh
+endif
+if ENABLE_OMLIBDBI # we piggy-back on MYSQL_TESTS as we need the same environment
+TESTS +=  \
+	libdbi-basic.sh \
+	libdbi-asyn.sh
+if HAVE_VALGRIND
+TESTS +=  \
+	libdbi-basic-vg.sh
+endif
+endif
+endif #  MYSQL_TESTS
+
 if ENABLE_FMHTTP
 TESTS +=  \
+	rscript_http_request.sh
+if HAVE_VALGRIND
+TESTS +=  \
 	rscript_http_request-vg.sh
-endif # ENABLE_FMHTTP
 endif # HAVE_VALGRIND
+endif # ENABLE_FMHTTP
+
 
 if ENABLE_ROOT_TESTS
 TESTS +=  \
@@ -436,16 +446,15 @@ TESTS +=  \
 endif
 endif
 
-# disable temporarily due to issues
-# see: https://github.com/rsyslog/rsyslog/issues/2564
-#if ENABLE_IMJOURNAL
-#TESTS +=  \
-#	imjournal-basic.sh
-#if HAVE_VALGRIND
-#TESTS +=  \
-#	imjournal-basic-vg.sh
-#endif
-#endif
+if ENABLE_IMJOURNAL
+TESTS +=  \
+	imjournal-basic.sh \
+	imjournal-statefile.sh
+if HAVE_VALGRIND
+TESTS +=  \
+	imjournal-basic-vg.sh
+endif
+endif
 
 if ENABLE_OMJOURNAL
 TESTS +=  \
@@ -572,13 +581,16 @@ endif
 if ENABLE_ELASTICSEARCH_TESTS
 TESTS +=  \
 	es-basic-server.sh \
-	es-basic-ha.sh \
 	es-maxbytes-bulk.sh \
 	es-basic-errfile-empty.sh \
 	es-basic-errfile-popul.sh \
 	es-bulk-errfile-empty.sh \
 	es-bulk-errfile-popul.sh \
 	es-writeoperation.sh
+if ENABLE_IMPSTATS
+TESTS +=  \
+	es-basic-ha.sh
+endif
 if ENABLE_IMFILE
 TESTS +=  \
 	es-bulk-errfile-popul-def-format.sh \
@@ -713,11 +725,8 @@ TESTS +=  \
 if HAVE_VALGRIND
 TESTS += \
 	imtcp-tls-basic-vg.sh \
-	imtcp_conndrop_tls-vg.sh
-if !ENABLE_DISTCHECK_WORKAROUND
-TESTS += \
+	imtcp_conndrop_tls-vg.sh \
 	manytcp-too-few-tls-vg.sh
-endif
 endif
 endif
 
@@ -756,6 +765,7 @@ TESTS += sndrcv_relp.sh \
 if ENABLE_GNUTLS
 TESTS += \
          sndrcv_relp_tls.sh \
+         sndrcv_relp_tls_prio.sh \
          relp_tls_certificate_not_found.sh
 endif
 endif
@@ -766,22 +776,33 @@ TESTS += \
 	sndrcv_omudpspoof_nonstdpt.sh
 endif
 
-if ENABLE_OMSTDOUT
-TESTS += \
-	omod-if-array.sh \
-	threadingmq.sh \
-	threadingmqaq.sh \
-	badqi.sh
+#disabled as array-passing mode is no longer supported:	omod-if-array.sh 
+#	omod-if-array.sh 
+#	omod-if-array-udp.sh 
 if ENABLE_IMPTCP
 TESTS += \
 	tabescape_dflt.sh \
+	tabescape_dflt-udp.sh \
 	tabescape_off.sh \
-	timestamp.sh \
-	inputname.sh \
-	proprepltest.sh \
-	parsertest.sh \
-	fieldtest.sh
-endif
+	tabescape_off-udp.sh \
+	inputname-imtcp.sh \
+	fieldtest.sh \
+	fieldtest-udp.sh \
+	proprepltest-nolimittag-udp.sh \
+	proprepltest-nolimittag.sh \
+	proprepltest-rfctag-udp.sh \
+	proprepltest-rfctag.sh \
+	timestamp-3164-udp.sh \
+	timestamp-3164.sh \
+	timestamp-3339-udp.sh \
+	timestamp-3339.sh \
+	timestamp-mysql-udp.sh \
+	timestamp-mysql.sh \
+	timestamp-pgsql-udp.sh \
+	timestamp-pgsql.sh \
+	timestamp-subseconds-udp.sh \
+	timestamp-subseconds.sh
+
 endif
 
 if ENABLE_OMRULESET
@@ -792,7 +813,24 @@ endif
 
 if ENABLE_PMSNARE
 TESTS += \
-	pmsnare.sh
+	pmsnare-default.sh \
+	pmsnare-default-udp.sh \
+	pmsnare-ccoff.sh \
+	pmsnare-ccoff-udp.sh \
+	pmsnare-ccdefault.sh \
+	pmsnare-ccdefault-udp.sh \
+	pmsnare-cccstyle.sh \
+	pmsnare-cccstyle-udp.sh \
+	pmsnare-ccbackslash.sh \
+	pmsnare-ccbackslash-udp.sh \
+	pmsnare-modoverride.sh \
+	pmsnare-modoverride-udp.sh
+endif
+
+if ENABLE_PMLASTMSG
+TESTS += \
+	pmlastmsg.sh \
+	pmlastmsg-udp.sh
 endif
 
 if ENABLE_EXTENDED_TESTS
@@ -857,6 +895,8 @@ TESTS += \
 endif
 
 if ENABLE_MMKUBERNETES
+if ENABLE_MMJSONPARSE
+if ENABLE_IMFILE
 TESTS += \
 	mmkubernetes-basic.sh
 if HAVE_VALGRIND
@@ -864,12 +904,19 @@ TESTS += \
 	mmkubernetes-basic-vg.sh
 endif
 endif
+endif
+endif
 
 endif # if ENABLE_TESTBENCH
 
 TESTS_ENVIRONMENT = RSYSLOG_MODDIR='$(abs_top_builddir)'/runtime/.libs/
-DISTCLEANFILES=rsyslog.pid
+TESTS_ENVIRONMENT+= TOP_BUILDDIR='$(top_builddir)'
+TESTS_ENVIRONMENT+= TESTTOOL_DIR='$(abs_top_builddir)/tests'
+DISTCLEANFILES=rsyslog.pid #.dep_cache/* .dep_wrk/*
 test_files = testbench.h runtime-dummy.c
+
+distclean-local:
+	rm -rf .dep_cache .dep_wrk
 
 EXTRA_DIST= \
 	internal-errmsg-memleak-vg.sh \
@@ -925,73 +972,6 @@ EXTRA_DIST= \
 	DevNull.cfgtest \
 	err1.rstest \
 	NoExistFile.cfgtest \
-	timestamp.sh \
-	testsuites/ts3164.conf \
-	testsuites/mon1digit.ts3164 \
-	testsuites/mon2digit.ts3164 \
-	testsuites/Jan.ts3164 \
-	testsuites/Feb.ts3164 \
-	testsuites/Mar.ts3164 \
-	testsuites/Apr.ts3164 \
-	testsuites/May.ts3164 \
-	testsuites/Jun.ts3164 \
-	testsuites/Jul.ts3164 \
-	testsuites/Aug.ts3164 \
-	testsuites/Sep.ts3164 \
-	testsuites/Oct.ts3164 \
-	testsuites/Nov.ts3164 \
-	testsuites/Dec.ts3164 \
-	testsuites/ts3339.conf \
-	testsuites/master.ts3339 \
-	testsuites/tsmysql.conf \
-	testsuites/master.tsmysql \
-	testsuites/tspgsql.conf \
-	testsuites/master.tspgsql \
-	testsuites/subsecond.conf \
-	testsuites/master.subsecond \
-	testsuites/parse_8bit_escape.conf \
-	testsuites/8bit.parse_8bit_escape \
-	testsuites/parse1.conf \
-	testsuites/field1.conf \
-	testsuites/1.parse1 \
-	testsuites/2.parse1 \
-	testsuites/3.parse1 \
-	testsuites/4.parse1 \
-	testsuites/mark.parse1 \
-	testsuites/8bit.parse1 \
-	testsuites/empty.parse1 \
-	testsuites/snare.parse1 \
-	testsuites/oversizeTag-1.parse1 \
-	testsuites/weird.parse1 \
-	testsuites/date1.parse1 \
-	testsuites/date2.parse1 \
-	testsuites/date3.parse1 \
-	testsuites/date4.parse1 \
-	testsuites/date5.parse1 \
-	testsuites/rfc3164.parse1 \
-	testsuites/rfc5424-1.parse1 \
-	testsuites/rfc5424-2.parse1 \
-	testsuites/rfc5424-3.parse1 \
-	testsuites/rfc5424-4.parse1 \
-	testsuites/malformed1.parse1 \
-	testsuites/reallife.parse1 \
-	testsuites/parse2.conf \
-	testsuites/reallife.parse2 \
-	testsuites/parse3.conf \
-	testsuites/reallife.parse3 \
-	testsuites/parse-nodate.conf \
-	testsuites/samples.parse-nodate \
-	testsuites/parse_invld_regex.conf \
-	testsuites/samples.parse_invld_regex \
-	testsuites/parse-3164-buggyday.conf \
-	testsuites/samples.parse-3164-buggyday \
-	testsuites/snare_ccoff_udp.conf \
-	testsuites/samples.snare_ccoff_udp \
-	testsuites/snare_ccoff_udp2.conf \
-	testsuites/samples.snare_ccoff_udp2 \
-	testsuites/omod-if-array.conf \
-	testsuites/1.omod-if-array \
-	testsuites/1.field1 \
 	tcp_forwarding_tpl.sh \
 	tcp_forwarding_ns_tpl.sh \
 	testsuites/tcp_forwarding_tpl.conf \
@@ -1000,8 +980,38 @@ EXTRA_DIST= \
 	testsuites/tcp_forwarding_dflt_tpl.conf \
 	tcp_forwarding_retries.sh \
 	killrsyslog.sh \
-	parsertest.sh \
+	parsertest-parse1.sh \
+	parsertest-parse1-udp.sh \
+	parsertest-parse2.sh \
+	parsertest-parse2-udp.sh \
+	parsertest-parse_8bit_escape.sh \
+	parsertest-parse_8bit_escape-udp.sh \
+	parsertest-parse3.sh \
+	parsertest-parse3-udp.sh \
+	parsertest-parse_invld_regex.sh \
+	parsertest-parse_invld_regex-udp.sh \
+	parsertest-parse-3164-buggyday.sh \
+	parsertest-parse-3164-buggyday-udp.sh \
+	parsertest-parse-nodate.sh \
+	parsertest-parse-nodate-udp.sh \
+	parsertest-snare_ccoff_udp.sh \
+	parsertest-snare_ccoff_udp2.sh \
 	fieldtest.sh \
+	fieldtest-udp.sh \
+	proprepltest-nolimittag-udp.sh \
+	proprepltest-nolimittag.sh \
+	proprepltest-rfctag-udp.sh \
+	proprepltest-rfctag.sh \
+	timestamp-3164-udp.sh \
+	timestamp-3164.sh \
+	timestamp-3339-udp.sh \
+	timestamp-3339.sh \
+	timestamp-mysql-udp.sh \
+	timestamp-mysql.sh \
+	timestamp-pgsql-udp.sh \
+	timestamp-pgsql.sh \
+	timestamp-subseconds-udp.sh \
+	timestamp-subseconds.sh \
 	rsf_getenv.sh \
 	testsuites/rsf_getenv.conf \
 	diskq-rfc5424.sh \
@@ -1179,6 +1189,7 @@ EXTRA_DIST= \
 	testsuites/now-utc.conf \
 	faketime_common.sh \
 	imjournal-basic.sh \
+	imjournal-statefile.sh \
 	imjournal-basic-vg.sh \
 	omjournal-abort-template.sh \
 	omjournal-abort-no-template.sh \
@@ -1249,17 +1260,18 @@ EXTRA_DIST= \
 	mmdb-container-empty.sh \
 	mmdb-multilevel-vg.sh \
 	incltest.sh \
-	testsuites/incltest.conf \
 	incltest_dir.sh \
-	testsuites/incltest_dir.conf \
 	incltest_dir_empty_wildcard.sh \
-	testsuites/incltest_dir_empty_wildcard.conf \
 	incltest_dir_wildcard.sh \
-	testsuites/incltest_dir_wildcard.conf \
 	testsuites/incltest.d/include.conf \
+	testsuites/es.yml \
+	es_response_get_msgnum.py \
+	elasticsearch-error-format-check.py \
 	es-basic-es6.0.sh \
 	es-basic.sh \
 	es-basic-vgthread.sh \
+	es-basic-server.sh \
+	es-basic-ha.sh \
 	es-basic-bulk.sh \
 	es-basic-errfile-empty.sh \
 	es-basic-errfile-popul.sh \
@@ -1272,6 +1284,7 @@ EXTRA_DIST= \
 	es-basic-vg.sh \
 	es-basic-bulk-vg.sh \
 	es-basic-ha-vg.sh \
+	es-maxbytes-bulk.sh \
 	linkedlistqueue.sh \
 	testsuites/linkedlistqueue.conf \
 	da-mainmsg-q.sh \
@@ -1356,12 +1369,9 @@ EXTRA_DIST= \
 	testsuites/imtcp_addtlframedelim.conf \
 	tcp-msgreduc-vg.sh \
 	testsuites/./tcp-msgreduc-vg.conf \
-	inputname.sh \
-	testsuites/inputname_imtcp.conf \
-	testsuites/1.inputname_imtcp_12514 \
-	testsuites/1.inputname_imtcp_12515 \
-	testsuites/1.inputname_imtcp_12516 \
+	inputname-imtcp.sh \
 	omod-if-array.sh \
+	omod-if-array-udp.sh \
 	discard.sh \
 	testsuites/discard.conf \
 	failover-no-rptd.sh \
@@ -1426,6 +1436,9 @@ EXTRA_DIST= \
 	sndrcv_relp_rebind.sh \
 	testsuites/sndrcv_relp_rebind_sender.conf \
 	testsuites/sndrcv_relp_rebind_rcvr.conf \
+	sndrcv_relp_tls_prio.sh \
+	testsuites/sndrcv_relp_tls_prio_sender.conf \
+	testsuites/sndrcv_relp_tls_prio_rcvr.conf \
 	sndrcv_relp_tls.sh \
 	testsuites/sndrcv_relp_tls_sender.conf \
 	testsuites/sndrcv_relp_tls_rcvr.conf \
@@ -1472,7 +1485,6 @@ EXTRA_DIST= \
 	omprog-transactions-vg.sh \
 	omprog-transactions-failed-messages.sh \
 	omprog-transactions-failed-commits.sh \
-	testsuites/omprog-defaults.conf \
 	testsuites/omprog-defaults-bin.sh \
 	testsuites/omprog-feedback.conf \
 	testsuites/omprog-feedback-bin.sh \
@@ -1595,11 +1607,6 @@ EXTRA_DIST= \
 	testsuites/dynfile_cachemiss.conf \
 	dynfile_invalid2.sh \
 	testsuites/dynfile_invalid2.conf \
-	proprepltest.sh \
-	testsuites/rfctag.conf \
-	testsuites/master.rfctag \
-	testsuites/nolimittag.conf \
-	testsuites/master.nolimittag \
 	rulesetmultiqueue.sh \
 	testsuites/rulesetmultiqueue.conf \
 	rulesetmultiqueue-v6.sh \
@@ -1631,11 +1638,9 @@ EXTRA_DIST= \
 	execonlywhenprevsuspended-nonsusp-queue.sh \
 	testsuites/execonlywhenprevsuspended-nonsusp-queue.conf \
 	tabescape_dflt.sh \
-	testsuites/tabescape_dflt.conf \
-	testsuites/1.tabescape_dflt \
+	tabescape_dflt-udp.sh \
 	tabescape_off.sh \
-	testsuites/tabescape_off.conf \
-	testsuites/1.tabescape_off \
+	tabescape_off-udp.sh \
 	dircreate_dflt.sh \
 	testsuites/dircreate_dflt.conf \
 	dircreate_off.sh \
@@ -1905,19 +1910,20 @@ EXTRA_DIST= \
 	testsuites/sndrcv_tls_priorityString_rcvr.conf \
 	omtcl.sh \
 	omtcl.tcl \
-	pmsnare.sh \
-	testsuites/pmsnare_default.conf \
-	testsuites/pmsnare_ccoff.conf \
-	testsuites/pmsnare_ccdefault.conf \
-	testsuites/pmsnare_cccstyle.conf \
-	testsuites/pmsnare_ccbackslash.conf \
-	testsuites/pmsnare_modoverride.conf \
-	testsuites/sample.pmsnare_default \
-	testsuites/sample.pmsnare_ccoff \
-	testsuites/sample.pmsnare_ccdefault \
-	testsuites/sample.pmsnare_cccstyle \
-	testsuites/sample.pmsnare_ccbackslash \
-	testsuites/sample.pmsnare_modoverride \
+	pmsnare-default.sh \
+	pmsnare-default-udp.sh \
+	pmsnare-ccoff.sh \
+	pmsnare-ccoff-udp.sh \
+	pmsnare-ccdefault.sh \
+	pmsnare-ccdefault-udp.sh \
+	pmsnare-cccstyle.sh \
+	pmsnare-cccstyle-udp.sh \
+	pmsnare-ccbackslash.sh \
+	pmsnare-ccbackslash-udp.sh \
+	pmsnare-modoverride.sh \
+	pmsnare-modoverride-udp.sh \
+	pmlastmsg.sh \
+	pmlastmsg-udp.sh \
 	testsuites/include-std-omfile-action.conf \
 	pgsql-basic.sh \
 	testsuites/pgsql-basic.sql \
@@ -1960,7 +1966,7 @@ tcpflood_LDADD = $(SOL_LIBS) $(PTHREADS_LIBS) $(RELP_LIBS)
 if ENABLE_GNUTLS
 tcpflood_CFLAGS += $(GNUTLS_CFLAGS)
 tcpflood_CPPFLAGS += $(GNUTLS_CFLAGS)
-tcpflood_LDADD += $(GNUTLS_LIBS) -lgcrypt
+tcpflood_LDADD += $(GNUTLS_LIBS)
 endif
 if ENABLE_OPENSSL
 tcpflood_CFLAGS += $(OPENSSL_CFLAGS)
@@ -1987,9 +1993,6 @@ randomgen_LDADD = $(SOL_LIBS)
 
 inputfilegen_SOURCES = inputfilegen.c
 inputfilegen_LDADD = $(SOL_LIBS)
-
-nettester_SOURCES = nettester.c getline.c
-nettester_LDADD = $(SOL_LIBS)
 
 # rtinit tests disabled for the moment - also questionable if they
 # really provide value (after all, everything fails if rtinit fails...)

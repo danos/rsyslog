@@ -16,26 +16,60 @@ if [ `uname` = "SunOS" ] ; then
 fi
 
 . $srcdir/diag.sh init
+generate_conf
+add_conf '
+$ModLoad ../plugins/imtcp/.libs/imtcp
+$MainMsgQueueTimeoutShutdown 10000
+
+# general definition
+$template outfmt,"%msg:F,58:2%\n"
+
+# create the individual rulesets
+$ruleset file1
+$RulesetCreateMainQueue on
+$template dynfile1,"rsyslog.out1.log" # trick to use relative path names!
+:msg, contains, "msgnum:" ?dynfile1;outfmt
+
+$ruleset file2
+$RulesetCreateMainQueue on
+$template dynfile2,"rsyslog.out2.log" # trick to use relative path names!
+:msg, contains, "msgnum:" ?dynfile2;outfmt
+
+$ruleset file3
+$RulesetCreateMainQueue on
+$template dynfile3,"rsyslog.out3.log" # trick to use relative path names!
+:msg, contains, "msgnum:" ?dynfile3;outfmt
+
+# start listeners and bind them to rulesets
+$InputTCPServerBindRuleset file1
+$InputTCPServerRun 13514
+
+$InputTCPServerBindRuleset file2
+$InputTCPServerRun 13515
+
+$InputTCPServerBindRuleset file3
+$InputTCPServerRun 13516
+'
 rm -f rsyslog.out1.log rsyslog.out2.log rsyslog.out3.log
-. $srcdir/diag.sh startup rulesetmultiqueue.conf
+startup
 . $srcdir/diag.sh wait-startup
 # now fill the three files (a bit sequentially, but they should
 # still get their share of concurrency - to increase the chance
 # we use three connections per set).
-. $srcdir/diag.sh tcpflood -c3 -p13514 -m20000 -i0
-. $srcdir/diag.sh tcpflood -c3 -p13515 -m20000 -i20000
-. $srcdir/diag.sh tcpflood -c3 -p13516 -m20000 -i40000
+tcpflood -c3 -p13514 -m20000 -i0
+tcpflood -c3 -p13515 -m20000 -i20000
+tcpflood -c3 -p13516 -m20000 -i40000
 
 # in this version of the imdiag, we do not have the capability to poll
 # all queues for emptyness. So we do a sleep in the hopes that this will
 # sufficiently drain the queues. This is race, but the best we currently
 # can do... - rgerhards, 2009-11-05
 sleep 2 
-. $srcdir/diag.sh shutdown-when-empty # shut down rsyslogd when done processing messages
-. $srcdir/diag.sh wait-shutdown
+shutdown_when_empty # shut down rsyslogd when done processing messages
+wait_shutdown
 # now consolidate all logs into a single one so that we can use the
 # regular check logic
-cat rsyslog.out1.log rsyslog.out2.log rsyslog.out3.log > rsyslog.out.log
-. $srcdir/diag.sh seq-check 0 59999
+cat rsyslog.out1.log rsyslog.out2.log rsyslog.out3.log > $RSYSLOG_OUT_LOG
+seq_check 0 59999
 rm -f rsyslog.out1.log rsyslog.out2.log rsyslog.out3.log
-. $srcdir/diag.sh exit
+exit_test
