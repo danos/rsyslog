@@ -162,6 +162,72 @@ sbin_PROGRAMS =
 
 # mmkubernetes
 @ENABLE_MMKUBERNETES_TRUE@am__append_63 = contrib/mmkubernetes
+# currently not supported in make distcheck:
+# --enable-mysql-tests
+# --enable-pgsql-tests 
+# --enable-extended-tests --> should probably never be enabled due to runtime
+@ENABLE_DEFAULT_TESTS_TRUE@am__append_64 = \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-diagtools \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-impstats \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-imptcp \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-klog \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-mail \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-mmanon \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-mmaudit \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-mmcount \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-mmexternal \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-mmfields \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-mmjsonparse \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-mmpstrucdata \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-mmrm1stspace \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-mmsequence \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-mmutf8fix \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-omruleset \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-omuxsock \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-pmaixforwardedfrom \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-pmciscoios \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-pmcisconames \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-pmlastmsg \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-pmnull \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-pmsnare \
+@ENABLE_DEFAULT_TESTS_TRUE@	--enable-usertools
+
+@ENABLE_OMPROG_TRUE@am__append_65 = --enable-omprog 
+
+# Note: [io]mzmq3 cannot be built any longer, according to Brian Knox they require an
+# outdated version of the client lib. So we do not bother any longer about them.
+@ENABLE_GSSAPI_TRUE@am__append_66 = --enable-gssapi-krb5
+@ENABLE_PMNORMALIZE_TRUE@am__append_67 = --enable-pmnormalize
+@ENABLE_MMDBLOOKUP_TRUE@am__append_68 = --enable-mmdblookup
+@ENABLE_MMNORMALIZE_TRUE@am__append_69 = --enable-mmnormalize
+@ENABLE_OMMONGODB_TRUE@am__append_70 = --enable-ommongodb
+@ENABLE_OMHIREDIS_TRUE@am__append_71 = --enable-omhiredis
+@ENABLE_MMSNMPTRAPD_TRUE@am__append_72 = --enable-mmsnmptrapd
+@ENABLE_OMLIBDBI_TRUE@am__append_73 = --enable-libdbi
+@ENABLE_LIBGCRYPT_TRUE@am__append_74 = --enable-libgcrypt
+@ENABLE_OMHTTPFS_TRUE@am__append_75 = --enable-omhttpfs
+@ENABLE_OMTCL_TRUE@am__append_76 = --enable-omtcl
+@ENABLE_SNMP_TRUE@am__append_77 = --enable-snmp
+@ENABLE_FMHTTP_TRUE@am__append_78 = --enable-fmhttp
+@ENABLE_OMUDPSPOOF_TRUE@am__append_79 = --enable-omudpspoof
+@ENABLE_PGSQL_TRUE@am__append_80 = --enable-pgsql
+@ENABLE_GNUTLS_TRUE@am__append_81 = --enable-gnutls
+@ENABLE_OPENSSL_TRUE@am__append_82 = --enable-openssl
+@ENABLE_MYSQL_TRUE@am__append_83 = --enable-mysql
+@ENABLE_ELASTICSEARCH_TRUE@am__append_84 = --enable-elasticsearch
+@ENABLE_ELASTICSEARCH_TESTS_TRUE@am__append_85 = --enable-elasticsearch-tests
+@ENABLE_MMGROK_TRUE@am__append_86 = --enable-mmgrok
+@ENABLE_RELP_TRUE@am__append_87 = --enable-relp --enable-omrelp-default-port=13515
+@ENABLE_IMKAFKA_TRUE@am__append_88 = --enable-imkafka
+@ENABLE_OMKAFKA_TRUE@am__append_89 = --enable-omkafka
+@ENABLE_KAFKA_TESTS_TRUE@am__append_90 = --enable-kafka-tests
+@ENABLE_IMJOURNAL_TRUE@am__append_91 = --enable-imjournal
+@ENABLE_OMJOURNAL_TRUE@am__append_92 = --enable-omjournal
+@ENABLE_IMCZMQ_TRUE@am__append_93 = --enable-imczmq
+@ENABLE_OMCZMQ_TRUE@am__append_94 = --enable-omczmq
+@ENABLE_IMFILE_TRUE@am__append_95 = --enable-imfile
+@ENABLE_DISTCHECK_WORKAROUND_TRUE@am__append_96 = --disable-testbench
+@ENABLE_DISTCHECK_WORKAROUND_FALSE@am__append_97 = --enable-testbench
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_check_define.m4 \
@@ -292,8 +358,9 @@ DIST_SUBDIRS = compat runtime grammar . plugins/immark \
 	contrib/mmrfc5424addhmac contrib/omhttpfs contrib/omamqp1 \
 	contrib/omtcl contrib/mmkubernetes tests
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in AUTHORS \
-	COPYING COPYING.LESSER ChangeLog INSTALL NEWS README compile \
-	config.guess config.sub install-sh ltmain.sh missing ylwrap
+	COPYING COPYING.LESSER ChangeLog INSTALL NEWS README TODO \
+	compile config.guess config.sub install-sh ltmain.sh missing \
+	ylwrap
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -477,7 +544,17 @@ SNMP_CFLAGS = @SNMP_CFLAGS@
 SNMP_LIBS = @SNMP_LIBS@
 SOL_LIBS = @SOL_LIBS@
 STRIP = @STRIP@
+TCL_BIN_DIR = @TCL_BIN_DIR@
 TCL_INCLUDE_SPEC = @TCL_INCLUDE_SPEC@
+TCL_LIB_FILE = @TCL_LIB_FILE@
+TCL_LIB_FLAG = @TCL_LIB_FLAG@
+TCL_LIB_SPEC = @TCL_LIB_SPEC@
+TCL_PATCH_LEVEL = @TCL_PATCH_LEVEL@
+TCL_SRC_DIR = @TCL_SRC_DIR@
+TCL_STUB_LIB_FILE = @TCL_STUB_LIB_FILE@
+TCL_STUB_LIB_FLAG = @TCL_STUB_LIB_FLAG@
+TCL_STUB_LIB_SPEC = @TCL_STUB_LIB_SPEC@
+TCL_VERSION = @TCL_VERSION@
 UDPSPOOF_CFLAGS = @UDPSPOOF_CFLAGS@
 UDPSPOOF_LIBS = @UDPSPOOF_LIBS@
 VALGRIND = @VALGRIND@
@@ -602,49 +679,27 @@ SUBDIRS = compat runtime grammar . plugins/immark plugins/imuxsock \
 	$(am__append_57) $(am__append_58) $(am__append_59) \
 	$(am__append_60) $(am__append_61) $(am__append_62) \
 	$(am__append_63) tests
-
 # make sure "make distcheck" tries to build all modules. This means that
 # a developer must always have an environment where every supporting library
 # is available. If that is not the case, the respective configure option may
 # temporarily be removed below. The intent behind forcing everthing to compile
 # in a make distcheck is so that we detect code that accidently was not updated
 # when some global update happened.
-DISTCHECK_CONFIGURE_FLAGS = \
-	--disable-silent-rules \
-	--disable-testbench \
-	--with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir) 
-
-THIS_IS_TEMPORARILY_DISABLED = \
-	--enable-distcheck-workaround \
-	--enable-testbench \
-	--enable-imdiag \
-	--enable-testbench \
-	--enable-imfile \
-	--enable-snmp \
-	--enable-libdbi \
-	--enable-mysql \
-	--enable-relp \
-	--enable-rsyslogd \
-	--enable-mail \
-	--enable-klog \
-	--enable-diagtools \
-	--enable-mmgrok \
-	--enable-gnutls \
-	--enable-omstdout \
-	--enable-pmlastmsg \
-	--enable-omruleset \
-	--enable-omprog \
-	--enable-imptcp \
-	--enable-omuxsock \
-	--enable-impstats \
-	--enable-memcheck \
-	--enable-pmaixforwardedfrom \
-	--enable-pmcisconames \
-	--enable-pmsnare \
-	--enable-elasticsearch \
-	--enable-valgrind \
-	--with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir) 
-
+DISTCHECK_CONFIGURE_FLAGS = --with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir) \
+	--enable-silent-rules --enable-rsyslogd --enable-omstdout \
+	--enable-imdiag --enable-testbench --enable-valgrind \
+	$(am__append_64) $(am__append_65) $(am__append_66) \
+	$(am__append_67) $(am__append_68) $(am__append_69) \
+	$(am__append_70) $(am__append_71) $(am__append_72) \
+	$(am__append_73) $(am__append_74) $(am__append_75) \
+	$(am__append_76) $(am__append_77) $(am__append_78) \
+	$(am__append_79) $(am__append_80) $(am__append_81) \
+	$(am__append_82) $(am__append_83) $(am__append_84) \
+	$(am__append_85) $(am__append_86) $(am__append_87) \
+	$(am__append_88) $(am__append_89) $(am__append_90) \
+	$(am__append_91) $(am__append_92) $(am__append_93) \
+	$(am__append_94) $(am__append_95) $(am__append_96) \
+	$(am__append_97)
 ACLOCAL_AMFLAGS = -I m4
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
@@ -1248,11 +1303,6 @@ uninstall-am: uninstall-nodist_systemdsystemunitDATA \
 
 @HAVE_SYSTEMD_TRUE@%.service: %.service.in
 @HAVE_SYSTEMD_TRUE@	$(AM_V_GEN)sed -e 's,@sbindir\@,$(sbindir),g' $< > $@
-# temporarily disable these checks for make distcheck 2012-09-06 rgerhards
-#				--enable-mmsnmptrapd \
-#				--enable-gssapi_krb5 \
-#				--enable-extended-tests \
-#				--enable-pgsql 
 
 dist-hook:
 	$(AM_V_GEN)echo $(VERSION) > $(distdir)/.tarball-version

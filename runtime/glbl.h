@@ -8,7 +8,7 @@
  * Please note that there currently is no glbl.c file as we do not yet
  * have any implementations.
  *
- * Copyright 2008-2017 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2008-2018 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -31,7 +31,7 @@
 #define GLBL_H_INCLUDED
 
 #include <sys/types.h>
-#ifdef HAVE_LIBLOGGING_STDLOG
+#ifdef ENABLE_LIBLOGGING_STDLOG
 #include <liblogging/stdlog.h>
 #endif
 #include "rainerscript.h"
@@ -46,7 +46,7 @@
 extern pid_t glbl_ourpid;
 extern int bProcessInternalMessages;
 extern int bPermitSlashInProgramname;
-#ifdef HAVE_LIBLOGGING_STDLOG
+#ifdef ENABLE_LIBLOGGING_STDLOG
 extern stdlog_channel_t stdlog_hdl;
 #endif
 
@@ -126,6 +126,7 @@ extern char** glblDbgFiles;
 extern size_t glblDbgFilesNum;
 extern int glblDbgWhitelist;
 extern int glblPermitCtlC;
+extern int glblInputTimeoutShutdown;
 
 /* Developer options enable some strange things for developer-only testing.
  * These should never be enabled in a user build, except if explicitly told
