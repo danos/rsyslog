@@ -45,6 +45,7 @@ override_dh_auto_configure:
 		--enable-mmpstrucdata \
 		--enable-mmsequence \
 		--enable-mmfields \
+		--enable-mmrm1stspace \
 		--enable-imczmq \
 		--enable-omczmq \
 		--enable-omhiredis \
