@@ -3,6 +3,7 @@ debian/rsyslog.conf  etc/
 debian/rsyslog-rotate usr/lib/rsyslog/
 usr/sbin/
 usr/share/man/
+usr/lib/*/rsyslog/fmhash.so
 usr/lib/*/rsyslog/imfile.so
 usr/lib/*/rsyslog/imklog.so
 usr/lib/*/rsyslog/immark.so

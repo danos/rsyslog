@@ -49,6 +49,7 @@ override_dh_auto_configure:
 		--enable-imczmq \
 		--enable-omczmq \
 		--enable-omhiredis \
+		--enable-fmhash \
 		--disable-libgcrypt \
 		--enable-testbench \
 		--enable-imdiag \
