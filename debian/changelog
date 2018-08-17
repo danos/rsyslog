@@ -1,3 +1,9 @@
+rsyslog (8.37.0-2~bpo9+1) stretch-backports; urgency=medium
+
+  * Rebuild for stretch-backports
+
+ -- Michael Biebl <biebl@debian.org>  Fri, 17 Aug 2018 14:31:39 +0200
+
 rsyslog (8.37.0-2) unstable; urgency=medium
 
   * Bump Build-Depends on librelp to (>= 1.2.16)
