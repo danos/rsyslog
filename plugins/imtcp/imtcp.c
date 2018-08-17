@@ -11,11 +11,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -74,7 +74,6 @@ DEFobjCurrIf(tcpsrv)
 DEFobjCurrIf(tcps_sess)
 DEFobjCurrIf(net)
 DEFobjCurrIf(netstrm)
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(ruleset)
 
 static rsRetVal resetConfigVariables(uchar __attribute__((unused)) *pp, void __attribute__((unused)) *pVal);
@@ -300,7 +299,7 @@ finalize_it:
 }
 
 
-/* This function is called when a new listener instace shall be added to 
+/* This function is called when a new listener instace shall be added to
  * the current config object via the legacy config system. It just shuffles
  * all parameters to the listener in-memory instance.
  * rgerhards, 2011-05-04
@@ -319,11 +318,11 @@ static rsRetVal addInstance(void __attribute__((unused)) *pVal, uchar *pNewVal)
 	} else {
 		CHKmalloc(inst->pszBindRuleset = ustrdup(cs.pszBindRuleset));
 	}
-        if((cs.lstnIP == NULL) || (cs.lstnIP[0] == '\0')) {
-                inst->pszBindAddr = NULL;
-        } else {
-                CHKmalloc(inst->pszBindAddr = ustrdup(cs.lstnIP));
-        }
+	if((cs.lstnIP == NULL) || (cs.lstnIP[0] == '\0')) {
+		inst->pszBindAddr = NULL;
+	} else {
+		CHKmalloc(inst->pszBindAddr = ustrdup(cs.lstnIP));
+	}
 
 	if((cs.pszInputName == NULL) || (cs.pszInputName[0] == '\0')) {
 		inst->pszInputName = NULL;
@@ -391,7 +390,7 @@ addListner(modConfData_t *modConf, instanceConf_t *inst)
 
 finalize_it:
 	if(iRet != RS_RET_OK) {
-		errmsg.LogError(0, NO_ERRCODE, "imtcp: error %d trying to add listener", iRet);
+		LogError(0, NO_ERRCODE, "imtcp: error %d trying to add listener", iRet);
 	}
 	RETiRet;
 }
@@ -406,7 +405,7 @@ CODESTARTnewInpInst
 
 	pvals = nvlstGetParams(lst, &inppblk, NULL);
 	if(pvals == NULL) {
-		errmsg.LogError(0, RS_RET_MISSING_CNFPARAMS,
+		LogError(0, RS_RET_MISSING_CNFPARAMS,
 			        "imtcp: required parameter are missing\n");
 		ABORT_FINALIZE(RS_RET_MISSING_CNFPARAMS);
 	}
@@ -423,8 +422,8 @@ CODESTARTnewInpInst
 			continue;
 		if(!strcmp(inppblk.descr[i].name, "port")) {
 			inst->pszBindPort = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
-                } else if(!strcmp(inppblk.descr[i].name, "address")) {
-                        inst->pszBindAddr = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
+		} else if(!strcmp(inppblk.descr[i].name, "address")) {
+			inst->pszBindAddr = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
 		} else if(!strcmp(inppblk.descr[i].name, "name")) {
 			inst->pszInputName = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
 		} else if(!strcmp(inppblk.descr[i].name, "defaulttz")) {
@@ -487,7 +486,7 @@ BEGINsetModCnf
 CODESTARTsetModCnf
 	pvals = nvlstGetParams(lst, &modpblk, NULL);
 	if(pvals == NULL) {
-		errmsg.LogError(0, RS_RET_MISSING_CNFPARAMS, "imtcp: error processing module "
+		LogError(0, RS_RET_MISSING_CNFPARAMS, "imtcp: error processing module "
 				"config parameters [module(...)]");
 		ABORT_FINALIZE(RS_RET_MISSING_CNFPARAMS);
 	}
@@ -517,7 +516,7 @@ CODESTARTsetModCnf
 			if(max <= 200000000) {
 				loadModConf->maxFrameSize = max;
 			} else {
-				errmsg.LogError(0, RS_RET_PARAM_ERROR, "imtcp: invalid value for 'maxFrameSize' "
+				LogError(0, RS_RET_PARAM_ERROR, "imtcp: invalid value for 'maxFrameSize' "
 						"parameter given is %d, max is 200000000", max);
 				ABORT_FINALIZE(RS_RET_PARAM_ERROR);
 			}
@@ -597,7 +596,7 @@ ENDendCnfLoad
 static inline void
 std_checkRuleset_genErrMsg(__attribute__((unused)) modConfData_t *modConf, instanceConf_t *inst)
 {
-	errmsg.LogError(0, NO_ERRCODE, "imtcp: ruleset '%s' for port %s not found - "
+	LogError(0, NO_ERRCODE, "imtcp: ruleset '%s' for port %s not found - "
 			"using default ruleset instead", inst->pszBindRuleset,
 			inst->pszBindPort);
 }
@@ -611,7 +610,7 @@ CODESTARTcheckCnf
 			inst->bSuppOctetFram = pModConf->bSuppOctetFram;
 	}
 	if(pModConf->root == NULL) {
-		errmsg.LogError(0, RS_RET_NO_LISTNERS , "imtcp: module loaded, but "
+		LogError(0, RS_RET_NO_LISTNERS , "imtcp: module loaded, but "
 				"no listeners defined - no input will be gathered");
 		iRet = RS_RET_NO_LISTNERS;
 	}
@@ -708,7 +707,6 @@ CODESTARTmodExit
 	objRelease(netstrm, LM_NETSTRMS_FILENAME);
 	objRelease(tcps_sess, LM_TCPSRV_FILENAME);
 	objRelease(tcpsrv, LM_TCPSRV_FILENAME);
-	objRelease(errmsg, CORE_COMPONENT);
 	objRelease(ruleset, CORE_COMPONENT);
 ENDmodExit
 
@@ -759,7 +757,6 @@ CODEmodInit_QueryRegCFSLineHdlr
 	CHKiRet(objUse(netstrm, LM_NETSTRMS_FILENAME));
 	CHKiRet(objUse(tcps_sess, LM_TCPSRV_FILENAME));
 	CHKiRet(objUse(tcpsrv, LM_TCPSRV_FILENAME));
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 	CHKiRet(objUse(ruleset, CORE_COMPONENT));
 
 	/* register config file handlers */

@@ -11,33 +11,69 @@
 echo ===============================================================================
 echo \[imtcp-multiport.sh\]: testing imtcp multiple listeners
 . $srcdir/diag.sh init
-. $srcdir/diag.sh startup imtcp-multiport.conf
-. $srcdir/diag.sh tcpflood -p13514 -m10000
-. $srcdir/diag.sh shutdown-when-empty # shut down rsyslogd when done processing messages
-. $srcdir/diag.sh wait-shutdown
-. $srcdir/diag.sh seq-check 0 9999
-. $srcdir/diag.sh exit
+generate_conf
+add_conf '
+$ModLoad ../plugins/imtcp/.libs/imtcp
+$MainMsgQueueTimeoutShutdown 10000
+$InputTCPServerRun 13514
+$InputTCPServerRun 13515
+$InputTCPServerRun 13516
+
+$template outfmt,"%msg:F,58:2%\n"
+template(name="dynfile" type="string" string=`echo $RSYSLOG_OUT_LOG`) # trick to use relative path names!
+:msg, contains, "msgnum:" ?dynfile;outfmt
+'
+startup
+tcpflood -p13514 -m10000
+shutdown_when_empty # shut down rsyslogd when done processing messages
+wait_shutdown
+seq_check 0 9999
+exit_test
 #
 #
 # ### now complete new cycle with other port ###
 #
 #
 . $srcdir/diag.sh init
-. $srcdir/diag.sh startup imtcp-multiport.conf
-. $srcdir/diag.sh tcpflood -p13515 -m10000
-. $srcdir/diag.sh shutdown-when-empty # shut down rsyslogd when done processing messages
-. $srcdir/diag.sh wait-shutdown
-. $srcdir/diag.sh seq-check 0 9999
-. $srcdir/diag.sh exit
+generate_conf
+add_conf '
+$ModLoad ../plugins/imtcp/.libs/imtcp
+$MainMsgQueueTimeoutShutdown 10000
+$InputTCPServerRun 13514
+$InputTCPServerRun 13515
+$InputTCPServerRun 13516
+
+$template outfmt,"%msg:F,58:2%\n"
+template(name="dynfile" type="string" string=`echo $RSYSLOG_OUT_LOG`) # trick to use relative path names!
+:msg, contains, "msgnum:" ?dynfile;outfmt
+'
+startup
+tcpflood -p13515 -m10000
+shutdown_when_empty # shut down rsyslogd when done processing messages
+wait_shutdown
+seq_check 0 9999
+exit_test
 #
 #
 # ### now complete new cycle with other port ###
 #
 #
 . $srcdir/diag.sh init
-. $srcdir/diag.sh startup imtcp-multiport.conf
-. $srcdir/diag.sh tcpflood -p13516 -m10000
-. $srcdir/diag.sh shutdown-when-empty # shut down rsyslogd when done processing messages
-. $srcdir/diag.sh wait-shutdown
-. $srcdir/diag.sh seq-check 0 9999
-. $srcdir/diag.sh exit
+generate_conf
+add_conf '
+$ModLoad ../plugins/imtcp/.libs/imtcp
+$MainMsgQueueTimeoutShutdown 10000
+$InputTCPServerRun 13514
+$InputTCPServerRun 13515
+$InputTCPServerRun 13516
+
+$template outfmt,"%msg:F,58:2%\n"
+template(name="dynfile" type="string" string=`echo $RSYSLOG_OUT_LOG`) # trick to use relative path names!
+:msg, contains, "msgnum:" ?dynfile;outfmt
+'
+startup
+tcpflood -p13516 -m10000
+shutdown_when_empty # shut down rsyslogd when done processing messages
+wait_shutdown
+seq_check 0 9999
+exit_test

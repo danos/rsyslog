@@ -10,11 +10,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -80,6 +80,7 @@ static struct configSettings_s {
 	int iDfltFacility;
 	int bUseJnlPID;
 	char *usePid;
+	int bWorkAroundJournalBug;
 } cs;
 
 static rsRetVal facilityHdlr(uchar **pp, void *pVal);
@@ -95,7 +96,8 @@ static struct cnfparamdescr modpdescr[] = {
 	{ "defaultseverity", eCmdHdlrSeverity, 0 },
 	{ "defaultfacility", eCmdHdlrString, 0 },
 	{ "usepidfromsystem", eCmdHdlrBinary, 0 },
-	{ "usepid", eCmdHdlrString, 0 }
+	{ "usepid", eCmdHdlrString, 0 },
+	{ "workaroundjournalbug", eCmdHdlrBinary, 0 }
 };
 static struct cnfparamblk modpblk =
 	{ CNFPARAMBLK_VERSION,
@@ -119,8 +121,17 @@ static sd_journal *j;
 static int j_inotify_fd;
 static struct {
 	statsobj_t *stats;
-	STATSCOUNTER_DEF(ctrSubmit, mutCtrSubmit)
+	STATSCOUNTER_DEF(ctrSubmitted, mutCtrSubmitted)
+	STATSCOUNTER_DEF(ctrRead, mutCtrRead);
+	STATSCOUNTER_DEF(ctrDiscarded, mutCtrDiscarded);
+	STATSCOUNTER_DEF(ctrFailed, mutCtrFailed);
+	STATSCOUNTER_DEF(ctrPollFailed, mutCtrPollFailed);
+	STATSCOUNTER_DEF(ctrRotations, mutCtrRotations);
+	STATSCOUNTER_DEF(ctrRecoveryAttempts, mutCtrRecoveryAttempts);
+	uint64 ratelimitDiscardedInInterval;
+	uint64 diskUsageBytes;
 } statsCounter;
+static char *last_cursor = NULL;
 
 #define J_PROCESS_PERIOD 1024  /* Call sd_journal_process() every 1,024 records */
 
@@ -140,7 +151,7 @@ static rsRetVal openJournal(void) {
 		iRet = RS_RET_IO_ERROR;
 	} else {
 		j_inotify_fd = r;
-	}	
+	}
 	RETiRet;
 }
 
@@ -252,9 +263,12 @@ int sharedJsonProperties)
 	}
 
 	CHKiRet(ratelimitAddMsg(ratelimiter, NULL, pMsg));
-	STATSCOUNTER_INC(statsCounter.ctrSubmit, statsCounter.mutCtrSubmit);
+	STATSCOUNTER_INC(statsCounter.ctrSubmitted, statsCounter.mutCtrSubmitted);
 
 finalize_it:
+	if (iRet == RS_RET_DISCARDMSG)
+		STATSCOUNTER_INC(statsCounter.ctrDiscarded, statsCounter.mutCtrDiscarded);
+
 	RETiRet;
 }
 
@@ -277,6 +291,7 @@ readjournal(void)
 	char *message = NULL;
 	char *sys_iden;
 	char *sys_iden_help = NULL;
+	char *c = NULL;
 
 	const void *get;
 	const void *pidget;
@@ -298,6 +313,7 @@ readjournal(void)
 	} else {
 		CHKiRet(sanitizeValue(((const char *)get) + 8, length - 8, &message));
 	}
+	STATSCOUNTER_INC(statsCounter.ctrRead, statsCounter.mutCtrRead);
 
 	/* Get message severity ("priority" in journald's terminology) */
 	if (sd_journal_get_data(j, "PRIORITY", &get, &length) >= 0) {
@@ -375,6 +391,7 @@ readjournal(void)
 	free (sys_iden);
 
 	if (-1 == r) {
+		STATSCOUNTER_INC(statsCounter.ctrFailed, statsCounter.mutCtrFailed);
 		ABORT_FINALIZE(RS_RET_OUT_OF_MEMORY);
 	}
 
@@ -420,6 +437,15 @@ readjournal(void)
 		tv.tv_usec = timestamp % 1000000;
 	}
 
+	if (cs.bWorkAroundJournalBug) {
+		/* save journal cursor (at this point we can be sure it is valid) */
+		sd_journal_get_cursor(j, &c);
+		if (c) {
+			free(last_cursor);
+			last_cursor = c;
+		}
+	}
+
 	/* submit message */
 	enqMsg((uchar *)message, (uchar *) sys_iden_help, facility, severity, &tv, json, 0);
 
@@ -438,83 +464,82 @@ persistJournalState(void)
 	DEFiRet;
 	FILE *sf; /* state file */
 	char tmp_sf[MAXFNAME];
-	char *cursor;
-	int ret = 0;
+	size_t n;
 
-	/* On success, sd_journal_get_cursor() returns 1 in systemd
-	   197 or older and 0 in systemd 198 or newer */
-	if ((ret = sd_journal_get_cursor(j, &cursor)) >= 0) {
-               /* we create a temporary name by adding a ".tmp"
-                * suffix to the end of our state file's name
-                */
-               snprintf(tmp_sf, sizeof(tmp_sf), "%s.tmp", cs.stateFile);
-               if ((sf = fopen(tmp_sf, "wb")) != NULL) {
-			if (fprintf(sf, "%s", cursor) < 0) {
-				iRet = RS_RET_IO_ERROR;
-			}
-			fclose(sf);
-			free(cursor);
-                       /* change the name of the file to the configured one */
-                       if (iRet == RS_RET_OK && rename(tmp_sf, cs.stateFile) == -1) {
-                               LogError(errno, iRet, "imjournal: rename() failed: "
-                                       "for new path: '%s'", cs.stateFile);
-                               iRet = RS_RET_IO_ERROR;
-                       }
-
-		} else {
-			LogError(errno, RS_RET_FOPEN_FAILURE, "imjournal: fopen() failed "
-				"for path: '%s'", tmp_sf);
-			iRet = RS_RET_FOPEN_FAILURE;
+	if (cs.bWorkAroundJournalBug) {
+		/* first check that we have valid cursor */
+		if (!last_cursor) {
+			ABORT_FINALIZE(RS_RET_OK);
 		}
 	} else {
-		LogError(-ret, RS_RET_ERR, "imjournal: sd_journal_get_cursor() failed");
-		iRet = RS_RET_ERR;
+		int ret;
+		if ((ret = sd_journal_get_cursor(j, &last_cursor))) {
+			LogError(-ret, RS_RET_ERR, "imjournal: sd_journal_get_cursor() failed");
+			ABORT_FINALIZE(RS_RET_ERR);
+		}
 	}
+
+	/* we create a temporary name by adding a ".tmp"
+	 * suffix to the end of our state file's name
+	 */
+	n = snprintf(tmp_sf, sizeof(tmp_sf), "%s.tmp", cs.stateFile);
+	if (n >= sizeof(tmp_sf)) { /* backup in case of too long path name */
+		strncpy(tmp_sf, cs.stateFile, sizeof(tmp_sf) - 5);
+		strcat(tmp_sf, ".tmp");
+	}
+
+	sf = fopen(tmp_sf, "wb");
+	if (sf == NULL) {
+		LogError(errno, RS_RET_FOPEN_FAILURE, "imjournal: fopen() failed for path: '%s'", tmp_sf);
+		ABORT_FINALIZE(RS_RET_FOPEN_FAILURE);
+	}
+
+	if(fputs(last_cursor, sf) == EOF) {
+		LogError(errno, RS_RET_IO_ERROR, "imjournal: failed to save cursor to: '%s'", tmp_sf);
+		fclose(sf);
+		ABORT_FINALIZE(RS_RET_IO_ERROR);
+	}
+
+	if (fclose(sf) == EOF) {
+		LogError(errno, RS_RET_IO_ERROR, "imjournal: fclose() failed for path: '%s'", tmp_sf);
+		ABORT_FINALIZE(RS_RET_IO_ERROR);
+	}
+
+	/* change the name of the file to the configured one */
+	if (rename(tmp_sf, cs.stateFile) < 0) {
+		LogError(errno, iRet, "imjournal: rename() failed for new path: '%s'", cs.stateFile);
+		ABORT_FINALIZE(RS_RET_IO_ERROR);
+	}
+
+finalize_it:
 	RETiRet;
 }
 
 
 static rsRetVal skipOldMessages(void);
-/* Polls the journal for new messages. Similar to sd_journal_wait()
- * except for the special handling of EINTR.
- */
 
-#define POLL_TIMEOUT 1000 /* timeout for poll is 1s */
+#define POLL_TIMEOUT 900000 /* timeout for poll is 900ms */
 
 static rsRetVal
 pollJournal(void)
 {
 	DEFiRet;
-	struct pollfd pollfd;
-	int err; // journal error code to process
-	int pr = 0;
+	int err;
 
-	pollfd.fd = j_inotify_fd;
-	pollfd.events = sd_journal_get_events(j);
-#ifdef NEW_JOURNAL
-	pr = poll(&pollfd, 1, POLL_TIMEOUT);
-#else
-	pr = poll(&pollfd, 1, -1);
-#endif
-	if (pr == -1) {
-		if (errno == EINTR) {
-			/* EINTR is also received during termination
-			 * so return now to check the term state.
-			 */
-			ABORT_FINALIZE(RS_RET_OK);
-		} else {
-			LogError(errno, RS_RET_ERR, "imjournal: poll() failed");
+	err = sd_journal_wait(j, POLL_TIMEOUT);
+	if (err == SD_JOURNAL_INVALIDATE) {
+		STATSCOUNTER_INC(statsCounter.ctrRotations, statsCounter.mutCtrRotations);
+		closeJournal();
+
+		iRet = openJournal();
+		if (iRet != RS_RET_OK) {
 			ABORT_FINALIZE(RS_RET_ERR);
 		}
-	}
-#ifndef NEW_JOURNAL
-	assert(pr == 1);
-#endif
 
-	err = sd_journal_process(j);
-	if (err < 0) {
-		LogError(-err, RS_RET_ERR, "imjournal: sd_journal_process() failed");
-		ABORT_FINALIZE(RS_RET_ERR);
+		if (cs.stateFile) {
+			iRet = loadJournalState();
+		}
+		LogMsg(0, RS_RET_OK, LOG_NOTICE, "imjournal: journal reloaded...");
 	}
 
 finalize_it:
@@ -562,6 +587,17 @@ loadJournalState(void)
 		cs.stateFile = new_stateFile;
 	}
 
+	/* if state file not exists (on very first run), skip */
+	if (access(cs.stateFile, F_OK|R_OK) == -1 && errno == ENOENT) {
+		if (cs.bIgnorePrevious) {
+			/* Seek to the very end of the journal and ignore all older messages. */
+			skipOldMessages();
+		}
+		LogMsg(errno, RS_RET_FILE_NOT_FOUND, LOG_NOTICE, "imjournal: No statefile exists, "
+				"%s will be created (ignore if this is first run)", cs.stateFile);
+		FINALIZE;
+	}
+
 	if ((r_sf = fopen(cs.stateFile, "rb")) != NULL) {
 		char readCursor[128 + 1];
 		if (fscanf(r_sf, "%128s\n", readCursor) != EOF) {
@@ -576,7 +612,7 @@ loadJournalState(void)
 				* This is resolving the situation when system is after reboot and boot_id
 				* doesn't match so cursor pointing into "future".
 				* Usually sd_journal_next jump to head of journal due to journal aproximation,
-				* but when system time goes backwards and cursor is still 
+				* but when system time goes backwards and cursor is still
 				  invalid, rsyslog stops logging.
 				* We use sd_journal_get_cursor to validate our cursor.
 				* When cursor is invalid we are trying to jump to the head of journal
@@ -629,6 +665,7 @@ static void
 tryRecover(void) {
 	LogMsg(0, RS_RET_OK, LOG_INFO, "imjournal: trying to recover from unexpected "
 		"journal error");
+	STATSCOUNTER_INC(statsCounter.ctrRecoveryAttempts, statsCounter.mutCtrRecoveryAttempts);
 	closeJournal();
 	srSleep(10, 0);	// do not hammer machine with too-frequent retries
 	openJournal();
@@ -698,13 +735,21 @@ CODESTARTrunInput
 			continue;
 		}
 
+		/*
+		 * update journal disk usage before reading the new message.
+		 */
+		const int e = sd_journal_get_usage(j, (uint64_t *)&statsCounter.diskUsageBytes);
+		if (e < 0) {
+			LogError(-e, RS_RET_ERR, "imjournal: sd_get_usage() failed");
+		}
+
 		if (readjournal() != RS_RET_OK) {
 			tryRecover();
 			continue;
 		}
 
 		count++;
-		
+
 		if ((count % J_PROCESS_PERIOD) == 0) {
 			/* Give the journal a periodic chance to detect rotated journal files to be cleaned up. */
 			r = sd_journal_process(j);
@@ -740,6 +785,7 @@ CODESTARTbeginCnfLoad
 	cs.iDfltFacility = DFLT_FACILITY;
 	cs.bUseJnlPID = -1;
 	cs.usePid = NULL;
+	cs.bWorkAroundJournalBug = 0;
 ENDbeginCnfLoad
 
 
@@ -760,9 +806,31 @@ CODESTARTactivateCnf
 	CHKiRet(statsobj.Construct(&(statsCounter.stats)));
 	CHKiRet(statsobj.SetName(statsCounter.stats, (uchar*)"imjournal"));
 	CHKiRet(statsobj.SetOrigin(statsCounter.stats, (uchar*)"imjournal"));
-	STATSCOUNTER_INIT(statsCounter.ctrSubmit, statsCounter.mutCtrSubmit);
+	STATSCOUNTER_INIT(statsCounter.ctrSubmitted, statsCounter.mutCtrSubmitted);
 	CHKiRet(statsobj.AddCounter(statsCounter.stats, UCHAR_CONSTANT("submitted"),
-			ctrType_IntCtr, CTR_FLAG_RESETTABLE, &(statsCounter.ctrSubmit)));
+			ctrType_IntCtr, CTR_FLAG_RESETTABLE, &(statsCounter.ctrSubmitted)));
+	STATSCOUNTER_INIT(statsCounter.ctrRead, statsCounter.mutCtrRead);
+	CHKiRet(statsobj.AddCounter(statsCounter.stats, UCHAR_CONSTANT("read"),
+		ctrType_IntCtr, CTR_FLAG_RESETTABLE, &(statsCounter.ctrRead)));
+	STATSCOUNTER_INIT(statsCounter.ctrDiscarded, statsCounter.mutCtrDiscarded);
+	CHKiRet(statsobj.AddCounter(statsCounter.stats, UCHAR_CONSTANT("discarded"),
+		ctrType_IntCtr, CTR_FLAG_RESETTABLE, &(statsCounter.ctrDiscarded)));
+	STATSCOUNTER_INIT(statsCounter.ctrFailed, statsCounter.mutCtrFailed);
+	CHKiRet(statsobj.AddCounter(statsCounter.stats, UCHAR_CONSTANT("failed"),
+		ctrType_IntCtr, CTR_FLAG_RESETTABLE, &(statsCounter.ctrFailed)));
+	STATSCOUNTER_INIT(statsCounter.ctrPollFailed, statsCounter.mutCtrPollFailed);
+	CHKiRet(statsobj.AddCounter(statsCounter.stats, UCHAR_CONSTANT("poll_failed"),
+		ctrType_IntCtr, CTR_FLAG_RESETTABLE, &(statsCounter.ctrPollFailed)));
+	STATSCOUNTER_INIT(statsCounter.ctrRotations, statsCounter.mutCtrRotations);
+	CHKiRet(statsobj.AddCounter(statsCounter.stats, UCHAR_CONSTANT("rotations"),
+		ctrType_IntCtr, CTR_FLAG_RESETTABLE, &(statsCounter.ctrRotations)));
+	STATSCOUNTER_INIT(statsCounter.ctrRecoveryAttempts, statsCounter.mutCtrRecoveryAttempts);
+	CHKiRet(statsobj.AddCounter(statsCounter.stats, UCHAR_CONSTANT("recovery_attempts"),
+		ctrType_IntCtr, CTR_FLAG_RESETTABLE, &(statsCounter.ctrRecoveryAttempts)));
+	CHKiRet(statsobj.AddCounter(statsCounter.stats, UCHAR_CONSTANT("ratelimit_discarded_in_interval"),
+	                ctrType_Int, CTR_FLAG_NONE, &(statsCounter.ratelimitDiscardedInInterval)));
+	CHKiRet(statsobj.AddCounter(statsCounter.stats, UCHAR_CONSTANT("disk_usage_bytes"),
+	                ctrType_Int, CTR_FLAG_NONE, &(statsCounter.diskUsageBytes)));
 	CHKiRet(statsobj.ConstructFinalize(statsCounter.stats));
 	/* end stats counter */
 
@@ -838,7 +906,7 @@ CODESTARTsetModCnf
 		} else if (!strcmp(modpblk.descr[i].name, "ignorepreviousmessages")) {
 			cs.bIgnorePrevious = (int) pvals[i].val.d.n;
 		} else if (!strcmp(modpblk.descr[i].name, "ignorenonvalidstatefile")) {
-			cs.bIgnoreNonValidStatefile = (int) pvals[i].val.d.n; 
+			cs.bIgnoreNonValidStatefile = (int) pvals[i].val.d.n;
 		} else if (!strcmp(modpblk.descr[i].name, "defaultseverity")) {
 			cs.iDfltSeverity = (int) pvals[i].val.d.n;
 		} else if (!strcmp(modpblk.descr[i].name, "defaultfacility")) {
@@ -854,6 +922,8 @@ CODESTARTsetModCnf
 			cs.bUseJnlPID = (int) pvals[i].val.d.n;
 		} else if (!strcmp(modpblk.descr[i].name, "usepid")) {
 			cs.usePid = (char *)es_str2cstr(pvals[i].val.d.estr, NULL);
+		} else if (!strcmp(modpblk.descr[i].name, "workaroundjournalbug")) {
+			cs.bWorkAroundJournalBug = (int) pvals[i].val.d.n;
 		} else {
 			dbgprintf("imjournal: program error, non-handled "
 				"param '%s' in beginCnfLoad\n", modpblk.descr[i].name);

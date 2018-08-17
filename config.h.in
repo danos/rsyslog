@@ -401,10 +401,6 @@
 /* Define with a value if your <sys/param.h> does not define MAXHOSTNAMELEN */
 #undef MAXHOSTNAMELEN
 
-/* Defined if memcheck support settings are to be enabled (e.g. prevents
-   dlclose()). */
-#undef MEMCHECK
-
 /* Defined if debug mode is disabled. */
 #undef NDEBUG
 

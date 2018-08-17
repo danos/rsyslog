@@ -69,25 +69,24 @@ MODULE_CNFNAME("ommongodb")
 /* internal structures
  */
 DEF_OMOD_STATIC_DATA
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(datetime)
 
 typedef struct _instanceData {
 	struct json_tokener *json_tokener; /* only if (tplName != NULL) */
 	mongoc_client_t *client;
-   	mongoc_collection_t *collection;
-   	bson_error_t error;
-    	char *server;
-    	char *port;
-    	char *uristr;
-    	char *ssl_ca;
-    	char *ssl_cert;
-    	char *uid;
-    	char *pwd;
+	mongoc_collection_t *collection;
+	bson_error_t error;
+	char *server;
+	char *port;
+	char *uristr;
+	char *ssl_ca;
+	char *ssl_cert;
+	char *uid;
+	char *pwd;
 	uint32_t allowed_error_codes[256];
 	int allowed_error_codes_nbr;
-   	char *db;
-   	char *collection_name;
+	char *db;
+	char *collection_name;
 	char *tplName;
 	int bErrMsgPermitted;	/* only one errmsg permitted per connection */
 } instanceData;
@@ -142,11 +141,11 @@ static void closeMongoDB(instanceData *pData)
 {
 	if(pData->client != NULL) {
 		if (pData->collection != NULL) {
-   		    mongoc_collection_destroy (pData->collection);
+			mongoc_collection_destroy (pData->collection);
 		}
 
-   		mongoc_client_destroy (pData->client);
-   		mongoc_cleanup ();
+		mongoc_client_destroy (pData->client);
+		mongoc_cleanup ();
 	}
 }
 
@@ -187,7 +186,7 @@ static void
 reportMongoError(instanceData *pData)
 {
 	if(pData->bErrMsgPermitted) {
-		errmsg.LogError(0, RS_RET_ERR, "ommongodb: error: %s", pData->error.message);
+		LogError(0, RS_RET_ERR, "ommongodb: error: %s", pData->error.message);
 		pData->bErrMsgPermitted = 0;
 	}
 }
@@ -207,16 +206,16 @@ static rsRetVal initMongoDB(instanceData *pData, int bSilent)
 	if (pData->ssl_cert && pData->ssl_ca) {
 		mongoc_ssl_opt_t ssl_opts;
 		memset(&ssl_opts, 0, sizeof(mongoc_ssl_opt_t));
-   		ssl_opts.pem_file = pData->ssl_cert;
-   		ssl_opts.ca_file = pData->ssl_ca;
-   		mongoc_client_set_ssl_opts (pData->client, &ssl_opts);
+		ssl_opts.pem_file = pData->ssl_cert;
+		ssl_opts.ca_file = pData->ssl_ca;
+		mongoc_client_set_ssl_opts (pData->client, &ssl_opts);
 	}
 	if(pData->client == NULL) {
 		if(!bSilent) {
 			reportMongoError(pData);
 			dbgprintf("ommongodb: can not initialize MongoDB handle");
 		}
-                ABORT_FINALIZE(RS_RET_SUSPENDED);
+		ABORT_FINALIZE(RS_RET_SUSPENDED);
 	}
 	pData->collection = mongoc_client_get_collection (pData->client, pData->db, pData->collection_name);
 
@@ -318,18 +317,18 @@ static bson_t *getDefaultBSON(smsg_t *pMsg)
 
 	doc = bson_new ();
 	bson_oid_t oid;
-   	bson_oid_init (&oid, NULL);
-   	BSON_APPEND_OID (doc, "_id", &oid);
-   	BSON_APPEND_UTF8 (doc, "sys", sys);
-   	BSON_APPEND_DATE_TIME (doc, "time", ts_gen);
-   	BSON_APPEND_DATE_TIME (doc, "time_rcvd", ts_rcv);
-   	BSON_APPEND_UTF8 (doc, "msg", msg);
-   	BSON_APPEND_INT32 (doc, "syslog_fac", facil);
-   	BSON_APPEND_INT32 (doc, "syslog_sever", severity);
-   	BSON_APPEND_UTF8 (doc, "syslog_tag", tag);
-   	BSON_APPEND_UTF8 (doc, "procid", procid);
-   	BSON_APPEND_UTF8 (doc, "pid", pid);
-   	BSON_APPEND_UTF8 (doc, "level", getLumberjackLevel(pMsg->iSeverity));
+	bson_oid_init (&oid, NULL);
+	BSON_APPEND_OID (doc, "_id", &oid);
+	BSON_APPEND_UTF8 (doc, "sys", sys);
+	BSON_APPEND_DATE_TIME (doc, "time", ts_gen);
+	BSON_APPEND_DATE_TIME (doc, "time_rcvd", ts_rcv);
+	BSON_APPEND_UTF8 (doc, "msg", msg);
+	BSON_APPEND_INT32 (doc, "syslog_fac", facil);
+	BSON_APPEND_INT32 (doc, "syslog_sever", severity);
+	BSON_APPEND_UTF8 (doc, "syslog_tag", tag);
+	BSON_APPEND_UTF8 (doc, "procid", procid);
+	BSON_APPEND_UTF8 (doc, "pid", pid);
+	BSON_APPEND_UTF8 (doc, "level", getLumberjackLevel(pMsg->iSeverity));
 
 	if(procid_free) free(procid);
 	if(tag_free) free(tag);
@@ -494,9 +493,9 @@ static bson_t *BSONFromJSONObject(struct json_object *json)
 	return doc;
 
 error:
-        if(doc != NULL)
-                bson_destroy(doc);
-        return NULL;
+	if(doc != NULL)
+		bson_destroy(doc);
+	return NULL;
 
 }
 
@@ -542,7 +541,6 @@ CODESTARTdoAction
 	}
 	if(doc == NULL) {
 		dbgprintf("ommongodb: error creating BSON doc\n");
-		/* FIXME: is this a correct return code? */
 		ABORT_FINALIZE(RS_RET_ERR);
 	}
 	if (mongoc_collection_insert (pData->collection, MONGOC_INSERT_NONE, doc, NULL, &(pData->error) ) ) {
@@ -674,7 +672,7 @@ CODESTARTnewActInst
 		if(pData->uid && pData->pwd){
 			uid = strlen(pData->uid);
 			pwd = strlen(pData->pwd);
-			uri_len += uid + pwd + strlen("?authMechanism=PLAIN") + 2;
+			uri_len += uid + pwd + 2;
 		}
 		if(pData->ssl_ca && pData->ssl_cert)
 			uri_len += strlen("?ssl=true"); /* "?ssl=true" & "&ssl=true" are the same size */
@@ -700,8 +698,6 @@ CODESTARTnewActInst
 		tmp = stpncpy(tmp, pData->port, port);
 		*tmp = '/';
 		++tmp;
-		if(pData->uid && pData->pwd)
-			tmp = stpncpy(tmp, "?authMechanism=PLAIN", 20);
 		if(pData->ssl_ca && pData->ssl_cert){
 			dbgprintf("ommongodb: Adding ssl to uristr.\n");
 			if(pData->uid && pData->pwd)
@@ -724,7 +720,6 @@ NO_LEGACY_CONF_parseSelectorAct
 
 BEGINmodExit
 CODESTARTmodExit
-	objRelease(errmsg, CORE_COMPONENT);
 	objRelease(datetime, CORE_COMPONENT);
 ENDmodExit
 
@@ -744,7 +739,6 @@ BEGINmodInit()
 CODESTARTmodInit
 	*ipIFVersProvided = CURR_MOD_IF_VERSION; /* we only support the current interface specification */
 CODEmodInit_QueryRegCFSLineHdlr
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 	CHKiRet(objUse(datetime, CORE_COMPONENT));
 	INITChkCoreFeature(bCoreSupportsBatching, CORE_FEATURE_BATCHING);
 	DBGPRINTF("ommongodb: module compiled with rsyslog version %s.\n", VERSION);

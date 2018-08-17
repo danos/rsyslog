@@ -9,16 +9,16 @@
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation, either version 3 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/>.
- * 
+ *
  * Author: Vaclav Tomec
  * <vaclav.tomec@gmail.com>
  */
@@ -55,15 +55,14 @@ MODULE_CNFNAME("omrabbitmq")
  */
 DEF_OMOD_STATIC_DATA
 
-static pthread_mutex_t mutDoAct = PTHREAD_MUTEX_INITIALIZER;
-
 typedef struct _instanceData {
-	/* here you need to define all action-specific data. A record of type 
+	/* here you need to define all action-specific data. A record of type
 	 * instanceData will be handed over to each instance of the action. Keep
 	 * in mind that there may be several invocations of the same type of action
 	 * inside rsyslog.conf, and this is what keeps them apart. Do NOT use
 	 * static data for this!
 	 */
+	pthread_mutex_t mutDoAct;
 	amqp_connection_state_t conn;
 	amqp_basic_properties_t props;
 	uchar *host;
@@ -211,7 +210,7 @@ initRabbitMQ(instanceData *pData)
 	DEFiRet;
 
 	DBGPRINTF("omrabbitmq: trying connect to '%s' at port %d\n", pData->host, pData->port);
-        
+
 	pData->conn = amqp_new_connection();
 
 	asocket = amqp_tcp_socket_new(pData->conn);
@@ -266,6 +265,7 @@ finalize_it:
 
 BEGINcreateInstance
 CODESTARTcreateInstance
+	pthread_mutex_init(&pData->mutDoAct, NULL);
 ENDcreateInstance
 
 
@@ -300,6 +300,7 @@ CODESTARTfreeInstance
 	free(pData->routing_key);
 	free(pData->tplName);
 	free(pData->exchange_type);
+	pthread_mutex_destroy(&pData->mutDoAct);
 ENDfreeInstance
 
 
@@ -351,11 +352,11 @@ CODESTARTtryResume
 	 * not always be the case.
 	 */
 
-	pthread_mutex_lock(&mutDoAct);
+	pthread_mutex_lock(&pData->mutDoAct);
 	if (pData->conn == NULL) {
 		iRet = initRabbitMQ(pData);
 	}
-	pthread_mutex_unlock(&mutDoAct);
+	pthread_mutex_unlock(&pData->mutDoAct);
 
 ENDtryResume
 
@@ -376,7 +377,7 @@ CODESTARTdoAction
 
 	amqp_bytes_t body_bytes;
 
-	pthread_mutex_lock(&mutDoAct);
+	pthread_mutex_lock(&pData->mutDoAct);
 	if (pData->conn == NULL) {
 		CHKiRet(initRabbitMQ(pData));
 	}
@@ -392,7 +393,7 @@ CODESTARTdoAction
 	}
 
 finalize_it:
-	pthread_mutex_unlock(&mutDoAct);
+	pthread_mutex_unlock(&pData->mutDoAct);
 ENDdoAction
 
 
@@ -495,7 +496,7 @@ CODESTARTnewActInst
 					"routing_key must be specified");
 		ABORT_FINALIZE(RS_RET_INVALID_PARAMS);
 	}
- 
+
 	// RabbitMQ properties initialization
 	memset(&pData->props, 0, sizeof pData->props);
 	pData->props._flags = AMQP_BASIC_DELIVERY_MODE_FLAG;
