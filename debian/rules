@@ -74,6 +74,4 @@ override_dh_missing:
 	dh_missing --list-missing
 
 override_dh_auto_test:
-ifeq (, $(findstring nocheck, $(DEB_BUILD_OPTIONS)))
-	make check || ( cat tests/test-suite.log; exit 1; )
-endif
+	dh_auto_test --no-parallel || ( cat tests/test-suite.log; exit 1; )
