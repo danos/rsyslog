@@ -22,7 +22,6 @@
  * limitations under the License.
  */
 #include "config.h"
-#include "rsyslog.h"
 
 #include <signal.h>
 #include <stdlib.h>
@@ -39,6 +38,7 @@
 #	include <systemd/sd-daemon.h>
 #endif
 
+#include "rsyslog.h"
 #include "wti.h"
 #include "ratelimit.h"
 #include "parser.h"
@@ -60,6 +60,17 @@
 #include "datetime.h"
 #include "dirty.h"
 #include "janitor.h"
+
+/* some global vars we need to differentiate between environments,
+ * for TZ-related things see
+ * https://github.com/rsyslog/rsyslog/issues/2994
+ */
+static int runningInContainer = 0;
+#ifdef OS_LINUX
+static int emitTZWarning = 0;
+#else
+static int emitTZWarning = 1;
+#endif
 
 #if defined(_AIX)
 /* AIXPORT : start
@@ -1383,8 +1394,12 @@ initAll(int argc, char **argv)
 		const char *const tz =
 			(access("/etc/localtime", R_OK) == 0) ? "TZ=/etc/localtime" : "TZ=UTC";
 		putenv((char*)tz);
-		LogMsg(0, RS_RET_NO_TZ_SET, LOG_WARNING, "environment variable TZ is not "
-			"set, auto correcting this to %s\n", tz);
+		if(emitTZWarning) {
+			LogMsg(0, RS_RET_NO_TZ_SET, LOG_WARNING, "environment variable TZ is not "
+				"set, auto correcting this to %s", tz);
+		} else {
+			dbgprintf("environment variable TZ is not set, auto correcting this to %s\n", tz);
+		}
 	}
 
 	/* END core initializations - we now come back to carrying out command line options*/
@@ -1827,8 +1842,25 @@ wait_timeout(void)
 		FD_ZERO(&rfds);
 		FD_SET(SRC_FD, &rfds);
 	}
-	if(!src_exists)
-		select(1, NULL, NULL, NULL, &tvSelectTimeout);
+	if(!src_exists) {
+		/* it looks like select() is NOT interrupted by HUP, even though
+		 * SA_RESTART is not given in the signal setup. As this code is
+		 * not expected to be used in production (when running as a
+		 * service under src control), we simply make a kind of
+		 * "somewhat-busy-wait" algorithm. We compute our own
+		 * timeout value, which we count down to zero. We do this
+		 * in useful subsecond steps.
+		 */
+		const int wait_period = 500000; /* wait period in microseconds */
+		int timeout = janitorInterval * 60 * (1000000 / wait_period);
+		do {
+			if(bFinished || bHadHUP) {
+				break;
+			}
+			srSleep(0, wait_period);
+			timeout--;
+		} while(timeout > 0);
+	}
 	else if(select(SRC_FD + 1, (fd_set *)&rfds, NULL, NULL, &tvSelectTimeout))
 	{
 		if(FD_ISSET(SRC_FD, &rfds))
@@ -1838,9 +1870,10 @@ wait_timeout(void)
 			if (errno != EINTR)
 			{
 				fprintf(stderr,"%s: ERROR: '%d' recvfrom\n", progname,errno);
-				exit(1);
-			} else  /* punt on short read */
-				continue;
+				exit(1); //TODO: this needs to be handled gracefully
+			} else { /* punt on short read */
+				return;
+			}
 
 			switch(srcpacket.subreq.action)
 			{
@@ -2059,6 +2092,8 @@ main(int argc, char **argv)
 			"terminate rsyslog\n", VERSION);
 		PidFile = strdup("NONE"); /* disables pid file writing */
 		glblPermitCtlC = 1;
+		runningInContainer = 1;
+		emitTZWarning = 1;
 	} else {
 		/* "dynamic defaults" - non-container case */
 		PidFile = strdup(PATH_PIDFILE);
