@@ -1,3 +1,9 @@
+rsyslog (8.38.0-1) UNRELEASED; urgency=medium
+
+  * New upstream version 8.38.0
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 18 Sep 2018 19:12:12 +0200
+
 rsyslog (8.37.0-2) unstable; urgency=medium
 
   * Bump Build-Depends on librelp to (>= 1.2.16)
