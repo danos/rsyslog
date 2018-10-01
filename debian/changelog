@@ -2,6 +2,7 @@ rsyslog (8.38.0-2) UNRELEASED; urgency=medium
 
   * d/copyright: Use https protocol in Format field
   * d/control: Removing redundant Priority field in binary package
+  * d/changelog: Remove trailing whitespaces
 
  -- Ondřej Nový <onovy@debian.org>  Mon, 01 Oct 2018 10:35:30 +0200
 
@@ -1714,7 +1715,7 @@ rsyslog (1.19.12-1) unstable; urgency=low
   * debian/control
     - Add Depends: lsb-base (>= 3.0-6) as the init script uses the LSB logging
       functions.
-    - Bump Standards-Version to 3.7.3. No further changes required. 
+    - Bump Standards-Version to 3.7.3. No further changes required.
 
  -- Michael Biebl <biebl@debian.org>  Mon, 03 Dec 2007 19:42:19 +0100
 
@@ -1777,7 +1778,7 @@ rsyslog (1.19.2-1) unstable; urgency=low
     - Pass --enable-mysql to ./configure.
     - Install the SQL schema file for dbconfig-common.
   * debian/rsyslog-mysql.config
-    - Setup the default values for dbconfig-common. 
+    - Setup the default values for dbconfig-common.
   * debian/rsyslog-mysql.{postinst,prerm,postrm}
     - Include the dbconfig-common scripts and call the dbc_go function.
     - Use ucf and ucfr to manage the generated configuration file mysql.conf.
