@@ -177,6 +177,9 @@
 /* Define to 1 if you have the `mkdir' function. */
 #undef HAVE_MKDIR
 
+/* Define to 1 if you have the `mongoc_client_set_ssl_opts' function. */
+#undef HAVE_MONGOC_CLIENT_SET_SSL_OPTS
+
 /* mysql_library_init available */
 #undef HAVE_MYSQL_LIBRARY_INIT
 

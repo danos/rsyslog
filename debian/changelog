@@ -1,3 +1,10 @@
+rsyslog (8.38.0-1) unstable; urgency=medium
+
+  * New upstream version 8.38.0
+  * Bump Standards-Version to 4.2.1
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 18 Sep 2018 19:46:09 +0200
+
 rsyslog (8.37.0-2~bpo9+1) stretch-backports; urgency=medium
 
   * Rebuild for stretch-backports

@@ -133,7 +133,7 @@ am__uninstall_files_from_dir = { \
 am__installdirs = "$(DESTDIR)$(pkglibdir)"
 LTLIBRARIES = $(pkglib_LTLIBRARIES)
 imfile_la_DEPENDENCIES =
-am_imfile_la_OBJECTS = imfile_la-imfile.lo
+am_imfile_la_OBJECTS = imfile_la-imfile.lo imfile_la-siphash.lo
 imfile_la_OBJECTS = $(am_imfile_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -425,7 +425,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 pkglib_LTLIBRARIES = imfile.la
-imfile_la_SOURCES = imfile.c
+imfile_la_SOURCES = imfile.c siphash.c
 imfile_la_CPPFLAGS = -I$(top_srcdir) $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_CFLAGS)
 imfile_la_LDFLAGS = -module -avoid-version
 imfile_la_LIBADD = 
@@ -508,6 +508,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/imfile_la-imfile.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/imfile_la-siphash.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -539,6 +540,13 @@ imfile_la-imfile.lo: imfile.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='imfile.c' object='imfile_la-imfile.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(imfile_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o imfile_la-imfile.lo `test -f 'imfile.c' || echo '$(srcdir)/'`imfile.c
+
+imfile_la-siphash.lo: siphash.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(imfile_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT imfile_la-siphash.lo -MD -MP -MF $(DEPDIR)/imfile_la-siphash.Tpo -c -o imfile_la-siphash.lo `test -f 'siphash.c' || echo '$(srcdir)/'`siphash.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/imfile_la-siphash.Tpo $(DEPDIR)/imfile_la-siphash.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='siphash.c' object='imfile_la-siphash.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(imfile_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o imfile_la-siphash.lo `test -f 'siphash.c' || echo '$(srcdir)/'`siphash.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
