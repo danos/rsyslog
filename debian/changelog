@@ -1,3 +1,9 @@
+rsyslog (8.38.0-1~bpo9+1) stretch-backports; urgency=medium
+
+  * Rebuild for stretch-backports
+
+ -- Michael Biebl <biebl@debian.org>  Mon, 08 Oct 2018 07:26:26 +0200
+
 rsyslog (8.38.0-1) unstable; urgency=medium
 
   * New upstream version 8.38.0
