@@ -4,14 +4,14 @@
 # This file is part of the rsyslog project, released  under GPLv3
 
 uname
-if [ `uname` = "FreeBSD" ] ; then
+if [ $(uname) = "FreeBSD" ] ; then
    echo "This test currently does not work on FreeBSD."
    exit 77
 fi
 
 echo ===============================================================================
 echo \[udp-msgreduc-vg.sh\]: testing imtcp multiple listeners
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 generate_conf
 add_conf '
 $ModLoad ../plugins/imudp/.libs/imudp

@@ -1,4 +1,147 @@
 ------------------------------------------------------------------------------
+Version 8.39.0 [v8-stable] 2018-10-30
+- imfile: improve truncation detection
+  previously, truncation was only detected at end of file. Especially with
+  busy files that could cause loss of data and possibly also stall imfile
+  reading. The new code now also checks during each read. Obviously, there
+  is some additional overhead associated with that, but this is unavoidable.
+  It still is highly recommended NOT to turn on "reopenOnTruncate" in imfile.
+  Note that there are also inherant reliability issues. There is no way to
+  "fix" these, as they are caused by races between the process(es) who truncate
+  and rsyslog reading the file. But with the new code, the "problem window"
+  should be much smaller and, more importantly, imfile should not stall.
+  see also https://github.com/rsyslog/rsyslog/issues/2659
+  see also https://github.com/rsyslog/rsyslog/issues/1605
+- imjournal: work around journald excessive reloading behavior
+  This is workaround for possible imjournal interaction with systemd
+  where journal invalidate fix is not present. The code tries to
+  detect SD_JOURNAL_INVALIDATE loop and not reload after each call.
+  Thanks to Jiri Vymazal for the patch.
+- errmsg: remove no longer needed code
+  refectored code (over a long time) so that object-ish style is no longer
+  needed and could now finally be removed; We also refactored the last
+  component (omhttp contrib module) that used the old interface.
+  closes https://github.com/rsyslog/rsyslog/issues/1684
+- queue bugfix: invalid error message on queue startup
+  due to some old regression (commit not exactly identified, but for
+  sure a regression, 9 years ago it was correct) an error message
+  is emitted when no .qi file exists on startup of the queue, which
+  is a normal condition.
+  Actually, the code should not have tried to open the .qi file in
+  the first place because it detected that it did not exist. That
+  (necessary) shortcut had been removed a while ago.
+  closes https://github.com/rsyslog/rsyslog/issues/3117
+- bugfix imrelp: regression with legacy configuration startup fail
+  Startup of a relp listener failed if legacy configuration was used.
+  caused by commit: 32b71daa8aadb8f16fe0ca2945e54d593f47a824
+  closes https://github.com/rsyslog/rsyslog/issues/3106
+- bugfix imudp: stall of connection and/or potential segfault
+  There was a regression in 493279b790a8cdace8ccbc2c5136985e820dd2fa.
+  This regression may cause stop (or delay) of reception from some systems
+  and may also caus a segfault. Triggering condition is that at least
+  one listener could not be created.
+  Thanks to Jens Låås for the patch.
+- bugfix gcry crypto driver: small memleak
+  If a crypto key is specified directly via the key="" parameter,
+  the storage for that key is not freed, causing a small memleak.
+  Note that the problem occurs only once per context, so this
+  should not cause real issues. Even more so, as specifying a
+  key directly is meant only for testing purposes and is strongly
+  discouraged for production use.
+  Detected by internal testing, no actual fail case known.
+- fix potential misadressing in encryption subsystem
+  could happen if e.g. disk queues were encrypted
+  not seen in practice but caught by testbench test
+- ksi subsystem changes
+  * enhance debug logging
+  * disable unsafe SHA1 algorithm
+  Thanks to Allan Park for the patch.
+- bugfix core: regex compile error messages could be incorrect
+- bugfix core: potential hang on rsyslog termination
+  The root cause was a deadlock during worker startup. This could
+  happen for example when a DA queue needed to persist data during
+  shutdown.
+  Fail condition:
+  * startup request for a new worker
+  * initialization of that worker
+  * immediate detection that the worker can or must shutdown
+  * main thread waiting for worker running state, which it skips,
+    and so the main thread hangs inside a loop
+  closes https://github.com/rsyslog/rsyslog/issues/3094
+-  bugfix imkafka: system hang when backgrounded
+  imkafka intializes librdkafka too early (before the fork). This leads
+  to hangs in various parts of the system - not only im imkafka but
+  other functions as well (e.g. getaddrinfo() calls).
+  closes https://github.com/rsyslog/rsyslog/issues/3180
+- bugfix imfile: file change was not reliably detected
+  A change in the inode was not detected under all circumstances,
+  most importantly not in some logrotate cases.
+  Includes new tests made by Andre Lorbach. They now use the
+  logrotate tool natively to reproduce the issue.
+  closes https://github.com/rsyslog/rsyslog/issues/2659
+  closes https://github.com/rsyslog/rsyslog/issues/1605
+- bugfix imrelp: do not fail build if librelp does not have relpSrvSetLstnAddr
+  closes https://github.com/rsyslog/rsyslog/issues/2938
+- bugfix queue subsystem: DA queue did ignore encryption settings
+  closes https://github.com/rsyslog/rsyslog/issues/3066
+  closes https://github.com/rsyslog/rsyslog/issues/2575
+- bugfix KSI: lmsig-ksils12 module skips signing the last block
+  Thanks to Allan Park for the patch.
+  closes https://github.com/rsyslog/rsyslog/issues/3105
+- bugfix fmhash: function hash64mod sometimes returned wrong result
+  Thanks to Harshvardhan Shrivastava for providing the patch
+  closes https://github.com/rsyslog/rsyslog/issues/3025
+- bugfix core/debug: data written to random fd 2 under some debug settings
+  This happens only during auto-backgrouding, where we cannot any longer
+  access stderr. Whatever is opened with fd2 receives some debug messages.
+  Note that the specific feature is usually turned on only in CI runs.
+- cleanup: removed no longer needed code
+  Code that was unused for quite a while or did not really belong to the
+  project identified and removed.
+- overall code cleanup
+  e.g. remove unused code, replace bad bash constructs, etc...
+- CI:
+  * some small improvements in testbench plumbing
+    e.g. (`cmd` replaced by $(cmd), removed useless use of cat, ...)
+  * testbench: improve plumbing for kafka tests
+    - Removed all sleeps where possible.
+    - Moved all kafka start/stop/download logic into functions.
+    - Moved kafka/zookeeper stop into error_exit and exit_test.
+    - Kafka/Zookeeper cleanup only done on success now.
+    - Kafka/Zookeeper logfiles automatically dumped on error_exit only now.
+    - Added cleanup for Kafka/Zookeeper instances into CI/buildbot_cleanup.sh
+    - added new tests
+  * testbench: fix incompatibility of one omprog test with Python3
+    Python3 writes to stderr immediately, and this caused the
+    captured output to differ with respect to Python2. Simplified
+    the test to do a single write to stderr. Also a cast to int
+    was needed when calculating 'numRepeats'.
+    closes https://github.com/rsyslog/rsyslog/issues/3030
+  * testbench: fixed imfile parallel issues
+   - Fixed timing issues in some imfile wildcard/regex tests
+   - Added touch command in imfile wildcard tests to make sure directories
+     exist before files are created in it if IO is under stress.
+   - changed content checking in some tests to use "content_check_with_count"
+     with check timeouts instead of using fixed sleeptimes.
+  * testbench: new basic tests
+    These ensure that for some modules that did not have any tests at all
+    we have at least a minimal coverage (module loads, activates, is able
+    to emit error messages). Of course, further improvements would make
+    much sense. Modules:
+    - ommail
+  - testbench: new tests for disk queue encryption
+  - testbench: improved auto-diagnostics for hanging instance
+  - testbench: hardened kafka test against failing kafka subsyste,
+    not in 100% of the cases, but at least in some that frequently occur
+  - failing tests now report failure status so that we can get stats
+    on unreliable tests
+  - testbench tooling: fix incorrect tcpflood TLS parameter check
+    could lead to segfault when started
+  - bugfix testbench tooling: tcpflood invalid type in calloc (openssl mode)
+    It is unlikley that this has caused a real issue, as long as pointers
+    are all of the same size (what is highly probable).
+    detected by cppcheck via Codacy.com
+------------------------------------------------------------------------------
 Version 8.38.0 [v8-stable] 2018-09-18
 - AIX: make basic modules work again
 - make rsyslog build on AIX again
@@ -357,6 +500,10 @@ Version 8.37.0 [v8-stable] 2018-08-07
   it does not properly free memory returned by glob(). This is a cosmetic
   bug as the process terminates within the next few milliseconds. However,
   it causes memory analyzer reports and thus makes CI fail.
+- bugfix core msg: potential deadlock (and rsyslog hang)
+  can happen e.g. with headerless messages when app-name
+  property is used
+  closes https://github.com/rsyslog/rsyslog/issues/3135
 - bugfix core: do not abort startup on problems setting scheduling policy
   rsyslog creates a default scheduling policy on startup. This code
   invalidly used CHKiRet (our exception handler) to check pthreads

@@ -5,7 +5,7 @@
 # program when signalOnClose=on, closes the pipe, and kills the
 # child if unresponsive.
 
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 generate_conf
 add_conf '
 module(load="../plugins/omprog/.libs/omprog")
@@ -37,7 +37,7 @@ shutdown_when_empty
 wait_shutdown
 . $srcdir/diag.sh ensure-no-process-exists $RSYSLOG_DYNNAME.omprog-close-unresponsive-bin.sh
 
-EXPECTED="Starting
+export EXPECTED="Starting
 Received msgnum:00000000:
 Received msgnum:00000001:
 Received msgnum:00000002:

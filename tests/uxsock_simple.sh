@@ -3,10 +3,10 @@
 # all data to an output file, then a rsyslog instance is started which generates
 # messages and sends them to the unix socket. Datagram sockets are being used.
 # added 2010-08-06 by Rgerhards
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 
 uname
-if [ `uname` = "FreeBSD" ] ; then
+if [ $(uname) = "FreeBSD" ] ; then
    echo "This test currently does not work on FreeBSD."
    exit 77
 fi

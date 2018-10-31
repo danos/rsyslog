@@ -9,9 +9,9 @@
 # lines in line-buffered mode. In this test, the 'stdbuf' utility of GNU
 # Coreutils is used to force line buffering in a Python program (see
 # 'omprog-output-capture-mt-bin.py' for alternatives).
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 uname
-if [ `uname` = "SunOS" ] ; then
+if [ $(uname) = "SunOS" ] ; then
    echo "This test currently does not work on all flavors of Solaris (problems with Python?)."
    exit 77
 fi
@@ -24,7 +24,7 @@ else
     LINE_LENGTH=511   # 512 minus 1 byte (for the newline char)
 fi
 
-export command_line="/usr/bin/stdbuf -oL -eL $srcdir/testsuites/omprog-output-capture-mt-bin.py $LINE_LENGTH"
+export command_line="/usr/bin/stdbuf -oL $srcdir/testsuites/omprog-output-capture-mt-bin.py $LINE_LENGTH"
 
 check_command_available stdbuf
 generate_conf

@@ -65,7 +65,6 @@ MODULE_CNFNAME("omhttp")
 
 /* internal structures */
 DEF_OMOD_STATIC_DATA
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(prop)
 DEFobjCurrIf(ruleset)
 
@@ -924,10 +923,8 @@ getDataRetryFailures(context *ctx,int itemStatus,char *request,char *response,
 {
 	DEFiRet;
 	fjson_object *omes = NULL;
-//	fjson_object *jo = NULL;
 	struct json_object_iterator it = json_object_iter_begin(response_item);
 	struct json_object_iterator itEnd = json_object_iter_end(response_item);
-//	const char *optype = NULL;
 	smsg_t *msg = NULL;
 
 	(void)response;
@@ -936,15 +933,6 @@ getDataRetryFailures(context *ctx,int itemStatus,char *request,char *response,
 	CHKmalloc(msg);
 	/* add status as local variables */
 	omes = json_object_new_object();
-
-//	if (!json_object_iter_equal(&it, &itEnd))
-//		optype = json_object_iter_peek_name(&it);
-/*	if (optype) {
-		jo = json_object_new_string(optype);
-	} else {
-		jo = json_object_new_string("unknown");
-	}
-*/
 
 	/* add response_body fields to local var omes */
 	it = json_object_iter_begin(response_body);
@@ -1388,7 +1376,7 @@ computeAuthHeader(char* uid, char* pwd, uchar** authBuf) {
 	if(r == 0) *authBuf = (uchar*) es_str2cstr(auth, NULL);
 
 	if (r != 0 || *authBuf == NULL) {
-		errmsg.LogError(0, RS_RET_ERR, "omhttp: failed to build auth header\n");
+		LogError(0, RS_RET_ERR, "omhttp: failed to build auth header\n");
 		ABORT_FINALIZE(RS_RET_ERR);
 	}
 
@@ -1417,7 +1405,7 @@ computeApiHeader(char* key, char* value, uchar** headerBuf) {
 	if(r == 0) *headerBuf = (uchar*) es_str2cstr(header, NULL);
 
 	if (r != 0 || *headerBuf == NULL) {
-		errmsg.LogError(0, RS_RET_ERR, "omhttp: failed to build http header\n");
+		LogError(0, RS_RET_ERR, "omhttp: failed to build http header\n");
 		ABORT_FINALIZE(RS_RET_ERR);
 	}
 
@@ -1588,7 +1576,7 @@ CODESTARTnewActInst
 			fp = fopen((const char*)pData->caCertFile, "r");
 			if(fp == NULL) {
 				rs_strerror_r(errno, errStr, sizeof(errStr));
-				errmsg.LogError(0, RS_RET_NO_FILE_ACCESS,
+				LogError(0, RS_RET_NO_FILE_ACCESS,
 						"error: 'tls.cacert' file %s couldn't be accessed: %s\n",
 						pData->caCertFile, errStr);
 			} else {
@@ -1599,7 +1587,7 @@ CODESTARTnewActInst
 			fp = fopen((const char*)pData->myCertFile, "r");
 			if(fp == NULL) {
 				rs_strerror_r(errno, errStr, sizeof(errStr));
-				errmsg.LogError(0, RS_RET_NO_FILE_ACCESS,
+				LogError(0, RS_RET_NO_FILE_ACCESS,
 						"error: 'tls.mycert' file %s couldn't be accessed: %s\n",
 						pData->myCertFile, errStr);
 			} else {
@@ -1610,7 +1598,7 @@ CODESTARTnewActInst
 			fp = fopen((const char*)pData->myPrivKeyFile, "r");
 			if(fp == NULL) {
 				rs_strerror_r(errno, errStr, sizeof(errStr));
-				errmsg.LogError(0, RS_RET_NO_FILE_ACCESS,
+				LogError(0, RS_RET_NO_FILE_ACCESS,
 						"error: 'tls.myprivkey' file %s couldn't be accessed: %s\n",
 						pData->myPrivKeyFile, errStr);
 			} else {
@@ -1631,19 +1619,19 @@ CODESTARTnewActInst
 	}
 
 	if(pData->pwd != NULL && pData->uid == NULL) {
-		errmsg.LogError(0, RS_RET_UID_MISSING,
+		LogError(0, RS_RET_UID_MISSING,
 			"omhttp: password is provided, but no uid "
 			"- action definition invalid");
 		ABORT_FINALIZE(RS_RET_UID_MISSING);
 	}
 	if(pData->httpheaderkey != NULL && pData->httpheadervalue == NULL) {
-		errmsg.LogError(0, RS_RET_UID_MISSING,
+		LogError(0, RS_RET_UID_MISSING,
 			"omhttp: http header key is provided, but no http header value "
 			"- action definition invalid");
 		ABORT_FINALIZE(RS_RET_UID_MISSING);
 	}
 	if(pData->dynRestPath && pData->restPath == NULL) {
-		errmsg.LogError(0, RS_RET_CONFIG_ERROR,
+		LogError(0, RS_RET_CONFIG_ERROR,
 			"omhttp: requested dynamic rest path, but no name for rest "
 			"path template given - action definition invalid");
 		ABORT_FINALIZE(RS_RET_CONFIG_ERROR);
@@ -1680,7 +1668,7 @@ CODESTARTnewActInst
 		pData->numServers = servers->nmemb;
 		pData->serverBaseUrls = malloc(servers->nmemb * sizeof(uchar*));
 		if (pData->serverBaseUrls == NULL) {
-			errmsg.LogError(0, RS_RET_ERR, "omhttp: unable to allocate buffer "
+			LogError(0, RS_RET_ERR, "omhttp: unable to allocate buffer "
 					"for http server configuration.");
 			ABORT_FINALIZE(RS_RET_ERR);
 		}
@@ -1688,7 +1676,7 @@ CODESTARTnewActInst
 		for(i = 0 ; i < servers->nmemb ; ++i) {
 			serverParam = es_str2cstr(servers->arr[i], NULL);
 			if (serverParam == NULL) {
-				errmsg.LogError(0, RS_RET_ERR, "omhttp: unable to allocate buffer "
+				LogError(0, RS_RET_ERR, "omhttp: unable to allocate buffer "
 					"for http server configuration.");
 				ABORT_FINALIZE(RS_RET_ERR);
 			}
@@ -1708,7 +1696,7 @@ CODESTARTnewActInst
 		pData->numServers = 1;
 		pData->serverBaseUrls = malloc(sizeof(uchar*));
 		if (pData->serverBaseUrls == NULL) {
-			errmsg.LogError(0, RS_RET_ERR, "omhttp: unable to allocate buffer "
+			LogError(0, RS_RET_ERR, "omhttp: unable to allocate buffer "
 					"for http server configuration.");
 			ABORT_FINALIZE(RS_RET_ERR);
 		}
@@ -1760,7 +1748,7 @@ CODESTARTcheckCnf
 		if (inst->retryRulesetName) {
 			localRet = ruleset.GetRuleset(pModConf->pConf, &pRuleset, inst->retryRulesetName);
 			if(localRet == RS_RET_NOT_FOUND) {
-				errmsg.LogError(0, localRet, "omhttp: retryruleset '%s' not found - "
+				LogError(0, localRet, "omhttp: retryruleset '%s' not found - "
 						"no retry ruleset will be used", inst->retryRulesetName);
 			} else {
 				inst->retryRuleset = pRuleset;
@@ -1794,7 +1782,6 @@ CODESTARTmodExit
 	if(pInputName != NULL)
 		prop.Destruct(&pInputName);
 	curl_global_cleanup();
-	objRelease(errmsg, CORE_COMPONENT);
 	objRelease(prop, CORE_COMPONENT);
 	objRelease(ruleset, CORE_COMPONENT);
 ENDmodExit
@@ -1817,12 +1804,11 @@ BEGINmodInit()
 CODESTARTmodInit
 	*ipIFVersProvided = CURR_MOD_IF_VERSION; /* we only support the current interface specification */
 CODEmodInit_QueryRegCFSLineHdlr
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 	CHKiRet(objUse(prop, CORE_COMPONENT));
 	CHKiRet(objUse(ruleset, CORE_COMPONENT));
 
 	if (curl_global_init(CURL_GLOBAL_ALL) != 0) {
-		errmsg.LogError(0, RS_RET_OBJ_CREATION_FAILED, "CURL fail. -http disabled");
+		LogError(0, RS_RET_OBJ_CREATION_FAILED, "CURL fail. -http disabled");
 		ABORT_FINALIZE(RS_RET_OBJ_CREATION_FAILED);
 	}
 

@@ -1,32 +1,28 @@
 #!/bin/bash
 # added 2018-08-13 by alorbach
 # This file is part of the rsyslog project, released under ASL 2.0
+. ${srcdir:=.}/diag.sh init
+
 export TESTMESSAGES=50000
 export TESTMESSAGESFULL=100000
 
 # Generate random topic name
-export RANDTOPIC1=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
-export RANDTOPIC2=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
+export RANDTOPIC1=$(tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 8 | head -n 1)
+export RANDTOPIC2=$(tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 8 | head -n 1)
 
-# enable the EXTRA_EXITCHECK only if really needed - otherwise spams the test log
-# too much
-#export EXTRA_EXITCHECK=dumpkafkalogs
-echo Check and Stop previous instances of kafka/zookeeper 
-. $srcdir/diag.sh download-kafka
-. $srcdir/diag.sh stop-zookeeper
-. $srcdir/diag.sh stop-kafka
+# Set EXTRA_EXITCHECK to dump kafka/zookeeperlogfiles on failure only.
+export EXTRA_EXITCHECK=dumpkafkalogs
+export EXTRA_EXIT=kafka
+echo STEP: Check and Stop previous instances of kafka/zookeeper
+download_kafka
+stop_zookeeper
+stop_kafka
 
-echo Init Testbench
-. $srcdir/diag.sh init
-
-echo Create kafka/zookeeper instance and topics
-. $srcdir/diag.sh start-zookeeper
-. $srcdir/diag.sh start-kafka
-. $srcdir/diag.sh create-kafka-topic $RANDTOPIC1 '.dep_wrk' '22181'
-. $srcdir/diag.sh create-kafka-topic $RANDTOPIC2 '.dep_wrk' '22181'
-
-echo Give Kafka some time to process topic create ...
-sleep 5
+echo STEP: Create kafka/zookeeper instance and topics
+start_zookeeper
+start_kafka
+create_kafka_topic $RANDTOPIC1 '.dep_wrk' '22181'
+create_kafka_topic $RANDTOPIC2 '.dep_wrk' '22181'
 
 # --- Create omkafka sender config
 export RSYSLOG_DEBUGLOG="log"
@@ -85,13 +81,13 @@ local4.* action(	name="kafka-fwd"
 	)
 '
 
-echo Starting sender instance [omkafka]
+echo STEP: Starting sender instance [omkafka]
 startup
 # ---
 
 # Injection messages now before starting receiver, simply because omkafka will take some time and
 # there is no reason to wait for the receiver to startup first. 
-echo Inject messages into rsyslog sender instance
+echo STEP: Inject messages into rsyslog sender instance
 injectmsg 1 $TESTMESSAGES
 
 # --- Create omkafka receiver config
@@ -132,31 +128,25 @@ if ($msg contains "msgnum:") then {
 }
 ' 2
 
-echo Starting receiver instance [imkafka]
+echo STEP: Starting receiver instance [imkafka]
 startup 2
 # ---
 
-echo Stopping sender  instance [omkafka]
+echo STEP: Stopping sender  instance [omkafka]
 shutdown_when_empty
 wait_shutdown
 
-echo Stopping receiver instance [imkafka]
+echo STEP: Stopping receiver instance [imkafka]
 kafka_wait_group_coordinator
 shutdown_when_empty 2
 wait_shutdown 2
 
-echo delete kafka topics
-. $srcdir/diag.sh delete-kafka-topic $RANDTOPIC1 '.dep_wrk' '22181'
-. $srcdir/diag.sh delete-kafka-topic $RANDTOPIC2 '.dep_wrk' '22181'
+echo STEP: delete kafka topics
+delete_kafka_topic $RANDTOPIC1 '.dep_wrk' '22181'
+delete_kafka_topic $RANDTOPIC2 '.dep_wrk' '22181'
 
 # Dump Kafka log | uncomment if needed
-# . $srcdir/diag.sh dump-kafka-serverlog
-
-echo stop kafka instance
-. $srcdir/diag.sh stop-kafka
-
-# STOP ZOOKEEPER in any case
-. $srcdir/diag.sh stop-zookeeper
+# dump_kafka_serverlog
 
 # Do the final sequence check
 seq_check 1 $TESTMESSAGES -d

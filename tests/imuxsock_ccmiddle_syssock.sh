@@ -2,7 +2,7 @@
 echo \[imuxsock_ccmiddle_syssock.sh\]: test trailing LF handling in imuxsock
 
 uname
-if [ `uname` = "SunOS" ] ; then
+if [ $(uname) = "SunOS" ] ; then
    echo "Solaris: FIX ME"
    exit 77
 fi
@@ -13,7 +13,7 @@ if [ $no_liblogging_stdlog -ne 0 ];then
   echo "liblogging-stdlog not available - skipping test"
   exit 77
 fi
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 generate_conf
 add_conf '
 module(load="../plugins/imuxsock/.libs/imuxsock"

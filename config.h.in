@@ -225,6 +225,9 @@
 /* Define to 1 if you have the `regcomp' function. */
 #undef HAVE_REGCOMP
 
+/* Define if relpSrvSetLstnAddr exists. */
+#undef HAVE_RELPSRVSETLSTNADDR
+
 /* Define if relpSrvSetOversizeMode exists. */
 #undef HAVE_RELPSRVSETOVERSIZEMODE
 

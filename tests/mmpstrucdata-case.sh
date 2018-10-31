@@ -3,7 +3,7 @@
 # correctly parsed.
 # This file is part of the rsyslog project, released  under ASL 2.0
 # rgerhards, 2015-04-30
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 generate_conf
 add_conf '
 module(load="../plugins/mmpstrucdata/.libs/mmpstrucdata")
@@ -19,7 +19,7 @@ action(type="omfile" template="outfmt" file=`echo $RSYSLOG_OUT_LOG`)
 '
 
 uname
-if [ `uname` = "FreeBSD" ] ; then
+if [ $(uname) = "FreeBSD" ] ; then
    echo "This test currently does not work on FreeBSD."
    exit 77
 fi

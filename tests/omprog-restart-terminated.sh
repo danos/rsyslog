@@ -7,7 +7,7 @@
 # omprog is going to write to the pipe (to send a message to the
 # program), and when omprog is going to read from the pipe (when it
 # is expecting the program to confirm the last message).
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 check_command_available lsof
 
 generate_conf
@@ -36,7 +36,7 @@ template(name="outfmt" type="string" string="%msg%\n")
 cp -f $srcdir/testsuites/omprog-restart-terminated-bin.sh $RSYSLOG_DYNNAME.omprog-restart-terminated-bin.sh
 
 # On Solaris 10, the output of ps is truncated for long process names; use /usr/ucb/ps instead:
-if [[ `uname` = "SunOS" && `uname -r` = "5.10" ]]; then
+if [[ $(uname) = "SunOS" && $(uname -r) = "5.10" ]]; then
     function get_child_pid {
         echo $(/usr/ucb/ps -awwx | grep "$RSYSLOG_DYNNAME.[o]mprog-restart-terminated-bin.sh" | awk '{ print $1 }')
     }
@@ -85,7 +85,7 @@ child_lsof=$(lsof -a -d 0-65535 -p $(get_child_pid) | awk '$4 != "255r" { print 
 shutdown_when_empty
 wait_shutdown
 
-EXPECTED="Starting
+export EXPECTED="Starting
 Received msgnum:00000000:
 Received msgnum:00000001:
 Received msgnum:00000002:

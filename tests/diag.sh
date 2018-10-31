@@ -10,6 +10,13 @@
 #
 # This file can be customized to environment specifics via environment
 # variables:
+# SUDO		either blank, or the command to use for sudo (usually "sudo").
+#		This env var is sometimes used to increase the chance that we
+#		get extra information, e.g. when trying to analyze running
+#		processes. Bottom line: if sudo is possible and you are OK with
+#		the testbench utilizing this, use
+#		export SUDO=sudo
+#		to activate the extra functionality.
 # RS_SORTCMD    Sort command to use (must support $RS_SORT_NUMERIC_OPT option). If unset,
 #		"sort" is used. E.g. Solaris needs "gsort"
 # RS_SORT_NUMERIC_OPT option to use for numerical sort, If unset "-g" is used.
@@ -17,7 +24,17 @@
 #               E.g. Solaris needs "gcmp"
 # RS_HEADCMD    head command to use. If unset, "head" is used.
 #               E.g. Solaris needs "ghead"
+# RSTB_GLOBAL_INPUT_SHUTDOWN_TIMEOUT
+#		global input timeout shutdown, default 60000 (60) sec. This should
+#		only be set specifically if there is good need to do so, e.g. if
+#		a test needs to timeout.
 #
+#
+# EXIT STATES
+# 0 - ok
+# 1 - FAIL
+# 77 - SKIP
+# 100 - Testbench failure
 
 # environment variables:
 # USE_AUTO_DEBUG "on" --> enables automatic debugging, anything else
@@ -29,6 +46,8 @@
 # TCPFLOOD_EXTRA_OPTS   enables to set extra options for tcpflood, usually
 #                       used in tests that have a common driver where it
 #                       is too hard to set these options otherwise
+# CONFIG
+export ZOOPIDFILE="$(pwd)/zookeeper.pid"
 
 #valgrind="valgrind --malloc-fill=ff --free-fill=fe --log-fd=1"
 
@@ -88,8 +107,27 @@ function skip_platform() {
 }
 
 
+# set special tests status. States ($1) are:
+# unreliable -- as the name says, test does not work reliably; $2 must be github issue URL
+#               depending on CI configuration, "unreliable" tests are skipped and not failed
+#               or not executed at all. Test reports may also be amended to github issue.
+function test_status() {
+	if [ "$1" == "unreliable" ]; then
+		if [ "$2" == "" ]; then
+			printf 'TESTBENCH_ERROR: github issue URL must be given\n'
+			error_exit 100
+		fi
+		export TEST_STATUS="$1"
+		export TEST_GITHUB_ISSUE="$2"
+	else
+		printf 'TESTBENCH_ERROR: test_status "%s" unknown\n' "$1"
+		error_exit 100
+	fi
+}
+
+
 function setvar_RS_HOSTNAME() {
-	printf "### Obtaining HOSTNAME (prequisite, not actual test) ###\n"
+	printf '### Obtaining HOSTNAME (prequisite, not actual test) ###\n'
 	generate_conf
 	add_conf 'module(load="../plugins/imtcp/.libs/imtcp")
 input(type="imtcp" port="'$TCPFLOOD_PORT'")
@@ -113,6 +151,9 @@ local0.* ./'${RSYSLOG_DYNNAME}'.HOSTNAME;hostname
 #			finished under stress otherwise
 # $1 is the instance id, if given
 function generate_conf() {
+	if [ "$RSTB_GLOBAL_INPUT_SHUTDOWN_TIMEOUT" == "" ]; then
+		RSTB_GLOBAL_INPUT_SHUTDOWN_TIMEOUT="60000"
+	fi
 	export TCPFLOOD_PORT="$(get_free_port)"
 	if [ "$1" == "" ]; then
 		export TESTCONF_NM="${RSYSLOG_DYNNAME}_" # this basename is also used by instance 2!
@@ -122,7 +163,7 @@ function generate_conf() {
 		mkdir $RSYSLOG_DYNNAME.spool
 	fi
 	echo 'module(load="../plugins/imdiag/.libs/imdiag")
-global(inputs.timeout.shutdown="60000")
+global(inputs.timeout.shutdown="'$RSTB_GLOBAL_INPUT_SHUTDOWN_TIMEOUT'")
 $IMDiagListenPortFileName '$RSYSLOG_DYNNAME.imdiag$1.port'
 $IMDiagServerRun 0
 
@@ -133,7 +174,7 @@ $IMDiagServerRun 0
 # add more data to config file. Note: generate_conf must have been called
 # $1 is config fragment, $2 the instance id, if given
 function add_conf() {
-	printf "%s" "$1" >> ${TESTCONF_NM}$2.conf
+	printf '%s' "$1" >> ${TESTCONF_NM}$2.conf
 }
 
 
@@ -150,18 +191,18 @@ function cmp_exact() {
 		error_exit  1
 	fi
 	if [ "$EXPECTED" == "" ]; then
-		printf "Testbench ERROR, cmp_exact() needs to have env var EXPECTED set!\n"
+		printf 'Testbench ERROR, cmp_exact() needs to have env var EXPECTED set!\n'
 		error_exit  1
 	fi
-	printf "%s\n" "$EXPECTED" | cmp - "$1"
+	printf '%s\n' "$EXPECTED" | cmp - "$1"
 	if [ $? -ne 0 ]; then
 		echo "invalid response generated"
 		echo "################# $1 is:"
-		cat -n ${RSYSLOG_OUT_LOG}
+		cat -n $1
 		echo "################# EXPECTED was:"
-		printf "%s\n" "$EXPECTED" | cat -n -
-		printf "\n#################### diff is:\n"
-		printf "%s\n" "$EXPECTED" | diff - "$1"
+		printf '%s\n' "$EXPECTED" | cat -n -
+		printf '\n#################### diff is:\n'
+		printf '%s\n' "$EXPECTED" | diff - "$1"
 		error_exit  1
 	fi;
 }
@@ -199,34 +240,37 @@ function wait_startup_pid() {
 		error_exit 100
 	fi
 	i=0
-	while test ! -f $1.pid; do
+	start_timeout="$(date)"
+	while test ! -f $1; do
 		$TESTTOOL_DIR/msleep 100 # wait 100 milliseconds
 		let "i++"
 		if test $i -gt $TB_TIMEOUT_STARTSTOP
 		then
-		   ps -f
-		   echo "ABORT! Timeout waiting on startup (pid file $1.pid)"
+		   echo "ABORT! Timeout waiting on startup (pid file $1)"
+		   echo "Wait initiated $start_timeout, now $(date)"
+		   ls -l $1
+		   ps -fp $(cat $1)
 		   error_exit 1
 		fi
 	done
-	echo "$1.pid found, pid  `cat $1.pid`"
+	printf '%s1 found, pid %s\n' "$1" "$(cat $1)"
 }
 
 # special version of wait_startup_pid() for rsyslog startup
 function wait_rsyslog_startup_pid() {
-	wait_startup_pid $RSYSLOG_PIDBASE$1
+	wait_startup_pid $RSYSLOG_PIDBASE$1.pid
 }
 
 # wait for startup of an arbitrary process
 # $1 - pid file name
 # $2 - startup file name (optional, only checked if given)
 function wait_process_startup() {
-	wait_startup_pid $1
+	wait_startup_pid $1.pid
 	i=0
 	if [ "$2" != "" ]; then
 		while test ! -f "$2"; do
 			$TESTTOOL_DIR/msleep 100 # wait 100 milliseconds
-			ps -p `cat $1.pid` &> /dev/null
+			ps -p $(cat $1.pid) &> /dev/null
 			if [ $? -ne 0 ]
 			then
 			   echo "ABORT! pid in $1 no longer active during startup!"
@@ -239,7 +283,7 @@ function wait_process_startup() {
 			   error_exit 1
 			fi
 		done
-		echo "$2 seen, associated pid " `cat $1.pid`
+		echo "$2 seen, associated pid " $(cat $1.pid)
 	fi
 }
 
@@ -253,7 +297,7 @@ function wait_file_exists() {
 			break
 		fi
 		$TESTTOOL_DIR/msleep 100 # wait 100 milliseconds
-		let "i++"
+		((i++))
 		if test $i -gt $TB_TIMEOUT_STARTSTOP; then
 		   echo "ABORT! Timeout waiting for file $1"
 		   ls -l $1
@@ -289,13 +333,40 @@ debug output in the receiver and check for actual problems.
 "
 }
 
+# check if kafka itself failed. $1 is the message file name.
+function kafka_check_broken_broker() {
+	grep -q "Broker transport failure" < "$1"
+	if [ "$?" -eq "0" ]; then
+		echo environment-induced test error - kafka broker failed - skipping test
+		cat -n $1
+		exit 77
+	fi
+}
+
+# inject messages via kafkacat tool (for imkafka tests)
+# $1 == "--wait" means wait for rsyslog to receive TESTMESSAGES lines in RSYSLOG_OUT_LOG
+# $TESTMESSAGES contains number of messages to inject
+# $RANDTOPIC contains topic to produce to
+function injectmsg_kafkacat() {
+	if [ "$TESTMESSAGES" == "" ]; then
+		printf 'TESTBENCH ERROR: TESTMESSAGES env var not set!\n'
+		error_exit 1
+	fi
+	for ((i=1 ; i<=TESTMESSAGES ; i++)); do
+		printf ' msgnum:%8.8d\n' $i; \
+	done | kafkacat -P -b localhost:29092 -t $RANDTOPIC
+	if [ "$1" == "--wait" ]; then
+		$srcdir/diag.sh wait-file-lines $RSYSLOG_OUT_LOG $TESTMESSAGES ${RETRIES:-200}
+	fi
+}
+
 # wait for rsyslogd startup ($1 is the instance)
 function wait_startup() {
 	wait_rsyslog_startup_pid $1
 	i=0
 	while test ! -f ${RSYSLOG_DYNNAME}$1.started; do
 		$TESTTOOL_DIR/msleep 100 # wait 100 milliseconds
-		ps -p `cat $RSYSLOG_PIDBASE$1.pid` &> /dev/null
+		ps -p $(cat $RSYSLOG_PIDBASE$1.pid) &> /dev/null
 		if [ $? -ne 0 ]
 		then
 		   echo "ABORT! rsyslog pid no longer active during startup!"
@@ -308,7 +379,7 @@ function wait_startup() {
 		   error_exit 1
 		fi
 	done
-	echo "rsyslogd$1 startup msg seen, pid " `cat $RSYSLOG_PIDBASE$1.pid`
+	echo "rsyslogd$1 startup msg seen, pid " $(cat $RSYSLOG_PIDBASE$1.pid)
 	wait_file_exists $RSYSLOG_DYNNAME.imdiag$1.port
 	eval export IMDIAG_PORT$1=$(cat $RSYSLOG_DYNNAME.imdiag$1.port)
 	eval PORT=$IMDIAG_PORT$1
@@ -324,9 +395,16 @@ function wait_startup() {
 # start rsyslogd with default params. $1 is the config file name to use
 # returns only after successful startup, $2 is the instance (blank or 2!)
 # RS_REDIR maybe set to redirect rsyslog output
+# env var RSTB_DAEMONIZE" == "YES" means rsyslogd shall daemonize itself;
+# any other value or unset means it does not do that.
 function startup() {
 	startup_common "$1" "$2"
-	eval LD_PRELOAD=$RSYSLOG_PRELOAD $valgrind ../tools/rsyslogd -C -n -i$RSYSLOG_PIDBASE$instance.pid -M../runtime/.libs:../.libs -f$CONF_FILE $RS_REDIR &
+	if [ "$RSTB_DAEMONIZE" == "YES" ]; then
+		n_option=""
+	else
+		n_option="-n"
+	fi
+	eval LD_PRELOAD=$RSYSLOG_PRELOAD $valgrind ../tools/rsyslogd -C $n_option -i$RSYSLOG_PIDBASE$instance.pid -M../runtime/.libs:../.libs -f$CONF_FILE $RS_REDIR &
 	wait_startup $instance
 }
 
@@ -362,7 +440,7 @@ function startup_vg_noleak() {
 # same as startup-vgthread, BUT we do NOT wait on the startup message!
 function startup_vgthread_waitpid_only() {
 	startup_common "$1" "$2"
-	valgrind --tool=helgrind $RS_TEST_VALGRIND_EXTRA_OPTS $RS_TESTBENCH_VALGRIND_EXTRA_OPTS --log-fd=1 --error-exitcode=10 --suppressions=$srcdir/linux_localtime_r.supp ${EXTRA_VALGRIND_SUPPRESSIONS:-} --gen-suppressions=all ../tools/rsyslogd -C -n -i$RSYSLOG_PIDBASE$2.pid -M../runtime/.libs:../.libs -f$CONF_FILE &
+	valgrind --tool=helgrind $RS_TEST_VALGRIND_EXTRA_OPTS $RS_TESTBENCH_VALGRIND_EXTRA_OPTS --log-fd=1 --error-exitcode=10 --suppressions=$srcdir/linux_localtime_r.supp ${EXTRA_VALGRIND_SUPPRESSIONS:-} --suppressions=$srcdir/CI/gcov.supp --gen-suppressions=all ../tools/rsyslogd -C -n -i$RSYSLOG_PIDBASE$2.pid -M../runtime/.libs:../.libs -f$CONF_FILE &
 	wait_rsyslog_startup_pid $2
 }
 
@@ -398,13 +476,14 @@ function get_mainqueuesize() {
 	fi
 }
 
-# grep for (partial) content. $1 is the content to check for
+# grep for (partial) content. $1 is the content to check for, $2 the file to check
 function content_check() {
-	cat ${RSYSLOG_OUT_LOG} | grep -qF "$1"
-	if [ "$?" -ne "0" ]; then
-	    printf "\n============================================================\n"
-	    echo FAIL: content_check failed to find "'$1'", content is
-	    cat -n ${RSYSLOG_OUT_LOG}
+	file=${2:-$RSYSLOG_OUT_LOG}
+	if ! grep -qF "$1" < "${file}"; then
+	    printf '\n============================================================\n'
+	    printf 'FILE "%s" content:\n' "$file"
+	    cat -n ${file}
+	    printf 'FAIL: content_check failed to find "%s"\n' "$1"
 	    error_exit 1
 	fi
 }
@@ -422,7 +501,7 @@ function content_check_with_count() {
 	while [  $timecounter -lt $timeoutend ]; do
 		let timecounter=timecounter+1
 
-		count=$(cat ${RSYSLOG_OUT_LOG} | grep -F "$1" | wc -l)
+		count=$(grep -F "$1" <${RSYSLOG_OUT_LOG} | wc -l)
 
 		if [ $count -eq $2 ]; then
 			echo content_check_with_count success, \"$1\" occured $2 times
@@ -446,12 +525,31 @@ function content_check_with_count() {
 
 
 function custom_content_check() {
-	cat $2 | grep -qF "$1"
+	grep -qF "$1" < $2
 	if [ "$?" -ne "0" ]; then
 	    echo FAIL: custom_content_check failed to find "'$1'" inside "'$2'"
 	    echo "file contents:"
 	    cat -n $2
 	    error_exit 1
+	fi
+}
+
+# check that given content $1 is not present in file $2 (default: RSYSLOG_OUTLOG)
+# regular expressions may be used
+function check_not_present() {
+	if [ "$2" == "" ]; then
+		file=$RSYSLOG_OUT_LOG
+	else
+		file="$2"
+	fi
+	grep -q "$1" < "$file"
+	if [ "$?" -eq "0" ]; then
+		echo FAIL: check_not present found
+		echo $1
+		echo inside file $file of $(wc -l < $file) lines
+		echo samples:
+		cat -n "$file" | grep "$1" | head -10
+		error_exit 1
 	fi
 }
 
@@ -480,7 +578,13 @@ function shutdown_when_empty() {
 	fi
 	cp $RSYSLOG_PIDBASE$1.pid $RSYSLOG_PIDBASE$1.pid.save
 	$TESTTOOL_DIR/msleep 500 # wait a bit (think about slow testbench machines!)
-	kill `cat $RSYSLOG_PIDBASE$1.pid` # note: we do not wait for the actual termination!
+	kill $(cat $RSYSLOG_PIDBASE$1.pid) # note: we do not wait for the actual termination!
+}
+
+# shut rsyslogd down without emptying the queue. $2 is the instance.
+function shutdown_immediate() {
+	cp $RSYSLOG_PIDBASE$2.pid $RSYSLOG_PIDBASE$2.pid.save
+	kill $(cat $RSYSLOG_PIDBASE$2.pid)
 }
 
 
@@ -488,7 +592,7 @@ function shutdown_when_empty() {
 # $1 is the instance
 function wait_shutdown() {
 	i=0
-	out_pid=`cat $RSYSLOG_PIDBASE$1.pid.save`
+	out_pid=$(cat $RSYSLOG_PIDBASE$1.pid.save)
 	echo wait on shutdown of $out_pid
 	if [[ "x$out_pid" == "x" ]]
 	then
@@ -496,10 +600,10 @@ function wait_shutdown() {
 	else
 		terminated=0
 	fi
+	start_timeout="$(date)"
 	while [[ $terminated -eq 0 ]]; do
 		ps -p $out_pid &> /dev/null
-		if [[ $? != 0 ]]
-		then
+		if [[ $? != 0 ]]; then
 			terminated=1
 		fi
 		$TESTTOOL_DIR/msleep 100 # wait 100 milliseconds
@@ -507,9 +611,19 @@ function wait_shutdown() {
 		if test $i -gt $TB_TIMEOUT_STARTSTOP
 		then
 		   echo "ABORT! Timeout waiting on shutdown"
+		   echo "Wait initiated $start_timeout, now $(date)"
+		   ps -fp $out_pid
 		   echo "Instance is possibly still running and may need"
 		   echo "manual cleanup."
-		   exit 1
+		   echo "TRYING TO capture status via gdb from hanging process"
+		   $SUDO gdb ../tools/rsyslogd <<< "attach $out_pid
+set pagination off
+inf thr
+thread apply all bt
+quit"
+		   echo "trying to kill -9 process"
+		   kill -9 $out_pid
+		   error_exit 1
 		fi
 	done
 	unset terminated
@@ -533,7 +647,7 @@ function await_lookup_table_reload() {
 
 
 function assert_content_missing() {
-	cat ${RSYSLOG_OUT_LOG} | grep -qF "$1"
+	grep -qF "$1" < ${RSYSLOG_OUT_LOG}
 	if [ "$?" -eq "0" ]; then
 		echo content-missing assertion failed, some line matched pattern "'$1'"
 		error_exit 1
@@ -542,7 +656,7 @@ function assert_content_missing() {
 
 
 function custom_assert_content_missing() {
-	cat $2 | grep -qF "$1"
+	grep -qF "$1" < $2
 	if [ "$?" -eq "0" ]; then
 		echo content-missing assertion failed, some line in "'$2'" matched pattern "'$1'"
 		cat -n "$2"
@@ -553,14 +667,14 @@ function custom_assert_content_missing() {
 
 # shut rsyslogd down when main queue is empty. $1 is the instance.
 function issue_HUP() {
-	kill -HUP `cat $RSYSLOG_PIDBASE$1.pid`
+	kill -HUP $(cat $RSYSLOG_PIDBASE$1.pid)
 	$TESTTOOL_DIR/msleep 1000
 }
 
 
 # actually, we wait for rsyslog.pid to be deleted. $1 is the instance
 function wait_shutdown_vg() {
-	wait `cat $RSYSLOG_PIDBASE$1.pid`
+	wait $(cat $RSYSLOG_PIDBASE$1.pid)
 	export RSYSLOGD_EXIT=$?
 	echo rsyslogd run exited with $RSYSLOGD_EXIT
 	if [ -e vgcore.* ]; then
@@ -569,11 +683,26 @@ function wait_shutdown_vg() {
 	fi
 }
 
+function check_file_exists() {
+	if [ ! -f "$1" ]; then
+		printf 'FAIL: file "%s" must exist, but does not\n' "$1"
+		error_exit 1
+	fi
+}
+
+function check_file_not_exists() {
+	if [ -f "$1" ]; then
+		printf 'FILE %s CONTENT:\n' "$1"
+		cat -n -- "$1"
+		printf 'FAIL: file "%s" must NOT exist, but does\n' "$1"
+		error_exit 1
+	fi
+}
 
 # check exit code for valgrind error
 function check_exit_vg(){
 	if [ "$RSYSLOGD_EXIT" -eq "10" ]; then
-		echo "valgrind run FAILED with exceptions - terminating"
+		printf 'valgrind run FAILED with exceptions - terminating\n'
 		error_exit 1
 	fi
 }
@@ -583,12 +712,11 @@ function check_exit_vg(){
 # for systems like Travis-CI where we cannot debug on the machine itself.
 # our $1 is the to-be-used exit code. if $2 is "stacktrace", call gdb.
 function error_exit() {
-	#env
 	if [ -e core* ]
 	then
 		echo trying to obtain crash location info
 		echo note: this may not be the correct file, check it
-		CORE=`ls core*`
+		CORE=$(ls core*)
 		echo "bt" >> gdb.in
 		echo "q" >> gdb.in
 		gdb ../tools/rsyslogd $CORE -batch -x gdb.in
@@ -600,7 +728,7 @@ function error_exit() {
 		then
 			echo trying to analyze core for main rsyslogd binary
 			echo note: this may not be the correct file, check it
-			CORE=`ls core*`
+			CORE=$(ls core*)
 			#echo "set pagination off" >gdb.in
 			#echo "core $CORE" >>gdb.in
 			echo "bt" >> gdb.in
@@ -630,35 +758,70 @@ function error_exit() {
 		RSYSLOG_DEBUG=$RSYSLOG_DEBUG_SAVE
 		rm IN_AUTO_DEBUG
 	fi
+	# output listening ports as a temporay debug measure (2018-09-08 rgerhards), now disables, but not yet removed (2018-10-22)
+	#if [ $(uname) == "Linux" ]; then
+	#	netstat -tlp
+	#else
+	#	netstat
+	#fi
+
 	# Extended debug output for dependencies started by testbench
 	if [[ "$EXTRA_EXITCHECK" == 'dumpkafkalogs' ]]; then
 		# Dump Zookeeper log
-		. $srcdir/diag.sh dump-zookeeper-serverlog
+		dump_zookeeper_serverlog
 		# Dump Kafka log
-		. $srcdir/diag.sh dump-kafka-serverlog
+		dump_kafka_serverlog
 	fi
-	# output listening ports as a temporay debug measure (2018-09-08 rgerhards)
-	if [ $(uname) == "Linux" ]; then
-		netstat -tlp
+
+	# Extended Exit handling for kafka / zookeeper instances 
+	kafka_exit_handling "false"
+
+	# Report error to rsyslog testbench stats
+	error_stats
+
+	if [ "$TEST_STATUS" == "unreliable" ] && [ "$1" -ne 100 ]; then
+		# TODO: log github issue
+		printf 'Test flagged as unreliable, exiting with 77 (skip). Original\n'
+		printf 'exit code was %d\n' $1
+		printf 'GitHub ISSUE: %s\n' "$TEST_GITHUB_ISSUE"
+		exit 77
 	else
-		netstat
+		exit $1
 	fi
-	# we need to do some minimal cleanup so that "make distcheck" does not
-	# complain too much
-	exit $1
 }
 
+# Helper function to call Adiscon test error script
+function error_stats() {
+	if [ "$RSYSLOG_STATSURL" != "" ]; then
+		echo reporting failure to $RSYSLOG_STATSURL
+		wget -nv $RSYSLOG_STATSURL\?Testname=$RSYSLOG_TESTNAME\&Testenv=$PWD\&Testmachine=$HOSTNAME\&rndstr=jnxv8i34u78fg23
+	fi
+}
 
 # do the usual sequence check to see if everything was properly received.
 # $4... are just to have the abilit to pass in more options...
 # add -v to chkseq if you need more verbose output
 function seq_check() {
+	if [ ! -f "$RSYSLOG_OUT_LOG" ]; then
+		printf 'FAIL: %s does not exist in seq_check!\n' "$RSYSLOG_OUT_LOG"
+		error_exit 1
+	fi
 	$RS_SORTCMD $RS_SORT_NUMERIC_OPT < ${RSYSLOG_OUT_LOG} | ./chkseq -s$1 -e$2 $3 $4 $5 $6 $7
 	if [ "$?" -ne "0" ]; then
+		$RS_SORTCMD $RS_SORT_NUMERIC_OPT < ${RSYSLOG_OUT_LOG} > $RSYSLOG_DYNNAME.error.log
 		echo "sequence error detected in $RSYSLOG_OUT_LOG"
 		echo "number of lines in file: $(wc -l $RSYSLOG_OUT_LOG)"
-		echo "sorted data has been placed in error.log"
-		$RS_SORTCMD $RS_SORT_NUMERIC_OPT < ${RSYSLOG_OUT_LOG} > error.log
+		echo "sorted data has been placed in error.log, first 10 lines are:"
+		cat -n $RSYSLOG_DYNNAME.error.log | head -10
+		echo "---last 10 lines are:"
+		cat -n $RSYSLOG_DYNNAME.error.log | tail -10
+		echo "UNSORTED data, first 10 lines are:"
+		cat -n $RSYSLOG_OUT_LOG | head -10
+		echo "---last 10 lines are:"
+		cat -n $RSYSLOG_OUT_LOG | tail -10
+		# for interactive testing, create a static filename. We know this may get
+		# mangled during a parallel test run
+		mv -f $RSYSLOG_DYNNAME.error.log error.log
 		error_exit 1 
 	fi
 }
@@ -731,7 +894,11 @@ function exit_test() {
 	rm -f tmp.qi nocert
 	rm -fr $RSYSLOG_DYNNAME*  # delete all of our dynamic files
 	unset TCPFLOOD_EXTRA_OPTS
-	printf "Test SUCCESFUL\n"
+
+	# Extended Exit handling for kafka / zookeeper instances 
+	kafka_exit_handling "true"
+
+	printf 'Test SUCCESFUL\n'
 	echo  -------------------------------------------------------------------------------
 }
 
@@ -774,8 +941,8 @@ dep_zk_cached_file=$dep_cache_dir/zookeeper-3.4.13.tar.gz
 #	makes creating testbench with single kafka instances difficult.
 # old version -> dep_kafka_url=http://www-us.apache.org/dist/kafka/0.10.2.2/kafka_2.12-0.10.2.2.tgz
 # old version -> dep_kafka_cached_file=$dep_cache_dir/kafka_2.12-0.10.2.2.tgz
-dep_kafka_url=http://www-us.apache.org/dist/kafka/2.0.0/kafka_2.12-2.0.0.tgz
-dep_kafka_cached_file=$dep_cache_dir/kafka_2.12-2.0.0.tgz
+dep_kafka_url=http://www-us.apache.org/dist/kafka/2.0.0/kafka_2.11-2.0.0.tgz
+dep_kafka_cached_file=$dep_cache_dir/kafka_2.11-2.0.0.tgz
 
 if [ -z "$ES_DOWNLOAD" ]; then
 	export ES_DOWNLOAD=elasticsearch-5.6.9.tar.gz
@@ -795,6 +962,415 @@ dep_work_dir=$(pwd)/.dep_wrk
 #dep_zk_work_dir=$dep_work_dir/zk
 
 #END: ext kafka config
+
+function kafka_exit_handling() {
+
+	# Extended Exit handling for kafka / zookeeper instances 
+	if [[ "$EXTRA_EXIT" == 'kafka' ]]; then
+		
+		echo "stop kafka instance"
+		stop_kafka '.dep_wrk' $1
+
+		echo "stop zookeeper instance"
+		stop_zookeeper '.dep_wrk' $1
+	fi
+
+	# Extended Exit handling for kafka / zookeeper instances 
+	if [[ "$EXTRA_EXIT" == 'kafkamulti' ]]; then
+		echo "stop kafka instances"
+		stop_kafka '.dep_wrk1' $1
+		stop_kafka '.dep_wrk2' $1
+		stop_kafka '.dep_wrk3' $1
+
+		echo "stop zookeeper instances"
+		stop_zookeeper '.dep_wrk1' $1
+		stop_zookeeper '.dep_wrk2' $1
+		stop_zookeeper '.dep_wrk3' $1
+	fi
+}
+
+function download_kafka() {
+	if [ ! -d $dep_cache_dir ]; then
+		echo "Creating dependency cache dir $dep_cache_dir"
+		mkdir $dep_cache_dir
+	fi
+	if [ ! -f $dep_zk_cached_file ]; then
+		echo "Downloading zookeeper"
+		wget -q $dep_zk_url -O $dep_zk_cached_file
+		if [ $? -ne 0 ]
+		then
+			echo error during wget, retry:
+			wget $dep_zk_url -O $dep_zk_cached_file
+			if [ $? -ne 0 ]
+			then
+				error_exit 1
+			fi
+		fi
+	fi
+	if [ ! -f $dep_kafka_cached_file ]; then
+		echo "Downloading kafka"
+		wget -q $dep_kafka_url -O $dep_kafka_cached_file
+		if [ $? -ne 0 ]
+		then
+			echo error during wget, retry:
+			wget $dep_kafka_url -O $dep_kafka_cached_file
+			if [ $? -ne 0 ]
+			then
+				error_exit 1
+			fi
+		fi
+	fi
+}
+
+function stop_kafka() {
+	if [ "$KEEP_KAFKA_RUNNING" == "YES" ]; then
+		return
+	fi
+	i=0
+	if [ "x$1" == "x" ]; then
+		dep_work_dir=$(readlink -f .dep_wrk)
+		dep_work_kafka_config="kafka-server.properties"
+	else
+		dep_work_dir=$(readlink -f $srcdir/$1)
+		if [[ ".dep_wrk" !=  "$1" ]]; then
+			dep_work_kafka_config="kafka-server$1.properties"
+		else
+			dep_work_kafka_config="kafka-server.properties"
+		fi
+	fi
+	if [ ! -d $dep_work_dir/kafka ]; then
+		echo "Kafka work-dir $dep_work_dir/kafka does not exist, no action needed"
+	else
+		# shellcheck disable=SC2009  - we do not grep on the process name!
+		kafkapid=$(ps aux | grep -i $dep_work_kafka_config | grep java | grep -v grep | awk '{print $2}')
+
+		echo "Stopping Kafka instance $1 ($dep_work_kafka_config/$kafkapid)"
+		kill $kafkapid
+
+		# Check if kafka instance went down!
+		while true; do
+			# shellcheck disable=SC2009  - we do not grep on the process name!
+			kafkapid=$(ps aux | grep -i $dep_work_kafka_config | grep java | grep -v grep | awk '{print $2}')
+			if [[ "" !=  "$kafkapid" ]]; then
+				$TESTTOOL_DIR/msleep 100 # wait 100 milliseconds
+				if test $i -gt $TB_TIMEOUT_STARTSTOP; then
+					echo "Kafka instance $dep_work_kafka_config (PID $kafkapid) still running - Performing hard shutdown (-9)"
+					kill -9 $kafkapid
+					break
+				fi
+				let "i++"
+			else
+				# Break the loop
+				break
+			fi
+		done
+		
+		if [[ "$2" == 'true' ]]; then
+			# Prozess shutdown, do cleanup now
+			cleanup_kafka $1
+		fi
+	fi
+}
+
+function cleanup_kafka() {
+	if [ "x$1" == "x" ]; then
+		dep_work_dir=$(readlink -f .dep_wrk)
+	else
+		dep_work_dir=$(readlink -f $srcdir/$1)
+	fi
+	if [ ! -d $dep_work_dir/kafka ]; then
+		echo "Kafka work-dir $dep_work_dir/kafka does not exist, no action needed"
+	else
+		echo "Cleanup Kafka instance $1"
+		rm -rf $dep_work_dir/kafka
+	fi
+}
+
+function stop_zookeeper() {
+	if [ "$KEEP_KAFKA_RUNNING" == "YES" ]; then
+		return
+	fi
+	i=0
+	if [ "x$1" == "x" ]; then
+		dep_work_dir=$(readlink -f .dep_wrk)
+		dep_work_tk_config="zoo.cfg"
+	else
+		dep_work_dir=$(readlink -f $srcdir/$1)
+		if [[ ".dep_wrk" !=  "$1" ]]; then
+			dep_work_tk_config="zoo$1.cfg"
+		else
+			dep_work_tk_config="zoo.cfg"
+		fi
+	fi
+
+	if [ ! -d $dep_work_dir/zk ]; then
+		echo "Zookeeper work-dir $dep_work_dir/zk does not exist, no action needed"
+	else
+		# Get Zookeeper pid instance
+		zkpid=$(ps aux | grep -i $dep_work_tk_config | grep java | grep -v grep | awk '{print $2}')
+		echo "Stopping Zookeeper instance $1 ($dep_work_tk_config/$zkpid)"
+		kill $zkpid
+
+		# Check if Zookeeper instance went down!
+		zkpid=$(ps aux | grep -i $dep_work_tk_config | grep java | grep -v grep | awk '{print $2}')
+		if [[ "" !=  "$zkpid" ]]; then
+			while true; do
+				zkpid=$(ps aux | grep -i $dep_work_tk_config | grep java | grep -v grep | awk '{print $2}')
+				if [[ "" !=  "$zkpid" ]]; then
+					$TESTTOOL_DIR/msleep 100 # wait 100 milliseconds
+					if test $i -gt $TB_TIMEOUT_STARTSTOP; then
+						echo "Zookeeper instance $dep_work_tk_config (PID $zkpid) still running - Performing hard shutdown (-9)"
+						kill -9 $zkpid
+						break
+					fi
+					let "i++"
+				else
+					break
+				fi
+			done
+		fi
+
+		if [[ "$2" == 'true' ]]; then
+			# Prozess shutdown, do cleanup now
+			cleanup_zookeeper $1
+		fi
+		rm "$ZOOPIDFILE"
+	fi
+}
+
+function cleanup_zookeeper() {
+	if [ "x$1" == "x" ]; then
+		dep_work_dir=$(readlink -f .dep_wrk)
+	else
+		dep_work_dir=$(readlink -f $srcdir/$1)
+	fi
+	rm -rf $dep_work_dir/zk
+}
+
+function start_zookeeper() {
+	if [ "$KEEP_KAFKA_RUNNING" == "YES" ] && [ -f "$ZOOPIDFILE" ]; then
+		printf 'zookeeper already runing, no need to start\n'
+		return
+	fi
+	if [ "x$1" == "x" ]; then
+		dep_work_dir=$(readlink -f .dep_wrk)
+		dep_work_tk_config="zoo.cfg"
+	else
+		dep_work_dir=$(readlink -f $srcdir/$1)
+		dep_work_tk_config="zoo$1.cfg"
+	fi
+
+	if [ ! -f $dep_zk_cached_file ]; then
+			echo "Dependency-cache does not have zookeeper package, did you download dependencies?"
+			error_exit 77
+	fi
+	if [ ! -d $dep_work_dir ]; then
+			echo "Creating dependency working directory"
+			mkdir -p $dep_work_dir
+	fi
+	if [ -d $dep_work_dir/zk ]; then
+			(cd $dep_work_dir/zk && ./bin/zkServer.sh stop)
+			$TESTTOOL_DIR/msleep 2000
+	fi
+	rm -rf $dep_work_dir/zk
+	(cd $dep_work_dir && tar -zxvf $dep_zk_cached_file --xform $dep_zk_dir_xform_pattern --show-transformed-names) > /dev/null
+	cp -f $srcdir/testsuites/$dep_work_tk_config $dep_work_dir/zk/conf/zoo.cfg
+	echo "Starting Zookeeper instance $1"
+	(cd $dep_work_dir/zk && ./bin/zkServer.sh start)
+	wait_startup_pid "$ZOOPIDFILE"
+}
+
+function start_kafka() {
+	# Force IPv4 usage of Kafka!
+	export KAFKA_OPTS="-Djava.net.preferIPv4Stack=True"
+	if [ "x$1" == "x" ]; then
+		dep_work_dir=$(readlink -f .dep_wrk)
+		dep_work_kafka_config="kafka-server.properties"
+	else
+		dep_work_dir=$(readlink -f $1)
+		dep_work_kafka_config="kafka-server$1.properties"
+	fi
+
+
+	# shellcheck disable=SC2009  - we do not grep on the process name!
+	kafkapid=$(ps aux | grep -i $dep_work_kafka_config | grep java | grep -v grep | awk '{print $2}')
+	if [ "$KEEP_KAFKA_RUNNING" == "YES" ] && [ "$kafkapid" != "" ]; then
+		printf 'kafka already runing, no need to start\n'
+		return
+	fi
+
+	if [ ! -f $dep_kafka_cached_file ]; then
+			echo "Dependency-cache does not have kafka package, did you download dependencies?"
+			error_exit 77
+	fi
+	if [ ! -d $dep_work_dir ]; then
+			echo "Creating dependency working directory"
+			mkdir -p $dep_work_dir
+	fi
+	rm -rf $dep_work_dir/kafka
+	( cd $dep_work_dir && 
+	  tar -zxvf $dep_kafka_cached_file --xform $dep_kafka_dir_xform_pattern --show-transformed-names) > /dev/null
+	cp -f $srcdir/testsuites/$dep_work_kafka_config $dep_work_dir/kafka/config/
+	#if [ "$(ps aux | grep -i $dep_work_kafka_config | grep java | grep -v grep | awk '{print $2}')" != "" ]; then
+	echo "Starting Kafka instance $dep_work_kafka_config"
+	(cd $dep_work_dir/kafka && ./bin/kafka-server-start.sh -daemon ./config/$dep_work_kafka_config)
+	$TESTTOOL_DIR/msleep 4000
+
+	# Check if kafka instance came up!
+	# shellcheck disable=SC2009  - we do not grep on the process name!
+	kafkapid=$(ps aux | grep -i $dep_work_kafka_config | grep java | grep -v grep | awk '{print $2}')
+	if [[ "" !=  "$kafkapid" ]];
+	then
+		echo "Kafka instance $dep_work_kafka_config (PID $kafkapid) started ... "
+	else
+		echo "Starting Kafka instance $dep_work_kafka_config, SECOND ATTEMPT!"
+		(cd $dep_work_dir/kafka && ./bin/kafka-server-start.sh -daemon ./config/$dep_work_kafka_config)
+		$TESTTOOL_DIR/msleep 4000
+
+		# shellcheck disable=SC2009  - we do not grep on the process name!
+		kafkapid=$(ps aux | grep -i $dep_work_kafka_config | grep java | grep -v grep | awk '{print $2}')
+		if [[ "" !=  "$kafkapid" ]];
+		then
+			echo "Kafka instance $dep_work_kafka_config (PID $kafkapid) started ... "
+		else
+			echo "Failed to start Kafka instance for $dep_work_kafka_config"
+			error_exit 77
+		fi
+	fi
+}
+
+function create_kafka_topic() {
+	if [ "x$2" == "x" ]; then
+		dep_work_dir=$(readlink -f .dep_wrk)
+	else
+		dep_work_dir=$(readlink -f $2)
+	fi
+	if [ "x$3" == "x" ]; then
+		dep_work_port='2181'
+	else
+		dep_work_port=$3
+	fi
+	if [ ! -d $dep_work_dir/kafka ]; then
+			echo "Kafka work-dir $dep_work_dir/kafka does not exist, did you start kafka?"
+			exit 1
+	fi
+	if [ "x$1" == "x" ]; then
+			echo "Topic-name not provided."
+			exit 1
+	fi
+
+	# we need to make sure replication has is working. So let's loop until no more
+	# errors (or timeout) - see also: https://github.com/rsyslog/rsyslog/issues/3045
+	timeout_ready=100 # roughly 10 sec
+	is_retry=0
+	i=0
+	while true; do
+		text=$(cd $dep_work_dir/kafka && ./bin/kafka-topics.sh --zookeeper localhost:$dep_work_port/kafka --create --topic $1 --replication-factor 1 --partitions 2 )
+		grep "Error.* larger than available brokers: 0" <<<"$text"
+		res=$?
+		echo RESULT GREP: $res
+		if [ $res -ne 0 ]; then
+			echo looks like brokers are available - continue...
+			break
+		fi
+		$TESTTOOL_DIR/msleep 100 # wait 100 milliseconds
+		let "i++"
+		if test $i -gt $timeout_ready; then
+			echo "ENV ERROR: kafka brokers did not come up:"
+			cat -n <<< $text
+			if [ $is_retry == 1 ]; then
+				echo "SKIPing test as the env is not ready for it"
+				exit 77
+			fi
+			echo "RETRYING kafka startup, doing shutdown and startup"
+			stop_zookeeper; stop_kafka
+			start_zookeeper; start_kafka
+			echo "READY for RETRY"
+			is_retry=1
+			i=0
+		fi
+	done
+
+	# we *assume* now all goes well
+	(cd $dep_work_dir/kafka && ./bin/kafka-topics.sh --zookeeper localhost:$dep_work_port/kafka --alter --topic $1 --delete-config retention.ms)
+	(cd $dep_work_dir/kafka && ./bin/kafka-topics.sh --zookeeper localhost:$dep_work_port/kafka --alter --topic $1 --delete-config retention.bytes)
+}
+
+function delete_kafka_topic() {
+	if [ "x$2" == "x" ]; then
+		dep_work_dir=$(readlink -f .dep_wrk)
+	else
+		dep_work_dir=$(readlink -f $srcdir/$2)
+	fi
+	if [ "x$3" == "x" ]; then
+		dep_work_port='2181'
+	else
+		dep_work_port=$3
+	fi
+
+	echo "deleting kafka-topic $1"
+	(cd $dep_work_dir/kafka && ./bin/kafka-topics.sh --delete --zookeeper localhost:$dep_work_port/kafka --topic $1)
+}
+
+function dump_kafka_topic() {
+	if [ "x$2" == "x" ]; then
+		dep_work_dir=$(readlink -f .dep_wrk)
+		dep_kafka_log_dump=$(readlink -f rsyslog.out.kafka.log)
+	else
+		dep_work_dir=$(readlink -f $srcdir/$2)
+		dep_kafka_log_dump=$(readlink -f rsyslog.out.kafka$2.log)
+	fi
+	if [ "x$3" == "x" ]; then
+		dep_work_port='2181'
+	else
+		dep_work_port=$3
+	fi
+
+	echo "dumping kafka-topic $1"
+	if [ ! -d $dep_work_dir/kafka ]; then
+			echo "Kafka work-dir does not exist, did you start kafka?"
+			exit 1
+	fi
+	if [ "x$1" == "x" ]; then
+			echo "Topic-name not provided."
+			exit 1
+	fi
+
+	(cd $dep_work_dir/kafka && ./bin/kafka-console-consumer.sh --timeout-ms 2000 --from-beginning --zookeeper localhost:$dep_work_port/kafka --topic $1 > $dep_kafka_log_dump)
+}
+
+function dump_kafka_serverlog() {
+	if [ "x$1" == "x" ]; then
+		dep_work_dir=$(readlink -f .dep_wrk)
+	else
+		dep_work_dir=$(readlink -f $srcdir/$1)
+	fi
+	if [ ! -d $dep_work_dir/kafka ]; then
+		echo "Kafka work-dir $dep_work_dir/kafka does not exist, no kafka debuglog"
+	else
+		echo "Dumping server.log from Kafka instance $1"
+		echo "========================================="
+		cat $dep_work_dir/kafka/logs/server.log
+		echo "========================================="
+		printf 'non-info is:\n'
+		grep --invert-match '^\[.* INFO ' $dep_work_dir/kafka/logs/server.log | grep '^\['
+	fi
+}
+
+function dump_zookeeper_serverlog() {
+	if [ "x$1" == "x" ]; then
+		dep_work_dir=$(readlink -f .dep_wrk)
+	else
+		dep_work_dir=$(readlink -f $srcdir/$1)
+	fi
+	echo "Dumping zookeeper.out from Zookeeper instance $1"
+	echo "========================================="
+	cat $dep_work_dir/zk/zookeeper.out
+	echo "========================================="
+	printf 'non-info is:\n'
+	grep --invert-match '^\[.* INFO ' $dep_work_dir/zk/zookeeper.out | grep '^\['
+}
+
 
 case $1 in
    'init')	$srcdir/killrsyslog.sh # kill rsyslogd if it runs for some reason
@@ -841,6 +1417,9 @@ case $1 in
 		export IMDIAG_PORT=13500
 		export IMDIAG_PORT2=13501
 		export TCPFLOOD_PORT=13514
+
+		# Extra Variables for Test statistic reporting
+		export RSYSLOG_TESTNAME=$(basename $0)
 
 		# we create one file with the test name, so that we know what was
 		# left over if "make distcheck" complains
@@ -928,12 +1507,12 @@ case $1 in
    'wait-pid-termination')  # wait for the pid in pid $2 to terminate, abort on timeout
 		i=0
 		out_pid=$2
-		if [[ "x$out_pid" == "x" ]]
-		then
+		if [[ "x$out_pid" == "x" ]]; then
 			terminated=1
 		else
 			terminated=0
 		fi
+		start_timeout="$(date)"
 		while [[ $terminated -eq 0 ]]; do
 			ps -p $out_pid &> /dev/null
 			if [[ $? != 0 ]]
@@ -945,27 +1524,23 @@ case $1 in
 			if test $i -gt $TB_TIMEOUT_STARTSTOP
 			then
 			   echo "ABORT! Timeout waiting on shutdown"
-			   echo "on PID file $2"
+			   echo "Wait initiated $start_timeout, now $(date)"
+			   ps -fp $out_pid
 			   echo "Instance is possibly still running and may need"
 			   echo "manual cleanup."
-			   exit 1
+			   error_exit 1
 			fi
 		done
 		unset terminated
 		unset out_pid
 		;;
-   'shutdown-immediate') # shut rsyslogd down without emptying the queue. $2 is the instance.
-		cp $RSYSLOG_PIDBASE$2.pid $RSYSLOG_PIDBASE$2.pid.save
-		kill `cat $RSYSLOG_PIDBASE$2.pid`
-		# note: we do not wait for the actual termination!
-		;;
    'kill-immediate') # kill rsyslog unconditionally
-		kill -9 `cat $RSYSLOG_PIDBASE.pid`
+		kill -9 $(cat $RSYSLOG_PIDBASE.pid)
 		# note: we do not wait for the actual termination!
 		;;
     'injectmsg-litteral') # inject litteral-payload  via our inject interface (imdiag)
 		echo injecting msg payload from: $2
-    cat $2 | sed -e 's/^/injectmsg litteral /g' | $TESTTOOL_DIR/diagtalker -p$IMDIAG_PORT || error_exit  $?
+		sed -e 's/^/injectmsg litteral /g' < "$2" | $TESTTOOL_DIR/diagtalker -p$IMDIAG_PORT || error_exit  $?
 		# TODO: some return state checking? (does it really make sense here?)
 		;;
    'check-mainq-spool') # check if mainqueue spool files exist, if not abort (we just check .qi).
@@ -1010,23 +1585,21 @@ case $1 in
 		;;
    'wait-file-lines') 
 		# $2 filename, $3 expected nbr of lines, $4 nbr of tries
-		if [ "$4" == "" ]; then
-			timeoutend=1
-		else
-			timeoutend=$4
-		fi
+		timeoutend=${4:-200}
 		timecounter=0
 
 		while [  $timecounter -lt $timeoutend ]; do
-			let timecounter=timecounter+1
+			(( timecounter++ ))
 
-			count=$(wc -l < ${RSYSLOG_OUT_LOG})
-			if [ $count -eq $3 ]; then
+			if [ -f "$RSYSLOG_OUT_LOG" ]; then
+				count=$(wc -l < "$RSYSLOG_OUT_LOG")
+			fi
+			if [ ${count:=0} -eq $3 ]; then
 				echo wait-file-lines success, have $3 lines
 				break
 			else
 				if [ "x$timecounter" == "x$timeoutend" ]; then
-					echo wait-file-lines failed, expected $3 got $count
+					echo wait-file-lines failed, expected $3 got $count after $timeoutend retries
 					shutdown_when_empty
 					wait_shutdown
 					error_exit 1
@@ -1056,10 +1629,10 @@ case $1 in
 				echo waiting for stats file "'$2'" to be created
 				$TESTTOOL_DIR/msleep 100
 		done
-		prev_count=$(cat $2 | grep 'BEGIN$' | wc -l)
+		prev_count=$(grep 'BEGIN$' <$2 | wc -l)
 		new_count=$prev_count
 		while [[ "x$prev_count" == "x$new_count" ]]; do
-				new_count=$(cat $2 | grep 'BEGIN$' | wc -l) # busy spin, because it allows as close timing-coordination in actual test run as possible
+				new_count=$(grep 'BEGIN$' <$2 | wc -l) # busy spin, because it allows as close timing-coordination in actual test run as possible
 		done
 		echo "stats push registered"
 		;;
@@ -1069,10 +1642,10 @@ case $1 in
 				echo waiting for stats file "'$2'" to be created
 				$TESTTOOL_DIR/msleep 100
 		done
-		prev_purged=$(cat $2 | grep -F 'origin=dynstats' | grep -F "${3}.purge_triggered=" | sed -e 's/.\+.purge_triggered=//g' | awk '{s+=$1} END {print s}')
+		prev_purged=$(grep -F 'origin=dynstats' < $2 | grep -F "${3}.purge_triggered=" | sed -e 's/.\+.purge_triggered=//g' | awk '{s+=$1} END {print s}')
 		new_purged=$prev_purged
 		while [[ "x$prev_purged" == "x$new_purged" ]]; do
-				new_purged=$(cat $2 | grep -F 'origin=dynstats' | grep -F "${3}.purge_triggered=" | sed -e 's/.\+\.purge_triggered=//g' | awk '{s+=$1} END {print s}') # busy spin, because it allows as close timing-coordination in actual test run as possible
+				new_purged=$(grep -F 'origin=dynstats' < "$2" | grep -F "${3}.purge_triggered=" | sed -e 's/.\+\.purge_triggered=//g' | awk '{s+=$1} END {print s}') # busy spin, because it allows as close timing-coordination in actual test run as possible
 				$TESTTOOL_DIR/msleep 10
 		done
 		echo "dyn-stats reset for bucket ${3} registered"
@@ -1090,9 +1663,9 @@ case $1 in
 #		fi
 #		;;
    'first-column-sum-check') 
-		sum=$(cat $4 | grep $3 | sed -e $2 | awk '{s+=$1} END {print s}')
+		sum=$(grep $3 < $4 | sed -e $2 | awk '{s+=$1} END {print s}')
 		if [ "x${sum}" != "x$5" ]; then
-		    printf "\n============================================================\n"
+		    printf '\n============================================================\n'
 		    echo FAIL: sum of first column with edit-expr "'$2'" run over lines from file "'$4'" matched by "'$3'" equals "'$sum'" which is NOT equal to EXPECTED value of "'$5'"
 		    echo "file contents:"
 		    cat $4
@@ -1100,7 +1673,7 @@ case $1 in
 		fi
 		;;
    'assert-first-column-sum-greater-than') 
-		sum=$(cat $4 | grep $3 | sed -e $2 | awk '{s+=$1} END {print s}')
+		sum=$(grep $3 <$4| sed -e $2 | awk '{s+=$1} END {print s}')
 		if [ ! $sum -gt $5 ]; then
 		    echo sum of first column with edit-expr "'$2'" run over lines from file "'$4'" matched by "'$3'" equals "'$sum'" which is smaller than expected lower-limit of "'$5'"
 		    echo "file contents:"
@@ -1109,7 +1682,7 @@ case $1 in
 		fi
 		;;
    'content-pattern-check') 
-		cat ${RSYSLOG_OUT_LOG} | grep -q "$2"
+		grep -q "$2" < ${RSYSLOG_OUT_LOG}
 		if [ "$?" -ne "0" ]; then
 		    echo content-check failed, not every line matched pattern "'$2'"
 		    echo "file contents:"
@@ -1123,38 +1696,6 @@ case $1 in
 		    exit 77
 		fi
 		;;
-   'download-kafka')
-		if [ ! -d $dep_cache_dir ]; then
-			echo "Creating dependency cache dir $dep_cache_dir"
-			mkdir $dep_cache_dir
-		fi
-		if [ ! -f $dep_zk_cached_file ]; then
-			echo "Downloading zookeeper"
-			wget -q $dep_zk_url -O $dep_zk_cached_file
-			if [ $? -ne 0 ]
-			then
-				echo error during wget, retry:
-				wget $dep_zk_url -O $dep_zk_cached_file
-				if [ $? -ne 0 ]
-				then
-					error_exit 1
-				fi
-			fi
-		fi
-		if [ ! -f $dep_kafka_cached_file ]; then
-			echo "Downloading kafka"
-			wget -q $dep_kafka_url -O $dep_kafka_cached_file
-			if [ $? -ne 0 ]
-			then
-				echo error during wget, retry:
-				wget $dep_kafka_url -O $dep_kafka_cached_file
-				if [ $? -ne 0 ]
-				then
-					error_exit 1
-				fi
-			fi
-		fi
-		;;
 	 'download-elasticsearch')
 		if [ ! -d $dep_cache_dir ]; then
 				echo "Creating dependency cache dir $dep_cache_dir"
@@ -1162,87 +1703,13 @@ case $1 in
 		fi
 		if [ ! -f $dep_es_cached_file ]; then
 				if [ -f /local_dep_cache/$ES_DOWNLOAD ]; then
-					printf "ElasticSearch: satisfying dependency %s from system cache.\n" "$ES_DOWNLOAD"
+					printf 'ElasticSearch: satisfying dependency %s from system cache.\n' "$ES_DOWNLOAD"
 					cp /local_dep_cache/$ES_DOWNLOAD $dep_es_cached_file
 				else
 					dep_es_url="https://artifacts.elastic.co/downloads/elasticsearch/$ES_DOWNLOAD"
-					printf "ElasticSearch: satisfying dependency %s from %s\n" "$ES_DOWNLOAD" "$dep_es_url"
+					printf 'ElasticSearch: satisfying dependency %s from %s\n' "$ES_DOWNLOAD" "$dep_es_url"
 					wget -q $dep_es_url -O $dep_es_cached_file
 				fi
-		fi
-		;;
-	 'start-zookeeper')
-		if [ "x$2" == "x" ]; then
-			dep_work_dir=$(readlink -f .dep_wrk)
-			dep_work_tk_config="zoo.cfg"
-		else
-			dep_work_dir=$(readlink -f $srcdir/$2)
-			dep_work_tk_config="zoo$2.cfg"
-		fi
-
-		if [ ! -f $dep_zk_cached_file ]; then
-				echo "Dependency-cache does not have zookeeper package, did you download dependencies?"
-				exit 77
-		fi
-		if [ ! -d $dep_work_dir ]; then
-				echo "Creating dependency working directory"
-				mkdir -p $dep_work_dir
-		fi
-		if [ -d $dep_work_dir/zk ]; then
-				(cd $dep_work_dir/zk && ./bin/zkServer.sh stop)
-				$TESTTOOL_DIR/msleep 2000
-		fi
-		rm -rf $dep_work_dir/zk
-		(cd $dep_work_dir && tar -zxvf $dep_zk_cached_file --xform $dep_zk_dir_xform_pattern --show-transformed-names) > /dev/null
-		cp -f $srcdir/testsuites/$dep_work_tk_config $dep_work_dir/zk/conf/zoo.cfg
-		echo "Starting Zookeeper instance $2"
-		(cd $dep_work_dir/zk && ./bin/zkServer.sh start)
-		$TESTTOOL_DIR/msleep 2000
-		;;
-	 'start-kafka')
-		# Force IPv4 usage of Kafka!
-		export KAFKA_OPTS="-Djava.net.preferIPv4Stack=True"
-		if [ "x$2" == "x" ]; then
-			dep_work_dir=$(readlink -f .dep_wrk)
-			dep_work_kafka_config="kafka-server.properties"
-		else
-			dep_work_dir=$(readlink -f $2)
-			dep_work_kafka_config="kafka-server$2.properties"
-		fi
-
-		if [ ! -f $dep_kafka_cached_file ]; then
-				echo "Dependency-cache does not have kafka package, did you download dependencies?"
-				exit 77
-		fi
-		if [ ! -d $dep_work_dir ]; then
-				echo "Creating dependency working directory"
-				mkdir -p $dep_work_dir
-		fi
-		rm -rf $dep_work_dir/kafka
-		(cd $dep_work_dir && tar -zxvf $dep_kafka_cached_file --xform $dep_kafka_dir_xform_pattern --show-transformed-names) > /dev/null
-		cp -f $srcdir/testsuites/$dep_work_kafka_config $dep_work_dir/kafka/config/
-		echo "Starting Kafka instance $dep_work_kafka_config"
-		(cd $dep_work_dir/kafka && ./bin/kafka-server-start.sh -daemon ./config/$dep_work_kafka_config)
-		$TESTTOOL_DIR/msleep 4000
-
-		# Check if kafka instance came up!
-		kafkapid=`ps aux | grep -i $dep_work_kafka_config | grep java | grep -v grep | awk '{print $2}'`
-		if [[ "" !=  "$kafkapid" ]];
-		then
-			echo "Kafka instance $dep_work_kafka_config started with PID $kafkapid"
-		else
-			echo "Starting Kafka instance $dep_work_kafka_config, SECOND ATTEMPT!"
-			(cd $dep_work_dir/kafka && ./bin/kafka-server-start.sh -daemon ./config/$dep_work_kafka_config)
-			$TESTTOOL_DIR/msleep 4000
-
-			kafkapid=`ps aux | grep -i $dep_work_kafka_config | grep java | grep -v grep | awk '{print $2}'`
-			if [[ "" !=  "$kafkapid" ]];
-			then
-				echo "Kafka instance $dep_work_kafka_config started with PID $kafkapid"
-			else
-				echo "Failed to start Kafka instance for $dep_work_kafka_config"
-				error_exit 77
-			fi
 		fi
 		;;
 	 'prepare-elasticsearch') # $2, if set, is the number of additional ES instances
@@ -1270,7 +1737,7 @@ case $1 in
 		fi
 		if [ -d $dep_work_dir/es ]; then
 			if [ -e $dep_work_es_pidfile ]; then
-				es_pid = $(cat $dep_work_es_pidfile)
+				es_pid=$(cat $dep_work_es_pidfile)
 				kill -SIGTERM $es_pid
 				. $srcdir/diag.sh wait-pid-termination $es_pid
 			fi
@@ -1311,17 +1778,17 @@ case $1 in
 		# THIS IS THE ACTUAL START of ES
 		$dep_work_dir/es/bin/elasticsearch -p $dep_work_es_pidfile -d
 		$TESTTOOL_DIR/msleep 2000
-		echo "Starting instance $2 started with PID" `cat $dep_work_es_pidfile`
+		echo "Starting instance $2 started with PID" $(cat $dep_work_es_pidfile)
 
 		# Wait for startup with hardcoded timeout
 		timeoutend=60
 		timeseconds=0
 		# Loop until elasticsearch port is reachable or until
 		# timeout is reached!
-		until [ "`curl --silent --show-error --connect-timeout 1 http://localhost:${ES_PORT:-19200} | grep 'rsyslog-testbench'`" != "" ]; do
+		until [ "$(curl --silent --show-error --connect-timeout 1 http://localhost:${ES_PORT:-19200} | grep 'rsyslog-testbench')" != "" ]; do
 			echo "--- waiting for ES startup: $timeseconds seconds"
 			$TESTTOOL_DIR/msleep 1000
-			let "timeseconds = $timeseconds + 1"
+			let "timeseconds=$timeseconds + 1"
 
 			if [ "$timeseconds" -gt "$timeoutend" ]; then 
 				echo "--- TIMEOUT ( $timeseconds ) reached!!!"
@@ -1330,58 +1797,6 @@ case $1 in
 		done
 		$TESTTOOL_DIR/msleep 2000
 		echo ES startup succeeded
-		;;
-	 'dump-kafka-serverlog')
-		if [ "x$2" == "x" ]; then
-			dep_work_dir=$(readlink -f .dep_wrk)
-		else
-			dep_work_dir=$(readlink -f $srcdir/$2)
-		fi
-		if [ ! -d $dep_work_dir/kafka ]; then
-			echo "Kafka work-dir $dep_work_dir/kafka does not exist, no kafka debuglog"
-		else
-			echo "Dumping server.log from Kafka instance $2"
-			echo "========================================="
-			cat $dep_work_dir/kafka/logs/server.log
-			echo "========================================="
-		fi
-		;;
-		
-	 'dump-zookeeper-serverlog')
-		if [ "x$2" == "x" ]; then
-			dep_work_dir=$(readlink -f .dep_wrk)
-		else
-			dep_work_dir=$(readlink -f $srcdir/$2)
-		fi
-		echo "Dumping zookeeper.out from Zookeeper instance $2"
-		echo "========================================="
-		cat $dep_work_dir/zk/zookeeper.out
-		echo "========================================="
-		;;
-	 'stop-kafka')
-		if [ "x$2" == "x" ]; then
-			dep_work_dir=$(readlink -f .dep_wrk)
-		else
-			dep_work_dir=$(readlink -f $srcdir/$2)
-		fi
-		if [ ! -d $dep_work_dir/kafka ]; then
-			echo "Kafka work-dir $dep_work_dir/kafka does not exist, no action needed"
-		else
-			echo "Stopping Kafka instance $2"
-			(cd $dep_work_dir/kafka && ./bin/kafka-server-stop.sh)
-			$TESTTOOL_DIR/msleep 2000
-			rm -rf $dep_work_dir/kafka
-		fi
-		;;
-	 'stop-zookeeper')
-		if [ "x$2" == "x" ]; then
-			dep_work_dir=$(readlink -f .dep_wrk)
-		else
-			dep_work_dir=$(readlink -f $srcdir/$2)
-		fi
-		(cd $dep_work_dir/zk &> /dev/null && ./bin/zkServer.sh stop)
-		$TESTTOOL_DIR/msleep 2000
-		rm -rf $dep_work_dir/zk
 		;;
 	 'stop-elasticsearch')
 		if [ "x$2" == "x" ]; then
@@ -1393,7 +1808,7 @@ case $1 in
 		fi
 		if [ -e $dep_work_es_pidfile ]; then
 			es_pid=$(cat $dep_work_es_pidfile)
-			printf "stopping ES with pid %d\n" $es_pid
+			printf 'stopping ES with pid %d\n' $es_pid
 			kill -SIGTERM $es_pid
 			. $srcdir/diag.sh wait-pid-termination $es_pid
 		fi
@@ -1405,75 +1820,11 @@ case $1 in
 		rm -f $dep_work_es_pidfile
 		rm -rf $dep_work_dir/es
 		;;
-	 'create-kafka-topic')
-		if [ "x$3" == "x" ]; then
-			dep_work_dir=$(readlink -f .dep_wrk)
-		else
-			dep_work_dir=$(readlink -f $3)
-		fi
-		if [ "x$4" == "x" ]; then
-			dep_work_port='2181'
-		else
-			dep_work_port=$4
-		fi
-		if [ ! -d $dep_work_dir/kafka ]; then
-				echo "Kafka work-dir $dep_work_dir/kafka does not exist, did you start kafka?"
-				exit 1
-		fi
-		if [ "x$2" == "x" ]; then
-				echo "Topic-name not provided."
-				exit 1
-		fi
-		(cd $dep_work_dir/kafka && ./bin/kafka-topics.sh --zookeeper localhost:$dep_work_port/kafka --create --topic $2 --replication-factor 1 --partitions 2 )
-		(cd $dep_work_dir/kafka && ./bin/kafka-topics.sh --zookeeper localhost:$dep_work_port/kafka --alter --topic $2 --delete-config retention.ms)
-		(cd $dep_work_dir/kafka && ./bin/kafka-topics.sh --zookeeper localhost:$dep_work_port/kafka --alter --topic $2 --delete-config retention.bytes)
-		;;
-	 'delete-kafka-topic')
-		if [ "x$3" == "x" ]; then
-			dep_work_dir=$(readlink -f .dep_wrk)
-		else
-			dep_work_dir=$(readlink -f $srcdir/$3)
-		fi
-		if [ "x$4" == "x" ]; then
-			dep_work_port='2181'
-		else
-			dep_work_port=$4
-		fi
-
-		echo "deleting kafka-topic $2"
-		(cd $dep_work_dir/kafka && ./bin/kafka-topics.sh --delete --zookeeper localhost:$dep_work_port/kafka --topic $2)
-		;;
-	 'dump-kafka-topic')
-		if [ "x$3" == "x" ]; then
-			dep_work_dir=$(readlink -f .dep_wrk)
-			dep_kafka_log_dump=$(readlink -f rsyslog.out.kafka.log)
-		else
-			dep_work_dir=$(readlink -f $srcdir/$3)
-			dep_kafka_log_dump=$(readlink -f rsyslog.out.kafka$3.log)
-		fi
-		if [ "x$4" == "x" ]; then
-			dep_work_port='2181'
-		else
-			dep_work_port=$4
-		fi
-
-		echo "dumping kafka-topic $2"
-		if [ ! -d $dep_work_dir/kafka ]; then
-				echo "Kafka work-dir does not exist, did you start kafka?"
-				exit 1
-		fi
-		if [ "x$2" == "x" ]; then
-				echo "Topic-name not provided."
-				exit 1
-		fi
-
-		(cd $dep_work_dir/kafka && ./bin/kafka-console-consumer.sh --timeout-ms 2000 --from-beginning --zookeeper localhost:$dep_work_port/kafka --topic $2 > $dep_kafka_log_dump)
-		;;
 	'check-inotify') # Check for inotify/fen support 
 		if [ -n "$(find /usr/include -name 'inotify.h' -print -quit)" ]; then
 			echo [inotify mode]
 		elif [ -n "$(find /usr/include/sys/ -name 'port.h' -print -quit)" ]; then
-			cat /usr/include/sys/port.h | grep -qF "PORT_SOURCE_FILE" 
+			grep -qF "PORT_SOURCE_FILE" < /usr/include/sys/port.h
 			if [ "$?" -ne "0" ]; then
 				echo [port.h found but FEN API not implemented , skipping...]
 				exit 77 # FEN API not available, skip this test

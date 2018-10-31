@@ -1127,10 +1127,7 @@ FindObjInfo(const char *const __restrict__ strOID, objInfo_t **ppInfo)
 	*ppInfo = arrObjInfo[i];
 
 finalize_it:
-	if(iRet == RS_RET_OK) {
-		/* DEV DEBUG ONLY dbgprintf("caller requested object '%s', found at index %d\n", (*ppInfo)->pszID, i);*/
-		/*EMPTY BY INTENSION*/;
-	} else {
+	if(iRet != RS_RET_OK) {
 		dbgprintf("caller requested object '%s', not found (iRet %d)\n", strOID, iRet);
 	}
 
@@ -1387,7 +1384,6 @@ objClassExit(void)
 	cfsyslineExit(pModInfo);
 	varClassExit(pModInfo);
 #endif
-	errmsgClassExit();
 	moduleClassExit();
 	RETiRet;
 }
@@ -1426,7 +1422,6 @@ objClassInit(modInfo_t *pModInfo)
 	CHKiRet(objGetObjInterface(&obj)); /* get ourselves ;) */
 
 	/* init classes we use (limit to as few as possible!) */
-	CHKiRet(errmsgClassInit(pModInfo));
 	CHKiRet(datetimeClassInit(pModInfo));
 	CHKiRet(cfsyslineInit());
 	CHKiRet(varClassInit(pModInfo));

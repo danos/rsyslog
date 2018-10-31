@@ -187,7 +187,6 @@ int opensslh_THREAD_cleanup(void)
 void osslLastSSLErrorMsg(int ret, SSL *ssl, int severity, const char* pszCallSource)
 {
 	unsigned long un_error = 0;
-//	char psz[256];
 	int iSSLErr = SSL_get_error(ssl, ret);
 
 	/* Check which kind of error we have */
@@ -197,19 +196,6 @@ void osslLastSSLErrorMsg(int ret, SSL *ssl, int severity, const char* pszCallSou
 		LogMsg(0, RS_RET_NO_ERRCODE, severity, "SSL_ERROR_SSL in '%s'", pszCallSource);
 	} else if(iSSLErr == SSL_ERROR_SYSCALL){
 		LogMsg(0, RS_RET_NO_ERRCODE, severity, "SSL_ERROR_SYSCALL in '%s'", pszCallSource);
-/*
-		if(ret == 0) {
-			// iSSLErr = ERR_get_error();
-			// iSSLErr = SSL_get_error(ssl, iSSLErr);
-			if(iSSLErr == 0) {
-				*psz = '\0';
-			} else {
-				ERR_error_string_n(ERR_get_error(), psz, sizeof(psz));
-			}
-		}
-		LogMsg(0, RS_RET_NO_ERRCODE, "SSL_ERROR_SYSCALL in '%s': %s",
-			pszCallSource, psz);
-*/
 	} else {
 		LogMsg(0, RS_RET_NO_ERRCODE, severity, "SSL_ERROR_UNKNOWN in '%s', SSL_get_error: '%s(%d)'",
 			pszCallSource, ERR_error_string(iSSLErr, NULL), iSSLErr);
@@ -440,9 +426,6 @@ osslGlblInit(void)
 	SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv3);		/* Disable insecure SSLv3 Protocol */
 	SSL_CTX_sess_set_cache_size(ctx,1024);			/* TODO: make configurable? */
 
-	/* TODO: DO ONLY SUPPORT DEFAULT CIPHERS YET
-	SSL_CTX_set_cipher_list(ctx,"ALL");			Support all ciphers */
-// TODO MORE NEEDED 	SSL_CTX_set_ecdh_auto(ctx, 1);
 	/* Enable Support for automatic EC temporary key parameter selection. */
 
 	/* Set default VERIFY Options for OpenSSL CTX - and CALLBACK */
@@ -1295,7 +1278,7 @@ AcceptConnReq(nsd_t *pNsd, nsd_t **ppNew)
 	}
 
 	/* If we reach this point, we are in TLS mode */
-	CHKiRet(osslInitSession(pNew)); /*, pThis));*/
+	CHKiRet(osslInitSession(pNew));
 	pNew->authMode = pThis->authMode;
 	pNew->pPermPeers = pThis->pPermPeers;
 
@@ -1536,7 +1519,6 @@ BIO_set_nbio( conn, 1 );
 	DBGPRINTF("Connect: TLS Mode\n");
 	if(!(pThis->ssl = SSL_new(ctx))) {
 		osslLastSSLErrorMsg(0, pThis->ssl, LOG_ERR, "Connect");
-/*		LogError(0, RS_RET_NO_ERRCODE, "Error creating an SSL context"); */
 		ABORT_FINALIZE(RS_RET_NO_ERRCODE);
 	}
 	SSL_set_bio(pThis->ssl, conn, conn);

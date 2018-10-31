@@ -224,11 +224,12 @@ sbin_PROGRAMS =
 @ENABLE_KAFKA_TESTS_TRUE@am__append_91 = --enable-kafka-tests
 @ENABLE_IMJOURNAL_TRUE@am__append_92 = --enable-imjournal
 @ENABLE_OMJOURNAL_TRUE@am__append_93 = --enable-omjournal
-@ENABLE_IMCZMQ_TRUE@am__append_94 = --enable-imczmq
-@ENABLE_OMCZMQ_TRUE@am__append_95 = --enable-omczmq
-@ENABLE_IMFILE_TRUE@am__append_96 = --enable-imfile
-@ENABLE_DISTCHECK_WORKAROUND_TRUE@am__append_97 = --disable-testbench
-@ENABLE_DISTCHECK_WORKAROUND_FALSE@am__append_98 = --enable-testbench
+@ENABLE_JOURNAL_TESTS_TRUE@am__append_94 = --enable-journal-tests
+@ENABLE_IMCZMQ_TRUE@am__append_95 = --enable-imczmq
+@ENABLE_OMCZMQ_TRUE@am__append_96 = --enable-omczmq
+@ENABLE_IMFILE_TRUE@am__append_97 = --enable-imfile
+@ENABLE_DISTCHECK_WORKAROUND_TRUE@am__append_98 = --disable-testbench
+@ENABLE_DISTCHECK_WORKAROUND_FALSE@am__append_99 = --enable-testbench
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_check_define.m4 \
@@ -700,7 +701,7 @@ DISTCHECK_CONFIGURE_FLAGS = --with-systemdsystemunitdir=$$dc_install_base/$(syst
 	$(am__append_89) $(am__append_90) $(am__append_91) \
 	$(am__append_92) $(am__append_93) $(am__append_94) \
 	$(am__append_95) $(am__append_96) $(am__append_97) \
-	$(am__append_98)
+	$(am__append_98) $(am__append_99)
 ACLOCAL_AMFLAGS = -I m4
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
