@@ -3,14 +3,14 @@
 # This file is part of the rsyslog project, released under ASL 2.0
 
 uname
-if [ `uname` = "FreeBSD" ] ; then
+if [ $(uname) = "FreeBSD" ] ; then
    echo "This test currently does not work on FreeBSD."
    exit 77
 fi
 
 echo ===============================================================================
 echo \[dynstats_prevent_premature_eviction.sh\]: test for ensuring metrics are not evicted before unused-ttl
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 generate_conf
 add_conf '
 ruleset(name="stats") {

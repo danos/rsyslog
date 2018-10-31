@@ -3,14 +3,14 @@
 # rgerhards, 2013-11-22
 
 uname
-if [ `uname` = "FreeBSD" ] ; then
+if [ $(uname) = "FreeBSD" ] ; then
    echo "This test currently does not work on FreeBSD."
    exit 77
 fi
 
 echo ===============================================================================
 echo \[mmpstrucdata.sh\]: testing mmpstrucdata
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 generate_conf
 add_conf '
 module(load="../plugins/mmpstrucdata/.libs/mmpstrucdata")

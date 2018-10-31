@@ -58,6 +58,7 @@
 #include "rsconf.h"
 #include "cfsysline.h"
 #include "datetime.h"
+#include "operatingstate.h"
 #include "dirty.h"
 #include "janitor.h"
 
@@ -349,6 +350,7 @@ prepareBackground(const int parentPipeFD)
 {
 	DBGPRINTF("rsyslogd: in child, finalizing initialization\n");
 
+	dbgTimeoutToStderr = 0; /* we loose stderr when backgrounding! */
 	int r = setsid();
 	if(r == -1) {
 		char err[1024];
@@ -607,8 +609,6 @@ rsyslogd_InitGlobalClasses(void)
 	CHKiRet(objUse(datetime, CORE_COMPONENT));
 	pErrObj = "ruleset";
 	CHKiRet(objUse(ruleset,  CORE_COMPONENT));
-	/*pErrObj = "conf";
-	CHKiRet(objUse(conf,     CORE_COMPONENT));*/
 	pErrObj = "prop";
 	CHKiRet(objUse(prop,     CORE_COMPONENT));
 	pErrObj = "parser";
@@ -2033,8 +2033,7 @@ deinitAll(void)
 	 * modules. As such, they are not yet cleared.  */
 	unregCfSysLineHdlrs();
 
-	/*dbgPrintAllDebugInfo();
-	/ * this is the last spot where this can be done - below output modules are unloaded! */
+	/* this is the last spot where this can be done - below output modules are unloaded! */
 
 	parserClassExit();
 	rsconfClassExit();
@@ -2049,6 +2048,7 @@ deinitAll(void)
 	rsrtExit(); /* runtime MUST always be deinitialized LAST (except for debug system) */
 	DBGPRINTF("Clean shutdown completed, bye\n");
 
+	errmsgExit();
 	/* dbgClassExit MUST be the last one, because it de-inits the debug system */
 	dbgClassExit();
 
@@ -2124,5 +2124,6 @@ main(int argc, char **argv)
 #ifdef ENABLE_LIBLOGGING_STDLOG
 	stdlog_close(stdlog_hdl);
 #endif
+	osf_close();
 	return 0;
 }

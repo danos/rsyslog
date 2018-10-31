@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([rsyslog],[8.38.0],[rsyslog@lists.adiscon.com])
+AC_INIT([rsyslog],[8.39.0],[rsyslog@lists.adiscon.com])
 
 # AIXPORT START: Detect the underlying OS
 unamestr=$(uname)
@@ -1403,6 +1403,8 @@ if test "x$enable_relp" = "xyes"; then
 
         AC_CHECK_FUNC([relpSrvSetOversizeMode],
                       [AC_DEFINE([HAVE_RELPSRVSETOVERSIZEMODE], [1], [Define if relpSrvSetOversizeMode exists.])])
+        AC_CHECK_FUNC([relpSrvSetLstnAddr],
+                      [AC_DEFINE([HAVE_RELPSRVSETLSTNADDR], [1], [Define if relpSrvSetLstnAddr exists.])])
 
         CFLAGS="$save_CFLAGS"
         LIBS="$save_LIBS"

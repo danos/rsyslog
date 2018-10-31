@@ -1,36 +1,27 @@
 #!/bin/bash
 # added 2018-08-29 by alorbach
 # This file is part of the rsyslog project, released under ASL 2.0
+echo Init Testbench
+. ${srcdir:=.}/diag.sh init
+check_command_available kafkacat
+export KEEP_KAFKA_RUNNING="YES"
+
 export TESTMESSAGES=100000
 export TESTMESSAGESFULL=$TESTMESSAGES
+# Set EXTRA_EXITCHECK to dump kafka/zookeeperlogfiles on failure only.
+export EXTRA_EXITCHECK=dumpkafkalogs
+export EXTRA_EXIT=kafka
 
-# Generate random topic name
-export RANDTOPIC=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
+export RANDTOPIC=$(tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 8 | head -n 1)
 
-# enable the EXTRA_EXITCHECK only if really needed - otherwise spams the test log
-# too much
-#export EXTRA_EXITCHECK=dumpkafkalogs
-echo ===============================================================================
-echo Create kafka/zookeeper instance and $RANDTOPIC topic
-. $srcdir/diag.sh download-kafka
-. $srcdir/diag.sh stop-zookeeper
-. $srcdir/diag.sh stop-kafka
+download_kafka
+stop_zookeeper
+stop_kafka
 
-echo Init Testbench
-. $srcdir/diag.sh init
-check_command_available kafkacat
+start_zookeeper
+start_kafka
+create_kafka_topic $RANDTOPIC '.dep_wrk' '22181'
 
-echo Create kafka/zookeeper instance and $RANDTOPIC topic
-. $srcdir/diag.sh start-zookeeper
-. $srcdir/diag.sh start-kafka
-# create new topic
-. $srcdir/diag.sh create-kafka-topic $RANDTOPIC '.dep_wrk' '22181'
-
-echo Give Kafka some time to process topic create ...
-sleep 5
-
-# --- Create imkafka receiver config
-export RSYSLOG_DEBUGLOG="log"
 generate_conf
 add_conf '
 main_queue(queue.timeoutactioncompletion="60000" queue.timeoutshutdown="60000")
@@ -58,39 +49,14 @@ if ($msg contains "msgnum:") then {
 # --- 
 
 # --- Start imkafka receiver config
-echo Starting receiver instance [imkafka]
 startup
-# --- 
 
-# --- Fill Kafka Server with messages
-# Can properly be done in a better way?!
-for i in {00000001..00100000}
-do
-	echo " msgnum:$i" >> $RSYSLOG_OUT_LOG.in
-done
-
-echo Inject messages into kafka
-cat $RSYSLOG_OUT_LOG.in | kafkacat -P -b localhost:29092 -t $RANDTOPIC
-# --- 
-
-echo Give imkafka some time to start...
-sleep 5
-
-echo Stopping sender instance [omkafka]
+injectmsg_kafkacat --wait
 shutdown_when_empty
 wait_shutdown
 
-# Delete topic to remove old traces before
-. $srcdir/diag.sh delete-kafka-topic $RANDTOPIC '.dep_wrk' '22181'
+delete_kafka_topic $RANDTOPIC '.dep_wrk' '22181'
 
-echo stop kafka instance
-. $srcdir/diag.sh stop-kafka
-
-# STOP ZOOKEEPER in any case
-. $srcdir/diag.sh stop-zookeeper
-
-# Do the final sequence check
 seq_check 1 $TESTMESSAGESFULL -d
 
-echo success
 exit_test

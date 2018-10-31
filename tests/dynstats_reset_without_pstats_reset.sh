@@ -3,14 +3,14 @@
 # This file is part of the rsyslog project, released under ASL 2.0
 
 uname
-if [ `uname` = "FreeBSD" ] ; then
+if [ $(uname) = "FreeBSD" ] ; then
    echo "This test currently does not work on FreeBSD."
    exit 77
 fi
 
 echo ===============================================================================
 echo \[dynstats_reset_without_pstats_reset.sh\]: test to ensure correctness of stats-ctr reset when pstats reset is turned off
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 generate_conf
 add_conf '
 ruleset(name="stats") {

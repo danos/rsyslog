@@ -7,7 +7,7 @@
 # sometimes happen in some environments.
 # addd 2017-10-25 by RGerhards, released under ASL 2.0
 
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 . $srcdir/diag.sh require-journalctl
 generate_conf
 add_conf '
@@ -39,7 +39,7 @@ if [ $? -ne 0 ]; then
         exit 77
 fi
 
-cat $RSYSLOG_OUT_LOG | fgrep -qF "$TESTMSG"
+fgrep -qF "$TESTMSG" < $RSYSLOG_OUT_LOG
 if [ $? -ne 0 ]; then
   echo "FAIL:  $RSYSLOG_OUT_LOG content (tail -n200):"
   tail -n200 $RSYSLOG_OUT_LOG
@@ -54,5 +54,4 @@ if [ $? -ne 0 ]; then
   echo "$TESTMSG"
   error_exit 1
 fi;
-exit 77 # TODO: remove - we just want to see the log file in test-suite.log!
 exit_test

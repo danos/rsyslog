@@ -740,8 +740,19 @@ detect_updates(fs_edge_t *const edge)
 			act_obj_unlink(act);
 			restart = 1;
 			break;
+		} else if(fileInfo.st_ino != act->ino) {
+			DBGPRINTF("file '%s' inode changed from %llu to %llu, unlinking from "
+				"internal lists\n", act->name, (long long unsigned) act->ino,
+				(long long unsigned) fileInfo.st_ino);
+			if(act->pStrm != NULL) {
+				/* we do no need to re-set later, as act_obj_unlink
+				 * will destroy the strm obj */
+				strmSet_checkRotation(act->pStrm, STRM_ROTATION_DO_NOT_CHECK);
+			}
+			act_obj_unlink(act);
+			restart = 1;
+			break;
 		}
-		// TODO: add inode check for change notification!
 
 	}
 
@@ -915,9 +926,6 @@ act_obj_destroy(act_obj_t *const act, const int is_deleted)
 			}
 		}
 	}
-	if(act->ratelimiter != NULL) {
-		ratelimitDestruct(act->ratelimiter);
-	}
 	if(act->pStrm != NULL) {
 		const instanceConf_t *const inst = act->edge->instarr[0];// TODO: same file, multiple instances?
 		pollFile(act); /* get any left-over data */
@@ -934,6 +942,9 @@ act_obj_destroy(act_obj_t *const act, const int is_deleted)
 			unlink((char*)statefn);
 		}
 	}
+	if(act->ratelimiter != NULL) {
+		ratelimitDestruct(act->ratelimiter);
+	}
 	#ifdef HAVE_INOTIFY_INIT
 	if(act->wd != -1) {
 		wdmapDel(act->wd);
@@ -947,7 +958,6 @@ act_obj_destroy(act_obj_t *const act, const int is_deleted)
 	#endif
 	free(act->basename);
 	free(act->source_name);
-	//free(act->statefile);
 	free(act->multiSub.ppMsgs);
 	#if defined(OS_SOLARIS) && defined (HAVE_PORT_SOURCE_FILE)
 		act->is_deleted = 1;
@@ -993,10 +1003,10 @@ chk_active(const act_obj_t *act, const act_obj_t *const deleted)
 /* unlink act object from linked list and then
  * destruct it.
  */
-static void //ATTR_NONNULL()
+static void ATTR_NONNULL()
 act_obj_unlink(act_obj_t *act)
 {
-	DBGPRINTF("act_obj_unlink %p: %s\n", act, act->name);
+	DBGPRINTF("act_obj_unlink %p: %s, pStrm %p\n", act, act->name, act->pStrm);
 	if(act->prev == NULL) {
 		act->edge->active = act->next;
 	} else {
@@ -1132,38 +1142,6 @@ finalize_it:
 	}
 	RETiRet;
 }
-
-#if 0 //TODO: check if we need (specialised?) versions of this?
-/* we receive a notification that a new object is found *beneath*
- * act. This function now finds the right spot to place it and the
- * activate the monitor.
- * TODO: think if it is worth optimizing this based on the inotify-provided
- * name. But it's complex in any case...
- */
-static rsRetVal ATTR_NONNULL(1, 2)
-fs_node_notify_new_obj(act_obj_t *const act, const char *const name)
-{
-	DBGPRINTF("fs_node_notify_new_obj: act->name '%s', name '%s'\n",
-		act->name, name);
-#if 0
-	char fullname[MAXFNAME];
-	snprintf(fullname, MAXFNAME, "%s/%s", act->name, name);
-//	act_obj_add(act->edge->node, fullname, 0);
-#endif
-	fs_node_walk(act->edge->node, poll_tree);
-	return RS_RET_OK;
-}
-
-static rsRetVal ATTR_NONNULL(1, 2)
-fs_node_notify_file_del(act_obj_t *const act, const char *const name)
-{
-	DBGPRINTF("fs_node_notify_file_del: act->name '%s', name '%s'\n",
-		act->name, name);
-	fs_node_walk(act->edge->parent, poll_tree);
-	// TODO: 1. impl: walk tree, 2. impl: use inotify name
-	return RS_RET_OK;
-}
-#endif
 
 
 /* Helper function to combine statefile and workdir
@@ -1525,7 +1503,7 @@ pollFileReal(act_obj_t *act, cstr_t **pCStr)
 	int nProcessed = 0;
 	regex_t *start_preg = NULL, *end_preg = NULL;
 
-	DBGPRINTF("pollFileReal enter, pStrm %p, name '%s'\n", act->pStrm, act->name);
+	DBGPRINTF("pollFileReal enter, act %p, pStrm %p, name '%s'\n", act, act->pStrm, act->name);
 	DBGPRINTF("pollFileReal enter, edge %p\n", act->edge);
 	DBGPRINTF("pollFileReal enter, edge->instarr %p\n", act->edge->instarr);
 
@@ -2086,7 +2064,6 @@ BEGINfreeCnf
 	instanceConf_t *inst, *del;
 CODESTARTfreeCnf
 	fs_node_destroy(pModConf->conf_tree);
-	//move_list_destruct(pModConf);
 	for(inst = pModConf->root ; inst != NULL ; ) {
 		free(inst->pszBindRuleset);
 		free(inst->pszFileName);
@@ -2408,7 +2385,6 @@ do_fen(void)
 	port_event_t portEvent;
 	struct timespec timeout;
 	DEFiRet;
-	//rsRetVal iRetTmp = RS_RET_OK;
 
 	/* Set port timeout to 1 second. We need to check for unmonitored files during meantime */
 	// TODO: do we need this timeout at all for equality to old code?

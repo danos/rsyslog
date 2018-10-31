@@ -3,14 +3,14 @@
 # This file is part of the rsyslog project, released under ASL 2.0
 
 uname
-if [ `uname` = "FreeBSD" ] ; then
+if [ $(uname) = "FreeBSD" ] ; then
    echo "This test currently does not work on FreeBSD."
    exit 77
 fi
 
 echo ===============================================================================
 echo \[json_object_looping-vg.sh\]: basic test for looping over json object / associative-array with valgrind
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 generate_conf
 add_conf '
 template(name="garply" type="string" string="garply: %$.garply%\n")

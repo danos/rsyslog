@@ -14,6 +14,7 @@ CLEANFILES=\
 	rsyslog.input-symlink.log rsyslog-link.*.log targets \
 	HOSTNAME \
 	rstb_* \
+	zookeeper.pid \
 	tmp.qi nocert
 
 CLEANFILES+= \
@@ -53,8 +54,13 @@ TESTS = $(TESTRUNS)
 
 if ENABLE_DEFAULT_TESTS
 TESTS +=  \
+	operatingstate-basic.sh \
+	operatingstate-empty.sh \
+	operatingstate-unclean.sh \
 	empty-hostname.sh \
 	hostname-getaddrinfo-fail.sh \
+	msleep_usage_output.sh \
+	test_id_usage_output.sh \
 	prop-programname.sh \
 	prop-programname-with-slashes.sh \
 	hostname-with-slash-pmrfc5424.sh \
@@ -134,6 +140,10 @@ TESTS +=  \
 	imtcp-NUL-rawmsg.sh \
 	imtcp-multiport.sh \
 	imtcp_incomplete_frame_at_end.sh \
+	queue-encryption-disk.sh \
+	queue-encryption-disk_keyfile.sh \
+	queue-encryption-disk_keyprog.sh \
+	queue-encryption-da.sh \
 	daqueue-persist.sh \
 	daqueue-invld-qi.sh \
 	daqueue-dirty-shutdown.sh \
@@ -145,6 +155,7 @@ TESTS +=  \
 	rulesetmultiqueue-v6.sh \
 	manytcp.sh \
 	rsf_getenv.sh \
+	msg-deadlock-headerless-noappname.sh \
 	imtcp_conndrop.sh \
 	imtcp_addtlframedelim.sh \
 	imtcp_no_octet_counted.sh \
@@ -302,9 +313,11 @@ TESTS +=  \
 	parsertest-snare_ccoff_udp2.sh
 if HAVE_VALGRIND
 TESTS +=  \
+	tcpflood_wrong_option_output.sh \
 	include-obj-outside-control-flow-vg.sh \
 	include-obj-in-if-vg.sh \
 	include-obj-text-vg.sh \
+	queue-encryption-disk_keyfile-vg.sh \
 	rscript_parse_json-vg.sh \
 	rscript_backticks-vg.sh \
 	rscript-config_enable-off-vg.sh \
@@ -344,9 +357,24 @@ TESTS +=  \
 endif # HAVE_VALGRIND
 endif # ENABLE_DEFAULT_TESTS
 
+if ENABLE_SNMP
+TESTS +=  \
+	omsnmp_errmsg_no_params.sh
+endif # if ENABLE_SNMP
+
+if ENABLE_MMUTF8FIX
+TESTS +=  \
+	mmutf8fix_no_error.sh
+endif # if ENABLE_MAIL
+
+if ENABLE_MAIL
+TESTS +=  \
+	ommail_errmsg_no_params.sh
+endif # if ENABLE_MAIL
 
 if ENABLE_MMANON
 TESTS +=  \
+	mmanon_with_debug.sh \
 	mmanon_random_32_ipv4.sh \
 	mmanon_random_cons_32_ipv4.sh \
 	mmanon_recognize_ipv4.sh \
@@ -540,9 +568,6 @@ TESTS +=  \
 if ENABLE_IP
 TESTS += tcp_forwarding_ns_tpl.sh
 endif
-if ENABLE_RELP
-TESTS += sndrcv_relp_dflt_pt.sh
-endif
 if HAVE_VALGRIND
 TESTS +=  \
 	mmexternal-SegFault-empty-jroot-vg.sh
@@ -602,8 +627,14 @@ if ENABLE_OMKAFKA
 if ENABLE_IMKAFKA
 if ENABLE_KAFKA_TESTS
 TESTS += \
+	kafka-selftest.sh \
 	omkafka.sh \
 	imkafka.sh \
+	imkafka-backgrounded.sh \
+	imkafka-config-err-ruleset.sh \
+	imkafka-config-err-param.sh \
+	imkafka-hang-on-no-kafka.sh \
+	imkafka-hang-other-action-on-no-kafka.sh \
 	imkafka_multi_single.sh \
 	sndrcv_kafka.sh \
 	sndrcv_kafka_multi_topics.sh
@@ -614,10 +645,8 @@ TESTS += \
 #	sndrcv_kafka_multi.sh
 if HAVE_VALGRIND
 TESTS += \
-	sndrcv_kafka-vg-rcvr.sh
-#	sndrcv_kafka-vg-sender.sh
-# Note: -sender had some issues. If the re-appear, see
-# see https://github.com/rsyslog/rsyslog/issues/2434
+	omkafka-vg.sh \
+	imkafka-vg.sh
 endif
 endif
 endif
@@ -853,11 +882,13 @@ if ENABLE_RELP
 TESTS += sndrcv_relp.sh \
 	 sndrcv_relp_rebind.sh \
 	 imrelp-basic.sh \
+	 imrelp-basic-oldstyle.sh \
 	 imrelp-manyconn.sh \
 	 imrelp-maxDataSize-error.sh \
 	 imrelp-long-msg.sh \
 	 imrelp-oversizeMode-truncate.sh \
 	 imrelp-oversizeMode-accept.sh \
+	 sndrcv_relp_dflt_pt.sh \
 	 glbl-oversizeMsg-log.sh \
 	 glbl-oversizeMsg-truncate.sh \
 	 glbl-oversizeMsg-split.sh
@@ -949,6 +980,7 @@ TESTS += \
 	imfile-fileNotFoundError-parameter.sh \
 	imfile-error-not-repeated.sh \
 	imfile-truncate.sh \
+	imfile-truncate-multiple.sh \
 	imfile-readmode2.sh \
 	imfile-readmode2-polling.sh \
 	imfile-readmode2-with-persists-data-during-stop.sh \
@@ -981,6 +1013,7 @@ TESTS += \
 	imfile-rename.sh \
 	imfile-symlink.sh \
 	imfile-symlink-multi.sh \
+	imfile-logrotate.sh \
 	imfile-growing-file-id.sh \
 	glbl-oversizeMsg-truncate-imfile.sh
 
@@ -1041,6 +1074,9 @@ distclean-local:
 	rm -rf .dep_cache .dep_wrk
 
 EXTRA_DIST= \
+	operatingstate-basic.sh \
+	operatingstate-empty.sh \
+	operatingstate-unclean.sh \
 	internal-errmsg-memleak-vg.sh \
 	glbl-oversizeMsg-log-vg.sh \
 	empty-hostname.sh \
@@ -1178,6 +1214,13 @@ EXTRA_DIST= \
 	rs-cnum.sh \
 	rs-int2hex.sh \
 	rs-substring.sh \
+	omsnmp_errmsg_no_params.sh \
+	ommail_errmsg_no_params.sh \
+	mmutf8fix_no_error.sh \
+	tcpflood_wrong_option_output.sh \
+	msleep_usage_output.sh \
+	test_id_usage_output.sh \
+	mmanon_with_debug.sh \
 	mmanon_random_32_ipv4.sh \
 	mmanon_random_cons_32_ipv4.sh \
 	mmanon_recognize_ipv4.sh \
@@ -1396,6 +1439,7 @@ EXTRA_DIST= \
 	testsuites/spframingfix.testdata \
 	imtcp_spframingfix.sh \
 	imptcp_spframingfix.sh \
+	msg-deadlock-headerless-noappname.sh \
 	imtcp_conndrop.sh \
 	imtcp_conndrop_tls.sh \
 	imtcp_conndrop_tls-vg.sh \
@@ -1421,6 +1465,11 @@ EXTRA_DIST= \
 	discard-allmark-vg.sh \
 	diag.sh \
 	rcvr_fail_restore.sh \
+	queue-encryption-disk.sh \
+	queue-encryption-disk_keyfile.sh \
+	queue-encryption-disk_keyfile-vg.sh \
+	queue-encryption-disk_keyprog.sh \
+	queue-encryption-da.sh \
 	daqueue-dirty-shutdown.sh \
 	daqueue-invld-qi.sh \
 	daqueue-persist.sh \
@@ -1434,6 +1483,7 @@ EXTRA_DIST= \
 	sndrcv_failover.sh \
 	sndrcv.sh \
 	imrelp-basic.sh \
+	imrelp-basic-oldstyle.sh \
 	imrelp-manyconn.sh \
 	imrelp-maxDataSize-error.sh \
 	imrelp-long-msg.sh \
@@ -1555,6 +1605,7 @@ EXTRA_DIST= \
 	imfile-freshStartTail2.sh \
 	imfile-freshStartTail3.sh \
 	imfile-truncate.sh \
+	imfile-truncate-multiple.sh \
 	imfile-wildcards.sh \
 	imfile-wildcards-dirs.sh \
 	imfile-wildcards-dirs2.sh \
@@ -1569,6 +1620,7 @@ EXTRA_DIST= \
 	imfile-rename.sh \
 	imfile-symlink.sh \
 	imfile-symlink-multi.sh \
+	imfile-logrotate.sh \
 	imfile-growing-file-id.sh \
 	glbl-oversizeMsg-truncate-imfile.sh \
 	dynfile_invld_async.sh \
@@ -1627,13 +1679,19 @@ EXTRA_DIST= \
 	mysql-actq-mt.sh \
 	mysql-actq-mt-withpause.sh \
 	mysql-actq-mt-withpause-vg.sh \
+	kafka-selftest.sh \
 	omkafka.sh \
+	omkafka-vg.sh \
+	imkafka-hang-on-no-kafka.sh \
+	imkafka-hang-other-action-on-no-kafka.sh \
+	imkafka-backgrounded.sh \
+	imkafka-config-err-ruleset.sh \
+	imkafka-config-err-param.sh \
 	imkafka.sh \
+	imkafka-vg.sh \
 	imkafka_multi_single.sh \
 	sndrcv_kafka.sh \
 	sndrcv_kafka_multi_topics.sh \
-	sndrcv_kafka-vg-rcvr.sh \
-	sndrcv_kafka-vg-sender.sh \
 	testsuites/kafka-server.properties \
 	testsuites/kafka-server.dep_wrk1.properties \
 	testsuites/kafka-server.dep_wrk2.properties \
@@ -1772,6 +1830,8 @@ EXTRA_DIST= \
 	travis/trusty.supp \
 	linux_localtime_r.supp \
 	CI/centos6-9.supp \
+	CI/centos7.supp \
+	CI/gcov.supp \
 	json_var_case.sh \
 	cfg.sh \
 	empty-prop-comparison.sh \

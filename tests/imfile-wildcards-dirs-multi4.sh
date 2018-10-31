@@ -1,10 +1,11 @@
 #!/bin/bash
 # This is part of the rsyslog testbench, licensed under GPLv3
+. ${srcdir:=.}/diag.sh init
 export IMFILEINPUTFILES="1"
 export IMFILEINPUTFILESSTEPS="5"
 #export IMFILEINPUTFILESALL=$(($IMFILEINPUTFILES * $IMFILEINPUTFILESSTEPS))
 export IMFILECHECKTIMEOUT="20"
-. $srcdir/diag.sh init
+
 generate_conf
 add_conf '
 $WorkDirectory '$RSYSLOG_DYNNAME'.spool
@@ -49,16 +50,16 @@ if $msg contains "msgnum:" then
 # Start rsyslog now before adding more files
 startup
 
-for i in `seq 1 $IMFILEINPUTFILES`;
+for i in $(seq 1 $IMFILEINPUTFILES);
 do
 	echo "Make $RSYSLOG_DYNNAME.input.dir$i"
 	mkdir $RSYSLOG_DYNNAME.input.dir$i
 done
 
-for j in `seq 1 $IMFILEINPUTFILESSTEPS`;
+for j in $(seq 1 $IMFILEINPUTFILESSTEPS);
 do
 	echo "Loop Num $j"
-	for i in `seq 1 $IMFILEINPUTFILES`;
+	for i in $(seq 1 $IMFILEINPUTFILES);
 	do
 		echo "Make $RSYSLOG_DYNNAME.input.dir$i/dir$j/testdir"
 		mkdir $RSYSLOG_DYNNAME.input.dir$i/dir$j
@@ -66,6 +67,7 @@ do
 		mkdir $RSYSLOG_DYNNAME.input.dir$i/dir$j/testdir/su$j
 		mkdir $RSYSLOG_DYNNAME.input.dir$i/dir$j/testdir/su$j/bd$j
 		mkdir $RSYSLOG_DYNNAME.input.dir$i/dir$j/testdir/su$j/bd$j/ir$j
+		touch $RSYSLOG_DYNNAME.input.dir$i/dir$j/testdir/su$j/bd$j/ir$j/file.logfile
 		./inputfilegen -m 1 > $RSYSLOG_DYNNAME.input.dir$i/dir$j/testdir/su$j/bd$j/ir$j/file.logfile
 	done
 	ls -d $RSYSLOG_DYNNAME.input.*
@@ -75,11 +77,16 @@ do
 	content_check_with_count "HEADER msgnum:00000000:" $IMFILEINPUTFILESALL $IMFILECHECKTIMEOUT
 
 	# Delete all but first!
-	for i in `seq 1 $IMFILEINPUTFILES`;
+	for i in $(seq 1 $IMFILEINPUTFILES);
 	do
 		rm -rf $RSYSLOG_DYNNAME.input.dir$i/dir$j/testdir/su$j/bd$j/ir$j/file.logfile
 		rm -rf $RSYSLOG_DYNNAME.input.dir$i/dir$j
 	done
+
+	# Helps in testbench parallel mode. 
+	#	Otherwise sometimes directories are not marked deleted in imfile before they get created again.
+	#	This is properly a real issue in imfile when FILE IO is high. 
+	./msleep 1000
 done
 
 shutdown_when_empty # shut down rsyslogd when done processing messages

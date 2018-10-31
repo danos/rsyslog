@@ -6,7 +6,7 @@
 # added 2009-05-27 by Rgerhards
 # This file is part of the rsyslog project, released  under ASL 2.0
 # uncomment for debugging support:
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 generate_conf
 add_conf '
 $ModLoad ../plugins/imtcp/.libs/imtcp
@@ -38,7 +38,7 @@ echo "*.*     :omtesting:sleep 0 1000" > ${RSYSLOG_DYNNAME}work-delay.conf
 # inject 10000 msgs, so that DO hit the high watermark
 startup
 injectmsg 0 10000
-. $srcdir/diag.sh shutdown-immediate
+shutdown_immediate
 wait_shutdown
 . $srcdir/diag.sh check-mainq-spool
 

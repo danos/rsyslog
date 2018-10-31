@@ -9,12 +9,12 @@
 # add 2017-05-10 by Rainer Gerhards, released under ASL 2.0
 
 uname
-if [ `uname` = "FreeBSD" ] ; then
+if [ $(uname) = "FreeBSD" ] ; then
    echo "This test currently does not work on FreeBSD."
    exit 77
 fi
 
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 generate_conf
 add_conf '
 global(processInternalMessages="off")
@@ -31,7 +31,7 @@ action(type="omfile" file=`echo $RSYSLOG2_OUT_LOG`)
 '
 startup_vg_waitpid_only
 ./msleep 500 # wait a bit so that the error message can be emitted
-. $srcdir/diag.sh shutdown-immediate
+shutdown_immediate
 wait_shutdown_vg
 
 exit_test
