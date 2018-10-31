@@ -1,4 +1,4 @@
-rsyslog (8.39.0-1) UNRELEASED; urgency=medium
+rsyslog (8.39.0-1) unstable; urgency=medium
 
   [ Ondřej Nový ]
   * d/copyright: Use https protocol in Format field
@@ -6,8 +6,15 @@ rsyslog (8.39.0-1) UNRELEASED; urgency=medium
 
   [ Michael Biebl ]
   * New upstream version 8.39.0
+  * Add Build-Depends on lsof.
+    Required by omprog-restart-terminated.sh and
+    omprog-restart-terminated-outfile.sh which are otherwise skipped when
+    running the test-suite.
+  * Drop lmstrmsrv.so module.
+    The module was removed upstream as it was no longer needed.
+  * Run queue-encryption-* tests only if gcrypt support is enabled
 
- -- Michael Biebl <biebl@debian.org>  Wed, 31 Oct 2018 06:03:01 +0100
+ -- Michael Biebl <biebl@debian.org>  Wed, 31 Oct 2018 10:45:39 +0100
 
 rsyslog (8.38.0-1) unstable; urgency=medium
 
