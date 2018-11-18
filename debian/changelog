@@ -1,3 +1,10 @@
+rsyslog (8.39.0-2) unstable; urgency=medium
+
+  * Mark lsof Build-Depends as linux-any
+  * Switch to debhelper compat level 12 and dh_installsystemd
+
+ -- Michael Biebl <biebl@debian.org>  Sun, 18 Nov 2018 19:34:45 +0100
+
 rsyslog (8.39.0-1) unstable; urgency=medium
 
   [ Ondřej Nový ]
