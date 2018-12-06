@@ -1,3 +1,12 @@
+rsyslog (8.39.0-3) unstable; urgency=medium
+
+  * Don't fail test-suite on flaky tests.
+    The tests daqueue-dirty-shutdown.sh and imfile-truncate.sh don't seem to
+    work reliably. We still want to execute them, but if they fail, return 77.
+    This way the test-runner considers them as skipped.
+
+ -- Michael Biebl <biebl@debian.org>  Thu, 06 Dec 2018 13:01:00 +0100
+
 rsyslog (8.39.0-2) unstable; urgency=medium
 
   * Mark lsof Build-Depends as linux-any
