@@ -24,7 +24,7 @@
 #export RSYSLOG_DEBUG="debug nologfuncflow noprintmutexaction nostdout"
 #export RSYSLOG_DEBUGLOG="log"
 
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 generate_conf
 add_conf '
 module(load="../plugins/omtesting/.libs/omtesting")
@@ -45,7 +45,7 @@ startup
 injectmsg  0 210000
 echo spool files immediately before shutdown:
 ls ${RSYSLOG_DYNNAME}.spool
-. $srcdir/diag.sh shutdown-immediate # shut down without the ability to fully persist state
+shutdown_immediate # shut down without the ability to fully persist state
 ./msleep 750	# simulate an os timeout (let it run a *very short* bit, else it's done ;))
 echo spool files immediately after shutdown \(but before kill\):
 ls ${RSYSLOG_DYNNAME}.spool

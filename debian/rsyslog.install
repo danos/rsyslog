@@ -15,7 +15,6 @@ usr/lib/*/rsyslog/lmnet.so
 usr/lib/*/rsyslog/lmnetstrms.so
 usr/lib/*/rsyslog/lmnsd_ptcp.so
 usr/lib/*/rsyslog/lmregexp.so
-usr/lib/*/rsyslog/lmstrmsrv.so
 usr/lib/*/rsyslog/lmtcpclt.so
 usr/lib/*/rsyslog/lmtcpsrv.so
 usr/lib/*/rsyslog/lmzlibw.so

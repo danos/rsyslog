@@ -6,7 +6,7 @@
 # feedback before the configured 'confirmTimeout'. Also tests the
 # keep-alive feature.
 
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 generate_conf
 add_conf '
 module(load="../plugins/omprog/.libs/omprog")
@@ -31,7 +31,7 @@ injectmsg 0 10
 shutdown_when_empty
 wait_shutdown
 
-EXPECTED="Starting
+export EXPECTED="Starting
 <= OK
 => msgnum:00000000:
 <= OK

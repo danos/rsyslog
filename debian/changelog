@@ -1,3 +1,37 @@
+rsyslog (8.39.0-3) unstable; urgency=medium
+
+  * Don't fail test-suite on flaky tests.
+    The tests daqueue-dirty-shutdown.sh and imfile-truncate.sh don't seem to
+    work reliably. We still want to execute them, but if they fail, return 77.
+    This way the test-runner considers them as skipped.
+
+ -- Michael Biebl <biebl@debian.org>  Thu, 06 Dec 2018 13:01:00 +0100
+
+rsyslog (8.39.0-2) unstable; urgency=medium
+
+  * Mark lsof Build-Depends as linux-any
+  * Switch to debhelper compat level 12 and dh_installsystemd
+
+ -- Michael Biebl <biebl@debian.org>  Sun, 18 Nov 2018 19:34:45 +0100
+
+rsyslog (8.39.0-1) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * d/copyright: Use https protocol in Format field
+  * d/changelog: Remove trailing whitespaces
+
+  [ Michael Biebl ]
+  * New upstream version 8.39.0
+  * Add Build-Depends on lsof.
+    Required by omprog-restart-terminated.sh and
+    omprog-restart-terminated-outfile.sh which are otherwise skipped when
+    running the test-suite.
+  * Drop lmstrmsrv.so module.
+    The module was removed upstream as it was no longer needed.
+  * Run queue-encryption-* tests only if gcrypt support is enabled
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 31 Oct 2018 10:45:39 +0100
+
 rsyslog (8.38.0-1~bpo9+1) stretch-backports; urgency=medium
 
   * Rebuild for stretch-backports
@@ -1751,7 +1785,7 @@ rsyslog (1.19.12-1) unstable; urgency=low
   * debian/control
     - Add Depends: lsb-base (>= 3.0-6) as the init script uses the LSB logging
       functions.
-    - Bump Standards-Version to 3.7.3. No further changes required. 
+    - Bump Standards-Version to 3.7.3. No further changes required.
 
  -- Michael Biebl <biebl@debian.org>  Mon, 03 Dec 2007 19:42:19 +0100
 
@@ -1814,7 +1848,7 @@ rsyslog (1.19.2-1) unstable; urgency=low
     - Pass --enable-mysql to ./configure.
     - Install the SQL schema file for dbconfig-common.
   * debian/rsyslog-mysql.config
-    - Setup the default values for dbconfig-common. 
+    - Setup the default values for dbconfig-common.
   * debian/rsyslog-mysql.{postinst,prerm,postrm}
     - Include the dbconfig-common scripts and call the dbc_go function.
     - Use ucf and ucfr to manage the generated configuration file mysql.conf.

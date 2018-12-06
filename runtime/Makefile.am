@@ -47,6 +47,8 @@ librsyslog_la_SOURCES = \
 	srUtils.h \
 	errmsg.c \
 	errmsg.h \
+	operatingstate.c \
+	operatingstate.h \
 	debug.c \
 	debug.h \
 	obj.c \
@@ -153,13 +155,6 @@ lmnetstrms_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_C
 lmnetstrms_la_LDFLAGS = -module -avoid-version $(LIBLOGGING_STDLOG_LIBS)
 lmnetstrms_la_LIBADD =
 
-# generic stream server framework
-pkglib_LTLIBRARIES += lmstrmsrv.la
-lmstrmsrv_la_SOURCES = strmsrv.c strmsrv.h strms_sess.c strms_sess.h
-lmstrmsrv_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_CFLAGS)
-lmstrmsrv_la_LDFLAGS = -module -avoid-version $(LIBLOGGING_STDLOG_LIBS)
-lmstrmsrv_la_LIBADD =
-
 # netstream drivers
 
 # plain tcp driver - main driver
@@ -200,13 +195,12 @@ endif
 if ENABLE_LIBGCRYPT
    noinst_LTLIBRARIES += libgcry.la
    libgcry_la_SOURCES = libgcry.c libgcry_common.c libgcry.h
-   libgcry_la_CPPFLAGS = $(RSRT_CFLAGS) $(LIBGCRYPT_CFLAGS)
+   libgcry_la_CPPFLAGS =  $(RSRT_CFLAGS) $(LIBGCRYPT_CFLAGS)
    pkglib_LTLIBRARIES += lmcry_gcry.la
-   lmcry_gcry_la_DEPENDENCIES = librsyslog.la libgcry.la
+   lmcry_gcry_la_DEPENDENCIES = libgcry.la
    lmcry_gcry_la_SOURCES = lmcry_gcry.c lmcry_gcry.h
    lmcry_gcry_la_CPPFLAGS = $(RSRT_CFLAGS) $(LIBGCRYPT_CFLAGS)
    lmcry_gcry_la_LDFLAGS = -module -avoid-version \
-	-Wl,--whole-archive,$(top_builddir)/runtime/.libs/librsyslog.a,--no-whole-archive
    lmcry_gcry_la_LIBADD = libgcry.la $(LIBGCRYPT_LIBS)
 endif
 

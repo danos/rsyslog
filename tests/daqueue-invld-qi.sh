@@ -2,12 +2,12 @@
 # This file is part of the rsyslog project, released  under ASL 2.0
 
 uname
-if [ `uname` = "SunOS" ] ; then
+if [ $(uname) = "SunOS" ] ; then
    echo "This test currently does not work on all flavors of Solaris."
    exit 77
 fi
 
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 generate_conf
 add_conf '
 $ModLoad ../plugins/imtcp/.libs/imtcp
@@ -38,7 +38,7 @@ echo "*.*     :omtesting:sleep 0 1000" > ${RSYSLOG_DYNNAME}work-delay.conf
 # inject 10000 msgs, so that DO hit the high watermark
 startup
 injectmsg 0 10000
-. $srcdir/diag.sh shutdown-immediate
+shutdown_immediate
 wait_shutdown
 . $srcdir/diag.sh check-mainq-spool
 ./mangle_qi -d -q ${RSYSLOG_DYNNAME}.spool/mainq.qi > tmp.qi

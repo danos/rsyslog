@@ -9,7 +9,7 @@
 # trick. -- rgerhards, 2018-07-21
 #export RSYSLOG_DEBUG="debug"
 USE_VALGRIND=true
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 check_command_available timeout
 pwd=$( pwd )
 k8s_srv_port=$( get_free_port )
@@ -143,8 +143,7 @@ grep -q 'mmkubernetes: Too Many Requests: the server is too heavily loaded to pr
 grep -q 'mmkubernetes: Too Many Requests: the server is too heavily loaded to provide the data for the requested url .*/pods\\\/pod-name-9-busy' $RSYSLOG_OUT_LOG || { echo fail4; rc=1; }
 
 if [ -f ${RSYSLOG_DYNNAME}.spool/mmkubernetes-stats.log ] ; then
-	cat ${RSYSLOG_DYNNAME}.spool/mmkubernetes-stats.log | \
-	python -c '
+	python <${RSYSLOG_DYNNAME}.spool/mmkubernetes-stats.log  -c '
 import sys,json
 k8s_srv_port = sys.argv[1]
 expected = {"name": "mmkubernetes(http://localhost:{0})".format(k8s_srv_port),

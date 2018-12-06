@@ -5,7 +5,7 @@
 # parameter. Checks that no file descriptors are leaked across restarts
 # of the program when stderr is being captured to a file.
 
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 check_command_available lsof
 
 generate_conf
@@ -35,7 +35,7 @@ template(name="outfmt" type="string" string="%msg%\n")
 cp -f $srcdir/testsuites/omprog-restart-terminated-bin.sh $RSYSLOG_DYNNAME.omprog-restart-terminated-bin.sh
 
 # On Solaris 10, the output of ps is truncated for long process names; use /usr/ucb/ps instead:
-if [[ `uname` = "SunOS" && `uname -r` = "5.10" ]]; then
+if [[ $(uname) = "SunOS" && $(uname -r) = "5.10" ]]; then
     function get_child_pid {
         echo $(/usr/ucb/ps -awwx | grep "$RSYSLOG_DYNNAME.[o]mprog-restart-terminated-bin.sh" | awk '{ print $1 }')
     }
@@ -83,7 +83,7 @@ end_fd_count=$(lsof -p $pid | wc -l)
 shutdown_when_empty
 wait_shutdown
 
-EXPECTED="Starting
+export EXPECTED="Starting
 Received msgnum:00000000:
 Received msgnum:00000001:
 Received msgnum:00000002:
@@ -108,7 +108,7 @@ Terminating normally"
 
 cmp_exact $RSYSLOG_OUT_LOG
 
-EXPECTED="[stderr] Starting
+export EXPECTED="[stderr] Starting
 [stderr] Received msgnum:00000000:
 [stderr] Received msgnum:00000001:
 [stderr] Received msgnum:00000002:

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Added 2017-12-09 by Rainer Gerhards, released under ASL 2.0
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 generate_conf
 add_conf '
 module(load="../plugins/imtcp/.libs/imtcp")
@@ -19,7 +19,7 @@ shutdown_when_empty
 wait_shutdown
 
 # Our fixed and calculated expected results
-EXPECTED='{ "parsed": { "c1": "data" } }'
+export EXPECTED='{ "parsed": { "c1": "data" } }'
 echo $EXPECTED | cmp - $RSYSLOG_OUT_LOG
 if [[ $? -ne 0 ]]; then
   printf "Invalid function output detected!\n"

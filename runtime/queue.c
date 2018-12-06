@@ -12,7 +12,7 @@
  * function names - this makes it really hard to read and does not provide much
  * benefit, at least I (now) think so...
  *
- * Copyright 2008-2017 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2008-2018 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -372,7 +372,8 @@ qqueueAdviseMaxWorkers(qqueue_t *pThis)
 	if(!pThis->bEnqOnly) {
 		if(pThis->bIsDA && getLogicalQueueSize(pThis) >= pThis->iHighWtrMrk) {
 			DBGOPRINT((obj_t*) pThis, "(re)activating DA worker\n");
-			wtpAdviseMaxWorkers(pThis->pWtpDA, 1); /* disk queues have always one worker */
+			wtpAdviseMaxWorkers(pThis->pWtpDA, 1, DENY_WORKER_START_DURING_SHUTDOWN);
+			/* disk queues have always one worker */
 		}
 		if(getLogicalQueueSize(pThis) == 0) {
 			iMaxWorkers = 0;
@@ -381,7 +382,7 @@ qqueueAdviseMaxWorkers(qqueue_t *pThis)
 		} else {
 			iMaxWorkers = getLogicalQueueSize(pThis) / pThis->iMinMsgsPerWrkr + 1;
 		}
-		wtpAdviseMaxWorkers(pThis->pWtpReg, iMaxWorkers);
+		wtpAdviseMaxWorkers(pThis->pWtpReg, iMaxWorkers, DENY_WORKER_START_DURING_SHUTDOWN);
 	}
 
 	RETiRet;
@@ -450,6 +451,22 @@ StartDA(qqueue_t *pThis)
 	CHKiRet(qqueueSettoQShutdown(pThis->pqDA, pThis->toQShutdown));
 	CHKiRet(qqueueSetiHighWtrMrk(pThis->pqDA, 0));
 	CHKiRet(qqueueSetiDiscardMrk(pThis->pqDA, 0));
+	if(pThis->useCryprov) {
+		/* hand over cryprov to DA queue - in-mem queue does no longer need it
+		 * and DA queue will be kept active from now on until termination.
+		 */
+		pThis->pqDA->useCryprov = pThis->useCryprov;
+		pThis->pqDA->cryprov = pThis->cryprov;
+		pThis->pqDA->cryprovData = pThis->cryprovData;
+		pThis->pqDA->cryprovName = pThis->cryprovName;
+		pThis->pqDA->cryprovNameFull = pThis->cryprovNameFull;
+		/* reset memory queue parameters */
+		pThis->useCryprov = 0;
+		/* pThis->cryprov cannot and need not be reset, is structure */
+		pThis->cryprovData = NULL;
+		pThis->cryprovName = NULL;
+		pThis->cryprovNameFull = NULL;
+	}
 
 	iRet = qqueueStart(pThis->pqDA);
 	/* file not found is expected, that means it is no previous QIF available */
@@ -782,6 +799,7 @@ qqueueTryLoadPersistedInfo(qqueue_t *pThis)
 	if(stat((char*) pThis->pszQIFNam, &stat_buf) == -1) {
 		if(errno == ENOENT) {
 			DBGOPRINT((obj_t*) pThis, "clean startup, no .qi file found\n");
+			ABORT_FINALIZE(RS_RET_FILE_NOT_FOUND);
 		} else {
 			LogError(errno, RS_RET_IO_ERROR, "queue: %s: error %d could not access .qi file",
 					obj.GetName((obj_t*) pThis), errno);
@@ -947,13 +965,14 @@ static rsRetVal qDestructDisk(qqueue_t *pThis)
 	RETiRet;
 }
 
-static rsRetVal qAddDisk(qqueue_t *pThis, smsg_t* pMsg)
+static rsRetVal ATTR_NONNULL(1,2)
+qAddDisk(qqueue_t *const pThis, smsg_t* pMsg)
 {
 	DEFiRet;
+	ISOBJ_TYPE_assert(pThis, qqueue);
+	ISOBJ_TYPE_assert(pMsg, msg);
 	number_t nWriteCount;
 	const int oldfile = strmGetCurrFileNum(pThis->tVars.disk.pWrite);
-
-	ASSERT(pThis != NULL);
 
 	CHKiRet(strm.SetWCntr(pThis->tVars.disk.pWrite, &nWriteCount));
 	CHKiRet((objSerialize(pMsg))(pMsg, pThis->tVars.disk.pWrite));
@@ -1165,12 +1184,13 @@ tryShutdownWorkersWithinQueueTimeout(qqueue_t *const pThis)
 		DBGOPRINT((obj_t*) pThis, "setting EnqOnly mode for DA worker\n");
 		pThis->pqDA->bEnqOnly = 1;
 		wtpSetState(pThis->pWtpDA, wtpState_SHUTDOWN_IMMEDIATE);
-		wtpAdviseMaxWorkers(pThis->pWtpDA, 1);
+		wtpAdviseMaxWorkers(pThis->pWtpDA, 1, DENY_WORKER_START_DURING_SHUTDOWN);
 		DBGOPRINT((obj_t*) pThis, "awoke DA worker, told it to shut down.\n");
 
 		/* also tell the DA queue worker to shut down, so that it already knows... */
 		wtpSetState(pThis->pqDA->pWtpReg, wtpState_SHUTDOWN);
-		wtpAdviseMaxWorkers(pThis->pqDA->pWtpReg, 1); /* awake its lone worker */
+		wtpAdviseMaxWorkers(pThis->pqDA->pWtpReg, 1, DENY_WORKER_START_DURING_SHUTDOWN);
+			/* awake its lone worker */
 		DBGOPRINT((obj_t*) pThis, "awoke DA queue regular worker, told it to shut down when done.\n");
 
 		d_pthread_mutex_unlock(pThis->mut);
@@ -1362,16 +1382,16 @@ cancelWorkers(qqueue_t *pThis)
  * longer, because we no longer can persist the queue in parallel to waiting
  * on worker timeouts.
  */
-rsRetVal
+rsRetVal ATTR_NONNULL(1)
 qqueueShutdownWorkers(qqueue_t *const pThis)
 {
 	DEFiRet;
+	ISOBJ_TYPE_assert(pThis, qqueue);
 
 	if(pThis->qType == QUEUETYPE_DIRECT) {
 		FINALIZE;
 	}
 
-	ISOBJ_TYPE_assert(pThis, qqueue);
 	ASSERT(pThis->pqParent == NULL); /* detect invalid calling sequence */
 
 	DBGOPRINT((obj_t*) pThis, "initiating worker thread shutdown sequence %p\n", pThis);
@@ -2668,7 +2688,7 @@ DoSaveOnShutdown(qqueue_t *pThis)
 	pThis->bShutdownImmediate = 0; /* would termiante the DA worker! */
 	pThis->iLowWtrMrk = 0;
 	wtpSetState(pThis->pWtpDA, wtpState_SHUTDOWN);	/* shutdown worker (only) when done (was _IMMEDIATE!) */
-	wtpAdviseMaxWorkers(pThis->pWtpDA, 1);		/* restart DA worker */
+	wtpAdviseMaxWorkers(pThis->pWtpDA, 1, PERMIT_WORKER_START_DURING_SHUTDOWN);	/* restart DA worker */
 
 	DBGOPRINT((obj_t*) pThis, "waiting for DA worker to terminate...\n");
 	timeoutComp(&tTimeout, QUEUE_TIMEOUT_ETERNAL);

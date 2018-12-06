@@ -5,7 +5,7 @@
 # by checking that omprog re-sends to the external program the messages
 # it has failed to process.
 
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 generate_conf
 add_conf '
 module(load="../plugins/omprog/.libs/omprog")
@@ -32,7 +32,7 @@ injectmsg 0 10
 shutdown_when_empty
 wait_shutdown
 
-EXPECTED="<= OK
+export EXPECTED="<= OK
 => msgnum:00000000:
 <= OK
 => msgnum:00000001:

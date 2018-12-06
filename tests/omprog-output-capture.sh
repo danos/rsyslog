@@ -3,7 +3,7 @@
 
 # This test tests the 'output' setting of omprog when the feedback
 # feature is not used (confirmMessages=off).
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 generate_conf
 add_conf '
 module(load="../plugins/omprog/.libs/omprog")
@@ -26,7 +26,7 @@ injectmsg 0 10
 shutdown_when_empty
 wait_shutdown
 
-EXPECTED="[stdout] Starting
+export EXPECTED="[stdout] Starting
 [stderr] Starting
 [stdout] Received msgnum:00000000:
 [stderr] Received msgnum:00000000:

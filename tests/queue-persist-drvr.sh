@@ -7,7 +7,7 @@
 # This file is part of the rsyslog project, released  under GPLv3
 # uncomment for debugging support:
 echo testing memory queue persisting to disk, mode $1
-. $srcdir/diag.sh init
+. ${srcdir:=.}/diag.sh init
 generate_conf
 add_conf '
 $ModLoad ../plugins/imtcp/.libs/imtcp
@@ -35,7 +35,7 @@ echo "*.*     :omtesting:sleep 0 1000" > ${RSYSLOG_DYNNAME}work-delay.conf
 # inject 5000 msgs, so that we do not hit the high watermark
 startup
 injectmsg 0 5000
-. $srcdir/diag.sh shutdown-immediate
+shutdown_immediate
 wait_shutdown
 . $srcdir/diag.sh check-mainq-spool
 
