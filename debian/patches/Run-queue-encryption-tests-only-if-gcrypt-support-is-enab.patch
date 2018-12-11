@@ -4,25 +4,14 @@ Subject: Run queue-encryption-* tests only if gcrypt support is enabled
 
 https://github.com/rsyslog/rsyslog/issues/3228
 ---
- tests/Makefile.am | 12 ++++++++----
- 1 file changed, 8 insertions(+), 4 deletions(-)
+ tests/Makefile.am | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
 diff --git a/tests/Makefile.am b/tests/Makefile.am
-index ea3c601..270d4db 100644
+index 235a081..cbf893b 100644
 --- a/tests/Makefile.am
 +++ b/tests/Makefile.am
-@@ -140,10 +140,6 @@ TESTS +=  \
- 	imtcp-NUL-rawmsg.sh \
- 	imtcp-multiport.sh \
- 	imtcp_incomplete_frame_at_end.sh \
--	queue-encryption-disk.sh \
--	queue-encryption-disk_keyfile.sh \
--	queue-encryption-disk_keyprog.sh \
--	queue-encryption-da.sh \
- 	daqueue-persist.sh \
- 	daqueue-invld-qi.sh \
- 	daqueue-dirty-shutdown.sh \
-@@ -357,6 +353,14 @@ TESTS +=  \
+@@ -363,6 +363,14 @@ TESTS +=  \
  endif # HAVE_VALGRIND
  endif # ENABLE_DEFAULT_TESTS
  
