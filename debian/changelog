@@ -1,8 +1,9 @@
-rsyslog (8.40.0-1) UNRELEASED; urgency=medium
+rsyslog (8.40.0-1) unstable; urgency=medium
 
   * New upstream version 8.40.0
+  * Rebase patches
 
- -- Michael Biebl <biebl@debian.org>  Tue, 11 Dec 2018 20:24:26 +0100
+ -- Michael Biebl <biebl@debian.org>  Tue, 11 Dec 2018 22:07:26 +0100
 
 rsyslog (8.39.0-3) unstable; urgency=medium
 
