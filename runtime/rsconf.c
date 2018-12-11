@@ -505,7 +505,7 @@ void cnfDoBSDTag(char *ln)
 	DBGPRINTF("cnf:global:BSD tag: %s\n", ln);
 	LogError(0, RS_RET_BSD_BLOCKS_UNSUPPORTED,
 			"BSD-style blocks are no longer supported in rsyslog, "
-			"see http://www.rsyslog.com/g/BSD for details and a "
+			"see https://www.rsyslog.com/g/BSD for details and a "
 			"solution (Block '%s')", ln);
 	free(ln);
 }
@@ -515,7 +515,7 @@ void cnfDoBSDHost(char *ln)
 	DBGPRINTF("cnf:global:BSD host: %s\n", ln);
 	LogError(0, RS_RET_BSD_BLOCKS_UNSUPPORTED,
 			"BSD-style blocks are no longer supported in rsyslog, "
-			"see http://www.rsyslog.com/g/BSD for details and a "
+			"see https://www.rsyslog.com/g/BSD for details and a "
 			"solution (Block '%s')", ln);
 	free(ln);
 }
@@ -642,7 +642,6 @@ tellModulesConfigLoadDone(void)
 {
 	cfgmodules_etry_t *node;
 
-	BEGINfunc
 	DBGPRINTF("telling modules that config load for %p is done\n", loadConf);
 	node = module.GetNxtCnfType(loadConf, NULL, eMOD_ANY);
 	while(node != NULL) {
@@ -654,7 +653,6 @@ tellModulesConfigLoadDone(void)
 		node = module.GetNxtCnfType(runConf, node, eMOD_ANY);
 	}
 
-	ENDfunc
 	return RS_RET_OK; /* intentional: we do not care about module errors */
 }
 
@@ -666,7 +664,6 @@ tellModulesCheckConfig(void)
 	cfgmodules_etry_t *node;
 	rsRetVal localRet;
 
-	BEGINfunc
 	DBGPRINTF("telling modules to check config %p\n", loadConf);
 	node = module.GetNxtCnfType(loadConf, NULL, eMOD_ANY);
 	while(node != NULL) {
@@ -683,7 +680,6 @@ tellModulesCheckConfig(void)
 		node = module.GetNxtCnfType(runConf, node, eMOD_ANY);
 	}
 
-	ENDfunc
 	return RS_RET_OK; /* intentional: we do not care about module errors */
 }
 
@@ -695,7 +691,6 @@ tellModulesActivateConfigPrePrivDrop(void)
 	cfgmodules_etry_t *node;
 	rsRetVal localRet;
 
-	BEGINfunc
 	DBGPRINTF("telling modules to activate config (before dropping privs) %p\n", runConf);
 	node = module.GetNxtCnfType(runConf, NULL, eMOD_ANY);
 	while(node != NULL) {
@@ -714,7 +709,6 @@ tellModulesActivateConfigPrePrivDrop(void)
 		node = module.GetNxtCnfType(runConf, node, eMOD_ANY);
 	}
 
-	ENDfunc
 	return RS_RET_OK; /* intentional: we do not care about module errors */
 }
 
@@ -726,7 +720,6 @@ tellModulesActivateConfig(void)
 	cfgmodules_etry_t *node;
 	rsRetVal localRet;
 
-	BEGINfunc
 	DBGPRINTF("telling modules to activate config %p\n", runConf);
 	node = module.GetNxtCnfType(runConf, NULL, eMOD_ANY);
 	while(node != NULL) {
@@ -743,7 +736,6 @@ tellModulesActivateConfig(void)
 		node = module.GetNxtCnfType(runConf, node, eMOD_ANY);
 	}
 
-	ENDfunc
 	return RS_RET_OK; /* intentional: we do not care about module errors */
 }
 
@@ -757,7 +749,6 @@ runInputModules(void)
 	cfgmodules_etry_t *node;
 	int bNeedsCancel;
 
-	BEGINfunc
 	node = module.GetNxtCnfType(runConf, NULL, eMOD_IN);
 	while(node != NULL) {
 		if(node->canRun) {
@@ -771,7 +762,6 @@ runInputModules(void)
 		node = module.GetNxtCnfType(runConf, node, eMOD_IN);
 	}
 
-	ENDfunc
 	return RS_RET_OK; /* intentional: we do not care about module errors */
 }
 
@@ -798,7 +788,6 @@ startInputModules(void)
 		node = module.GetNxtCnfType(runConf, node, eMOD_IN);
 	}
 
-	ENDfunc
 	return RS_RET_OK; /* intentional: we do not care about module errors */
 }
 

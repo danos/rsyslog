@@ -534,6 +534,7 @@ enum rsRetVal_				/** return value. All methods return this if not specified oth
 	RS_RET_FS_ERR = -2443, /**< file-system error */
 	RS_RET_POLL_ERR = -2444, /**< error in poll() system call */
 	RS_RET_OVERSIZE_MSG = -2445, /**< message is too long (above configured max) */
+	RS_RET_TLS_KEY_ERR = -2446, /**< TLS KEY has problems */
 
 	/* RainerScript error messages (range 1000.. 1999) */
 	RS_RET_SYSVAR_NOT_FOUND = 1001, /**< system variable could not be found (maybe misspelled) */
@@ -574,8 +575,8 @@ enum rsRetVal_				/** return value. All methods return this if not specified oth
 #define CHKmalloc(operation) if((operation) == NULL) ABORT_FINALIZE(RS_RET_OUT_OF_MEMORY)
 /* macro below is used in conjunction with CHKiRet_Hdlr, else use ABORT_FINALIZE */
 #define FINALIZE goto finalize_it;
-#define DEFiRet BEGINfunc rsRetVal iRet = RS_RET_OK
-#define RETiRet do{ ENDfuncIRet return iRet; }while(0)
+#define DEFiRet rsRetVal iRet = RS_RET_OK
+#define RETiRet return iRet
 
 #define ABORT_FINALIZE(errCode)			\
 	do {					\

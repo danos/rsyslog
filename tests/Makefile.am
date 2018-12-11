@@ -60,6 +60,8 @@ TESTS +=  \
 	empty-hostname.sh \
 	hostname-getaddrinfo-fail.sh \
 	msleep_usage_output.sh \
+	mangle_qi_usage_output.sh \
+	minitcpsrv_usage_output.sh \
 	test_id_usage_output.sh \
 	prop-programname.sh \
 	prop-programname-with-slashes.sh \
@@ -140,10 +142,6 @@ TESTS +=  \
 	imtcp-NUL-rawmsg.sh \
 	imtcp-multiport.sh \
 	imtcp_incomplete_frame_at_end.sh \
-	queue-encryption-disk.sh \
-	queue-encryption-disk_keyfile.sh \
-	queue-encryption-disk_keyprog.sh \
-	queue-encryption-da.sh \
 	daqueue-persist.sh \
 	daqueue-invld-qi.sh \
 	daqueue-dirty-shutdown.sh \
@@ -311,6 +309,13 @@ TESTS +=  \
 	parsertest-parse-nodate-udp.sh \
 	parsertest-snare_ccoff_udp.sh \
 	parsertest-snare_ccoff_udp2.sh
+if ENABLE_LIBGCRYPT
+TESTS +=  \
+	queue-encryption-disk.sh \
+	queue-encryption-disk_keyfile.sh \
+	queue-encryption-disk_keyprog.sh \
+	queue-encryption-da.sh
+endif # ENABLE_LIBGCRYPT
 if HAVE_VALGRIND
 TESTS +=  \
 	tcpflood_wrong_option_output.sh \
@@ -320,6 +325,7 @@ TESTS +=  \
 	queue-encryption-disk_keyfile-vg.sh \
 	rscript_parse_json-vg.sh \
 	rscript_backticks-vg.sh \
+	rscript_backticks_empty_envvar-vg.sh \
 	rscript-config_enable-off-vg.sh \
 	prop-jsonmesg-vg.sh \
 	mmexternal-SegFault-vg.sh \
@@ -399,6 +405,7 @@ endif # if ENABLE_MMANON
 if ENABLE_ELASTICSEARCH_TESTS
 TESTS +=  \
 	es-basic-server.sh \
+	es-execOnlyWhenPreviousSuspended.sh \
 	es-maxbytes-bulk.sh \
 	es-basic-errfile-empty.sh \
 	es-basic-errfile-popul.sh \
@@ -407,7 +414,8 @@ TESTS +=  \
 	es-writeoperation.sh
 
 es-basic-server.log: es-basic-bulk.log
-es-maxbytes-bulk.log: es-basic-server.log
+es-execOnlyWhenPreviousSuspended: es-basic-server.log
+es-maxbytes-bulk.log: es-execOnlyWhenPreviousSuspended.log
 es-basic-errfile-empty.log: es-maxbytes-bulk.log
 es-basic-errfile-popul.log: es-basic-errfile-empty.log
 es-bulk-errfile-empty.log: es-basic-errfile-popul.log
@@ -507,6 +515,7 @@ endif
 
 if ENABLE_MYSQL_TESTS
 TESTS +=  \
+	mysqld-start.sh \
 	mysql-basic.sh \
 	mysql-basic-cnf6.sh \
 	mysql-asyn.sh \
@@ -515,6 +524,7 @@ TESTS +=  \
 	action-tx-single-processing.sh \
 	action-tx-errfile.sh
 
+mysql-basic.log: mysqld-start.log
 mysql-basic-cnf6.log: mysql-basic.log
 mysql-asyn.log: mysql-basic-cnf6.log
 mysql-actq-mt.log: mysql-asyn.log
@@ -546,6 +556,7 @@ TESTS +=  \
 libdbi-basic-vg.log: libdbi-asyn.log
 endif
 endif
+TESTS += mysqld-stop.sh
 endif #  MYSQL_TESTS
 
 if ENABLE_FMHTTP
@@ -816,6 +827,7 @@ TESTS +=  \
 endif
 if HAVE_VALGRIND
 TESTS +=  \
+	mmjsonparse_extra_data-vg.sh \
 	json_null_array-vg.sh \
 	json_object_looping-vg.sh \
 	json_array_looping-vg.sh \
@@ -866,7 +878,11 @@ TESTS +=  \
 	sndrcv_tls_ossl_anon_rebind.sh \
 	imtcp-tls-ossl-x509valid.sh \
 	imtcp-tls-ossl-x509name.sh \
-	imtcp-tls-ossl-x509fingerprint.sh
+	imtcp-tls-ossl-x509fingerprint.sh \
+	imtcp-tls-ossl-error-ca.sh \
+	imtcp-tls-ossl-error-cert.sh \
+	imtcp-tls-ossl-error-key.sh \
+	imtcp-tls-ossl-error-key2.sh
 if HAVE_VALGRIND
 TESTS += \
 	imtcp-tls-ossl-basic-vg.sh
@@ -881,6 +897,7 @@ endif
 if ENABLE_RELP
 TESTS += sndrcv_relp.sh \
 	 sndrcv_relp_rebind.sh \
+	 omrelp_errmsg_no_connect.sh \
 	 imrelp-basic.sh \
 	 imrelp-basic-oldstyle.sh \
 	 imrelp-manyconn.sh \
@@ -969,11 +986,17 @@ if ENABLE_EXTENDED_TESTS
 # random.sh is temporarily disabled as it needs some work
 # to rsyslog core to complete in reasonable time
 #TESTS += random.sh
+if ENABLE_IMFILE
+TESTS += \
+	imfile-basic-2GB-file.sh \
+	imfile-truncate-2GB-file.sh
+endif # ENABLE_IMFILE
 endif
 
 if ENABLE_IMFILE
 TESTS += \
 	imfile-basic.sh \
+	imfile-basic-legacy.sh \
 	imfile-discard-truncated-line.sh \
 	imfile-truncate-line.sh \
 	imfile-file-not-found-error.sh \
@@ -1074,6 +1097,7 @@ distclean-local:
 	rm -rf .dep_cache .dep_wrk
 
 EXTRA_DIST= \
+	urlencode.py \
 	operatingstate-basic.sh \
 	operatingstate-empty.sh \
 	operatingstate-unclean.sh \
@@ -1110,6 +1134,9 @@ EXTRA_DIST= \
 	tls-certs/ca.pem \
 	tls-certs/cert.pem \
 	tls-certs/key.pem \
+	tls-certs/ca-fail.pem \
+	tls-certs/cert-fail.pem \
+	tls-certs/key-fail.pem \
 	testsuites/x.509/ca.pem \
 	testsuites/x.509/ca-key.pem \
 	testsuites/x.509/client-cert.pem \
@@ -1209,6 +1236,7 @@ EXTRA_DIST= \
 	rscript_parse_json.sh \
 	rscript_parse_json-vg.sh \
 	rscript_backticks-vg.sh \
+	rscript_backticks_empty_envvar-vg.sh \
 	rscript_previous_action_suspended.sh \
 	rscript_str2num_negative.sh \
 	rs-cnum.sh \
@@ -1219,6 +1247,8 @@ EXTRA_DIST= \
 	mmutf8fix_no_error.sh \
 	tcpflood_wrong_option_output.sh \
 	msleep_usage_output.sh \
+	mangle_qi_usage_output.sh \
+	minitcpsrv_usage_output.sh \
 	test_id_usage_output.sh \
 	mmanon_with_debug.sh \
 	mmanon_random_32_ipv4.sh \
@@ -1374,6 +1404,7 @@ EXTRA_DIST= \
 	es-basic.sh \
 	es-basic-vgthread.sh \
 	es-basic-server.sh \
+	es-execOnlyWhenPreviousSuspended.sh \
 	es-basic-ha.sh \
 	es-basic-bulk.sh \
 	es-basic-errfile-empty.sh \
@@ -1416,6 +1447,10 @@ EXTRA_DIST= \
 	imtcp-tls-ossl-x509name.sh \
 	imtcp-tls-ossl-x509fingerprint.sh \
 	imtcp-tls-ossl-basic-vg.sh \
+	imtcp-tls-ossl-error-ca.sh \
+	imtcp-tls-ossl-error-cert.sh \
+	imtcp-tls-ossl-error-key.sh \
+	imtcp-tls-ossl-error-key2.sh \
 	manytcp.sh \
 	manyptcp.sh \
 	imptcp-NUL.sh \
@@ -1482,6 +1517,7 @@ EXTRA_DIST= \
 	sndrcv_drvr_noexit.sh \
 	sndrcv_failover.sh \
 	sndrcv.sh \
+	omrelp_errmsg_no_connect.sh \
 	imrelp-basic.sh \
 	imrelp-basic-oldstyle.sh \
 	imrelp-manyconn.sh \
@@ -1581,6 +1617,9 @@ EXTRA_DIST= \
 	imfile-endregex.sh \
 	imfile-endregex-vg.sh \
 	imfile-basic.sh \
+	imfile-basic-legacy.sh \
+	imfile-basic-2GB-file.sh \
+	imfile-truncate-2GB-file.sh \
 	imfile-discard-truncated-line.sh \
 	imfile-truncate-line.sh \
 	imfile-file-not-found-error.sh \
@@ -1671,6 +1710,8 @@ EXTRA_DIST= \
 	testsuites/mysql-select-msg.sql \
 	libdbi-basic.sh \
 	libdbi-asyn.sh \
+	mysqld-start.sh \
+	mysqld-stop.sh \
 	mysql-basic.sh \
 	mysql-basic-cnf6.sh \
 	mysql-basic-vg.sh \
@@ -1766,6 +1807,7 @@ EXTRA_DIST= \
 	json_null-vg.sh \
 	json_null_array.sh \
 	json_null_array-vg.sh \
+	mmjsonparse_extra_data-vg.sh \
 	mmnormalize_regex.sh \
 	testsuites/mmnormalize_regex.rulebase \
 	testsuites/regex_input \

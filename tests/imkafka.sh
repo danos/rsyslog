@@ -1,7 +1,6 @@
 #!/bin/bash
 # added 2018-08-29 by alorbach
 # This file is part of the rsyslog project, released under ASL 2.0
-echo Init Testbench
 . ${srcdir:=.}/diag.sh init
 check_command_available kafkacat
 export KEEP_KAFKA_RUNNING="YES"
@@ -46,12 +45,8 @@ if ($msg contains "msgnum:") then {
 	action( type="omfile" file=`echo $RSYSLOG_OUT_LOG` template="outfmt" )
 }
 '
-# --- 
-
-# --- Start imkafka receiver config
 startup
-
-injectmsg_kafkacat --wait
+injectmsg_kafkacat --wait 1 $TESTMESSAGESFULL -d
 shutdown_when_empty
 wait_shutdown
 

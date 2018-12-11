@@ -164,7 +164,6 @@ sbin_PROGRAMS =
 # mmkubernetes
 @ENABLE_MMKUBERNETES_TRUE@am__append_64 = contrib/mmkubernetes
 # currently not supported in make distcheck:
-# --enable-mysql-tests
 # --enable-pgsql-tests 
 # --enable-extended-tests --> should probably never be enabled due to runtime
 @ENABLE_DEFAULT_TESTS_TRUE@am__append_65 = \
@@ -215,21 +214,22 @@ sbin_PROGRAMS =
 @ENABLE_GNUTLS_TRUE@am__append_82 = --enable-gnutls
 @ENABLE_OPENSSL_TRUE@am__append_83 = --enable-openssl
 @ENABLE_MYSQL_TRUE@am__append_84 = --enable-mysql
-@ENABLE_ELASTICSEARCH_TRUE@am__append_85 = --enable-elasticsearch
-@ENABLE_ELASTICSEARCH_TESTS_TRUE@am__append_86 = --enable-elasticsearch-tests
-@ENABLE_MMGROK_TRUE@am__append_87 = --enable-mmgrok
-@ENABLE_RELP_TRUE@am__append_88 = --enable-relp --enable-omrelp-default-port=13515
-@ENABLE_IMKAFKA_TRUE@am__append_89 = --enable-imkafka
-@ENABLE_OMKAFKA_TRUE@am__append_90 = --enable-omkafka
-@ENABLE_KAFKA_TESTS_TRUE@am__append_91 = --enable-kafka-tests
-@ENABLE_IMJOURNAL_TRUE@am__append_92 = --enable-imjournal
-@ENABLE_OMJOURNAL_TRUE@am__append_93 = --enable-omjournal
-@ENABLE_JOURNAL_TESTS_TRUE@am__append_94 = --enable-journal-tests
-@ENABLE_IMCZMQ_TRUE@am__append_95 = --enable-imczmq
-@ENABLE_OMCZMQ_TRUE@am__append_96 = --enable-omczmq
-@ENABLE_IMFILE_TRUE@am__append_97 = --enable-imfile
-@ENABLE_DISTCHECK_WORKAROUND_TRUE@am__append_98 = --disable-testbench
-@ENABLE_DISTCHECK_WORKAROUND_FALSE@am__append_99 = --enable-testbench
+@ENABLE_MYSQL_TESTS_TRUE@am__append_85 = --enable-mysql-tests
+@ENABLE_ELASTICSEARCH_TRUE@am__append_86 = --enable-elasticsearch
+@ENABLE_ELASTICSEARCH_TESTS_TRUE@am__append_87 = --enable-elasticsearch-tests
+@ENABLE_MMGROK_TRUE@am__append_88 = --enable-mmgrok
+@ENABLE_RELP_TRUE@am__append_89 = --enable-relp --enable-omrelp-default-port=13515
+@ENABLE_IMKAFKA_TRUE@am__append_90 = --enable-imkafka
+@ENABLE_OMKAFKA_TRUE@am__append_91 = --enable-omkafka
+@ENABLE_KAFKA_TESTS_TRUE@am__append_92 = --enable-kafka-tests
+@ENABLE_IMJOURNAL_TRUE@am__append_93 = --enable-imjournal
+@ENABLE_OMJOURNAL_TRUE@am__append_94 = --enable-omjournal
+@ENABLE_JOURNAL_TESTS_TRUE@am__append_95 = --enable-journal-tests
+@ENABLE_IMCZMQ_TRUE@am__append_96 = --enable-imczmq
+@ENABLE_OMCZMQ_TRUE@am__append_97 = --enable-omczmq
+@ENABLE_IMFILE_TRUE@am__append_98 = --enable-imfile
+@ENABLE_DISTCHECK_WORKAROUND_TRUE@am__append_99 = --disable-testbench
+@ENABLE_DISTCHECK_WORKAROUND_FALSE@am__append_100 = --enable-testbench
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_check_define.m4 \
@@ -361,8 +361,8 @@ DIST_SUBDIRS = compat runtime grammar . plugins/immark \
 	contrib/omamqp1 contrib/omtcl contrib/mmkubernetes tests
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in AUTHORS \
 	COPYING COPYING.LESSER ChangeLog INSTALL NEWS README TODO \
-	compile config.guess config.sub install-sh ltmain.sh missing \
-	ylwrap
+	compile config.guess config.sub depcomp install-sh ltmain.sh \
+	missing ylwrap
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -701,7 +701,7 @@ DISTCHECK_CONFIGURE_FLAGS = --with-systemdsystemunitdir=$$dc_install_base/$(syst
 	$(am__append_89) $(am__append_90) $(am__append_91) \
 	$(am__append_92) $(am__append_93) $(am__append_94) \
 	$(am__append_95) $(am__append_96) $(am__append_97) \
-	$(am__append_98) $(am__append_99)
+	$(am__append_98) $(am__append_99) $(am__append_100)
 ACLOCAL_AMFLAGS = -I m4
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
