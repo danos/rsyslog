@@ -67,6 +67,14 @@
 
 #include <regex.h>
 
+/* some platforms do not have large file support :( */
+#ifndef O_LARGEFILE
+#  define O_LARGEFILE 0
+#endif
+#ifndef HAVE_LSEEK64
+#  define lseek64(fd, offset, whence) lseek(fd, offset, whence)
+#endif
+
 MODULE_TYPE_INPUT
 MODULE_TYPE_NOKEEP
 MODULE_CNFNAME("imfile")
@@ -695,7 +703,7 @@ act_obj_add(fs_edge_t *const edge, const char *const name, const int is_file,
 	if(is_file && !is_symlink) {
 		const instanceConf_t *const inst = edge->instarr[0];// TODO: same file, multiple instances?
 		CHKiRet(ratelimitNew(&act->ratelimiter, "imfile", name));
-		CHKmalloc(act->multiSub.ppMsgs = MALLOC(inst->nMultiSub * sizeof(smsg_t *)));
+		CHKmalloc(act->multiSub.ppMsgs = malloc(inst->nMultiSub * sizeof(smsg_t *)));
 		act->multiSub.maxElem = inst->nMultiSub;
 		act->multiSub.nElem = 0;
 		pollFile(act);
@@ -707,9 +715,6 @@ act_obj_add(fs_edge_t *const edge, const char *const name, const int is_file,
 	}
 	act->next = edge->active;
 	edge->active = act;
-//dbgprintf("printout of fs tree after act_obj_add for '%s'\n", name);
-//fs_node_print(runModConf->conf_tree, 0);
-//dbg_wdmapPrint("wdmap after act_obj_add");
 finalize_it:
 	if(iRet != RS_RET_OK) {
 		if(act != NULL) {
@@ -864,7 +869,7 @@ poll_tree(fs_edge_t *const chld)
 					"directory - ignored", file);
 				continue;
 			}
-			if(chld->is_file != is_file) {
+			if(!issymlink && (chld->is_file != is_file)) {
 				LogMsg(0, RS_RET_ERR, LOG_WARNING,
 					"imfile: '%s' is %s but %s expected - ignored",
 					file, (is_file) ? "FILE" : "DIRECTORY",
@@ -1017,9 +1022,6 @@ act_obj_unlink(act_obj_t *act)
 	}
 	act_obj_destroy(act, 1);
 	act = NULL;
-//dbgprintf("printout of fs tree post unlink\n");
-//fs_node_print(runModConf->conf_tree, 0);
-//dbg_wdmapPrint("wdmap after");
 }
 
 static void
@@ -1274,7 +1276,7 @@ enqLine(act_obj_t *const act,
 		/* Make sure we account for terminating null byte */
 		size_t ceeMsgSize = msgLen + CONST_LEN_CEE_COOKIE + 1;
 		char *ceeMsg;
-		CHKmalloc(ceeMsg = MALLOC(ceeMsgSize));
+		CHKmalloc(ceeMsg = malloc(ceeMsgSize));
 		strcpy(ceeMsg, CONST_CEE_COOKIE);
 		strcat(ceeMsg, (char*)rsCStrGetSzStrNoNULL(cstrLine));
 		MsgSetRawMsg(pMsg, ceeMsg, ceeMsgSize);
@@ -1431,8 +1433,6 @@ static rsRetVal
 openFileWithoutStateFile(act_obj_t *const act)
 {
 	DEFiRet;
-	struct stat stat_buf;
-
 	const instanceConf_t *const inst = act->edge->instarr[0];// TODO: same file, multiple instances?
 
 	DBGPRINTF("clean startup withOUT state file for '%s'\n", act->name);
@@ -1448,9 +1448,16 @@ openFileWithoutStateFile(act_obj_t *const act)
 	/* As a state file not exist, this is a fresh start. seek to file end
 	 * when freshStartTail is on.
 	 */
-	if(inst->freshStartTail){
-		if(stat((char*) act->name, &stat_buf) != -1) {
-			act->pStrm->iCurrOffs = stat_buf.st_size;
+	if(inst->freshStartTail) {
+		const int fd = open(act->name, O_RDONLY | O_CLOEXEC);
+		if(fd >= 0) {
+			act->pStrm->iCurrOffs = lseek64(fd, 0, SEEK_END);
+			if(act->pStrm->iCurrOffs < 0) {
+				act->pStrm->iCurrOffs = 0;
+				LogError(errno, RS_RET_ERR, "imfile: could not query current "
+					"file size for %s - 'freshStartTail' option will "
+					"be ignored, starting at begin of file", inst->pszFileName);
+			}
 			CHKiRet(strm.SeekCurrOffs(act->pStrm));
 		}
 	}
@@ -1486,11 +1493,9 @@ finalize_it:
  */
 static void pollFileCancelCleanup(void *pArg)
 {
-	BEGINfunc;
 	cstr_t **ppCStr = (cstr_t**) pArg;
 	if(*ppCStr != NULL)
 		rsCStrDestruct(ppCStr);
-	ENDfunc;
 }
 
 
@@ -1574,7 +1579,7 @@ createInstance(instanceConf_t **const pinst)
 {
 	instanceConf_t *inst;
 	DEFiRet;
-	CHKmalloc(inst = MALLOC(sizeof(instanceConf_t)));
+	CHKmalloc(inst = malloc(sizeof(instanceConf_t)));
 	inst->next = NULL;
 	inst->pBindRuleset = NULL;
 
@@ -1913,16 +1918,14 @@ BEGINsetModCnf
 	struct cnfparamvals *pvals = NULL;
 	int i;
 CODESTARTsetModCnf
-	/* new style config has different default! */
-#if defined(OS_SOLARIS)
-	#if defined (HAVE_PORT_SOURCE_FILE) /* use FEN on Solaris if available */
+	#if defined(HAVE_PORT_SOURCE_FILE)
+		/* this means we are on Solaris, so inotify is not there */
 		loadModConf->opMode = OPMODE_FEN;
+	#elif defined(HAVE_INOTIFY_INIT)
+		loadModConf->opMode = OPMODE_INOTIFY;
 	#else
 		loadModConf->opMode = OPMODE_POLLING;
 	#endif
-#else
-	loadModConf->opMode = OPMODE_INOTIFY;
-#endif
 	pvals = nvlstGetParams(lst, &modpblk, NULL);
 	if(pvals == NULL) {
 		LogError(0, RS_RET_MISSING_CNFPARAMS, "imfile: error processing module "
@@ -2430,7 +2433,6 @@ do_fen(void)
 			if(act->edge->is_file) {
 				pollFile(act);
 			} else {
-				// curr: fs_node_walk(act->edge->parent, poll_tree);
 				fs_node_walk(act->edge->node, poll_tree);
 			}
 		}

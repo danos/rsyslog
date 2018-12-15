@@ -10,7 +10,7 @@
  * *****************************************************
  *
  * Please visit the rsyslog project at
- * http://www.rsyslog.com
+ * https://www.rsyslog.com
  * to learn more about it and discuss any questions you may have.
  *
  * rsyslog had initially been forked from the sysklogd project.
@@ -154,7 +154,7 @@ char **syslogd_crunch_list(char *list)
 	for (count=i=0; p[i]; i++)
 		if (p[i] == LIST_DELIMITER) count++;
 
-	if ((result = (char **)MALLOC(sizeof(char *) * (count+2))) == NULL) {
+	if ((result = (char **)malloc(sizeof(char *) * (count+2))) == NULL) {
 		printf ("Sorry, can't get enough memory, exiting.\n");
 		exit(0); /* safe exit, because only called during startup */
 	}
@@ -166,7 +166,7 @@ char **syslogd_crunch_list(char *list)
 	 */
 	count = 0;
 	while ((q=strchr(p, LIST_DELIMITER))) {
-		result[count] = (char *) MALLOC(q - p + 1);
+		result[count] = (char *) malloc(q - p + 1);
 		if (result[count] == NULL) {
 			printf ("Sorry, can't get enough memory, exiting.\n");
 			exit(0); /* safe exit, because only called during startup */
@@ -177,7 +177,7 @@ char **syslogd_crunch_list(char *list)
 		count++;
 	}
 	if ((result[count] = \
-	     (char *)MALLOC(strlen(p) + 1)) == NULL) {
+	     (char *)malloc(strlen(p) + 1)) == NULL) {
 		printf ("Sorry, can't get enough memory, exiting.\n");
 		exit(0); /* safe exit, because only called during startup */
 	}

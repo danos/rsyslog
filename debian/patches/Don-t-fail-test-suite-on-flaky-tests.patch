@@ -31,7 +31,7 @@ index df72277..734f081 100755
  exit_test
 +) || exit 77
 diff --git a/tests/imfile-truncate.sh b/tests/imfile-truncate.sh
-index a262336..d172bdb 100755
+index 72ef168..9c9a714 100755
 --- a/tests/imfile-truncate.sh
 +++ b/tests/imfile-truncate.sh
 @@ -1,5 +1,6 @@
@@ -41,7 +41,7 @@ index a262336..d172bdb 100755
  . ${srcdir:=.}/diag.sh init
  . $srcdir/diag.sh check-inotify
  generate_conf
-@@ -33,3 +34,4 @@ wait_shutdown
+@@ -39,3 +40,4 @@ cat -n $RSYSLOG_DYNNAME.rsyslog
  
  seq_check 0 4
  exit_test
