@@ -530,6 +530,12 @@
 /* Version number of package */
 #undef VERSION
 
+/* month part of real rsyslog version */
+#undef VERSION_MONTH
+
+/* year part of real rsyslog version */
+#undef VERSION_YEAR
+
 /* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
    `char[]'. */
 #undef YYTEXT_POINTER

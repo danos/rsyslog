@@ -6,12 +6,18 @@
 # stdout/stderr by the various program instances are not intermingled in
 # the output file (i.e., are captured atomically by omprog) when 1) the
 # lines are less than PIPE_BUF bytes long and 2) the program writes the
-# lines in line-buffered mode. In this test, the 'stdbuf' utility of GNU
-# Coreutils is used to force line buffering in a Python program (see
-# 'omprog-output-capture-mt-bin.py' for alternatives).
+# lines in unbuffered or line-buffered mode.
+
 . ${srcdir:=.}/diag.sh init
-skip_platform "SunOS" "This test currently does not work on all flavors of Solaris (problems with Python?)."
-export NUMMESSAGES=20000   # number of logs to send
+skip_platform "SunOS" "This test currently does not work on all flavors of Solaris (problems with Python?)"
+if [ "$CC" == "gcc" ] && [[ "$CFLAGS" == *"-coverage"* ]]; then
+	printf 'This test does not work with gcc coverage instrumentation\n'
+	printf 'It will hang, but we do not know why. See\n'
+	printf 'https://github.com/rsyslog/rsyslog/issues/3361\n'
+	exit 77
+fi
+
+export NUMMESSAGES=20000
 
 if [[ "$(uname)" == "Linux" ]]; then
     LINE_LENGTH=4095   # 4KB minus 1 byte (for the newline char)
@@ -19,15 +25,18 @@ else
     LINE_LENGTH=511   # 512 minus 1 byte (for the newline char)
 fi
 
-export command_line="/usr/bin/stdbuf -oL $srcdir/testsuites/omprog-output-capture-mt-bin.py $LINE_LENGTH"
+export command_line="$srcdir/testsuites/omprog-output-capture-mt-bin.py $LINE_LENGTH"
+empty_check() {
+	if [ $(wc -l < "$RSYSLOG_OUT_LOG") -eq $((NUMMESSAGES * 2)) ]; then
+		return 0
+	fi
+	return 1
+}
+export QUEUE_EMPTY_CHECK_FUNC=empty_check
 
-check_command_available stdbuf
 generate_conf
 add_conf '
-module(load="../plugins/imtcp/.libs/imtcp")
 module(load="../plugins/omprog/.libs/omprog")
-
-input(type="imtcp" port="'$TCPFLOOD_PORT'")
 
 template(name="outfmt" type="string" string="%msg%\n")
 
@@ -51,7 +60,7 @@ main_queue(
 }
 '
 startup
-tcpflood -m$NUMMESSAGES
+injectmsg 0 $NUMMESSAGES
 
 # Issue some HUP signals to cause the output file to be reopened during
 # writing (not a complete test of this feature, but at least we check it
@@ -61,13 +70,14 @@ issue_HUP
 issue_HUP
 ./msleep 1000
 issue_HUP
-wait_file_lines "$RSYSLOG_OUT_LOG" $((NUMMESSAGES * 2))
+
+#wait_file_lines "$RSYSLOG_OUT_LOG" $((NUMMESSAGES * 2))
 shutdown_when_empty
 wait_shutdown
 
 line_num=0
 while IFS= read -r line; do
-    let "line_num++"
+    ((line_num++))
     if [[ ${#line} != $LINE_LENGTH ]]; then
         echo "intermingled line in captured output: line: $line_num, length: ${#line} (expected: $LINE_LENGTH)"
         echo "$line"
