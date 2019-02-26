@@ -88,7 +88,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-subdir = contrib/omzmq3
+subdir = plugins/omclickhouse
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_check_define.m4 \
 	$(top_srcdir)/m4/atomic_operations.m4 \
@@ -133,16 +133,18 @@ am__uninstall_files_from_dir = { \
 am__installdirs = "$(DESTDIR)$(pkglibdir)"
 LTLIBRARIES = $(pkglib_LTLIBRARIES)
 am__DEPENDENCIES_1 =
-omzmq3_la_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_omzmq3_la_OBJECTS = omzmq3_la-omzmq3.lo
-omzmq3_la_OBJECTS = $(am_omzmq3_la_OBJECTS)
+omclickhouse_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
+am_omclickhouse_la_OBJECTS = omclickhouse_la-omclickhouse.lo
+omclickhouse_la_OBJECTS = $(am_omclickhouse_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-omzmq3_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(omzmq3_la_LDFLAGS) $(LDFLAGS) -o $@
+omclickhouse_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(AM_CFLAGS) $(CFLAGS) $(omclickhouse_la_LDFLAGS) $(LDFLAGS) \
+	-o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -177,8 +179,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(omzmq3_la_SOURCES)
-DIST_SOURCES = $(omzmq3_la_SOURCES)
+SOURCES = $(omclickhouse_la_SOURCES)
+DIST_SOURCES = $(omclickhouse_la_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -203,7 +205,7 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/depcomp README
+am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -425,11 +427,11 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-pkglib_LTLIBRARIES = omzmq3.la
-omzmq3_la_SOURCES = omzmq3.c
-omzmq3_la_CPPFLAGS = $(RSRT_CFLAGS) $(PTHREADS_CFLAGS) $(CZMQ_CFLAGS)
-omzmq3_la_LDFLAGS = -module -avoid-version
-omzmq3_la_LIBADD = $(CZMQ_LIBS)
+pkglib_LTLIBRARIES = omclickhouse.la
+omclickhouse_la_SOURCES = omclickhouse.c
+omclickhouse_la_CPPFLAGS = $(RSRT_CFLAGS) $(PTHREADS_CFLAGS) $(CURL_CFLAGS)
+omclickhouse_la_LDFLAGS = -module -avoid-version
+omclickhouse_la_LIBADD = $(CURL_LIBS) $(LIBM)
 EXTRA_DIST = 
 all: all-am
 
@@ -444,9 +446,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu contrib/omzmq3/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu plugins/omclickhouse/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu contrib/omzmq3/Makefile
+	  $(AUTOMAKE) --gnu plugins/omclickhouse/Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
 	  *config.status*) \
@@ -500,8 +502,8 @@ clean-pkglibLTLIBRARIES:
 	  rm -f $${locs}; \
 	}
 
-omzmq3.la: $(omzmq3_la_OBJECTS) $(omzmq3_la_DEPENDENCIES) $(EXTRA_omzmq3_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(omzmq3_la_LINK) -rpath $(pkglibdir) $(omzmq3_la_OBJECTS) $(omzmq3_la_LIBADD) $(LIBS)
+omclickhouse.la: $(omclickhouse_la_OBJECTS) $(omclickhouse_la_DEPENDENCIES) $(EXTRA_omclickhouse_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(omclickhouse_la_LINK) -rpath $(pkglibdir) $(omclickhouse_la_OBJECTS) $(omclickhouse_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -509,7 +511,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/omzmq3_la-omzmq3.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/omclickhouse_la-omclickhouse.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -535,12 +537,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
-omzmq3_la-omzmq3.lo: omzmq3.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(omzmq3_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT omzmq3_la-omzmq3.lo -MD -MP -MF $(DEPDIR)/omzmq3_la-omzmq3.Tpo -c -o omzmq3_la-omzmq3.lo `test -f 'omzmq3.c' || echo '$(srcdir)/'`omzmq3.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/omzmq3_la-omzmq3.Tpo $(DEPDIR)/omzmq3_la-omzmq3.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='omzmq3.c' object='omzmq3_la-omzmq3.lo' libtool=yes @AMDEPBACKSLASH@
+omclickhouse_la-omclickhouse.lo: omclickhouse.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(omclickhouse_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT omclickhouse_la-omclickhouse.lo -MD -MP -MF $(DEPDIR)/omclickhouse_la-omclickhouse.Tpo -c -o omclickhouse_la-omclickhouse.lo `test -f 'omclickhouse.c' || echo '$(srcdir)/'`omclickhouse.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/omclickhouse_la-omclickhouse.Tpo $(DEPDIR)/omclickhouse_la-omclickhouse.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='omclickhouse.c' object='omclickhouse_la-omclickhouse.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(omzmq3_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o omzmq3_la-omzmq3.lo `test -f 'omzmq3.c' || echo '$(srcdir)/'`omzmq3.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(omclickhouse_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o omclickhouse_la-omclickhouse.lo `test -f 'omclickhouse.c' || echo '$(srcdir)/'`omclickhouse.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

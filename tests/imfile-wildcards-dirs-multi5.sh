@@ -4,7 +4,7 @@
 export IMFILEINPUTFILES="8" #"8"
 export IMFILEINPUTFILESSTEPS="5" #"5"
 #export IMFILEINPUTFILESALL=$(($IMFILEINPUTFILES * $IMFILEINPUTFILESSTEPS))
-export IMFILECHECKTIMEOUT="20"
+export IMFILECHECKTIMEOUT="60"
 # generate input files first. Note that rsyslog processes it as
 # soon as it start up (so the file should exist at that point).
 
@@ -60,7 +60,7 @@ do
 	ls -d $RSYSLOG_DYNNAME.input.*
 	
 	# Check correct amount of input files each time
-	let IMFILEINPUTFILESALL=$(($IMFILEINPUTFILES * $j))
+	IMFILEINPUTFILESALL=$((IMFILEINPUTFILES * j))
 	content_check_with_count "HEADER msgnum:00000000:" $IMFILEINPUTFILESALL $IMFILECHECKTIMEOUT
 
 	# Delete all but first!
