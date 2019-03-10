@@ -1,3 +1,10 @@
+rsyslog (8.1901.0-1~bpo9+1) stretch-backports; urgency=medium
+
+  * Rebuild for stretch-backports.
+  * Revert "Use debhelper-compat (= 12) Build-Depends and drop debian/compat"
+
+ -- Michael Biebl <biebl@debian.org>  Sun, 10 Mar 2019 21:42:13 +0100
+
 rsyslog (8.1901.0-1) unstable; urgency=medium
 
   * New upstream version 8.1901.0
