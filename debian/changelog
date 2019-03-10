@@ -1,3 +1,13 @@
+rsyslog (8.1901.0-1) unstable; urgency=medium
+
+  * New upstream version 8.1901.0
+  * Use debhelper-compat (= 12) Build-Depends and drop debian/compat
+  * Rebase patches
+  * Fix reference to HTML documentation in rsyslog.conf (Closes: #920922)
+  * Bump Standards-Version to 4.3.0
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 26 Feb 2019 18:43:39 +0100
+
 rsyslog (8.40.0-1~bpo9+1) stretch-backports; urgency=medium
 
   * Rebuild for stretch-backports

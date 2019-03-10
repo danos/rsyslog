@@ -2,7 +2,7 @@
 # added 2018-04-27 by alorbach
 # This file is part of the rsyslog project, released under ASL 2.0
 . ${srcdir:=.}/diag.sh init
-export NUMMESSAGES=10000
+export NUMMESSAGES=10
 generate_conf
 add_conf '
 global(	defaultNetstreamDriverCAFile="'$srcdir/tls-certs/ca.pem'"
@@ -26,11 +26,10 @@ template(name="outfmt" type="string" string="%msg:F,58:2%\n")
 					template="outfmt"
 					file=`echo $RSYSLOG_OUT_LOG`)
 '
-# Begin actuall testcase
 startup
 tcpflood -p'$TCPFLOOD_PORT' -m$NUMMESSAGES -Ttls -x$srcdir/tls-certs/ca.pem -Z$srcdir/tls-certs/cert.pem -z$srcdir/tls-certs/key.pem
 wait_file_lines
-shutdown_when_empty # shut down rsyslogd when done processing messages
+shutdown_when_empty
 wait_shutdown
 seq_check
 exit_test
