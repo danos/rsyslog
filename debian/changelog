@@ -1,3 +1,10 @@
+rsyslog (8.1903.0-1) UNRELEASED; urgency=medium
+
+  * New upstream version 8.1903.0
+  * Switch debian-branch to experimental
+
+ -- Michael Biebl <biebl@debian.org>  Mon, 25 Mar 2019 18:28:06 +0100
+
 rsyslog (8.1901.0-1) unstable; urgency=medium
 
   * New upstream version 8.1901.0
