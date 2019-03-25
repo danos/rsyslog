@@ -77,8 +77,12 @@ export ZOOPIDFILE="$(pwd)/zookeeper.pid"
 TB_TIMEOUT_STARTSTOP=400 # timeout for start/stop rsyslogd in tenths (!) of a second 400 => 40 sec
 # note that 40sec for the startup should be sufficient even on very slow machines. we changed this from 2min on 2017-12-12
 TB_TEST_TIMEOUT=90  # number of seconds after which test checks timeout (eg. waits)
-TB_TEST_MAX_RUNTIME=500 # maximum runtuime in seconds for a test; testbench will abort test
+TB_TEST_MAX_RUNTIME=580 # maximum runtuime in seconds for a test; testbench will abort test
 			# after that time (iff it has a chance to, not strictly enforced)
+			# Note: 580 is slightly below the rsyslog-ci required max non-stdout writing timeout
+			# This is usually at 600 (10 minutes) and processes will be force-terminated if they
+			# go over it. This is especially bad because we do not receive notifications in this
+			# case.
 export RSYSLOG_DEBUG_TIMEOUTS_TO_STDERR="on"  # we want to know when we loose messages due to timeouts
 if [ "$TESTTOOL_DIR" == "" ]; then
 	export TESTTOOL_DIR="${srcdir:-.}"
@@ -282,21 +286,16 @@ wait_startup_pid() {
 		echo "FAIL: testbench bug: wait_startup_called without \$1"
 		error_exit 100
 	fi
-	i=0
-	start_timeout="$(date)"
 	while test ! -f $1; do
 		$TESTTOOL_DIR/msleep 100 # wait 100 milliseconds
-		(( i++ ))
-		if test $i -gt $TB_TIMEOUT_STARTSTOP
-		then
-		   printf 'ABORT! Timeout waiting on startup (pid file %s1)' "$1"
-		   echo "Wait initiated $start_timeout, now $(date)"
-		   ls -l $1
-		   ps -fp $(cat $1)
+		if [ $(date +%s) -gt $(( TB_STARTTEST + TB_TEST_MAX_RUNTIME )) ]; then
+		   printf '%s ABORT! Timeout waiting on startup (pid file %s)\n' "$(tb_timestamp)" "$1"
+		   ls -l "$1"
+		   ps -fp $(cat "$1")
 		   error_exit 1
 		fi
 	done
-	printf '%s found, pid %s\n' "$1" "$(cat $1)"
+	printf '%s %s found, pid %s\n' "$(tb_timestamp)" "$1" "$(cat $1)"
 }
 
 # special version of wait_startup_pid() for rsyslog startup
@@ -320,13 +319,12 @@ wait_process_startup() {
 			   error_exit 1
 			fi
 			(( i++ ))
-			if test $i -gt $TB_TIMEOUT_STARTSTOP
-			then
-			   echo "ABORT! Timeout waiting on file '$2'"
+			if [ $(date +%s) -gt $(( TB_STARTTEST + TB_TEST_MAX_RUNTIME )) ]; then
+			   printf '%s ABORT! Timeout waiting on file %s\n' "$(tb_timestamp)" "$2"
 			   error_exit 1
 			fi
 		done
-		echo "$2 seen, associated pid " $(cat $1.pid)
+		printf '%s %s seen, associated pid %s\n' "$(tb_timestamp)" "$2" "$(cat $1)"
 	fi
 }
 
@@ -338,22 +336,17 @@ wait_pid_termination() {
 			printf 'TESTBENCH error: pidfile name not specified in wait_pid_termination\n'
 			error_exit 100
 		fi
-		i=0
 		terminated=0
-		start_timeout="$(date)"
 		while [[ $terminated -eq 0 ]]; do
 			ps -p $out_pid &> /dev/null
 			if [[ $? != 0 ]]; then
 				terminated=1
 			fi
 			$TESTTOOL_DIR/msleep 100
-			(( i++ ))
-			if test $i -gt $TB_TIMEOUT_STARTSTOP ; then
-			   echo "ABORT! Timeout waiting on shutdown"
-			   echo "Wait initiated $start_timeout, now $(date)"
+			if [ $(date +%s) -gt $(( TB_STARTTEST + TB_TEST_MAX_RUNTIME )) ]; then
+			   printf '%s ABORT! Timeout waiting on shutdown (pid %s)\n' "$(tb_timestamp)" $out_pid
 			   ps -fp $out_pid
-			   echo "Instance is possibly still running and may need"
-			   echo "manual cleanup."
+			   printf 'Instance is possibly still running and may need manual cleanup.\n'
 			   error_exit 1
 			fi
 		done
@@ -449,7 +442,6 @@ injectmsg_kafkacat() {
 # wait for rsyslogd startup ($1 is the instance)
 wait_startup() {
 	wait_rsyslog_startup_pid $1
-	i=0
 	while test ! -f ${RSYSLOG_DYNNAME}$1.started; do
 		$TESTTOOL_DIR/msleep 100 # wait 100 milliseconds
 		ps -p $(cat $RSYSLOG_PIDBASE$1.pid) &> /dev/null
@@ -458,10 +450,8 @@ wait_startup() {
 		   echo "ABORT! rsyslog pid no longer active during startup!"
 		   error_exit 1 stacktrace
 		fi
-		(( i++ ))
-		if test $i -gt $TB_TIMEOUT_STARTSTOP
-		then
-		   echo "ABORT! Timeout waiting on startup ('${RSYSLOG_DYNNAME}.started' file)"
+		if [ $(date +%s) -gt $(( TB_STARTTEST + TB_TEST_MAX_RUNTIME )) ]; then
+		   printf '%s ABORT! Timeout waiting startup file %s\n' "$(tb_timestamp)" "${RSYSLOG_DYNNAME}.started"
 		   error_exit 1
 		fi
 	done
@@ -596,6 +586,32 @@ content_check() {
 }
 
 
+# grep for (partial) content. this checks the count of the content
+# $1 is the content to check for
+# $2 required count
+# $3 the file to check (if default not used)
+# option --regex is understood, in which case $1 is a regex
+content_count_check() {
+	if [ "$1" == "--regex" ]; then
+		grep_opt=
+		shift
+	else
+		grep_opt=-F
+	fi
+	file=${3:-$RSYSLOG_OUT_LOG}
+	count=$(grep -c -F -- "$1" <${RSYSLOG_OUT_LOG})
+	if [ ${count:=0} -ne "$2" ]; then
+	    grep -c -F -- "$1" <${RSYSLOG_OUT_LOG}
+	    printf '\n============================================================\n'
+	    printf 'FILE "%s" content:\n' "$file"
+	    cat -n ${file}
+	    printf 'FAIL: content count required %d but was %d\n' "$2" $count
+	    printf 'FAIL: content_check failed to find "%s"\n' "$1"
+	    error_exit 1
+	fi
+}
+
+
 
 # $1 - content to check for
 # $2 - number of times content must appear
@@ -610,16 +626,26 @@ content_check_with_count() {
 			echo content_check_with_count success, \"$1\" occured $2 times
 			break
 		else
-			if [ "x$timecounter" == "x$timeoutend" ]; then
+			if [ "$timecounter" == "$timeoutend" ]; then
 				shutdown_when_empty ""
 				wait_shutdown ""
 
 				echo content_check_with_count failed, expected \"$1\" to occur $2 times, but found it "$count" times
-				echo file ${RSYSLOG_OUT_LOG} content is:
-				sort < ${RSYSLOG_OUT_LOG}
+				echo file $RSYSLOG_OUT_LOG content is:
+				if [ $(wc -l < "$RSYSLOG_OUT_LOG") -gt 10000 ]; then
+					printf 'truncation, we have %d lines, which is way too much\n' \
+						$(wc -l < "$RSYSLOG_OUT_LOG")
+					printf 'showing first and last 5000 lines\n'
+					head -n 5000 < "$RSYSLOG_OUT_LOG"
+					print '\n ... CUT ..................................................\n\n'
+					tail -n 5000 < "$RSYSLOG_OUT_LOG"
+				else
+					cat -n "$RSYSLOG_OUT_LOG"
+				fi
 				error_exit 1
 			else
-				echo content_check_with_count have $count, wait for $2 times $1...
+				printf 'content_check_with_count have %d, wait for %d times (%d lines), msg: %s\n' \
+					"$count" "$2" $(wc -l < "$RSYSLOG_OUT_LOG") "$1"
 				$TESTTOOL_DIR/msleep 1000
 			fi
 		fi
@@ -762,7 +788,6 @@ wait_shutdown() {
 		wait_shutdown_vg "$1"
 		return
 	fi
-	i=0
 	out_pid=$(cat $RSYSLOG_PIDBASE$1.pid.save)
 	printf '%s wait on shutdown of %s\n' "$(tb_timestamp)" "$out_pid"
 	if [[ "$out_pid" == "" ]]
@@ -771,18 +796,14 @@ wait_shutdown() {
 	else
 		terminated=0
 	fi
-	start_timeout="$(date)"
 	while [[ $terminated -eq 0 ]]; do
 		ps -p $out_pid &> /dev/null
 		if [[ $? != 0 ]]; then
 			terminated=1
 		fi
 		$TESTTOOL_DIR/msleep 100 # wait 100 milliseconds
-		(( i++ ))
-		if test $i -gt $TB_TIMEOUT_STARTSTOP
-		then
-		   echo "ABORT! Timeout waiting on shutdown"
-		   echo "Wait initiated $start_timeout, now $(date)"
+		if [ $(date +%s) -gt $(( TB_STARTTEST + TB_TEST_MAX_RUNTIME )) ]; then
+		   printf '%s wait_shutdown ABORT! Timeout waiting on shutdown (pid %s)\n' "$(tb_timestamp)" $out_pid
 		   ps -fp $out_pid
 		   echo "Instance is possibly still running and may need"
 		   echo "manual cleanup."
@@ -1120,7 +1141,7 @@ error_exit() {
 			exitval=77
 		fi
 	fi
-	printf '%s Test %s FAILED (took %s seconds)\n' "$(tb_timestamp)" "$0" "$(( $(date +%s) - TB_STARTTEST ))"
+	printf '%s FAIL: Test %s (took %s seconds)\n' "$(tb_timestamp)" "$0" "$(( $(date +%s) - TB_STARTTEST ))"
 	exit $exitval
 }
 
@@ -1264,7 +1285,7 @@ exit_test() {
 	rm -f rsyslog.action.*.include
 	rm -f work rsyslog.out.* xlate*.lkp_tbl
 	rm -rf test-logdir stat-file1
-	rm -f rsyslog.conf.tlscert stat-file1 rsyslog.empty imfile-state*
+	rm -f rsyslog.conf.tlscert stat-file1 rsyslog.empty imfile-state:*
 	rm -rf rsyslog-link.*.log targets
 	rm -f ${TESTCONF_NM}.conf
 	rm -f tmp.qi nocert
@@ -1295,7 +1316,7 @@ get_inode() {
 		printf 'FAIL: file "%s" does not exist in get_inode\n' "$1"
 		error_exit 100
 	fi
-	stat -c '%i' "$1"
+	python -c 'import os; import stat; print os.lstat("'$1'")[stat.ST_INO]'
 }
 
 
@@ -1306,6 +1327,14 @@ check_logger_has_option_d() {
 	skip_platform "SunOS"  "We need logger -p option, which we do not have on (all flavors of) Solaris"
 }
 
+
+require_relpEngineSetTLSLibByName() {
+	./have_relpEngineSetTLSLibByName
+	if [ $? -eq 1 ]; then
+	  echo "relpEngineSetTLSLibByName API not available. Test stopped"
+	  exit 77
+	fi;
+}
 
 # check if command $1 is available - will exit 77 when not OK
 check_command_available() {
@@ -1933,6 +1962,97 @@ init_elasticsearch() {
 	curl --silent -XDELETE localhost:${ES_PORT:-9200}/rsyslog_testbench
 }
 
+omhttp_start_server() {
+    # Args: 1=port 2=server args
+    # Args 2 and up are passed along as is to omhttp_server.py
+    omhttp_server_py=$srcdir/omhttp_server.py
+    if [ ! -f $omhttp_server_py ]; then
+        echo "Cannot find ${omhttp_server_py} for omhttp test"
+        error_exit 1
+    fi
+
+    if [ "x$1" == "x" ]; then
+        omhttp_server_port="8080"
+    else
+        omhttp_server_port="$1"
+    fi
+
+    # Create work directory for parallel tests
+    omhttp_work_dir=$RSYSLOG_DYNNAME/omhttp
+
+    omhttp_server_pidfile="${omhttp_work_dir}/omhttp_server.pid"
+    omhttp_server_logfile="${omhttp_work_dir}/omhttp_server.log"
+    mkdir -p ${omhttp_work_dir}
+
+    server_args="-p $omhttp_server_port ${*:2}"
+
+    python ${omhttp_server_py} ${server_args} >> ${omhttp_server_logfile} 2>&1 &
+    if [ ! $? -eq 0 ]; then
+        echo "Failed to start omhttp test server."
+        rm -rf $omhttp_work_dir
+        error_exit 1
+    fi
+
+    omhttp_server_pid=$!
+    echo ${omhttp_server_pid} > ${omhttp_server_pidfile}
+    echo "Started omhttp test server with args ${server_args} with pid ${omhttp_server_pid}"
+}
+
+omhttp_stop_server() {
+    # Args: None
+    omhttp_work_dir=$RSYSLOG_DYNNAME/omhttp
+    if [ ! -d $omhttp_work_dir ]; then
+        echo "omhttp server $omhttp_work_dir does not exist, no action needed"
+    else
+        echo "Stopping omhttp server"
+        kill -9 $(cat ${omhttp_work_dir}/omhttp_server.pid) > /dev/null 2>&1
+        rm -rf $omhttp_work_dir
+    fi
+}
+
+omhttp_get_data() {
+    # Args: 1=port 2=endpoint 3=batchformat(optional)
+    if [ "x$1" == "x" ]; then
+        omhttp_server_port=8080
+    else
+        omhttp_server_port=$1
+    fi
+
+    if [ "x$2" == "x" ]; then
+        omhttp_path=""
+    else
+        omhttp_path=$2
+    fi
+
+    # The test server returns a json encoded array of strings containing whatever omhttp sent to it in each request
+    python_init="import json, sys; dat = json.load(sys.stdin)"
+    python_print="print('\n'.join(out))"
+    if [ "x$3" == "x" ]; then
+        # dat = ['{"msgnum":"1"}, '{"msgnum":"2"}', '{"msgnum":"3"}', '{"msgnum":"4"}']
+        python_parse="$python_init; out = [json.loads(l)['msgnum'] for l in dat]; $python_print"
+    else
+       if [ "x$3" == "xjsonarray" ]; then
+            # dat = ['[{"msgnum":"1"},{"msgnum":"2"}]', '[{"msgnum":"3"},{"msgnum":"4"}]']
+            python_parse="$python_init; out = [l['msgnum'] for a in dat for l in json.loads(a)]; $python_print"
+        elif [ "x$3" == "xnewline" ]; then
+            # dat = ['{"msgnum":"1"}\n{"msgnum":"2"}', '{"msgnum":"3"}\n{"msgnum":"4"}']
+            python_parse="$python_init; out = [json.loads(l)['msgnum'] for a in dat for l in a.split('\n')]; $python_print"
+        elif [ "x$3" == "xkafkarest" ]; then
+            # dat = ['{"records":[{"value":{"msgnum":"1"}},{"value":{"msgnum":"2"}}]}',
+            #        '{"records":[{"value":{"msgnum":"3"}},{"value":{"msgnum":"4"}}]}']
+            python_parse="$python_init; out = [l['value']['msgnum'] for a in dat for l in json.loads(a)['records']]; $python_print"
+        else
+            # use newline parsing as default
+            python_parse="$python_init; out = [json.loads(l)['msgnum'] for a in dat for l in a.split('\n')]; $python_print"
+        fi
+
+    fi
+    
+    omhttp_url="localhost:${omhttp_server_port}/${omhttp_path}"
+    curl -s ${omhttp_url} \
+        | python -c "${python_parse}" | sort -n \
+        > ${RSYSLOG_OUT_LOG}
+}
 
 case $1 in
    'init')	$srcdir/killrsyslog.sh # kill rsyslogd if it runs for some reason
@@ -2010,7 +2130,7 @@ case $1 in
 		rm -f log log* # RSyslog debug output 
 		rm -f work 
 		rm -rf test-logdir stat-file1
-		rm -f rsyslog.empty imfile-state* omkafka-failed.data
+		rm -f rsyslog.empty imfile-state:* omkafka-failed.data
 		rm -rf rsyslog-link.*.log targets
 		rm -f tmp.qi nocert
 		rm -f core.* vgcore.* core*

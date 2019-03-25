@@ -429,6 +429,7 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CONF_FILE_PATH = @CONF_FILE_PATH@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CURL_CFLAGS = @CURL_CFLAGS@
@@ -533,6 +534,7 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PGSQL_CFLAGS = @PGSQL_CFLAGS@
 PGSQL_LIBS = @PGSQL_LIBS@
 PG_CONFIG = @PG_CONFIG@
+PID_FILE_PATH = @PID_FILE_PATH@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
@@ -742,7 +744,7 @@ librsyslog_la_SOURCES = \
 	../outchannel.c \
 	../outchannel.h \
 	../template.c \
-	../template.h#
+	../template.h
 
 #librsyslog_la_LDFLAGS = -module -avoid-version
 @WITH_MODDIRS_FALSE@librsyslog_la_CPPFLAGS = -DSD_EXPORT_SYMBOLS \
@@ -776,7 +778,8 @@ librsyslog_la_LIBADD = $(DL_LIBS) $(RT_LIBS) $(LIBUUID_LIBS) \
 lmzlibw_la_SOURCES = zlibw.c zlibw.h
 lmzlibw_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) \
 	$(am__append_6)
-lmzlibw_la_LDFLAGS = -module -avoid-version $(am__append_7)
+lmzlibw_la_LDFLAGS = -module -avoid-version $(ZLIB_LIBS) \
+	$(am__append_7)
 lmzlibw_la_LIBADD = 
 #
 # network support

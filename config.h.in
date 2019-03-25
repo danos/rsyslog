@@ -30,6 +30,9 @@
 /* Define to 1 if you have the <arpa/nameser.h> header file. */
 #undef HAVE_ARPA_NAMESER_H
 
+/* Define to 1 if you have the `asprintf' function. */
+#undef HAVE_ASPRINTF
+
 /* Define if compiler provides atomic builtins */
 #undef HAVE_ATOMIC_BUILTINS
 
@@ -99,6 +102,9 @@
 
 /* Define to 1 if you have the `getline' function. */
 #undef HAVE_GETLINE
+
+/* Define to 1 if you have the <getopt.h> header file. */
+#undef HAVE_GETOPT_H
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
@@ -224,6 +230,9 @@
 
 /* Define to 1 if you have the `regcomp' function. */
 #undef HAVE_REGCOMP
+
+/* Define if relpEngineSetTLSLibByName exists. */
+#undef HAVE_RELPENGINESETTLSLIBBYNAME
 
 /* Define if relpSrvSetLstnAddr exists. */
 #undef HAVE_RELPSRVSETLSTNADDR
@@ -451,6 +460,12 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* "Configuration file path (default : /etc/rsyslog.conf)" */
+#undef PATH_CONFFILE
+
+/* "Pid file path (default : /var/run/rsyslogd.pid)" */
+#undef PATH_PIDFILE
 
 /* platform id for display purposes */
 #undef PLATFORM_ID

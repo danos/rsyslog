@@ -10,7 +10,7 @@ CLEANFILES=\
 	work \
 	test-spool test-logdir stat-file1 \
 	rsyslog.pipe rsyslog.input.* \
-	rsyslog.input rsyslog.input.* imfile-state* omkafka-failed.data \
+	rsyslog.input rsyslog.input.* imfile-state:* omkafka-failed.data \
 	rsyslog.input-symlink.log rsyslog-link.*.log targets \
 	HOSTNAME \
 	rstb_* \
@@ -46,6 +46,7 @@ check_PROGRAMS = $(TESTRUNS) ourtail tcpflood chkseq msleep randomgen \
 	omrelp_dflt_port \
 	mangle_qi \
 	have_relpSrvSetOversizeMode \
+	have_relpEngineSetTLSLibByName \
 	test_id
 if ENABLE_JOURNAL_TESTS
 if ENABLE_IMJOURNAL
@@ -489,9 +490,10 @@ endif # if ENABLE_MMANON
 
 if ENABLE_CLICKHOUSE_TESTS
 TESTS +=  \
-	clickhouse-retry-error.sh \
 	clickhouse-start.sh \
 	clickhouse-basic.sh \
+	clickhouse-dflt-tpl.sh \
+	clickhouse-retry-error.sh \
 	clickhouse-load.sh \
 	clickhouse-bulk.sh \
 	clickhouse-bulk-load.sh \
@@ -502,9 +504,10 @@ TESTS +=  \
 	clickhouse-wrong-template-option.sh \
 	clickhouse-wrong-insert-syntax.sh
 
-clickhouse-start.log: clickhouse-retry-error.log
 clickhouse-basic.log: clickhouse-start.log
-clickhouse-load.log: clickhouse-basic.log
+clickhouse-dflt-tpl.log: clickhouse-basic.log
+clickhouse-retry-error.log: clickhouse-dflt-tpl.log
+clickhouse-load.log: clickhouse-retry-error.log
 clickhouse-bulk.log: clickhouse-load.log
 clickhouse-bulk-load.log: clickhouse-bulk.log
 clickhouse-limited-batch.log: clickhouse-bulk-load.log
@@ -676,7 +679,8 @@ TESTS +=  \
 	imjournal-statefile.sh
 if HAVE_VALGRIND
 TESTS +=  \
-	imjournal-basic-vg.sh
+	imjournal-basic-vg.sh \
+	imjournal-statefile-vg.sh
 endif
 endif
 
@@ -688,6 +692,15 @@ TESTS +=  \
 	omjournal-basic-no-template.sh
 endif
 endif #if ENABLE_JOURNAL_TESTS
+
+if ENABLE_IMPROG
+TESTS +=  \
+	improg_errmsg_no_params.sh
+if HAVE_VALGRIND
+TESTS +=  \
+	improg_errmsg_no_params-vg.sh
+endif # ENABLE_IMPROG
+endif
 
 if ENABLE_OMPROG
 TESTS +=  \
@@ -718,12 +731,37 @@ TESTS +=  \
 endif
 endif
 
+if ENABLE_OMHTTP
+TESTS +=  \
+	omhttp-auth.sh \
+	omhttp-basic.sh \
+	omhttp-batch-fail-with-400.sh \
+	omhttp-batch-jsonarray-compress.sh \
+	omhttp-batch-jsonarray-retry.sh \
+	omhttp-batch-jsonarray.sh \
+	omhttp-batch-kafkarest-retry.sh \
+	omhttp-batch-kafkarest.sh \
+	omhttp-batch-newline.sh \
+	omhttp-retry.sh
+if HAVE_VALGRIND
+TESTS +=  \
+	omhttp-auth-vg.sh \
+	omhttp-basic-vg.sh \
+	omhttp-batch-jsonarray-compress-vg.sh \
+	omhttp-batch-jsonarray-retry-vg.sh \
+	omhttp-batch-jsonarray-vg.sh \
+	omhttp-batch-kafkarest-retry-vg.sh \
+	omhttp-retry-vg.sh
+endif
+endif
+
 if ENABLE_OMKAFKA
 if ENABLE_IMKAFKA
 if ENABLE_KAFKA_TESTS
 TESTS += \
 	kafka-selftest.sh \
 	omkafka.sh \
+	omkafkadynakey.sh \
 	imkafka.sh \
 	imkafka-backgrounded.sh \
 	imkafka-config-err-ruleset.sh \
@@ -942,7 +980,9 @@ TESTS +=  \
 	sndrcv_tls_anon_ipv4.sh \
 	sndrcv_tls_anon_ipv6.sh \
 	sndrcv_tls_certless_clientonly.sh \
-	sndrcv_tls_certless_clientonly-legacy.sh \
+	sndrcv_tls_gtls_servercert_gtls_clientanon.sh \
+	sndrcv_tls_gtls_servercert_gtls_clientanon_legacy.sh \
+	sndrcv_tls_gtls_serveranon_gtls_clientanon.sh \
 	sndrcv_tls_priorityString.sh \
 	sndrcv_tls_certvalid.sh \
 	sndrcv_tls_certvalid_expired.sh \
@@ -965,6 +1005,8 @@ TESTS +=  \
 	sndrcv_tls_ossl_anon_ipv4.sh \
 	sndrcv_tls_ossl_anon_ipv6.sh \
 	sndrcv_tls_ossl_anon_rebind.sh \
+	sndrcv_tls_ossl_serveranon_ossl_clientanon.sh \
+	sndrcv_tls_ossl_servercert_ossl_clientanon.sh \
 	sndrcv_tls_ossl_certvalid.sh \
 	sndrcv_tls_ossl_certvalid_expired.sh \
 	imtcp-tls-ossl-x509valid.sh \
@@ -980,6 +1022,15 @@ TESTS += \
 endif
 endif
 
+if ENABLE_GNUTLS
+if ENABLE_OPENSSL
+TESTS +=  \
+	sndrcv_tls_ossl_servercert_gtls_clientanon.sh \
+	sndrcv_tls_ossl_serveranon_gtls_clientanon.sh \
+	sndrcv_tls_gtls_servercert_ossl_clientanon.sh \
+	sndrcv_tls_gtls_serveranon_ossl_clientanon.sh
+endif
+endif
 
 if ENABLE_OMUXSOCK
 TESTS += uxsock_simple.sh
@@ -996,6 +1047,8 @@ TESTS += sndrcv_relp.sh \
 	 imrelp-long-msg.sh \
 	 imrelp-oversizeMode-truncate.sh \
 	 imrelp-oversizeMode-accept.sh \
+	 imrelp-invld-tlslib.sh \
+	 omrelp-invld-tlslib.sh \
 	 sndrcv_relp_dflt_pt.sh \
 	 glbl-oversizeMsg-log.sh \
 	 glbl-oversizeMsg-truncate.sh \
@@ -1006,10 +1059,12 @@ TESTS += \
          sndrcv_relp_tls_certvalid.sh \
          sndrcv_relp_tls_prio.sh \
          relp_tls_certificate_not_found.sh \
-	 omrelp_wrong_authmode.sh
+	 omrelp_wrong_authmode.sh \
+	 imrelp-tls.sh
 endif # ENABLE_GNUTLS
 if HAVE_VALGRIND
 TESTS += \
+	 imrelp-basic-vg.sh \
 	 imrelp-manyconn-vg.sh
 endif # HAVE_VALGRIND
 endif
@@ -1114,6 +1169,8 @@ TESTS += \
 	imfile-endregex-timeout-with-shutdown.sh \
 	imfile-endregex-timeout-with-shutdown-polling.sh \
 	imfile-endmsg.regex.sh \
+	imfile-statefile-no-file_id.sh \
+	imfile-statefile-no-file_id-TO-file_id.sh \
 	imfile-persist-state-1.sh \
 	imfile-freshStartTail1.sh \
 	imfile-freshStartTail2.sh \
@@ -1133,6 +1190,7 @@ TESTS += \
 	imfile-symlink.sh \
 	imfile-symlink-multi.sh \
 	imfile-logrotate.sh \
+	imfile-logrotate-multiple.sh \
 	imfile-logrotate-copytruncate.sh \
 	imfile-logrotate-nocopytruncate.sh \
 	imfile-growing-file-id.sh \
@@ -1263,6 +1321,8 @@ EXTRA_DIST= \
 	tcp_forwarding_ns_tpl.sh \
 	tcp_forwarding_dflt_tpl.sh \
 	tcp_forwarding_retries.sh \
+	queue-minbatch.sh \
+	queue-minbatch-queuefull.sh \
 	killrsyslog.sh \
 	parsertest-parse1.sh \
 	parsertest-parse1-udp.sh \
@@ -1300,8 +1360,6 @@ EXTRA_DIST= \
 	diskq-rfc5424.sh \
 	diskqueue-full.sh \
 	diskqueue.sh \
-	queue-minbatch.sh \
-	queue-minbatch-queuefull.sh \
 	arrayqueue.sh \
 	include-obj-text-from-file.sh \
 	include-obj-outside-control-flow-vg.sh \
@@ -1440,6 +1498,7 @@ EXTRA_DIST= \
 	faketime_common.sh \
 	imjournal-basic.sh \
 	imjournal-statefile.sh \
+	imjournal-statefile-vg.sh \
 	imjournal-basic-vg.sh \
 	omjournal-abort-template.sh \
 	omjournal-abort-no-template.sh \
@@ -1504,6 +1563,7 @@ EXTRA_DIST= \
 	incltest_dir_empty_wildcard.sh \
 	incltest_dir_wildcard.sh \
 	testsuites/es.yml \
+	clickhouse-dflt-tpl.sh \
 	clickhouse-retry-error.sh \
 	clickhouse-start.sh \
 	clickhouse-stop.sh \
@@ -1648,6 +1708,7 @@ EXTRA_DIST= \
 	sndrcv.sh \
 	omrelp_errmsg_no_connect.sh \
 	imrelp-basic.sh \
+	imrelp-basic-vg.sh \
 	imrelp-basic-oldstyle.sh \
 	imrelp-manyconn.sh \
 	imrelp-manyconn-vg.sh \
@@ -1655,6 +1716,8 @@ EXTRA_DIST= \
 	imrelp-long-msg.sh \
 	imrelp-oversizeMode-truncate.sh \
 	imrelp-oversizeMode-accept.sh \
+	imrelp-invld-tlslib.sh \
+	omrelp-invld-tlslib.sh \
 	glbl-oversizeMsg-log.sh \
 	glbl-oversizeMsg-truncate.sh \
 	glbl-oversizeMsg-split.sh \
@@ -1665,6 +1728,7 @@ EXTRA_DIST= \
         sndrcv_relp_tls_certvalid.sh \
 	relp_tls_certificate_not_found.sh \
 	omrelp_wrong_authmode.sh \
+	imrelp-tls.sh \
 	sndrcv_relp_dflt_pt.sh \
 	sndrcv_udp.sh \
 	imudp_thread_hang.sh \
@@ -1677,6 +1741,8 @@ EXTRA_DIST= \
 	action-tx-errfile.sh \
 	testsuites/action-tx-errfile.result \
 	pipeaction.sh \
+	improg_errmsg_no_params.sh \
+	improg_errmsg_no_params-vg.sh \
 	omprog-defaults.sh \
 	omprog-defaults-vg.sh \
 	omprog-output-capture.sh \
@@ -1769,6 +1835,8 @@ EXTRA_DIST= \
 	imfile-endmsg.regex-with-example-vg.sh \
 	imfile-endmsg.regex.crio.rulebase \
 	imfile-endmsg.regex.json.rulebase \
+	imfile-statefile-no-file_id.sh \
+	imfile-statefile-no-file_id-TO-file_id.sh \
 	imfile-persist-state-1.sh \
 	imfile-freshStartTail1.sh \
 	imfile-freshStartTail2.sh \
@@ -1792,6 +1860,7 @@ EXTRA_DIST= \
 	imfile-logrotate.sh \
 	imfile-logrotate-copytruncate.sh \
 	imfile-logrotate-nocopytruncate.sh \
+	imfile-logrotate-multiple.sh \
 	imfile-growing-file-id.sh \
 	glbl-oversizeMsg-truncate-imfile.sh \
 	dynfile_invld_async.sh \
@@ -1854,6 +1923,7 @@ EXTRA_DIST= \
 	mysql-actq-mt-withpause-vg.sh \
 	kafka-selftest.sh \
 	omkafka.sh \
+	omkafkadynakey.sh \
 	omkafka-vg.sh \
 	imkafka-hang-on-no-kafka.sh \
 	imkafka-hang-other-action-on-no-kafka.sh \
@@ -2017,7 +2087,15 @@ EXTRA_DIST= \
 	sndrcv_tls_certvalid.sh \
 	sndrcv_tls_certvalid_expired.sh \
 	sndrcv_tls_certless_clientonly.sh \
-	sndrcv_tls_certless_clientonly-legacy.sh \
+	sndrcv_tls_gtls_servercert_gtls_clientanon.sh \
+	sndrcv_tls_gtls_servercert_gtls_clientanon_legacy.sh \
+	sndrcv_tls_gtls_serveranon_gtls_clientanon.sh \
+	sndrcv_tls_ossl_serveranon_ossl_clientanon.sh \
+	sndrcv_tls_ossl_servercert_ossl_clientanon.sh \
+	sndrcv_tls_ossl_servercert_gtls_clientanon.sh \
+	sndrcv_tls_ossl_serveranon_gtls_clientanon.sh \
+	sndrcv_tls_gtls_servercert_ossl_clientanon.sh \
+	sndrcv_tls_gtls_serveranon_ossl_clientanon.sh \
 	omtcl.sh \
 	omtcl.tcl \
 	pmsnare-default.sh \
@@ -2069,6 +2147,7 @@ omrelp_dflt_port_SOURCES = omrelp_dflt_port.c
 mangle_qi_SOURCES = mangle_qi.c
 chkseq_SOURCES = chkseq.c
 have_relpSrvSetOversizeMode = have_relpSrvSetOversizeMode.c
+have_relpEngineSetTLSLibByName = have_relpEngineSetTLSLibByName.c
 test_id_SOURCES = test_id.c
 
 uxsockrcvr_SOURCES = uxsockrcvr.c

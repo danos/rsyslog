@@ -408,16 +408,11 @@ destructSrv(ptcpsrv_t *pSrv)
 	if(pSrv->pInputName != NULL)
 		prop.Destruct(&pSrv->pInputName);
 	pthread_mutex_destroy(&pSrv->mutSessLst);
-	if(pSrv->pszInputName != NULL)
-		free(pSrv->pszInputName);
-	if(pSrv->port != NULL)
-		free(pSrv->port);
-	if(pSrv->pszLstnPortFileName)
-		free(pSrv->pszLstnPortFileName);
-	if(pSrv->path != NULL)
-		free(pSrv->path);
-	if(pSrv->lstnIP != NULL)
-		free(pSrv->lstnIP);
+	free(pSrv->pszInputName);
+	free(pSrv->port);
+	free(pSrv->pszLstnPortFileName);
+	free(pSrv->path);
+	free(pSrv->lstnIP);
 	free(pSrv);
 }
 
@@ -442,7 +437,7 @@ static rsRetVal startupUXSrv(ptcpsrv_t *pSrv) {
 	}
 
 	local.sun_family = AF_UNIX;
-	strncpy(local.sun_path, (char*) path, sizeof(local.sun_path));
+	strncpy(local.sun_path, (char*) path, sizeof(local.sun_path)-1);
 	if (pSrv->bUnlink) {
 		unlink(local.sun_path);
 	}
@@ -499,8 +494,8 @@ finalize_it:
  * Does NOT yet accept/process any incoming data (but binds ports). Hint: this
  * code is to be executed before dropping privileges.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-align"
+PRAGMA_DIAGNOSTIC_PUSH
+PRAGMA_IGNORE_Wcast_align
 static rsRetVal
 startupSrv(ptcpsrv_t *pSrv)
 {
@@ -675,7 +670,7 @@ finalize_it:
 
 	RETiRet;
 }
-#pragma GCC diagnostic pop
+PRAGMA_DIAGNOSTIC_POP
 
 /* Set pRemHost based on the address provided. This is to be called upon accept()ing
  * a connection request. It must be provided by the socket we received the
@@ -727,7 +722,7 @@ getPeerNames(prop_t **peerName, prop_t **peerIP, struct sockaddr *pAddr, sbool b
 				if (getaddrinfo((char *) szHname, NULL, &hints, &res) == 0) {
 					freeaddrinfo(res);
 					/* OK, we know we have evil, so let's indicate this to our caller */
-					snprintf((char *) szHname, NI_MAXHOST, "[MALICIOUS:IP=%s]", szIP);
+					snprintf((char *) szHname, sizeof(szHname), "[MALICIOUS:IP=%s]", szIP);
 					DBGPRINTF("Malicious PTR record, IP = \"%s\" HOST = \"%s\"", szIP, szHname);
 					bMaliciousHName = 1;
 				}

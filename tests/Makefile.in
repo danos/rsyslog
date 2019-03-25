@@ -98,6 +98,7 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	omrelp_dflt_port$(EXEEXT) \
 @ENABLE_TESTBENCH_TRUE@	mangle_qi$(EXEEXT) \
 @ENABLE_TESTBENCH_TRUE@	have_relpSrvSetOversizeMode$(EXEEXT) \
+@ENABLE_TESTBENCH_TRUE@	have_relpEngineSetTLSLibByName$(EXEEXT) \
 @ENABLE_TESTBENCH_TRUE@	test_id$(EXEEXT) $(am__EXEEXT_1)
 @ENABLE_IMJOURNAL_TRUE@@ENABLE_JOURNAL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_1 = journal_print
 @ENABLE_TESTBENCH_TRUE@TESTS = $(am__append_2) $(am__append_3) \
@@ -141,7 +142,9 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	$(am__append_78) $(am__append_79) \
 @ENABLE_TESTBENCH_TRUE@	$(am__append_80) $(am__append_81) \
 @ENABLE_TESTBENCH_TRUE@	$(am__append_82) $(am__append_83) \
-@ENABLE_TESTBENCH_TRUE@	$(am__append_84)
+@ENABLE_TESTBENCH_TRUE@	$(am__append_84) $(am__append_85) \
+@ENABLE_TESTBENCH_TRUE@	$(am__append_86) $(am__append_87) \
+@ENABLE_TESTBENCH_TRUE@	$(am__append_88) $(am__append_89)
 @ENABLE_ELASTICSEARCH_TESTS_MINIMAL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_2 = \
 @ENABLE_ELASTICSEARCH_TESTS_MINIMAL_TRUE@@ENABLE_TESTBENCH_TRUE@	es-basic.sh \
 @ENABLE_ELASTICSEARCH_TESTS_MINIMAL_TRUE@@ENABLE_TESTBENCH_TRUE@	es-basic-es6.0.sh \
@@ -520,9 +523,10 @@ host_triplet = @host@
 @ENABLE_MMANON_TRUE@@ENABLE_TESTBENCH_TRUE@	mmanon_random_cons_128_ipembedded.sh
 
 @ENABLE_CLICKHOUSE_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_17 = \
-@ENABLE_CLICKHOUSE_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	clickhouse-retry-error.sh \
 @ENABLE_CLICKHOUSE_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	clickhouse-start.sh \
 @ENABLE_CLICKHOUSE_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	clickhouse-basic.sh \
+@ENABLE_CLICKHOUSE_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	clickhouse-dflt-tpl.sh \
+@ENABLE_CLICKHOUSE_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	clickhouse-retry-error.sh \
 @ENABLE_CLICKHOUSE_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	clickhouse-load.sh \
 @ENABLE_CLICKHOUSE_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	clickhouse-bulk.sh \
 @ENABLE_CLICKHOUSE_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	clickhouse-bulk-load.sh \
@@ -623,7 +627,8 @@ host_triplet = @host@
 @ENABLE_IMJOURNAL_TRUE@@ENABLE_JOURNAL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imjournal-statefile.sh
 
 @ENABLE_IMJOURNAL_TRUE@@ENABLE_JOURNAL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_35 = \
-@ENABLE_IMJOURNAL_TRUE@@ENABLE_JOURNAL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imjournal-basic-vg.sh
+@ENABLE_IMJOURNAL_TRUE@@ENABLE_JOURNAL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imjournal-basic-vg.sh \
+@ENABLE_IMJOURNAL_TRUE@@ENABLE_JOURNAL_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imjournal-statefile-vg.sh
 
 @ENABLE_JOURNAL_TESTS_TRUE@@ENABLE_OMJOURNAL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_36 = \
 @ENABLE_JOURNAL_TESTS_TRUE@@ENABLE_OMJOURNAL_TRUE@@ENABLE_TESTBENCH_TRUE@	omjournal-abort-template.sh \
@@ -631,7 +636,13 @@ host_triplet = @host@
 @ENABLE_JOURNAL_TESTS_TRUE@@ENABLE_OMJOURNAL_TRUE@@ENABLE_TESTBENCH_TRUE@	omjournal-basic-template.sh \
 @ENABLE_JOURNAL_TESTS_TRUE@@ENABLE_OMJOURNAL_TRUE@@ENABLE_TESTBENCH_TRUE@	omjournal-basic-no-template.sh
 
-@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_37 = \
+@ENABLE_IMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_37 = \
+@ENABLE_IMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@	improg_errmsg_no_params.sh
+
+@ENABLE_IMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_38 = \
+@ENABLE_IMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	improg_errmsg_no_params-vg.sh
+
+@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_39 = \
 @ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@	omprog-defaults.sh \
 @ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@	omprog-output-capture.sh \
 @ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@	omprog-output-capture-mt.sh \
@@ -648,7 +659,7 @@ host_triplet = @host@
 @ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@	omprog-transactions-failed-messages.sh \
 @ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@	omprog-transactions-failed-commits.sh
 
-@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_38 = \
+@ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_40 = \
 @ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	omprog-defaults-vg.sh \
 @ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	omprog-output-capture-vg.sh \
 @ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	omprog-feedback-vg.sh \
@@ -657,9 +668,31 @@ host_triplet = @host@
 @ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	omprog-single-instance-vg.sh \
 @ENABLE_OMPROG_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	omprog-transactions-vg.sh
 
-@ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_39 = \
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_41 = \
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@	omhttp-auth.sh \
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@	omhttp-basic.sh \
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@	omhttp-batch-fail-with-400.sh \
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@	omhttp-batch-jsonarray-compress.sh \
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@	omhttp-batch-jsonarray-retry.sh \
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@	omhttp-batch-jsonarray.sh \
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@	omhttp-batch-kafkarest-retry.sh \
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@	omhttp-batch-kafkarest.sh \
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@	omhttp-batch-newline.sh \
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@	omhttp-retry.sh
+
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_42 = \
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	omhttp-auth-vg.sh \
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	omhttp-basic-vg.sh \
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	omhttp-batch-jsonarray-compress-vg.sh \
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	omhttp-batch-jsonarray-retry-vg.sh \
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	omhttp-batch-jsonarray-vg.sh \
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	omhttp-batch-kafkarest-retry-vg.sh \
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	omhttp-retry-vg.sh
+
+@ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_43 = \
 @ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@	kafka-selftest.sh \
 @ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@	omkafka.sh \
+@ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@	omkafkadynakey.sh \
 @ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@	imkafka.sh \
 @ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@	imkafka-backgrounded.sh \
 @ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@	imkafka-config-err-ruleset.sh \
@@ -670,11 +703,11 @@ host_triplet = @host@
 @ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_kafka.sh \
 @ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_kafka_multi_topics.sh
 
-@ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_40 = \
+@ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_44 = \
 @ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	omkafka-vg.sh \
 @ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imkafka-vg.sh
 
-@ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_41 = \
+@ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_45 = \
 @ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@	impstats-hup.sh \
 @ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@	dynstats.sh \
 @ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@	dynstats_overflow.sh \
@@ -690,7 +723,7 @@ host_triplet = @host@
 @ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@	dynstats_reset_without_pstats_reset.sh \
 @ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@	dynstats_prevent_premature_eviction.sh
 
-@ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_42 = \
+@ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_46 = \
 @ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	dynstats-vg.sh \
 @ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	dynstats_reset-vg.sh \
 @ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	dynstats_overflow-vg.sh \
@@ -702,7 +735,7 @@ host_triplet = @host@
 
 # note that some tests simply USE imptcp, but they also
 # need to be disabled if we do not have this module
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_43 = \
+@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_47 = \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	manyptcp.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	imptcp_framing_regex.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	imptcp_framing_regex-oversize.sh \
@@ -724,61 +757,61 @@ host_triplet = @host@
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_hash64.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_replace.sh
 
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_44 = \
+@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_48 = \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imptcp_conndrop-vg.sh
 
-@ENABLE_FMHASH_TRUE@@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_45 = \
+@ENABLE_FMHASH_TRUE@@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_49 = \
 @ENABLE_FMHASH_TRUE@@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	rscript_hash32-vg.sh \
 @ENABLE_FMHASH_TRUE@@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	rscript_hash64-vg.sh
 
-@ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_46 = \
+@ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_50 = \
 @ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@	mmpstrucdata.sh \
 @ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@	mmpstrucdata-case.sh
 
-@ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_47 = \
+@ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_51 = \
 @ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	mmpstrucdata-vg.sh \
 @ENABLE_MMPSTRUCDATA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	mmpstrucdata-invalid-vg.sh
 
-@ENABLE_MMRM1STSPACE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_48 = \
+@ENABLE_MMRM1STSPACE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_52 = \
 @ENABLE_MMRM1STSPACE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmrm1stspace-basic.sh
 
-@ENABLE_PMNULL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_49 = \
+@ENABLE_PMNULL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_53 = \
 @ENABLE_PMNULL_TRUE@@ENABLE_TESTBENCH_TRUE@	pmnull-basic.sh \
 @ENABLE_PMNULL_TRUE@@ENABLE_TESTBENCH_TRUE@	pmnull-withparams.sh
 
-@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_50 = \
+@ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_54 = \
 @ENABLE_OMSTDOUT_TRUE@@ENABLE_TESTBENCH_TRUE@	omstdout-basic.sh
 
-@ENABLE_PMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_51 = \
+@ENABLE_PMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_55 = \
 @ENABLE_PMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	pmnormalize-basic.sh \
 @ENABLE_PMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	pmnormalize-rule.sh
 
-@ENABLE_PMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_52 = \
+@ENABLE_PMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_56 = \
 @ENABLE_PMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	pmnormalize-rule-vg.sh
 
-@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_53 = msgvar-concurrency-array.sh \
+@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_57 = msgvar-concurrency-array.sh \
 @ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	msgvar-concurrency-array-event.tags.sh \
 @ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_rule_from_string.sh \
 @ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_rule_from_array.sh
 
-@ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_54 = \
+@ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_58 = \
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_regex_defaulted.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_regex_disabled.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_variable.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmnormalize_tokenized.sh
 
-@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@LOGNORM_REGEX_SUPPORTED_TRUE@am__append_55 = \
+@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@LOGNORM_REGEX_SUPPORTED_TRUE@am__append_59 = \
 @ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@LOGNORM_REGEX_SUPPORTED_TRUE@	mmnormalize_regex.sh
 
-@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_56 = \
+@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_60 = \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmjsonparse-w-o-cookie.sh \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmjsonparse-w-o-cookie-multi-spaces.sh
 
-@ENABLE_IMPSTATS_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_57 = \
+@ENABLE_IMPSTATS_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_61 = \
 @ENABLE_IMPSTATS_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmjsonparse-invalid-containerName.sh \
 @ENABLE_IMPSTATS_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	wtpShutdownAll-assertionFailure.sh
 
-@ENABLE_IMPTCP_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_58 = \
+@ENABLE_IMPTCP_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_62 = \
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	mmjsonparse_simple.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	imptcp-oversize-message-display.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	imptcp-msg-truncation-on-number.sh \
@@ -792,7 +825,7 @@ host_triplet = @host@
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_object_looping.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_nonarray_looping.sh
 
-@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_59 = \
+@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_63 = \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	mmjsonparse_extra_data-vg.sh \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	json_null_array-vg.sh \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	json_object_looping-vg.sh \
@@ -800,30 +833,32 @@ host_triplet = @host@
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	json_object_suicide_in_loop-vg.sh \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	json_null-vg.sh
 
-@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_60 = \
+@ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_64 = \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	stop_when_array_has_element.sh \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_null_array.sh \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_null.sh \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_var_cmpr.sh \
 @ENABLE_MMJSONPARSE_TRUE@@ENABLE_TESTBENCH_TRUE@	json_var_case.sh
 
-@ENABLE_MMDBLOOKUP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_61 = \
+@ENABLE_MMDBLOOKUP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_65 = \
 @ENABLE_MMDBLOOKUP_TRUE@@ENABLE_TESTBENCH_TRUE@    mmdb.sh \
 @ENABLE_MMDBLOOKUP_TRUE@@ENABLE_TESTBENCH_TRUE@    mmdb-container.sh \
 @ENABLE_MMDBLOOKUP_TRUE@@ENABLE_TESTBENCH_TRUE@    mmdb-container-empty.sh
 
-@ENABLE_MMDBLOOKUP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_62 = \
+@ENABLE_MMDBLOOKUP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_66 = \
 @ENABLE_MMDBLOOKUP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@    mmdb-vg.sh \
 @ENABLE_MMDBLOOKUP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@    mmdb-multilevel-vg.sh
 
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_63 = \
+@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_67 = \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp_conndrop_tls.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_anon_rebind.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_anon_hostname.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_anon_ipv4.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_anon_ipv6.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_certless_clientonly.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_certless_clientonly-legacy.sh \
+@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_gtls_servercert_gtls_clientanon.sh \
+@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_gtls_servercert_gtls_clientanon_legacy.sh \
+@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_gtls_serveranon_gtls_clientanon.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_priorityString.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_certvalid.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_certvalid_expired.sh \
@@ -833,16 +868,18 @@ host_triplet = @host@
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-tls-gtls-x509name.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-tls-basic.sh
 
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_64 = \
+@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_68 = \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imtcp-tls-basic-vg.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imtcp_conndrop_tls-vg.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	manytcp-too-few-tls-vg.sh
 
-@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_65 = \
+@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_69 = \
 @ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-tls-ossl-basic.sh \
 @ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_ossl_anon_ipv4.sh \
 @ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_ossl_anon_ipv6.sh \
 @ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_ossl_anon_rebind.sh \
+@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_ossl_serveranon_ossl_clientanon.sh \
+@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_ossl_servercert_ossl_clientanon.sh \
 @ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_ossl_certvalid.sh \
 @ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_ossl_certvalid_expired.sh \
 @ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-tls-ossl-x509valid.sh \
@@ -853,11 +890,17 @@ host_triplet = @host@
 @ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-tls-ossl-error-key.sh \
 @ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-tls-ossl-error-key2.sh
 
-@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_66 = \
+@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_70 = \
 @ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imtcp-tls-ossl-basic-vg.sh
 
-@ENABLE_OMUXSOCK_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_67 = uxsock_simple.sh
-@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_68 = sndrcv_relp.sh \
+@ENABLE_GNUTLS_TRUE@@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_71 = \
+@ENABLE_GNUTLS_TRUE@@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_ossl_servercert_gtls_clientanon.sh \
+@ENABLE_GNUTLS_TRUE@@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_ossl_serveranon_gtls_clientanon.sh \
+@ENABLE_GNUTLS_TRUE@@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_gtls_servercert_ossl_clientanon.sh \
+@ENABLE_GNUTLS_TRUE@@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_gtls_serveranon_ossl_clientanon.sh
+
+@ENABLE_OMUXSOCK_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_72 = uxsock_simple.sh
+@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_73 = sndrcv_relp.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 sndrcv_relp_rebind.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 omrelp_errmsg_no_connect.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 imrelp-basic.sh \
@@ -867,22 +910,26 @@ host_triplet = @host@
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 imrelp-long-msg.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 imrelp-oversizeMode-truncate.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 imrelp-oversizeMode-accept.sh \
+@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 imrelp-invld-tlslib.sh \
+@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 omrelp-invld-tlslib.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 sndrcv_relp_dflt_pt.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 glbl-oversizeMsg-log.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 glbl-oversizeMsg-truncate.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 glbl-oversizeMsg-split.sh
 
-@ENABLE_GNUTLS_TRUE@@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_69 = \
+@ENABLE_GNUTLS_TRUE@@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_74 = \
 @ENABLE_GNUTLS_TRUE@@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@         sndrcv_relp_tls.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@         sndrcv_relp_tls_certvalid.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@         sndrcv_relp_tls_prio.sh \
 @ENABLE_GNUTLS_TRUE@@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@         relp_tls_certificate_not_found.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 omrelp_wrong_authmode.sh
+@ENABLE_GNUTLS_TRUE@@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 omrelp_wrong_authmode.sh \
+@ENABLE_GNUTLS_TRUE@@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 imrelp-tls.sh
 
-@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_70 = \
+@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_75 = \
+@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	 imrelp-basic-vg.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	 imrelp-manyconn-vg.sh
 
-@ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_71 = \
+@ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_76 = \
 @ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_omudpspoof.sh \
 @ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_omudpspoof_nonstdpt.sh
 
@@ -890,7 +937,7 @@ host_triplet = @host@
 #disabled as array-passing mode is no longer supported:	omod-if-array.sh 
 #	omod-if-array.sh 
 #	omod-if-array-udp.sh 
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_72 = \
+@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_77 = \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	tabescape_dflt.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	tabescape_dflt-udp.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	tabescape_off.sh \
@@ -914,11 +961,11 @@ host_triplet = @host@
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	timestamp-subseconds-udp.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	timestamp-subseconds.sh
 
-@ENABLE_OMRULESET_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_73 = \
+@ENABLE_OMRULESET_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_78 = \
 @ENABLE_OMRULESET_TRUE@@ENABLE_TESTBENCH_TRUE@	omruleset.sh \
 @ENABLE_OMRULESET_TRUE@@ENABLE_TESTBENCH_TRUE@	omruleset-queue.sh
 
-@ENABLE_PMSNARE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_74 = \
+@ENABLE_PMSNARE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_79 = \
 @ENABLE_PMSNARE_TRUE@@ENABLE_TESTBENCH_TRUE@	pmsnare-default.sh \
 @ENABLE_PMSNARE_TRUE@@ENABLE_TESTBENCH_TRUE@	pmsnare-default-udp.sh \
 @ENABLE_PMSNARE_TRUE@@ENABLE_TESTBENCH_TRUE@	pmsnare-ccoff.sh \
@@ -932,7 +979,7 @@ host_triplet = @host@
 @ENABLE_PMSNARE_TRUE@@ENABLE_TESTBENCH_TRUE@	pmsnare-modoverride.sh \
 @ENABLE_PMSNARE_TRUE@@ENABLE_TESTBENCH_TRUE@	pmsnare-modoverride-udp.sh
 
-@ENABLE_PMLASTMSG_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_75 = \
+@ENABLE_PMLASTMSG_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_80 = \
 @ENABLE_PMLASTMSG_TRUE@@ENABLE_TESTBENCH_TRUE@	pmlastmsg.sh \
 @ENABLE_PMLASTMSG_TRUE@@ENABLE_TESTBENCH_TRUE@	pmlastmsg-udp.sh
 
@@ -940,11 +987,11 @@ host_triplet = @host@
 # random.sh is temporarily disabled as it needs some work
 # to rsyslog core to complete in reasonable time
 #TESTS += random.sh
-@ENABLE_EXTENDED_TESTS_TRUE@@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_76 = \
+@ENABLE_EXTENDED_TESTS_TRUE@@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_81 = \
 @ENABLE_EXTENDED_TESTS_TRUE@@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-basic-2GB-file.sh \
 @ENABLE_EXTENDED_TESTS_TRUE@@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-truncate-2GB-file.sh
 
-@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_77 = \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_82 = \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-basic.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-basic-legacy.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-discard-truncated-line.sh \
@@ -968,6 +1015,8 @@ host_triplet = @host@
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-endregex-timeout-with-shutdown.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-endregex-timeout-with-shutdown-polling.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-endmsg.regex.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-statefile-no-file_id.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-statefile-no-file_id-TO-file_id.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-persist-state-1.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-freshStartTail1.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-freshStartTail2.sh \
@@ -987,42 +1036,43 @@ host_triplet = @host@
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-symlink.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-symlink-multi.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-logrotate.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-logrotate-multiple.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-logrotate-copytruncate.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-logrotate-nocopytruncate.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-growing-file-id.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	glbl-oversizeMsg-truncate-imfile.sh
 
-@ENABLE_IMFILE_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_78 = \
+@ENABLE_IMFILE_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_83 = \
 @ENABLE_IMFILE_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-endmsg.regex-with-example.sh
 
-@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_79 = \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_84 = \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-basic-vg.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-endregex-vg.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-endmsg.regex-vg.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-readmode0-vg.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-readmode2-vg.sh
 
-@ENABLE_HELGRIND_TRUE@@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_80 = \
+@ENABLE_HELGRIND_TRUE@@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_85 = \
 @ENABLE_HELGRIND_TRUE@@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-basic-vgthread.sh
 
-@ENABLE_IMFILE_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_81 = \
+@ENABLE_IMFILE_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_86 = \
 @ENABLE_IMFILE_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imfile-endmsg.regex-with-example-vg.sh
 
-@ENABLE_OMTCL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_82 = \
+@ENABLE_OMTCL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_87 = \
 @ENABLE_OMTCL_TRUE@@ENABLE_TESTBENCH_TRUE@	 omtcl.sh
 
-@ENABLE_IMFILE_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_MMKUBERNETES_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_83 = \
+@ENABLE_IMFILE_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_MMKUBERNETES_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_88 = \
 @ENABLE_IMFILE_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_MMKUBERNETES_TRUE@@ENABLE_TESTBENCH_TRUE@	mmkubernetes-basic.sh
 
-@ENABLE_IMFILE_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_MMKUBERNETES_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_84 = \
+@ENABLE_IMFILE_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_MMKUBERNETES_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_89 = \
 @ENABLE_IMFILE_TRUE@@ENABLE_MMJSONPARSE_TRUE@@ENABLE_MMKUBERNETES_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	mmkubernetes-basic-vg.sh
 
-@ENABLE_GNUTLS_TRUE@am__append_85 = $(GNUTLS_CFLAGS)
-@ENABLE_GNUTLS_TRUE@am__append_86 = $(GNUTLS_CFLAGS)
-@ENABLE_GNUTLS_TRUE@am__append_87 = $(GNUTLS_LIBS)
-@ENABLE_OPENSSL_TRUE@am__append_88 = $(OPENSSL_CFLAGS)
-@ENABLE_OPENSSL_TRUE@am__append_89 = $(OPENSSL_CFLAGS)
-@ENABLE_OPENSSL_TRUE@am__append_90 = $(OPENSSL_LIBS)
+@ENABLE_GNUTLS_TRUE@am__append_90 = $(GNUTLS_CFLAGS)
+@ENABLE_GNUTLS_TRUE@am__append_91 = $(GNUTLS_CFLAGS)
+@ENABLE_GNUTLS_TRUE@am__append_92 = $(GNUTLS_LIBS)
+@ENABLE_OPENSSL_TRUE@am__append_93 = $(OPENSSL_CFLAGS)
+@ENABLE_OPENSSL_TRUE@am__append_94 = $(OPENSSL_CFLAGS)
+@ENABLE_OPENSSL_TRUE@am__append_95 = $(OPENSSL_LIBS)
 subdir = tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_check_define.m4 \
@@ -1113,6 +1163,11 @@ am_diagtalker_OBJECTS = diagtalker.$(OBJEXT)
 diagtalker_OBJECTS = $(am_diagtalker_OBJECTS)
 am__DEPENDENCIES_1 =
 diagtalker_DEPENDENCIES = $(am__DEPENDENCIES_1)
+have_relpEngineSetTLSLibByName_SOURCES =  \
+	have_relpEngineSetTLSLibByName.c
+have_relpEngineSetTLSLibByName_OBJECTS =  \
+	have_relpEngineSetTLSLibByName.$(OBJEXT)
+have_relpEngineSetTLSLibByName_LDADD = $(LDADD)
 have_relpSrvSetOversizeMode_SOURCES = have_relpSrvSetOversizeMode.c
 have_relpSrvSetOversizeMode_OBJECTS =  \
 	have_relpSrvSetOversizeMode.$(OBJEXT)
@@ -1199,9 +1254,9 @@ SOURCES = $(liboverride_getaddrinfo_la_SOURCES) \
 	$(liboverride_gethostname_la_SOURCES) \
 	$(liboverride_gethostname_nonfqdn_la_SOURCES) \
 	$(chkseq_SOURCES) $(diagtalker_SOURCES) \
-	have_relpSrvSetOversizeMode.c $(inputfilegen_SOURCES) \
-	$(journal_print_SOURCES) $(mangle_qi_SOURCES) \
-	$(minitcpsrv_SOURCES) $(msleep_SOURCES) \
+	have_relpEngineSetTLSLibByName.c have_relpSrvSetOversizeMode.c \
+	$(inputfilegen_SOURCES) $(journal_print_SOURCES) \
+	$(mangle_qi_SOURCES) $(minitcpsrv_SOURCES) $(msleep_SOURCES) \
 	$(omrelp_dflt_port_SOURCES) $(ourtail_SOURCES) \
 	$(randomgen_SOURCES) $(syslog_caller_SOURCES) \
 	$(tcpflood_SOURCES) $(test_id_SOURCES) $(uxsockrcvr_SOURCES)
@@ -1209,9 +1264,9 @@ DIST_SOURCES = $(am__liboverride_getaddrinfo_la_SOURCES_DIST) \
 	$(am__liboverride_gethostname_la_SOURCES_DIST) \
 	$(am__liboverride_gethostname_nonfqdn_la_SOURCES_DIST) \
 	$(chkseq_SOURCES) $(diagtalker_SOURCES) \
-	have_relpSrvSetOversizeMode.c $(inputfilegen_SOURCES) \
-	$(journal_print_SOURCES) $(mangle_qi_SOURCES) \
-	$(minitcpsrv_SOURCES) $(msleep_SOURCES) \
+	have_relpEngineSetTLSLibByName.c have_relpSrvSetOversizeMode.c \
+	$(inputfilegen_SOURCES) $(journal_print_SOURCES) \
+	$(mangle_qi_SOURCES) $(minitcpsrv_SOURCES) $(msleep_SOURCES) \
 	$(omrelp_dflt_port_SOURCES) $(ourtail_SOURCES) \
 	$(randomgen_SOURCES) $(syslog_caller_SOURCES) \
 	$(tcpflood_SOURCES) $(test_id_SOURCES) $(uxsockrcvr_SOURCES)
@@ -1426,6 +1481,7 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CONF_FILE_PATH = @CONF_FILE_PATH@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CURL_CFLAGS = @CURL_CFLAGS@
@@ -1530,6 +1586,7 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PGSQL_CFLAGS = @PGSQL_CFLAGS@
 PGSQL_LIBS = @PGSQL_LIBS@
 PG_CONFIG = @PG_CONFIG@
+PID_FILE_PATH = @PID_FILE_PATH@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
@@ -1642,7 +1699,7 @@ TEST_EXTENSIONS = .sh
 @ENABLE_TESTBENCH_TRUE@	log* work test-spool test-logdir \
 @ENABLE_TESTBENCH_TRUE@	stat-file1 rsyslog.pipe rsyslog.input.* \
 @ENABLE_TESTBENCH_TRUE@	rsyslog.input rsyslog.input.* \
-@ENABLE_TESTBENCH_TRUE@	imfile-state* omkafka-failed.data \
+@ENABLE_TESTBENCH_TRUE@	imfile-state:* omkafka-failed.data \
 @ENABLE_TESTBENCH_TRUE@	rsyslog.input-symlink.log \
 @ENABLE_TESTBENCH_TRUE@	rsyslog-link.*.log targets HOSTNAME \
 @ENABLE_TESTBENCH_TRUE@	rstb_* zookeeper.pid tmp.qi nocert \
@@ -1737,6 +1794,8 @@ EXTRA_DIST = \
 	tcp_forwarding_ns_tpl.sh \
 	tcp_forwarding_dflt_tpl.sh \
 	tcp_forwarding_retries.sh \
+	queue-minbatch.sh \
+	queue-minbatch-queuefull.sh \
 	killrsyslog.sh \
 	parsertest-parse1.sh \
 	parsertest-parse1-udp.sh \
@@ -1774,8 +1833,6 @@ EXTRA_DIST = \
 	diskq-rfc5424.sh \
 	diskqueue-full.sh \
 	diskqueue.sh \
-	queue-minbatch.sh \
-	queue-minbatch-queuefull.sh \
 	arrayqueue.sh \
 	include-obj-text-from-file.sh \
 	include-obj-outside-control-flow-vg.sh \
@@ -1914,6 +1971,7 @@ EXTRA_DIST = \
 	faketime_common.sh \
 	imjournal-basic.sh \
 	imjournal-statefile.sh \
+	imjournal-statefile-vg.sh \
 	imjournal-basic-vg.sh \
 	omjournal-abort-template.sh \
 	omjournal-abort-no-template.sh \
@@ -1978,6 +2036,7 @@ EXTRA_DIST = \
 	incltest_dir_empty_wildcard.sh \
 	incltest_dir_wildcard.sh \
 	testsuites/es.yml \
+	clickhouse-dflt-tpl.sh \
 	clickhouse-retry-error.sh \
 	clickhouse-start.sh \
 	clickhouse-stop.sh \
@@ -2122,6 +2181,7 @@ EXTRA_DIST = \
 	sndrcv.sh \
 	omrelp_errmsg_no_connect.sh \
 	imrelp-basic.sh \
+	imrelp-basic-vg.sh \
 	imrelp-basic-oldstyle.sh \
 	imrelp-manyconn.sh \
 	imrelp-manyconn-vg.sh \
@@ -2129,6 +2189,8 @@ EXTRA_DIST = \
 	imrelp-long-msg.sh \
 	imrelp-oversizeMode-truncate.sh \
 	imrelp-oversizeMode-accept.sh \
+	imrelp-invld-tlslib.sh \
+	omrelp-invld-tlslib.sh \
 	glbl-oversizeMsg-log.sh \
 	glbl-oversizeMsg-truncate.sh \
 	glbl-oversizeMsg-split.sh \
@@ -2139,6 +2201,7 @@ EXTRA_DIST = \
         sndrcv_relp_tls_certvalid.sh \
 	relp_tls_certificate_not_found.sh \
 	omrelp_wrong_authmode.sh \
+	imrelp-tls.sh \
 	sndrcv_relp_dflt_pt.sh \
 	sndrcv_udp.sh \
 	imudp_thread_hang.sh \
@@ -2151,6 +2214,8 @@ EXTRA_DIST = \
 	action-tx-errfile.sh \
 	testsuites/action-tx-errfile.result \
 	pipeaction.sh \
+	improg_errmsg_no_params.sh \
+	improg_errmsg_no_params-vg.sh \
 	omprog-defaults.sh \
 	omprog-defaults-vg.sh \
 	omprog-output-capture.sh \
@@ -2243,6 +2308,8 @@ EXTRA_DIST = \
 	imfile-endmsg.regex-with-example-vg.sh \
 	imfile-endmsg.regex.crio.rulebase \
 	imfile-endmsg.regex.json.rulebase \
+	imfile-statefile-no-file_id.sh \
+	imfile-statefile-no-file_id-TO-file_id.sh \
 	imfile-persist-state-1.sh \
 	imfile-freshStartTail1.sh \
 	imfile-freshStartTail2.sh \
@@ -2266,6 +2333,7 @@ EXTRA_DIST = \
 	imfile-logrotate.sh \
 	imfile-logrotate-copytruncate.sh \
 	imfile-logrotate-nocopytruncate.sh \
+	imfile-logrotate-multiple.sh \
 	imfile-growing-file-id.sh \
 	glbl-oversizeMsg-truncate-imfile.sh \
 	dynfile_invld_async.sh \
@@ -2328,6 +2396,7 @@ EXTRA_DIST = \
 	mysql-actq-mt-withpause-vg.sh \
 	kafka-selftest.sh \
 	omkafka.sh \
+	omkafkadynakey.sh \
 	omkafka-vg.sh \
 	imkafka-hang-on-no-kafka.sh \
 	imkafka-hang-other-action-on-no-kafka.sh \
@@ -2491,7 +2560,15 @@ EXTRA_DIST = \
 	sndrcv_tls_certvalid.sh \
 	sndrcv_tls_certvalid_expired.sh \
 	sndrcv_tls_certless_clientonly.sh \
-	sndrcv_tls_certless_clientonly-legacy.sh \
+	sndrcv_tls_gtls_servercert_gtls_clientanon.sh \
+	sndrcv_tls_gtls_servercert_gtls_clientanon_legacy.sh \
+	sndrcv_tls_gtls_serveranon_gtls_clientanon.sh \
+	sndrcv_tls_ossl_serveranon_ossl_clientanon.sh \
+	sndrcv_tls_ossl_servercert_ossl_clientanon.sh \
+	sndrcv_tls_ossl_servercert_gtls_clientanon.sh \
+	sndrcv_tls_ossl_serveranon_gtls_clientanon.sh \
+	sndrcv_tls_gtls_servercert_ossl_clientanon.sh \
+	sndrcv_tls_gtls_serveranon_ossl_clientanon.sh \
 	omtcl.sh \
 	omtcl.tcl \
 	pmsnare-default.sh \
@@ -2543,16 +2620,17 @@ omrelp_dflt_port_SOURCES = omrelp_dflt_port.c
 mangle_qi_SOURCES = mangle_qi.c
 chkseq_SOURCES = chkseq.c
 have_relpSrvSetOversizeMode = have_relpSrvSetOversizeMode.c
+have_relpEngineSetTLSLibByName = have_relpEngineSetTLSLibByName.c
 test_id_SOURCES = test_id.c
 uxsockrcvr_SOURCES = uxsockrcvr.c
 uxsockrcvr_LDADD = $(SOL_LIBS)
 tcpflood_SOURCES = tcpflood.c
-tcpflood_CFLAGS = $(PTHREADS_CFLAGS) $(RELP_CFLAGS) $(am__append_85) \
-	$(am__append_88)
-tcpflood_CPPFLAGS = $(PTHREADS_CFLAGS) $(RELP_CFLAGS) $(am__append_86) \
-	$(am__append_89)
+tcpflood_CFLAGS = $(PTHREADS_CFLAGS) $(RELP_CFLAGS) $(am__append_90) \
+	$(am__append_93)
+tcpflood_CPPFLAGS = $(PTHREADS_CFLAGS) $(RELP_CFLAGS) $(am__append_91) \
+	$(am__append_94)
 tcpflood_LDADD = $(SOL_LIBS) $(PTHREADS_LIBS) $(RELP_LIBS) \
-	$(am__append_87) $(am__append_90)
+	$(am__append_92) $(am__append_95)
 minitcpsrv_SOURCES = minitcpsrvr.c
 minitcpsrv_LDADD = $(SOL_LIBS)
 syslog_caller_SOURCES = syslog_caller.c
@@ -2662,6 +2740,10 @@ diagtalker$(EXEEXT): $(diagtalker_OBJECTS) $(diagtalker_DEPENDENCIES) $(EXTRA_di
 	@rm -f diagtalker$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(diagtalker_OBJECTS) $(diagtalker_LDADD) $(LIBS)
 
+have_relpEngineSetTLSLibByName$(EXEEXT): $(have_relpEngineSetTLSLibByName_OBJECTS) $(have_relpEngineSetTLSLibByName_DEPENDENCIES) $(EXTRA_have_relpEngineSetTLSLibByName_DEPENDENCIES) 
+	@rm -f have_relpEngineSetTLSLibByName$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(have_relpEngineSetTLSLibByName_OBJECTS) $(have_relpEngineSetTLSLibByName_LDADD) $(LIBS)
+
 have_relpSrvSetOversizeMode$(EXEEXT): $(have_relpSrvSetOversizeMode_OBJECTS) $(have_relpSrvSetOversizeMode_DEPENDENCIES) $(EXTRA_have_relpSrvSetOversizeMode_DEPENDENCIES) 
 	@rm -f have_relpSrvSetOversizeMode$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(have_relpSrvSetOversizeMode_OBJECTS) $(have_relpSrvSetOversizeMode_LDADD) $(LIBS)
@@ -2722,6 +2804,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chkseq.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/diagtalker.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/have_relpEngineSetTLSLibByName.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/have_relpSrvSetOversizeMode.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inputfilegen.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/journal_print-journal_print.Po@am__quote@
@@ -3237,9 +3320,10 @@ uninstall-am: uninstall-pkglibLTLIBRARIES
 @ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@es-basic-bulk-vg.log: es-bulk-errfile-popul-def-interleaved.log
 @ENABLE_ELASTICSEARCH_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@es-basic-ha-vg.log: es-basic-bulk-vg.log
 
-@ENABLE_CLICKHOUSE_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@clickhouse-start.log: clickhouse-retry-error.log
 @ENABLE_CLICKHOUSE_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@clickhouse-basic.log: clickhouse-start.log
-@ENABLE_CLICKHOUSE_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@clickhouse-load.log: clickhouse-basic.log
+@ENABLE_CLICKHOUSE_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@clickhouse-dflt-tpl.log: clickhouse-basic.log
+@ENABLE_CLICKHOUSE_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@clickhouse-retry-error.log: clickhouse-dflt-tpl.log
+@ENABLE_CLICKHOUSE_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@clickhouse-load.log: clickhouse-retry-error.log
 @ENABLE_CLICKHOUSE_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@clickhouse-bulk.log: clickhouse-load.log
 @ENABLE_CLICKHOUSE_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@clickhouse-bulk-load.log: clickhouse-bulk.log
 @ENABLE_CLICKHOUSE_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@clickhouse-limited-batch.log: clickhouse-bulk-load.log
