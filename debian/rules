@@ -74,4 +74,4 @@ override_dh_missing:
 	dh_missing --list-missing
 
 override_dh_auto_test:
-	dh_auto_test --no-parallel || ( cat tests/test-suite.log; exit 1; )
+	dh_auto_test --no-parallel || ( cat tests/test-suite.log; exit 1 ) && ( cat tests/test-suite.log )
