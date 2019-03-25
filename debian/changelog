@@ -1,9 +1,18 @@
-rsyslog (8.1903.0-1) UNRELEASED; urgency=medium
+rsyslog (8.1903.0-1) experimental; urgency=medium
 
   * New upstream version 8.1903.0
-  * Switch debian-branch to experimental
+  * Rebase patches
+    - Drop Run-queue-encryption-tests-only-if-gcrypt-support-is-enab.patch,
+      merged upstream.
+    - Update Don-t-fail-test-suite-on-flaky-tests.patch to no longer treat
+      daqueue-dirty-shutdown as flaky. This test should work reliably now.
+      (Closes: #913984)
+  * Always dump test-suite.log to stdout.
+    In case of a flaky test which is skipped on failure we want to see the
+    test output.
+  * Remove migration code from pre-jessie
 
- -- Michael Biebl <biebl@debian.org>  Mon, 25 Mar 2019 18:28:06 +0100
+ -- Michael Biebl <biebl@debian.org>  Mon, 25 Mar 2019 22:47:54 +0100
 
 rsyslog (8.1901.0-1) unstable; urgency=medium
 
