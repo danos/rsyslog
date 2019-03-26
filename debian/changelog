@@ -1,3 +1,9 @@
+rsyslog (8.1903.0-2) experimental; urgency=medium
+
+  * Properly respect the nocheck build option
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 26 Mar 2019 10:40:01 +0100
+
 rsyslog (8.1903.0-1) experimental; urgency=medium
 
   * New upstream version 8.1903.0
