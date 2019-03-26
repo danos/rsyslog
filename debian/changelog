@@ -1,3 +1,10 @@
+rsyslog (8.1903.0-3) experimental; urgency=medium
+
+  * Revert "Enlarged msg offset types for bigger structured messages"
+    Seems to break the test-suite on various architectures.
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 26 Mar 2019 23:15:59 +0100
+
 rsyslog (8.1903.0-2) experimental; urgency=medium
 
   * Properly respect the nocheck build option
