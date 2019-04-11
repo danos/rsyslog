@@ -1,3 +1,11 @@
+rsyslog (8.1903.0-4) experimental; urgency=medium
+
+  * Drop dependency on lsb-base.
+    It is only needed when booting with sysvinit and initscripts, but
+    initscripts already Depends on lsb-base (see #864999).
+
+ -- Michael Biebl <biebl@debian.org>  Thu, 11 Apr 2019 11:12:50 +0200
+
 rsyslog (8.1903.0-3) experimental; urgency=medium
 
   * Revert "Enlarged msg offset types for bigger structured messages"
