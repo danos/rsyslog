@@ -45,7 +45,6 @@ Provides: system-log-daemon,
 Pre-Depends: ${misc:Pre-Depends}
 Depends: ${shlibs:Depends},
          ${misc:Depends},
-         lsb-base (>= 3.2-14)
 Recommends: logrotate
 Suggests: rsyslog-mysql | rsyslog-pgsql,
           rsyslog-mongodb,
