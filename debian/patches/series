@@ -1,3 +1,2 @@
 Don-t-create-a-database.patch
 Don-t-fail-test-suite-on-flaky-tests.patch
-Revert-Enlarged-msg-offset-types-for-bigger-structured-me.patch
