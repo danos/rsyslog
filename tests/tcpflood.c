@@ -1,6 +1,10 @@
 /* Opens a large number of tcp connections and sends
  * messages over them. This is used for stress-testing.
  *
+ * NOTE: the following part is actually the SPEC (or call it man page).
+ * It's not random comments. So if the code behavior does not match what
+ * is written here, it should be considered a bug.
+ *
  * Params
  * -t	target address (default 127.0.0.1)
  * -p	target port(s) (default 13514), multiple via port1:port2:port3...
@@ -64,10 +68,14 @@
  * -O	Use octate-count framing
  * -v   verbose output, possibly useful for troubleshooting. Most importantly,
  *      this gives insight into librelp actions (if relp is selected as protocol).
+ * -k	Custom Configuration string passwed through the TLS library.
+ *	Currently only OpenSSL is supported, possible configuration commands and values can be found here:
+ *	https://www.openssl.org/docs/man1.0.2/man3/SSL_CONF_cmd.html
+ *	Sample: -k"Protocol=ALL,-SSLv2,-SSLv3,-TLSv1,-TLSv1.1"
  *
  * Part of the testbench for rsyslog.
  *
- * Copyright 2009-2016 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2009-2019 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
@@ -159,6 +167,7 @@ char *test_rs_strerror_r(int errnum, char *buf, size_t buflen) {
 
 #define MAX_EXTRADATA_LEN 200*1024
 #define MAX_SENDBUF 2 * MAX_EXTRADATA_LEN
+#define MAX_RCVBUF 16 * 1024 + 1/* TLS RFC 8449: max size of buffer for message reception */
 
 static char *targetIP = "127.0.0.1";
 static char *msgPRI = "167";
@@ -204,6 +213,7 @@ static char *relpPermittedPeer = NULL;
 static int tlsLogLevel = 0;
 static char *jsonCookie = NULL; /* if non-NULL, use JSON format with this cookie */
 static int octateCountFramed = 0;
+static char *customConfig = NULL; /* Stores a string with custom configuration passed through the TLS driver */
 
 #ifdef ENABLE_GNUTLS
 static gnutls_session_t *sessArray;	/* array of TLS sessions to use */
@@ -214,6 +224,7 @@ static gnutls_certificate_credentials_t tlscred;
 /* Main OpenSSL CTX pointer */
 static SSL_CTX *ctx;
 static SSL **sslArray;
+
 #endif
 
 /* variables for managing multi-threaded operations */
@@ -504,8 +515,9 @@ void closeConnections(void)
 				ling.l_onoff = 1;
 				ling.l_linger = 1;
 				setsockopt(sockArray[i], SOL_SOCKET, SO_LINGER, &ling, sizeof(ling));
-				if(transport == TP_TLS)
+				if(transport == TP_TLS) {
 					closeTLSSess(i);
+				}
 				close(sockArray[i]);
 			}
 		}
@@ -1050,37 +1062,36 @@ void osslLastSSLErrorMsg(int ret, SSL *ssl, const char* pszCallSource)
 {
 	unsigned long un_error = 0;
 	char psz[256];
-	long iMyRet = SSL_get_error(ssl, ret);
 
-	/* Check which kind of error we have */
-	printf("tcpflood: openssl error '%s' with error code=%ld\n", pszCallSource, iMyRet);
-	if(iMyRet == SSL_ERROR_SSL) {
-		/* Loop through errors */
-		while ((un_error = ERR_peek_last_error()) != 0){
-			ERR_error_string_n(un_error, psz, 256);
-			printf("tcpflood: Errorstack: %s\n", psz);
-		}
-
-	} else if(iMyRet == SSL_ERROR_SYSCALL){
-		iMyRet = ERR_get_error();
-		if(ret == 0) {
-			iMyRet = SSL_get_error(ssl, iMyRet);
-			if(iMyRet == 0) {
-				*psz = '\0';
-			} else {
-				ERR_error_string_n(iMyRet, psz, 256);
-			}
-			printf("tcpflood: SysErr: %s\n", psz);
-		} else {
-			/* Loop through errors */
-			while ((un_error = ERR_peek_last_error()) != 0){
-				ERR_error_string_n(un_error, psz, 256);
-				printf("tcpflood: Errorstack: %s\n", psz);
-			}
-		}
+	if (ssl == NULL) {
+		/* Output Error Info*/
+		printf("tcpflood: Error in '%s' with ret=%d\n", pszCallSource, ret);
 	} else {
-		printf("tcpflood: Unknown SSL Error in '%s' (%d), SSL_get_error: %ld\n",
-			pszCallSource, ret, iMyRet);
+		long iMyRet = SSL_get_error(ssl, ret);
+
+		/* Check which kind of error we have */
+		printf("tcpflood: openssl error '%s' with error code=%ld\n", pszCallSource, iMyRet);
+		if(iMyRet == SSL_ERROR_SYSCALL){
+			iMyRet = ERR_get_error();
+			if(ret == 0) {
+				iMyRet = SSL_get_error(ssl, iMyRet);
+				if(iMyRet == 0) {
+					*psz = '\0';
+				} else {
+					ERR_error_string_n(iMyRet, psz, 256);
+				}
+				printf("tcpflood: SysErr: %s\n", psz);
+			}
+		} else {
+			printf("tcpflood: Unknown SSL Error in '%s' (%d), SSL_get_error: %ld\n",
+				pszCallSource, ret, iMyRet);
+		}
+	}
+
+	/* Loop through errors */
+	while ((un_error = ERR_get_error()) > 0){
+		ERR_error_string_n(un_error, psz, 256);
+		printf("tcpflood: %s Errorstack: %s\n", pszCallSource, psz);
 	}
 }
 
@@ -1167,6 +1178,69 @@ initTLS(void)
 	SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);		/* Disable insecure SSLv2 Protocol */
 	SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv3);		/* Disable insecure SSLv3 Protocol */
 	SSL_CTX_sess_set_cache_size(ctx,1024);
+
+	/* Check for Custom Config string */
+	if (customConfig != NULL){
+#if OPENSSL_VERSION_NUMBER >= 0x10020000L
+	char *pCurrentPos;
+	char *pNextPos;
+	char *pszCmd;
+	char *pszValue;
+	int iConfErr;
+
+	printf("tcpflood: custom config set to '%s'\n", customConfig);
+
+	/* Set working pointer */
+	pCurrentPos = (char*) customConfig;
+	if (strlen(pCurrentPos) > 0) {
+		pNextPos = index(pCurrentPos, '=');
+		if (pNextPos != NULL) {
+			pszCmd = strndup(pCurrentPos, pNextPos-pCurrentPos);
+			pszValue = strdup(++pNextPos);
+
+			// Create CTX Config Helper
+			SSL_CONF_CTX *cctx;
+			cctx = SSL_CONF_CTX_new();
+			SSL_CONF_CTX_set_flags(cctx, SSL_CONF_FLAG_CLIENT);
+			SSL_CONF_CTX_set_flags(cctx, SSL_CONF_FLAG_FILE);
+			SSL_CONF_CTX_set_flags(cctx, SSL_CONF_FLAG_SHOW_ERRORS);
+			SSL_CONF_CTX_set_ssl_ctx(cctx, ctx);
+
+			/* Add SSL Conf Command */
+			iConfErr = SSL_CONF_cmd(cctx, pszCmd, pszValue);
+			if (iConfErr > 0) {
+				printf("tcpflood: Successfully added Command %s:%s\n",
+					pszCmd, pszValue);
+			}
+			else {
+				printf("tcpflood: error, adding Command: %s:%s "
+					"in SSL_CONF_cmd with error '%d'\n",
+					pszCmd, pszValue, iConfErr);
+				osslLastSSLErrorMsg(0, NULL, "initTLS");
+			}
+
+			/* Finalize SSL Conf */
+			iConfErr = SSL_CONF_CTX_finish(cctx);
+			if (!iConfErr) {
+				printf("tcpflood: error, setting openssl command parameters: %s\n",
+					customConfig);
+			}
+
+			free(pszCmd);
+			free(pszValue);
+		} else {
+			printf("tcpflood: error, invalid value for -k: %s\n", customConfig);
+		}
+	} else {
+		printf("tcpflood: error, invalid value for -k: %s\n", customConfig);
+	}
+#else
+	printf("tcpflood: error, OpenSSL Version to old, SSL_CONF_cmd API is not supported.");
+#endif
+
+	}
+
+
 	/* DO ONLY SUPPORT DEFAULT CIPHERS YET
 	* SSL_CTX_set_cipher_list(ctx,"ALL");			 Support all ciphers */
 
@@ -1299,6 +1373,14 @@ closeTLSSess(int i)
 {
 	int r;
 	r = SSL_shutdown(sslArray[i]);
+	if (r <= 0){
+		/* Shutdown not finished, call SSL_read to do a bidirectional shutdown, see doc for more:
+		*	https://www.openssl.org/docs/man1.1.1/man3/SSL_shutdown.html
+		*/
+		char rcvBuf[MAX_RCVBUF];
+		SSL_read(sslArray[i], rcvBuf, MAX_RCVBUF);
+
+	}
 	SSL_free(sslArray[i]);
 }
 #	elif defined(ENABLE_GNUTLS)
@@ -1471,7 +1553,7 @@ int main(int argc, char *argv[])
 
 	setvbuf(stdout, buf, _IONBF, 48);
 
-	while((opt = getopt(argc, argv, "a:b:E:ef:F:t:c:C:m:i:I:P:p:d:Dn:l:L:M:rsBR:S:T:x:XW:yYz:Z:j:Ov")) != -1) {
+	while((opt = getopt(argc, argv, "a:Bb:c:C:d:DeE:f:F:k:i:I:l:j:L:m:M:n:OP:p:rR:sS:t:T:vW:x:XyYz:Z:")) != -1) {
 		switch (opt) {
 		case 'b':	batchsize = atoll(optarg);
 				break;
@@ -1597,6 +1679,8 @@ int main(int argc, char *argv[])
 				break;
 		case 'v':	verbose = 1;
 				break;
+		case 'k':	customConfig = optarg;
+				break;
 		default:	printf("invalid option '%c' or value missing - terminating...\n", opt);
 				exit (1);
 				break;
@@ -1634,9 +1718,11 @@ int main(int argc, char *argv[])
 		if(setrlimit(RLIMIT_NOFILE, &maxFiles) < 0) {
 			perror("setrlimit to increase file handles failed");
 			fprintf(stderr,
-			        "could net set sufficiently large number of "
+			        "could not set sufficiently large number of "
 			        "open files for required connection count!\n");
-			exit(1);
+			if(!softLimitConnections) {
+				exit(1);
+			}
 		}
 	}
 

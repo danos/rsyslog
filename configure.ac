@@ -2,9 +2,9 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([rsyslog],[8.1903.0],[rsyslog@lists.adiscon.com])         # UPDATE on release
+AC_INIT([rsyslog],[8.1904.0],[rsyslog@lists.adiscon.com])         # UPDATE on release
 AC_DEFINE(VERSION_YEAR, 19, [year part of real rsyslog version])  # UPDATE on release
-AC_DEFINE(VERSION_MONTH, 3, [month part of real rsyslog version]) # UPDATE on release
+AC_DEFINE(VERSION_MONTH, 4, [month part of real rsyslog version]) # UPDATE on release
 
 AM_INIT_AUTOMAKE([subdir-objects])
 
@@ -1609,6 +1609,30 @@ AC_ARG_ENABLE(helgrind,
 )
 AM_CONDITIONAL(ENABLE_HELGRIND, test x$enable_helgrind = xyes)
 
+# settings for the batch report input module
+AC_ARG_ENABLE(imbatchreport,
+        [AS_HELP_STRING([--enable-imbatchreport],[batch report input module enabled @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_imbatchreport="yes" ;;
+          no) enable_imbatchreport="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-imbatchreport) ;;
+         esac],
+        [enable_imbatchreport=no]
+)
+AM_CONDITIONAL(ENABLE_IMBATCHREPORT, test x$enable_imbatchreport = xyes)
+
+# settings for the db2diag parser module
+AC_ARG_ENABLE(pmdb2diag,
+        [AS_HELP_STRING([--enable-pmdb2diag],[db2diag parser module enabled @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_pmdb2diag="yes" ;;
+          no) enable_pmdb2diag="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-pmdb2diag) ;;
+         esac],
+        [enable_pmdb2diag=no]
+)
+AM_CONDITIONAL(ENABLE_PMDB2DIAG, test x$enable_pmdb2diag = xyes)
+
 # settings for the file input module
 AC_ARG_ENABLE(imfile,
         [AS_HELP_STRING([--enable-imfile],[file input module enabled @<:@default=no@:>@])],
@@ -1637,6 +1661,46 @@ if test "x$enable_imfile" = "xyes"; then
 fi
 AM_CONDITIONAL(ENABLE_IMFILE, test x$enable_imfile = xyes)
 
+# settings for the docker log input module
+AC_ARG_ENABLE(imdocker,
+        [AS_HELP_STRING([--enable-imdocker],[input docker module enabled @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_imdocker="yes" ;;
+          no) enable_imdocker="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-imdocker) ;;
+         esac],
+        [enable_imdocker=no]
+)
+if test "x$enable_imdocker" = "xyes"; then
+	AC_CHECK_HEADERS([curl/curl.h])
+	PKG_CHECK_MODULES([CURL], [libcurl >= 7.40.0])
+fi
+AM_CONDITIONAL(ENABLE_IMDOCKER, test x$enable_imdocker = xyes)
+
+AC_ARG_ENABLE(imdocker-tests,
+        [AS_HELP_STRING([--enable-imdocker-tests],[Enable imdocker tests @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_imdocker_tests="yes" ;;
+          no) enable_imdocker_tests="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-imdocker-tests) ;;
+         esac],
+        [enable_imdocker_tests=no]
+)
+
+AM_CONDITIONAL(ENABLE_IMDOCKER_TESTS, test x$enable_imdocker_tests = xyes)
+
+
+# settings for the tuxedo ULOG input module
+AC_ARG_ENABLE(imtuxedoulog,
+        [AS_HELP_STRING([--enable-imtuxedoulog],[tuxedo ULOG input module enabled @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_imtuxedoulog="yes" ;;
+          no) enable_imtuxedoulog="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-imtuxedoulog) ;;
+         esac],
+        [enable_imtuxedoulog=no]
+)
+AM_CONDITIONAL(ENABLE_IMTUXEDOULOG, test x$enable_imtuxedoulog = xyes)
 
 # settings for the external program input module
 AC_ARG_ENABLE(improg,
@@ -2277,6 +2341,20 @@ AM_CONDITIONAL(ENABLE_MMKUBERNETES, test x$enable_mmkubernetes = xyes)
 
 # END Kubernetes metadata support
 
+
+# mmtaghostname
+AC_ARG_ENABLE(mmtaghostname,
+        [AS_HELP_STRING([--enable-mmtaghostname],[Enable Tag and Hostname messages' modifier @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_mmtaghostname="yes" ;;
+          no) enable_mmtaghostname="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-mmtaghostname) ;;
+         esac],
+        [enable_mmtaghostname=no]
+)
+AM_CONDITIONAL(ENABLE_MMTAGHOSTNAME, test x$enable_mmtaghostname = xyes)
+#END mmtaghostname
+
 # man pages
 have_to_generate_man_pages="no"
 git_src_have_to_generate_man_pages="yes" # default to use when building from git source
@@ -2409,9 +2487,14 @@ AC_CONFIG_FILES([Makefile \
 		contrib/omhttpfs/Makefile \
 		contrib/omamqp1/Makefile \
 		contrib/omtcl/Makefile \
+		contrib/imbatchreport/Makefile \
 		contrib/omfile-hardened/Makefile \
 		contrib/mmkubernetes/Makefile \
+		contrib/imtuxedoulog/Makefile \
 		contrib/improg/Makefile \
+		contrib/mmtaghostname/Makefile \
+		contrib/imdocker/Makefile \
+		contrib/pmdb2diag/Makefile \
 		tests/Makefile])
 AC_OUTPUT
 
@@ -2443,11 +2526,14 @@ echo "    /dev/kmsg functionality enabled:          $enable_kmsg"
 echo "    plain tcp input module enabled:           $enable_imptcp"
 echo "    imdiag enabled:                           $enable_imdiag"
 echo "    file input module enabled:                $enable_imfile"
+echo "    docker log input module enabled:          $enable_imdocker"
 echo "    Solaris input module enabled:             $enable_imsolaris"
 echo "    periodic statistics module enabled:       $enable_impstats"
 echo "    imczmq input module enabled:              $enable_imczmq"
 echo "    imjournal input module enabled:           $enable_imjournal"
+echo "    imbatchreport input module enabled:       $enable_imbatchreport"
 echo "    imkafka module will be compiled:          $enable_imkafka"
+echo "    imtuxedoulog module will be compiled:     $enable_imtuxedoulog"
 echo "    improg input module enabled:              $enable_improg"
 echo
 echo "---{ output plugins }---"
@@ -2478,6 +2564,7 @@ echo "    pmnull module will be compiled:           $enable_pmnull"
 echo "    pmnormalize module will be compiled:      $enable_pmnormalize"
 echo "    pmaixforwardedfrom module w.be compiled:  $enable_pmaixforwardedfrom"
 echo "    pmsnare module will be compiled:          $enable_pmsnare"
+echo "    pmdb2diag module will be compiled:        $enable_pmdb2diag"
 echo "    pmpanngfw module will be compiled:        $enable_pmpanngfw"
 echo
 echo "---{ message modification modules }---"
@@ -2494,6 +2581,7 @@ echo "    mmdblookup enabled:                       $enable_mmdblookup"
 echo "    mmfields enabled:                         $enable_mmfields"
 echo "    mmrm1stspace module enabled:              $enable_mmrm1stspace"
 echo "    mmkubernetes enabled:                     $enable_mmkubernetes"
+echo "    mmtaghostname enabled:                    $enable_mmtaghostname"
 echo
 echo "---{ database support }---"
 echo "    MySql support enabled:                    $enable_mysql"
@@ -2527,6 +2615,7 @@ echo "    Elasticsearch Tests:                      $enable_elasticsearch_tests"
 echo "    ClickHouse Tests:                         $enable_clickhouse_tests"
 echo "    PostgreSQL Tests enabled:                 $enable_pgsql_tests"
 echo "    Kafka Tests enabled:                      $enable_kafka_tests"
+echo "    Imdocker Tests enabled:                   $enable_imdocker_tests"
 echo "    systemd journal tests enabled:            $enable_journal_tests"
 echo "    Debug mode enabled:                       $enable_debug"
 echo "    (total) debugless mode enabled:           $enable_debugless"
