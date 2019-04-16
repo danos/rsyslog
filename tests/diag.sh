@@ -567,8 +567,16 @@ getpid() {
 }
 
 # grep for (partial) content. $1 is the content to check for, $2 the file to check
+# option --check-only just returns success/fail but does not terminate on fail
+#    this is meant for checking during queue shutdown processing.
 # option --regex is understood, in which case $1 is a regex
 content_check() {
+	if [ "$1" == "--check-only" ]; then
+		check_only="yes"
+		shift
+	else
+		check_only="no"
+	fi
 	if [ "$1" == "--regex" ]; then
 		grep_opt=
 		shift
@@ -577,11 +585,18 @@ content_check() {
 	fi
 	file=${2:-$RSYSLOG_OUT_LOG}
 	if ! grep -q  $grep_opt -- "$1" < "${file}"; then
+	    if [ "$check_only" == "yes" ]; then
+		printf 'content_check did not yet succeed\n'
+	    return 1
+	    fi
 	    printf '\n============================================================\n'
 	    printf 'FILE "%s" content:\n' "$file"
 	    cat -n ${file}
 	    printf 'FAIL: content_check failed to find "%s"\n' "$1"
 	    error_exit 1
+	fi
+	if [ "$check_only" == "yes" ]; then
+	    return 0
 	fi
 }
 
@@ -739,7 +754,7 @@ check_journal_testmsg_received() {
 # wait for main message queue to be empty. $1 is the instance.
 # we run in a loop to ensure rsyslog is *really* finished when a
 # function for the "finished predicate" is defined. This is done
-# by setting env var QUEUE_EMPTY_CHECK_FUNCTION to the bash
+# by setting env var QUEUE_EMPTY_CHECK_FUNC to the bash
 # function name.
 wait_queueempty() {
 	while [ $(date +%s) -le $(( TB_STARTTEST + TB_TEST_MAX_RUNTIME )) ]; do
@@ -822,6 +837,8 @@ quit"
 	unset out_pid
 	if [ "$(ls core.* 2>/dev/null)" != "" ]; then
 	   printf 'ABORT! core file exists (maybe from a parallel run!)\n'
+	   pwd
+	   ls -l core.*
 	   error_exit  1
 	fi
 }
@@ -916,7 +933,7 @@ wait_seq_check() {
 		if [ -f "$RSYSLOG_OUT_LOG" ]; then
 			count=$(wc -l < "$RSYSLOG_OUT_LOG")
 		fi
-		seq_check --check-only "$@" &>/dev/null
+		seq_check --check-only "$@" #&>/dev/null
 		ret=$?
 		if [ $ret == 0 ]; then
 			printf 'wait_seq_check success (%d lines)\n' "$count"
@@ -1172,7 +1189,11 @@ error_stats() {
 # $4... are just to have the abilit to pass in more options...
 # add -v to chkseq if you need more verbose output
 # argument --check-only can be used to simply do a check without abort in fail case
+# env var SEQ_CHECK_FILE permits to override file name to check
 seq_check() {
+	if [ "$SEQ_CHECK_FILE" == "" ]; then
+		SEQ_CHECK_FILE="$RSYSLOG_OUT_LOG"
+	fi
 	if [ "$1" == "--check-only" ]; then
 		check_only="YES"
 		shift
@@ -1191,30 +1212,30 @@ seq_check() {
 		startnum=$1
 		endnum=$2
 	fi
-	if [ ! -f "$RSYSLOG_OUT_LOG" ]; then
+	if [ ! -f "$SEQ_CHECK_FILE" ]; then
 		if [ "$check_only"  == "YES" ]; then
 			return 1
 		fi
-		printf 'FAIL: %s does not exist in seq_check!\n' "$RSYSLOG_OUT_LOG"
+		printf 'FAIL: %s does not exist in seq_check!\n' "$SEQ_CHECK_FILE"
 		error_exit 1
 	fi
-	$RS_SORTCMD $RS_SORT_NUMERIC_OPT < ${RSYSLOG_OUT_LOG} | ./chkseq -s$startnum -e$endnum $3 $4 $5 $6 $7
+	$RS_SORTCMD $RS_SORT_NUMERIC_OPT < ${SEQ_CHECK_FILE} | ./chkseq -s$startnum -e$endnum $3 $4 $5 $6 $7
 	ret=$?
 	if [ "$check_only"  == "YES" ]; then
 		return $ret
 	fi
 	if [ $ret -ne 0 ]; then
-		$RS_SORTCMD $RS_SORT_NUMERIC_OPT < ${RSYSLOG_OUT_LOG} > $RSYSLOG_DYNNAME.error.log
-		echo "sequence error detected in $RSYSLOG_OUT_LOG"
-		echo "number of lines in file: $(wc -l $RSYSLOG_OUT_LOG)"
+		$RS_SORTCMD $RS_SORT_NUMERIC_OPT < ${SEQ_CHECK_FILE} > $RSYSLOG_DYNNAME.error.log
+		echo "sequence error detected in $SEQ_CHECK_FILE"
+		echo "number of lines in file: $(wc -l $SEQ_CHECK_FILE)"
 		echo "sorted data has been placed in error.log, first 10 lines are:"
 		cat -n $RSYSLOG_DYNNAME.error.log | head -10
 		echo "---last 10 lines are:"
 		cat -n $RSYSLOG_DYNNAME.error.log | tail -10
 		echo "UNSORTED data, first 10 lines are:"
-		cat -n $RSYSLOG_OUT_LOG | head -10
+		cat -n $SEQ_CHECK_FILE | head -10
 		echo "---last 10 lines are:"
-		cat -n $RSYSLOG_OUT_LOG | tail -10
+		cat -n $SEQ_CHECK_FILE | tail -10
 		# for interactive testing, create a static filename. We know this may get
 		# mangled during a parallel test run
 		mv -f $RSYSLOG_DYNNAME.error.log error.log
@@ -1252,11 +1273,26 @@ gzip_seq_check() {
 
 # do a tcpflood run and check if it worked params are passed to tcpflood
 tcpflood() {
+	if [ "$1" == "--check-only" ]; then
+		check_only="yes"
+		shift
+	else
+		check_only="no"
+	fi
+
 	eval ./tcpflood -p$TCPFLOOD_PORT "$@" $TCPFLOOD_EXTRA_OPTS
-	if [ "$?" -ne "0" ]; then
-		echo "error during tcpflood on port ${TCPFLOOD_PORT}! see ${RSYSLOG_OUT_LOG}.save for what was written"
-		cp ${RSYSLOG_OUT_LOG} ${RSYSLOG_OUT_LOG}.save
-		error_exit 1 stacktrace
+	res=$?
+	if [ "$check_only" == "yes" ]; then
+		if [ "$res" -ne "0" ]; then
+			echo "error during tcpflood on port ${TCPFLOOD_PORT}! see ${RSYSLOG_OUT_LOG}.save for what was written"
+			cp ${RSYSLOG_OUT_LOG} ${RSYSLOG_OUT_LOG}.save
+			error_exit 1 stacktrace
+		fi
+	else
+		if [ "$res" -ne "0" ]; then
+			echo "error during tcpflood on port ${TCPFLOOD_PORT}! But test continues..."
+		fi
+		return 0
 	fi
 }
 
@@ -1316,7 +1352,7 @@ get_inode() {
 		printf 'FAIL: file "%s" does not exist in get_inode\n' "$1"
 		error_exit 100
 	fi
-	python -c 'import os; import stat; print os.lstat("'$1'")[stat.ST_INO]'
+	python -c 'import os; import stat; print(os.lstat("'$1'")[stat.ST_INO])'
 }
 
 
@@ -1369,15 +1405,11 @@ presort() {
 #START: ext kafka config
 #dep_cache_dir=$(readlink -f .dep_cache)
 dep_cache_dir=$(pwd)/.dep_cache
-dep_zk_url=http://www-us.apache.org/dist/zookeeper/zookeeper-3.4.13/zookeeper-3.4.13.tar.gz
-dep_zk_cached_file=$dep_cache_dir/zookeeper-3.4.13.tar.gz
+dep_zk_url=http://www-us.apache.org/dist/zookeeper/zookeeper-3.4.14/zookeeper-3.4.14.tar.gz
+dep_zk_cached_file=$dep_cache_dir/zookeeper-3.4.14.tar.gz
 
-# byANDRE: We stay with kafka 0.10.x for now. Newer Kafka Versions have changes that
-#	makes creating testbench with single kafka instances difficult.
-# old version -> dep_kafka_url=http://www-us.apache.org/dist/kafka/0.10.2.2/kafka_2.12-0.10.2.2.tgz
-# old version -> dep_kafka_cached_file=$dep_cache_dir/kafka_2.12-0.10.2.2.tgz
-dep_kafka_url=http://www-us.apache.org/dist/kafka/2.0.0/kafka_2.11-2.0.0.tgz
-dep_kafka_cached_file=$dep_cache_dir/kafka_2.11-2.0.0.tgz
+dep_kafka_url=http://www-us.apache.org/dist/kafka/2.2.0/kafka_2.12-2.2.0.tgz
+dep_kafka_cached_file=$dep_cache_dir/kafka_2.12-2.2.0.tgz
 
 if [ -z "$ES_DOWNLOAD" ]; then
 	export ES_DOWNLOAD=elasticsearch-5.6.9.tar.gz
@@ -1451,6 +1483,7 @@ download_kafka() {
 			wget $dep_kafka_url -O $dep_kafka_cached_file
 			if [ $? -ne 0 ]
 			then
+				rm $dep_kafka_cached_file # a 0-size file may be left over
 				error_exit 1
 			fi
 		fi
@@ -1622,6 +1655,8 @@ start_zookeeper() {
 }
 
 start_kafka() {
+	printf '%s starting kafka\n' "$(tb_timestamp)"
+
 	# Force IPv4 usage of Kafka!
 	export KAFKA_OPTS="-Djava.net.preferIPv4Stack=True"
 	if [ "x$1" == "x" ]; then
@@ -1631,7 +1666,6 @@ start_kafka() {
 		dep_work_dir=$(readlink -f $1)
 		dep_work_kafka_config="kafka-server$1.properties"
 	fi
-
 
 	# shellcheck disable=SC2009  - we do not grep on the process name!
 	kafkapid=$(ps aux | grep -i $dep_work_kafka_config | grep java | grep -v grep | awk '{print $2}')
