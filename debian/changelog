@@ -1,8 +1,8 @@
-rsyslog (8.1905.0-1) UNRELEASED; urgency=medium
+rsyslog (8.1905.0-1) experimental; urgency=medium
 
   * New upstream version 8.1905.0
 
- -- Michael Biebl <biebl@debian.org>  Tue, 28 May 2019 19:05:40 +0200
+ -- Michael Biebl <biebl@debian.org>  Tue, 28 May 2019 20:06:53 +0200
 
 rsyslog (8.1904.0-1) experimental; urgency=medium
 
