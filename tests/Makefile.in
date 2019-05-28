@@ -191,6 +191,7 @@ host_triplet = @host@
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	operatingstate-basic.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	operatingstate-empty.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	operatingstate-unclean.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	smtradfile.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	empty-hostname.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	hostname-getaddrinfo-fail.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	msleep_usage_output.sh \
@@ -205,6 +206,10 @@ host_triplet = @host@
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	hostname-with-slash-dflt-slash-valid.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	stop-localvar.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	stop-msgvar.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	glbl-ruleset-queue-defaults.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	glbl-internalmsg_severity-info-shown.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	glbl-internalmsg_severity-debug-shown.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	glbl-internalmsg_severity-debug-not_shown.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	glbl-umask.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	glbl-unloadmodules.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	glbl-invld-param.sh \
@@ -228,6 +233,7 @@ host_triplet = @host@
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	privdropuserid.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	privdropgroup.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	privdropgroupid.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	json-nonstring.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	template-json.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	template-pure-json.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	template-pos-from-to.sh \
@@ -261,6 +267,7 @@ host_triplet = @host@
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	tcp_forwarding_tpl.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	tcp_forwarding_dflt_tpl.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	tcp_forwarding_retries.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	queue_errmsg-oversize.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	queue-minbatch.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	queue-minbatch-queuefull.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	arrayqueue.sh \
@@ -279,6 +286,7 @@ host_triplet = @host@
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-NUL-rawmsg.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-multiport.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp_incomplete_frame_at_end.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	da-queue-persist.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	daqueue-persist.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	daqueue-invld-qi.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	daqueue-dirty-shutdown.sh \
@@ -286,6 +294,7 @@ host_triplet = @host@
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	diskqueue.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	diskqueue-fsync.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	diskqueue-full.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	diskqueue-non-unique-prefix.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	rulesetmultiqueue.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	rulesetmultiqueue-v6.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	manytcp.sh \
@@ -410,6 +419,7 @@ host_triplet = @host@
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_previous_action_suspended.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_str2num_negative.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript-config_enable-on.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	config_output-o-option.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	rs-cnum.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	rs-substring.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	rs-int2hex.sh \
@@ -457,6 +467,7 @@ host_triplet = @host@
 
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_11 = \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	tcpflood_wrong_option_output.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	smtradfile-vg.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	dnscache-TTL-0-vg.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	include-obj-outside-control-flow-vg.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	include-obj-in-if-vg.sh \
@@ -995,6 +1006,7 @@ host_triplet = @host@
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	 imrelp-manyconn-vg.sh
 
 @ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_82 = \
+@ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@	omudpspoof_errmsg_no_params.sh \
 @ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_omudpspoof.sh \
 @ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_omudpspoof_nonstdpt.sh
 
@@ -1085,6 +1097,7 @@ host_triplet = @host@
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-endmsg.regex.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-statefile-no-file_id.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-statefile-no-file_id-TO-file_id.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-statefile-directory.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-persist-state-1.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-freshStartTail1.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-freshStartTail2.sh \
@@ -1108,7 +1121,8 @@ host_triplet = @host@
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-logrotate-copytruncate.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-logrotate-nocopytruncate.sh \
 @ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-growing-file-id.sh \
-@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	glbl-oversizeMsg-truncate-imfile.sh
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	glbl-oversizeMsg-truncate-imfile.sh \
+@ENABLE_IMFILE_TRUE@@ENABLE_TESTBENCH_TRUE@	config_enabled-off.sh
 
 @ENABLE_IMFILE_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_90 = \
 @ENABLE_IMFILE_TRUE@@ENABLE_MMNORMALIZE_TRUE@@ENABLE_TESTBENCH_TRUE@	imfile-endmsg.regex-with-example.sh
@@ -1847,11 +1861,18 @@ EXTRA_DIST = \
 	urlencode.py \
 	dnscache-TTL-0.sh \
 	dnscache-TTL-0-vg.sh \
+	smtradfile.sh \
+	smtradfile-vg.sh \
 	operatingstate-basic.sh \
 	operatingstate-empty.sh \
 	operatingstate-unclean.sh \
 	internal-errmsg-memleak-vg.sh \
+	glbl-ruleset-queue-defaults.sh \
+	glbl-internalmsg_severity-info-shown.sh \
+	glbl-internalmsg_severity-debug-shown.sh \
+	glbl-internalmsg_severity-debug-not_shown.sh \
 	glbl-oversizeMsg-log-vg.sh \
+	config_enabled-off.sh \
 	empty-hostname.sh \
 	hostname-getaddrinfo-fail.sh \
 	hostname-with-slash-pmrfc5424.sh \
@@ -1910,6 +1931,7 @@ EXTRA_DIST = \
 	tcp_forwarding_ns_tpl.sh \
 	tcp_forwarding_dflt_tpl.sh \
 	tcp_forwarding_retries.sh \
+	queue_errmsg-oversize.sh \
 	queue-minbatch.sh \
 	queue-minbatch-queuefull.sh \
 	killrsyslog.sh \
@@ -1949,11 +1971,13 @@ EXTRA_DIST = \
 	diskq-rfc5424.sh \
 	diskqueue-full.sh \
 	diskqueue.sh \
+	diskqueue-non-unique-prefix.sh \
 	arrayqueue.sh \
 	include-obj-text-from-file.sh \
 	include-obj-outside-control-flow-vg.sh \
 	include-obj-in-if-vg.sh \
 	include-obj-text-vg.sh \
+	config_output-o-option.sh \
 	rscript-config_enable-off-vg.sh \
 	rscript-config_enable-on.sh \
 	rscript_http_request.sh \
@@ -2074,6 +2098,7 @@ EXTRA_DIST = \
 	privdropuserid.sh \
 	privdropgroup.sh \
 	privdropgroupid.sh \
+	json-nonstring.sh \
 	template-json.sh \
 	template-pure-json.sh \
 	template-pos-from-to.sh \
@@ -2315,6 +2340,7 @@ EXTRA_DIST = \
 	queue-encryption-disk_keyfile-vg.sh \
 	queue-encryption-disk_keyprog.sh \
 	queue-encryption-da.sh \
+	da-queue-persist.sh \
 	daqueue-dirty-shutdown.sh \
 	daqueue-invld-qi.sh \
 	daqueue-persist.sh \
@@ -2355,6 +2381,7 @@ EXTRA_DIST = \
 	imudp_thread_hang.sh \
 	sndrcv_udp_nonstdpt.sh \
 	sndrcv_udp_nonstdpt_v6.sh \
+	omudpspoof_errmsg_no_params.sh \
 	sndrcv_omudpspoof.sh \
 	sndrcv_omudpspoof_nonstdpt.sh \
 	sndrcv_gzip.sh \
@@ -2482,6 +2509,7 @@ EXTRA_DIST = \
 	imfile-endmsg.regex.json.rulebase \
 	imfile-statefile-no-file_id.sh \
 	imfile-statefile-no-file_id-TO-file_id.sh \
+	imfile-statefile-directory.sh \
 	imfile-persist-state-1.sh \
 	imfile-freshStartTail1.sh \
 	imfile-freshStartTail2.sh \

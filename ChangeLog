@@ -1,4 +1,123 @@
 ------------------------------------------------------------------------------
+Version 8.1905.0 (aka 2019.05) 2019-05-28
+- templates: add datatype template option for JSON generation
+  The new "datatype" and "onEmpty"  template options permits to
+  generate non-string data rather easily. It works together with
+  jsonf formatting, which is what people should use nowadays.
+  closes https://github.com/rsyslog/rsyslog/issues/2827
+- config processing: check disk queue file is unique
+  If the same name is specified for multiple queues, the queue files
+  will become corrupted. This commit adds a check during config parsing.
+  If duplicate names are detected the config parser errors out and the
+  related object is not created.
+  Note: this may look to a change-of-behaviour to some users. However,
+  this never worked and it was pure luck that these users did not run
+  into big problems (e.g. DA queues were never going to disk at the
+  same time). So it is acceptable to error out in this hard error case.
+  closes https://github.com/rsyslog/rsyslog/issues/1385
+- global config: new parameters for ruleset queue defaults
+  specifically:
+  * default.ruleset.queue.timeoutshutdown
+  * default.ruleset.queue.timeoutactioncompletion
+  * default.ruleset.queue.timeoutenqueue
+  * default.ruleset.queue.timeoutworkerthreadshutdown
+  closes https://github.com/rsyslog/rsyslog/issues/3656
+- add capability to write full config file (-o cmdline option)
+  Introduces the capability to create an output config file that explodes
+  all "includes" into a single file. This provides a much better overview
+  of how exactly the configuration is crafted. That could often be a great
+  troubleshooting aid.
+  This commit also contains some slight not-really-related cleanup.
+  closes https://github.com/rsyslog/rsyslog/issues/3634
+- queue subsystem: permit to disable "light delay mark"
+  New semantic: if lightDelayMark is 0, it is set to the max queue
+  size, effectively disabling the "light delay" functionality.
+  Thanks to Yury Bushmelev to mentioning issues related to light
+  delay mark and propsing the solution (which actually is what
+  this commit does).
+  closes https://github.com/rsyslog/rsyslog/issues/1778
+- queue subsystem: provide better user status messages
+  The queue subsystem now provides additional information messages which
+  may help a regular user to maintain system healt. Most importantly,
+  DA queues now output when they persist queue data at end of run and
+  when they restart the queue based on persisted data.
+- core: emit a warning message for ultra-large queue size definitions
+  We see error reports from users who have configured excessively large queues
+  and receive an OOM condition or other problems.
+  With that patcjh we generate a warnomg message if a queue is configured very
+  large. "Very large" is defined to be in excess of 500000 messages.
+  see also https://github.com/rsyslog/rsyslog/issues/3314
+  closes https://github.com/rsyslog/rsyslog/issues/3334
+- new global config parameter "internalmsg.severity"
+  permits to specify a severity filter for internal message. Only
+  messages with this severity level or more severe are logged.
+  Orignally this was done in rsyslog.conf as usual: you can filter
+  rsyslog messages on severity, just like any other. But with systemd,
+  we now emit primarily to the journal, and this is outside of rsyslog's
+  rule engine and so regular filters do not apply (at least in regard
+  to the journal). Logging to journal is good, because finally
+  folks begin to see the messages (traditional distro configs discard
+  them, for whatever is the reason).
+  This commit implements a global setting for a severity-based filter
+  for internal messages, before submitted to journal. So it's not 100%
+  of what rsyslog can do, but at least some way to customize.
+  see also https://github.com/rsyslog/rsyslog/issues/3639
+- config processing bugfix: error messages if config.enabled="off" is used
+  Using config.enabled="off" could lead to error messages on
+  "parameter xxx not known", which were invalid. They occured
+  because the config handler expected them to be used, which
+  was not the case due to being disabled.
+  This commit fixes that issue.
+  closes https://github.com/rsyslog/rsyslog/issues/2520
+- core portability bugfix: harden shutdown processing on FreeBSD
+  On FreeBSD, rsyslog does not always terminate immediately on SIGTEM.
+  Root cause seems to be that SIGTERM is delivered differently under
+  FreeBSD. This causes the main thread to not be awaken, and so it
+  takes until the next janitor interval to come back to life - which
+  can be far too long. Fixed this bug explicitley awaking the main
+  thread.
+- imtcp bugfix: oversize message truncation causes log to be garbled
+  The actual problem is in the tcpserver component. However, the prime user
+  is imtcp and so users will likely experience this as imtcp problem.
+  When a too-long message is truncated, the byte after the truncation
+  position becomes the first byte of the next message. This will garble
+  the next messages and in almost all cases render it is syslog-incompliant.
+  The same problem does NOT occur when the message is split.
+  This commit fixes the issue. It also includes a testbench fix.
+  Unfortunately the test for exactly this feature was not properly
+  crafted and so could not detect the problem.
+  closes https://github.com/rsyslog/rsyslog/issues/3580
+- omfile bugfix: FlushOnTXEnd does not work reliably with dynafiles
+  The flush was only done to the last dynafile in use at end of
+  transactions. Dynafiles that were also modified during the
+  transaction were not flushed.
+  Special thanks to Duy Nguyen for pointing us to the bug and
+  suggesting a solution.
+  This commit also contains a bit of cosmetic cleanup inside
+  the file stream class.
+  closes https://github.com/rsyslog/rsyslog/issues/2502
+- lmcry_gcry build bugfix: was not always properly build
+  Due to an invalid definition in build system this seems to have not
+  been correctly build on at least some platforms (but it worked on
+  others as it passed CI testing). This has now been corrected.
+  Thanks to Remi Locherer for the patch.
+- dnscache bufix: very unlikely memory leak
+  This fixes a memory leak that can only occur under OOM conditions.
+  Detected by Coverity Scan, CID 203717
+- testbench bugfix: wrong parameter check in diag.sh (tcpflood())
+  When first parameter is check_only, the tcpflood funtion shall not
+  abort the test itself (The fail is intended if this option is set).
+  closes issue #3625
+- testbench bugfix: imfile-symlink test failed w/ parallel test run
+  The test sometimes failed. It used a symlinkl to a hardcoded name
+  rsyslog-link.*.log. This symlink was created but then disappears.
+  The reason is that upon (every!) test exit, rsyslog-link.*.log is
+  deleted. So a parallel test running the exit procedure just at the
+  "right" time can removed that file.
+  The bug is that the file name should be created using the tests's
+  dynamic name. This is done now.
+  closes https://github.com/rsyslog/rsyslog/issues/3550
+------------------------------------------------------------------------------
 Version 8.1904.0 (aka 2019.04) 2019-04-16
 - omfile: provide more helpful error message on file write errors
   now contains actual file name plus a link to probable causes for this type

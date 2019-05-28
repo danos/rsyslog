@@ -225,7 +225,6 @@ am_librsyslog_la_OBJECTS = librsyslog_la-rsyslog.lo \
 	librsyslog_la-hashtable_itr.lo ../librsyslog_la-outchannel.lo \
 	../librsyslog_la-template.lo
 librsyslog_la_OBJECTS = $(am_librsyslog_la_OBJECTS)
-lmcry_gcry_la_LIBADD =
 am__lmcry_gcry_la_SOURCES_DIST = lmcry_gcry.c lmcry_gcry.h
 @ENABLE_LIBGCRYPT_TRUE@am_lmcry_gcry_la_OBJECTS =  \
 @ENABLE_LIBGCRYPT_TRUE@	lmcry_gcry_la-lmcry_gcry.lo
@@ -825,9 +824,8 @@ lmzlibw_la_LIBADD =
 @ENABLE_LIBGCRYPT_TRUE@lmcry_gcry_la_DEPENDENCIES = libgcry.la
 @ENABLE_LIBGCRYPT_TRUE@lmcry_gcry_la_SOURCES = lmcry_gcry.c lmcry_gcry.h
 @ENABLE_LIBGCRYPT_TRUE@lmcry_gcry_la_CPPFLAGS = $(RSRT_CFLAGS) $(LIBGCRYPT_CFLAGS)
-@ENABLE_LIBGCRYPT_TRUE@lmcry_gcry_la_LDFLAGS = -module -avoid-version \
-@ENABLE_LIBGCRYPT_TRUE@   lmcry_gcry_la_LIBADD = libgcry.la $(LIBGCRYPT_LIBS)
-
+@ENABLE_LIBGCRYPT_TRUE@lmcry_gcry_la_LDFLAGS = -module -avoid-version
+@ENABLE_LIBGCRYPT_TRUE@lmcry_gcry_la_LIBADD = libgcry.la $(LIBGCRYPT_LIBS)
 @ENABLE_GSSAPI_TRUE@lmgssutil_la_SOURCES = gss-misc.c gss-misc.h
 @ENABLE_GSSAPI_TRUE@lmgssutil_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS)
 @ENABLE_GSSAPI_TRUE@lmgssutil_la_LDFLAGS = -module -avoid-version
