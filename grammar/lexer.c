@@ -1773,6 +1773,8 @@ char *yytext;
 PRAGMA_IGNORE_Wsign_compare
 PRAGMA_IGNORE_Wmissing_noreturn
 
+FILE *fp_rs_full_conf_output = NULL;
+
 /* TODO: move this to a better modules, refactor -- rgerhards, 2018-01-22 */
 static char *
 read_file(const char *const filename)
@@ -1882,8 +1884,8 @@ expand_backticks(char *const param)
 
 	return estr;
 }
-#line 1886 "lexer.c"
-#line 163 "lexer.l"
+#line 1888 "lexer.c"
+#line 165 "lexer.l"
  /*%option noyywrap nodefault case-insensitive */
 /* avoid compiler warning: `yyunput' defined but not used */
 #define YY_NO_INPUT 1
@@ -1933,8 +1935,9 @@ struct bufstack {
 char *cnfcurrfn;			/* name of currently processed file */
 
 int popfile(void);
-int cnfSetLexFile(char *fname);
+int cnfSetLexFile(const char *fname);
 
+static void cnfPrintToken(const char *token);
 extern int yydebug;
 
 /* somehow, I need these prototype even though the headers are 
@@ -1946,8 +1949,8 @@ int fileno(FILE *stream);
 #endif
 
 
-#line 1950 "lexer.c"
-#line 1951 "lexer.c"
+#line 1953 "lexer.c"
+#line 1954 "lexer.c"
 
 #define INITIAL 0
 #define INOBJ 1
@@ -2172,12 +2175,12 @@ YY_DECL
 		}
 
 	{
-#line 230 "lexer.l"
-
-
 #line 233 "lexer.l"
+
+
+#line 236 "lexer.l"
  /* keywords */
-#line 2181 "lexer.c"
+#line 2184 "lexer.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -2247,30 +2250,30 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 234 "lexer.l"
-{ BEGIN EXPR; return IF; }
+#line 237 "lexer.l"
+{ cnfPrintToken(yytext); BEGIN EXPR; return IF; }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 235 "lexer.l"
-{ BEGIN EXPR; return FOREACH; }
+#line 238 "lexer.l"
+{ cnfPrintToken(yytext); BEGIN EXPR; return FOREACH; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 236 "lexer.l"
-{ BEGIN IN_PROCEDURE_CALL; return RELOAD_LOOKUP_TABLE_PROCEDURE; }
+#line 239 "lexer.l"
+{ cnfPrintToken(yytext); BEGIN IN_PROCEDURE_CALL; return RELOAD_LOOKUP_TABLE_PROCEDURE; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 237 "lexer.l"
-{ return yytext[0]; }
+#line 240 "lexer.l"
+{ cnfPrintToken(yytext); return yytext[0]; }
 	YY_BREAK
 case 5:
 /* rule 5 can match eol */
 YY_RULE_SETUP
-#line 238 "lexer.l"
+#line 241 "lexer.l"
 {
-				   yytext[yyleng-1] = '\0';
+				  cnfPrintToken(yytext);  yytext[yyleng-1] = '\0';
 				   unescapeStr((uchar*)yytext+1, yyleng-2);
 				   yylval.estr = es_newStrFromBuf(yytext+1, strlen(yytext)-1);
 				   return STRING; }
@@ -2278,173 +2281,173 @@ YY_RULE_SETUP
 case 6:
 /* rule 6 can match eol */
 YY_RULE_SETUP
-#line 243 "lexer.l"
+#line 246 "lexer.l"
 {
-				   yytext[yyleng-1] = '\0';
+				   cnfPrintToken(yytext); yytext[yyleng-1] = '\0';
 				   unescapeStr((uchar*)yytext+1, yyleng-2);
 				   yylval.estr = es_newStrFromBuf(yytext+1, strlen(yytext)-1);
 				   return STRING; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 248 "lexer.l"
-{ return yytext[0]; }
+#line 251 "lexer.l"
+{ cnfPrintToken(yytext); return yytext[0]; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 249 "lexer.l"
-{ BEGIN INITIAL; return yytext[0]; }
+#line 252 "lexer.l"
+{ cnfPrintToken(yytext); BEGIN INITIAL; return yytext[0]; }
 	YY_BREAK
 case 9:
 /* rule 9 can match eol */
 YY_RULE_SETUP
-#line 250 "lexer.l"
-{  }
+#line 253 "lexer.l"
+{cnfPrintToken(yytext);   }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 251 "lexer.l"
-{ parser_errmsg("invalid character '%s' in expression "
+#line 254 "lexer.l"
+{ cnfPrintToken(yytext); parser_errmsg("invalid character '%s' in expression "
 					        "- is there an invalid escape sequence somewhere?",
 						yytext); }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 254 "lexer.l"
-{ BEGIN EXPR; return yytext[0]; }
+#line 257 "lexer.l"
+{ cnfPrintToken(yytext); BEGIN EXPR; return yytext[0]; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 255 "lexer.l"
-{ BEGIN INITIAL; return THEN; }
+#line 258 "lexer.l"
+{ cnfPrintToken(yytext); BEGIN INITIAL; return THEN; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 256 "lexer.l"
-{ BEGIN INITIAL; return DO; }
+#line 259 "lexer.l"
+{ cnfPrintToken(yytext); BEGIN INITIAL; return DO; }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 257 "lexer.l"
-{ BEGIN INITIAL; return ';'; }
+#line 260 "lexer.l"
+{ cnfPrintToken(yytext); BEGIN INITIAL; return ';'; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 258 "lexer.l"
-{ return OR; }
+#line 261 "lexer.l"
+{ cnfPrintToken(yytext); return OR; }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 259 "lexer.l"
-{ return AND; }
+#line 262 "lexer.l"
+{ cnfPrintToken(yytext); return AND; }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 260 "lexer.l"
-{ return NOT; }
+#line 263 "lexer.l"
+{ cnfPrintToken(yytext); return NOT; }
 	YY_BREAK
 case 18:
-#line 262 "lexer.l"
-case 19:
-#line 263 "lexer.l"
-case 20:
-#line 264 "lexer.l"
-case 21:
 #line 265 "lexer.l"
-case 22:
+case 19:
 #line 266 "lexer.l"
-case 23:
+case 20:
 #line 267 "lexer.l"
-case 24:
+case 21:
 #line 268 "lexer.l"
-case 25:
+case 22:
 #line 269 "lexer.l"
-case 26:
+case 23:
 #line 270 "lexer.l"
-case 27:
+case 24:
 #line 271 "lexer.l"
+case 25:
+#line 272 "lexer.l"
+case 26:
+#line 273 "lexer.l"
+case 27:
+#line 274 "lexer.l"
 case 28:
 YY_RULE_SETUP
-#line 271 "lexer.l"
-{ return yytext[0]; }
+#line 274 "lexer.l"
+{ cnfPrintToken(yytext); return yytext[0]; }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 272 "lexer.l"
-{ return CMP_EQ; }
+#line 275 "lexer.l"
+{ cnfPrintToken(yytext); return CMP_EQ; }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 273 "lexer.l"
-{ return CMP_LE; }
+#line 276 "lexer.l"
+{ cnfPrintToken(yytext); return CMP_LE; }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 274 "lexer.l"
-{ return CMP_GE; }
+#line 277 "lexer.l"
+{ cnfPrintToken(yytext); return CMP_GE; }
 	YY_BREAK
 case 32:
-#line 276 "lexer.l"
+#line 279 "lexer.l"
 case 33:
 YY_RULE_SETUP
-#line 276 "lexer.l"
-{ return CMP_NE; }
+#line 279 "lexer.l"
+{ cnfPrintToken(yytext); return CMP_NE; }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 277 "lexer.l"
-{ return CMP_LT; }
+#line 280 "lexer.l"
+{ cnfPrintToken(yytext); return CMP_LT; }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 278 "lexer.l"
-{ return CMP_GT; }
+#line 281 "lexer.l"
+{ cnfPrintToken(yytext); return CMP_GT; }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 279 "lexer.l"
-{ return CMP_CONTAINS; }
+#line 282 "lexer.l"
+{ cnfPrintToken(yytext); return CMP_CONTAINS; }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 280 "lexer.l"
-{ return ITERATOR_ASSIGNMENT; }
+#line 283 "lexer.l"
+{ cnfPrintToken(yytext); return ITERATOR_ASSIGNMENT; }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 281 "lexer.l"
-{ return CMP_CONTAINSI; }
+#line 284 "lexer.l"
+{ cnfPrintToken(yytext); return CMP_CONTAINSI; }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 282 "lexer.l"
-{ return CMP_STARTSWITH; }
+#line 285 "lexer.l"
+{ cnfPrintToken(yytext); return CMP_STARTSWITH; }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 283 "lexer.l"
-{ return CMP_STARTSWITHI; }
+#line 286 "lexer.l"
+{ cnfPrintToken(yytext); return CMP_STARTSWITHI; }
 	YY_BREAK
 case 41:
-#line 285 "lexer.l"
+#line 288 "lexer.l"
 case 42:
-#line 286 "lexer.l"
+#line 289 "lexer.l"
 case 43:
 YY_RULE_SETUP
-#line 286 "lexer.l"
-{ yylval.n = strtoll(yytext, NULL, 0); return NUMBER; }
+#line 289 "lexer.l"
+{ cnfPrintToken(yytext); yylval.n = strtoll(yytext, NULL, 0); return NUMBER; }
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 287 "lexer.l"
-{ yylval.s = strdup(yytext+1); return VAR; }
+#line 290 "lexer.l"
+{ cnfPrintToken(yytext); yylval.s = strdup(yytext+1); return VAR; }
 	YY_BREAK
 case 45:
 /* rule 45 can match eol */
 YY_RULE_SETUP
-#line 288 "lexer.l"
+#line 291 "lexer.l"
 {
-				   yytext[yyleng-1] = '\0';
+				   cnfPrintToken(yytext); yytext[yyleng-1] = '\0';
 				   unescapeStr((uchar*)yytext+1, yyleng-2);
 				   yylval.estr = es_newStrFromBuf(yytext+1, strlen(yytext)-1);
 				   return STRING; }
@@ -2452,9 +2455,9 @@ YY_RULE_SETUP
 case 46:
 /* rule 46 can match eol */
 YY_RULE_SETUP
-#line 293 "lexer.l"
+#line 296 "lexer.l"
 {
-				   yytext[yyleng-1] = '\0';
+				   cnfPrintToken(yytext); yytext[yyleng-1] = '\0';
 				   unescapeStr((uchar*)yytext+1, yyleng-2);
 				   yylval.estr = expand_backticks(yytext+1);
 				   return STRING; }
@@ -2462,9 +2465,9 @@ YY_RULE_SETUP
 case 47:
 /* rule 47 can match eol */
 YY_RULE_SETUP
-#line 298 "lexer.l"
+#line 301 "lexer.l"
 {
-				   yytext[yyleng-1] = '\0';
+				   cnfPrintToken(yytext); yytext[yyleng-1] = '\0';
 				   unescapeStr((uchar*)yytext+1, yyleng-2);
 				   yylval.estr = es_newStrFromBuf(yytext+1, strlen(yytext)-1);
 				   return STRING; }
@@ -2472,119 +2475,119 @@ YY_RULE_SETUP
 case 48:
 /* rule 48 can match eol */
 YY_RULE_SETUP
-#line 303 "lexer.l"
-
+#line 306 "lexer.l"
+{ cnfPrintToken(yytext); }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 304 "lexer.l"
-{ yylval.estr = es_newStrFromCStr(yytext, yyleng);
+#line 307 "lexer.l"
+{ cnfPrintToken(yytext); yylval.estr = es_newStrFromCStr(yytext, yyleng);
 				  return FUNC; }
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 306 "lexer.l"
-{ parser_errmsg("invalid character '%s' in expression "
+#line 309 "lexer.l"
+{ cnfPrintToken(yytext); parser_errmsg("invalid character '%s' in expression "
 					        "- is there an invalid escape sequence somewhere?",
 						yytext); }
 	YY_BREAK
 case 51:
 /* rule 51 can match eol */
 YY_RULE_SETUP
-#line 309 "lexer.l"
+#line 312 "lexer.l"
 
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 310 "lexer.l"
-{ parser_errmsg("invalid character '%s' in 'call' statement"
+#line 313 "lexer.l"
+{ cnfPrintToken(yytext); parser_errmsg("invalid character '%s' in 'call' statement"
 					        "- is there an invalid escape sequence somewhere?",
 						yytext); }
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 313 "lexer.l"
-{ yylval.estr = es_newStrFromCStr(yytext, yyleng);
+#line 316 "lexer.l"
+{ cnfPrintToken(yytext); yylval.estr = es_newStrFromCStr(yytext, yyleng);
 				  BEGIN INITIAL;
 				  return NAME; }
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 316 "lexer.l"
-{ return '&'; }
+#line 319 "lexer.l"
+{ cnfPrintToken(yytext); return '&'; }
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 317 "lexer.l"
-{ return '{'; }
+#line 320 "lexer.l"
+{ cnfPrintToken(yytext); return '{'; }
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 318 "lexer.l"
-{ return '}'; }
+#line 321 "lexer.l"
+{ cnfPrintToken(yytext); return '}'; }
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 319 "lexer.l"
-{ return STOP; }
+#line 322 "lexer.l"
+{ cnfPrintToken(yytext); return STOP; }
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 320 "lexer.l"
-{ return ELSE; }
+#line 323 "lexer.l"
+{ cnfPrintToken(yytext); return ELSE; }
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 321 "lexer.l"
-{ BEGIN INCALL; return CALL; }
+#line 324 "lexer.l"
+{ cnfPrintToken(yytext); BEGIN INCALL; return CALL; }
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 322 "lexer.l"
-{ BEGIN EXPR; return CALL_INDIRECT; }
+#line 325 "lexer.l"
+{ cnfPrintToken(yytext); BEGIN EXPR; return CALL_INDIRECT; }
 	YY_BREAK
 case 61:
 YY_RULE_SETUP
-#line 323 "lexer.l"
-{ BEGIN EXPR; return SET; }
+#line 326 "lexer.l"
+{ cnfPrintToken(yytext); BEGIN EXPR; return SET; }
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 324 "lexer.l"
-{ BEGIN EXPR; return RESET; }
+#line 327 "lexer.l"
+{ cnfPrintToken(yytext); BEGIN EXPR; return RESET; }
 	YY_BREAK
 case 63:
 YY_RULE_SETUP
-#line 325 "lexer.l"
-{ BEGIN EXPR; return UNSET; }
+#line 328 "lexer.l"
+{ cnfPrintToken(yytext); BEGIN EXPR; return UNSET; }
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 326 "lexer.l"
-{ return CONTINUE; }
+#line 329 "lexer.l"
+{ cnfPrintToken(yytext); return CONTINUE; }
 	YY_BREAK
 /* line number support because the "preprocessor" combines lines and so needs
   * to tell us the real source line.
   */
 case 65:
 YY_RULE_SETUP
-#line 330 "lexer.l"
-{ BEGIN LINENO; }
+#line 333 "lexer.l"
+{ cnfPrintToken(yytext); BEGIN LINENO; }
 	YY_BREAK
 case 66:
 YY_RULE_SETUP
-#line 331 "lexer.l"
-{ yylineno = atoi(yytext) - 1; }
+#line 334 "lexer.l"
+{ cnfPrintToken(yytext); yylineno = atoi(yytext) - 1; }
 	YY_BREAK
 case 67:
 YY_RULE_SETUP
-#line 332 "lexer.l"
-{ BEGIN INITIAL; }
+#line 335 "lexer.l"
+{ cnfPrintToken(yytext); BEGIN INITIAL; }
 	YY_BREAK
 case 68:
 /* rule 68 can match eol */
 YY_RULE_SETUP
-#line 333 "lexer.l"
+#line 336 "lexer.l"
 
 	YY_BREAK
 /* $IncludeConfig must be detected as part of CFSYSLINE, because this is
@@ -2593,177 +2596,177 @@ YY_RULE_SETUP
 case 69:
 /* rule 69 can match eol */
 YY_RULE_SETUP
-#line 337 "lexer.l"
+#line 340 "lexer.l"
 
 	YY_BREAK
 case 70:
 YY_RULE_SETUP
-#line 338 "lexer.l"
-{ if(cnfDoInclude(yytext, 0) != 0)
+#line 341 "lexer.l"
+{ cnfPrintToken(yytext); if(cnfDoInclude(yytext, 0) != 0)
 					yyterminate();
 				  BEGIN INITIAL; }
 	YY_BREAK
 case 71:
 /* rule 71 can match eol */
 YY_RULE_SETUP
-#line 341 "lexer.l"
-{ yylval.objType = CNFOBJ_MAINQ;
+#line 344 "lexer.l"
+{ cnfPrintToken(yytext); yylval.objType = CNFOBJ_MAINQ;
 				  BEGIN INOBJ; return BEGINOBJ; }
 	YY_BREAK
 case 72:
 /* rule 72 can match eol */
 YY_RULE_SETUP
-#line 343 "lexer.l"
-{ yylval.objType = CNFOBJ_TIMEZONE;
+#line 346 "lexer.l"
+{ cnfPrintToken(yytext); yylval.objType = CNFOBJ_TIMEZONE;
 				  BEGIN INOBJ; return BEGINOBJ; }
 	YY_BREAK
 case 73:
 /* rule 73 can match eol */
 YY_RULE_SETUP
-#line 345 "lexer.l"
-{ yylval.objType = CNFOBJ_PARSER;
+#line 348 "lexer.l"
+{ cnfPrintToken(yytext); yylval.objType = CNFOBJ_PARSER;
 				  BEGIN INOBJ; return BEGINOBJ; }
 	YY_BREAK
 case 74:
 /* rule 74 can match eol */
 YY_RULE_SETUP
-#line 347 "lexer.l"
-{ yylval.objType = CNFOBJ_GLOBAL;
+#line 350 "lexer.l"
+{ cnfPrintToken(yytext); yylval.objType = CNFOBJ_GLOBAL;
 				  BEGIN INOBJ; return BEGINOBJ; }
 	YY_BREAK
 case 75:
 /* rule 75 can match eol */
 YY_RULE_SETUP
-#line 349 "lexer.l"
-{ yylval.objType = CNFOBJ_TPL;
+#line 352 "lexer.l"
+{ cnfPrintToken(yytext); yylval.objType = CNFOBJ_TPL;
 				  BEGIN INOBJ; return BEGIN_TPL; }
 	YY_BREAK
 case 76:
 /* rule 76 can match eol */
 YY_RULE_SETUP
-#line 351 "lexer.l"
-{ yylval.objType = CNFOBJ_RULESET;
+#line 354 "lexer.l"
+{ cnfPrintToken(yytext); yylval.objType = CNFOBJ_RULESET;
 				  BEGIN INOBJ; return BEGIN_RULESET; }
 	YY_BREAK
 case 77:
 /* rule 77 can match eol */
 YY_RULE_SETUP
-#line 353 "lexer.l"
-{ yylval.objType = CNFOBJ_PROPERTY;
+#line 356 "lexer.l"
+{ cnfPrintToken(yytext); yylval.objType = CNFOBJ_PROPERTY;
 				  BEGIN INOBJ; return BEGIN_PROPERTY; }
 	YY_BREAK
 case 78:
 /* rule 78 can match eol */
 YY_RULE_SETUP
-#line 355 "lexer.l"
-{ yylval.objType = CNFOBJ_CONSTANT;
+#line 358 "lexer.l"
+{ cnfPrintToken(yytext); yylval.objType = CNFOBJ_CONSTANT;
 				  BEGIN INOBJ; return BEGIN_CONSTANT; }
 	YY_BREAK
 case 79:
 /* rule 79 can match eol */
 YY_RULE_SETUP
-#line 357 "lexer.l"
-{ yylval.objType = CNFOBJ_INPUT;
+#line 360 "lexer.l"
+{ cnfPrintToken(yytext); yylval.objType = CNFOBJ_INPUT;
 				  BEGIN INOBJ; return BEGINOBJ; }
 	YY_BREAK
 case 80:
 /* rule 80 can match eol */
 YY_RULE_SETUP
-#line 359 "lexer.l"
-{ yylval.objType = CNFOBJ_MODULE;
+#line 362 "lexer.l"
+{ cnfPrintToken(yytext); yylval.objType = CNFOBJ_MODULE;
 				  BEGIN INOBJ; return BEGINOBJ; }
 	YY_BREAK
 case 81:
 /* rule 81 can match eol */
 YY_RULE_SETUP
-#line 361 "lexer.l"
-{ yylval.objType = CNFOBJ_LOOKUP_TABLE;
+#line 364 "lexer.l"
+{ cnfPrintToken(yytext); yylval.objType = CNFOBJ_LOOKUP_TABLE;
 				  BEGIN INOBJ; return BEGINOBJ; }
 	YY_BREAK
 case 82:
 /* rule 82 can match eol */
 YY_RULE_SETUP
-#line 363 "lexer.l"
-{ yylval.objType = CNFOBJ_DYN_STATS;
+#line 366 "lexer.l"
+{ cnfPrintToken(yytext); yylval.objType = CNFOBJ_DYN_STATS;
 				  BEGIN INOBJ; return BEGINOBJ; }
 	YY_BREAK
 case 83:
 /* rule 83 can match eol */
 YY_RULE_SETUP
-#line 365 "lexer.l"
-{ BEGIN INOBJ; return BEGIN_INCLUDE; }
+#line 368 "lexer.l"
+{ cnfPrintToken(yytext); BEGIN INOBJ; return BEGIN_INCLUDE; }
 	YY_BREAK
 case 84:
 /* rule 84 can match eol */
 YY_RULE_SETUP
-#line 366 "lexer.l"
-{ BEGIN INOBJ; return BEGIN_ACTION; }
+#line 369 "lexer.l"
+{ cnfPrintToken(yytext); BEGIN INOBJ; return BEGIN_ACTION; }
 	YY_BREAK
 case 85:
 /* rule 85 can match eol */
 YY_RULE_SETUP
-#line 367 "lexer.l"
+#line 370 "lexer.l"
 {
-				  yylval.s = strdup(rmLeadingSpace(yytext));
+				  cnfPrintToken(yytext); yylval.s = strdup(rmLeadingSpace(yytext));
 				  dbgprintf("lexer: propfilt is '%s'\n", yylval.s);
 				  return PROPFILT;
 				  }
 	YY_BREAK
 case 86:
 YY_RULE_SETUP
-#line 372 "lexer.l"
-{ yylval.s = strdup(rmLeadingSpace(yytext)); return PRIFILT; }
+#line 375 "lexer.l"
+{ cnfPrintToken(yytext); yylval.s = strdup(rmLeadingSpace(yytext)); return PRIFILT; }
 	YY_BREAK
 case 87:
-#line 374 "lexer.l"
+#line 377 "lexer.l"
 case 88:
-#line 375 "lexer.l"
+#line 378 "lexer.l"
 case 89:
 /* rule 89 can match eol */
-#line 376 "lexer.l"
+#line 379 "lexer.l"
 case 90:
 /* rule 90 can match eol */
-#line 377 "lexer.l"
+#line 380 "lexer.l"
 case 91:
 /* rule 91 can match eol */
-#line 378 "lexer.l"
+#line 381 "lexer.l"
 case 92:
 /* rule 92 can match eol */
-#line 379 "lexer.l"
+#line 382 "lexer.l"
 case 93:
 /* rule 93 can match eol */
 YY_RULE_SETUP
-#line 379 "lexer.l"
-{ yylval.s = yytext; return LEGACY_ACTION; }
+#line 382 "lexer.l"
+{ cnfPrintToken(yytext); yylval.s = yytext; return LEGACY_ACTION; }
 	YY_BREAK
 case 94:
 YY_RULE_SETUP
-#line 380 "lexer.l"
-{ BEGIN INITIAL; return ENDOBJ; }
+#line 383 "lexer.l"
+{ cnfPrintToken(yytext); BEGIN INITIAL; return ENDOBJ; }
 	YY_BREAK
 case 95:
 YY_RULE_SETUP
-#line 381 "lexer.l"
-{ yylval.estr = es_newStrFromCStr(yytext, yyleng);
+#line 384 "lexer.l"
+{ cnfPrintToken(yytext); yylval.estr = es_newStrFromCStr(yytext, yyleng);
 				  return NAME; }
 	YY_BREAK
 case 96:
-#line 384 "lexer.l"
+#line 387 "lexer.l"
 case 97:
-#line 385 "lexer.l"
+#line 388 "lexer.l"
 case 98:
-#line 386 "lexer.l"
+#line 389 "lexer.l"
 case 99:
 YY_RULE_SETUP
-#line 386 "lexer.l"
-{ return(yytext[0]); }
+#line 389 "lexer.l"
+{ cnfPrintToken(yytext); return(yytext[0]); }
 	YY_BREAK
 case 100:
 /* rule 100 can match eol */
 YY_RULE_SETUP
-#line 387 "lexer.l"
+#line 390 "lexer.l"
 {
-				   yytext[yyleng-1] = '\0';
+				   cnfPrintToken(yytext); yytext[yyleng-1] = '\0';
 				   unescapeStr((uchar*)yytext+1, yyleng-2);
 				   yylval.estr = es_newStrFromBuf(yytext+1, strlen(yytext)-1);
 				   return STRING; }
@@ -2771,9 +2774,9 @@ YY_RULE_SETUP
 case 101:
 /* rule 101 can match eol */
 YY_RULE_SETUP
-#line 392 "lexer.l"
+#line 395 "lexer.l"
 {
-				   yytext[yyleng-1] = '\0';
+				   cnfPrintToken(yytext); yytext[yyleng-1] = '\0';
 				   unescapeStr((uchar*)yytext+1, yyleng-2);
 				   yylval.estr = expand_backticks(yytext+1);
 				   return STRING; }
@@ -2782,28 +2785,28 @@ YY_RULE_SETUP
 				  return VALUE; }*/
 case 102:
 YY_RULE_SETUP
-#line 399 "lexer.l"
-{ preCommentState = YY_START; BEGIN COMMENT; }
+#line 402 "lexer.l"
+{ cnfPrintToken(yytext); preCommentState = YY_START; BEGIN COMMENT; }
 	YY_BREAK
 case 103:
 YY_RULE_SETUP
-#line 400 "lexer.l"
-{ preCommentState = YY_START; BEGIN COMMENT; }
+#line 403 "lexer.l"
+{ cnfPrintToken(yytext); preCommentState = YY_START; BEGIN COMMENT; }
 	YY_BREAK
 case 104:
 YY_RULE_SETUP
-#line 401 "lexer.l"
-{ preCommentState = YY_START; BEGIN COMMENT; }
+#line 404 "lexer.l"
+{ cnfPrintToken(yytext); preCommentState = YY_START; BEGIN COMMENT; }
 	YY_BREAK
 case 105:
 YY_RULE_SETUP
-#line 402 "lexer.l"
-{ BEGIN preCommentState; }
+#line 405 "lexer.l"
+{ cnfPrintToken(yytext); BEGIN preCommentState; }
 	YY_BREAK
 case 106:
 /* rule 106 can match eol */
 YY_RULE_SETUP
-#line 403 "lexer.l"
+#line 406 "lexer.l"
 
 	YY_BREAK
 case 107:
@@ -2811,19 +2814,19 @@ case 107:
 (yy_c_buf_p) = yy_cp -= 1;
 YY_DO_BEFORE_ACTION; /* set up yytext again */
 YY_RULE_SETUP
-#line 404 "lexer.l"
+#line 407 "lexer.l"
 /* skip comments in input */
 	YY_BREAK
 case 108:
 /* rule 108 can match eol */
 YY_RULE_SETUP
-#line 405 "lexer.l"
-
+#line 408 "lexer.l"
+{ cnfPrintToken(yytext); }
 	YY_BREAK
 case 109:
 YY_RULE_SETUP
-#line 406 "lexer.l"
-{ parser_errmsg("invalid character '%s' in object definition "
+#line 409 "lexer.l"
+{ cnfPrintToken(yytext); parser_errmsg("invalid character '%s' in object definition "
 					        "- is there an invalid escape sequence somewhere?",
 						yytext); }
 	YY_BREAK
@@ -2832,8 +2835,8 @@ case 110:
 (yy_c_buf_p) = yy_cp -= 1;
 YY_DO_BEFORE_ACTION; /* set up yytext again */
 YY_RULE_SETUP
-#line 409 "lexer.l"
-{ /* see comment on $IncludeConfig above */
+#line 412 "lexer.l"
+{ cnfPrintToken(yytext); /* see comment on $IncludeConfig above */
 				  if(!strncasecmp(yytext, "$includeconfig ", 14)) {
 					yyless((yy_size_t)14);
 				  	BEGIN INCL;
@@ -2850,8 +2853,8 @@ case 111:
 (yy_c_buf_p) = yy_cp -= 1;
 YY_DO_BEFORE_ACTION; /* set up yytext again */
 YY_RULE_SETUP
-#line 420 "lexer.l"
-{ yylval.s = strdup(yytext); return BSD_TAG_SELECTOR; }
+#line 423 "lexer.l"
+{ cnfPrintToken(yytext); yylval.s = strdup(yytext); return BSD_TAG_SELECTOR; }
 	YY_BREAK
 case 112:
 /* rule 112 can match eol */
@@ -2860,8 +2863,8 @@ YY_LINENO_REWIND_TO(yy_cp - 1);
 (yy_c_buf_p) = yy_cp -= 1;
 YY_DO_BEFORE_ACTION; /* set up yytext again */
 YY_RULE_SETUP
-#line 421 "lexer.l"
-{ yylval.s = strdup(yytext); return BSD_HOST_SELECTOR; }
+#line 424 "lexer.l"
+{ cnfPrintToken(yytext); yylval.s = strdup(yytext); return BSD_HOST_SELECTOR; }
 	YY_BREAK
 case 113:
 /* rule 113 can match eol */
@@ -2870,33 +2873,33 @@ YY_LINENO_REWIND_TO(yy_cp - 1);
 (yy_c_buf_p) = yy_cp -= 1;
 YY_DO_BEFORE_ACTION; /* set up yytext again */
 YY_RULE_SETUP
-#line 422 "lexer.l"
-{ yylval.s = strdup(yytext); return BSD_HOST_SELECTOR; }
+#line 425 "lexer.l"
+{ cnfPrintToken(yytext); yylval.s = strdup(yytext); return BSD_HOST_SELECTOR; }
 	YY_BREAK
 case 114:
 *yy_cp = (yy_hold_char); /* undo effects of setting up yytext */
 (yy_c_buf_p) = yy_cp -= 1;
 YY_DO_BEFORE_ACTION; /* set up yytext again */
 YY_RULE_SETUP
-#line 423 "lexer.l"
-{ yylval.s = strdup(yytext); return BSD_HOST_SELECTOR; }
+#line 426 "lexer.l"
+{ cnfPrintToken(yytext); yylval.s = strdup(yytext); return BSD_HOST_SELECTOR; }
 	YY_BREAK
 case 115:
 /* rule 115 can match eol */
 YY_RULE_SETUP
-#line 424 "lexer.l"
-/* skip comments in input */
+#line 427 "lexer.l"
+{cnfPrintToken(yytext); }/* skip comments in input */
 	YY_BREAK
 case 116:
 /* rule 116 can match eol */
 YY_RULE_SETUP
-#line 425 "lexer.l"
-/* drop whitespace */
+#line 428 "lexer.l"
+{cnfPrintToken(yytext); }/* drop whitespace */
 	YY_BREAK
 case 117:
 YY_RULE_SETUP
-#line 426 "lexer.l"
-{ parser_errmsg("invalid character '%s' "
+#line 429 "lexer.l"
+{ cnfPrintToken(yytext); parser_errmsg("invalid character '%s' "
 					        "- is there an invalid escape sequence somewhere?",
 						yytext); }
 	YY_BREAK
@@ -2908,15 +2911,15 @@ case YY_STATE_EOF(LINENO):
 case YY_STATE_EOF(INCALL):
 case YY_STATE_EOF(IN_PROCEDURE_CALL):
 case YY_STATE_EOF(EXPR):
-#line 429 "lexer.l"
+#line 432 "lexer.l"
 { if(popfile() != 0) yyterminate(); }
 	YY_BREAK
 case 118:
 YY_RULE_SETUP
-#line 431 "lexer.l"
+#line 434 "lexer.l"
 YY_FATAL_ERROR( "flex scanner jammed" );
 	YY_BREAK
-#line 2920 "lexer.c"
+#line 2923 "lexer.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -3892,33 +3895,14 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 431 "lexer.l"
+#line 434 "lexer.l"
 
-int
-cnfParseBuffer(char *buf, unsigned lenBuf)
+static void cnfPrintToken(const char *token)
 {
-	struct bufstack *bs;
-	int r = 0;
-	yydebug = 1;
-	BEGIN INITIAL;
-	/* maintain stack */
-	if((bs = malloc(sizeof(struct bufstack))) == NULL) {
-		r = 1;
-		goto done;
+	if(fp_rs_full_conf_output != NULL) {
+		fprintf(fp_rs_full_conf_output, "%s", token);
 	}
-
-	if(currbs != NULL)
-		currbs->lineno = yylineno;
-	bs->prev = currbs;
-	bs->fn = strdup("*buffer*");
-	bs->bs = yy_scan_buffer(buf, lenBuf);
-	bs->estr = NULL;
-	currbs = bs;
-	cnfcurrfn = bs->fn;
-	yylineno = 1;
-done:	return r;
 }
-
 
 /* add config file or text the the stack of config objects to be
  * processed.
@@ -3945,12 +3929,17 @@ cnfAddConfigBuffer(es_str_t *const str, const char *const cnfobj_name)
 	bs->prev = currbs;
 	bs->fn = strdup(cnfobj_name);
 	yy_size_t lll = es_strlen(str);
+	/* NOTE: yy_scan_buffer() does an automatic yy_switch_to_buffer to the new buffer */
 	bs->bs = yy_scan_buffer((char*)es_getBufAddr(str), lll);
 	bs->estr = str; /* needed so we can free it later */
 	currbs = bs;
 	cnfcurrfn = bs->fn;
 	yylineno = 1;
 	dbgprintf("config parser: pushed config fragment on top of stack: %s\n", cnfobj_name);
+
+	if(fp_rs_full_conf_output != NULL) {
+		fprintf(fp_rs_full_conf_output, "\n##### BEGIN CONFIG: %s\n", cnfcurrfn);
+	}
 
 done:
 	if(r != 0) {
@@ -3964,7 +3953,7 @@ done:
  * note: in case of error, errno must be kept valid!
  */
 int
-cnfSetLexFile(char *fname)
+cnfSetLexFile(const char *const fname)
 {
 	es_str_t *str = NULL;
 	struct bufstack *bs;
@@ -4005,6 +3994,10 @@ int
 popfile(void)
 {
 	struct bufstack *bs = currbs;
+
+	if(fp_rs_full_conf_output != NULL) {
+		fprintf(fp_rs_full_conf_output, "\n##### END   CONFIG: %s\n", cnfcurrfn);
+	}
 
 	if(bs == NULL)
 		return 1;

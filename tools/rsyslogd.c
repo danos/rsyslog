@@ -3,7 +3,7 @@
  * because it was either written from scratch by me (rgerhards) or
  * contributors who agreed to ASL 2.0.
  *
- * Copyright 2004-2018 Rainer Gerhards and Adiscon
+ * Copyright 2004-2019 Rainer Gerhards and Adiscon
  *
  * This file is part of rsyslog.
  *
@@ -61,6 +61,7 @@
 #include "operatingstate.h"
 #include "dirty.h"
 #include "janitor.h"
+#include "parserif.h"
 
 /* some global vars we need to differentiate between environments,
  * for TZ-related things see
@@ -72,6 +73,7 @@ static int emitTZWarning = 0;
 #else
 static int emitTZWarning = 1;
 #endif
+static pthread_t mainthread = 0;
 
 #if defined(_AIX)
 /* AIXPORT : start
@@ -155,11 +157,6 @@ DEFobjCurrIf(module)
 DEFobjCurrIf(datetime)
 DEFobjCurrIf(glbl)
 
-/* imports from syslogd.c, these should go away over time (as we
- * migrate/replace more and more code to ASL 2.0).
- */
-char **syslogd_crunch_list(char *list);
-/* end syslogd.c imports */
 extern int yydebug; /* interface to flex */
 
 
@@ -847,30 +844,34 @@ submitMsgWithDfltRatelimiter(smsg_t *pMsg)
 static void
 logmsgInternal_doWrite(smsg_t *pMsg)
 {
-	if(bProcessInternalMessages) {
-		submitMsg2(pMsg);
-	} else {
-		const int pri = getPRIi(pMsg);
-		uchar *const msg = getMSG(pMsg);
-#		ifdef ENABLE_LIBLOGGING_STDLOG
-		/* the "emit only once" rate limiter is quick and dirty and not
-		 * thread safe. However, that's no problem for the current intend
-		 * and it is not justified to create more robust code for the
-		 * functionality. -- rgerhards, 2018-05-14
-		 */
-		static warnmsg_emitted = 0;
-		if(warnmsg_emitted == 0) {
-			stdlog_log(stdlog_hdl, LOG_WARNING, "%s",
-				"RSYSLOG WARNING: liblogging-stdlog "
-				"functionality will go away soon. For details see "
-				"https://github.com/rsyslog/rsyslog/issues/2706");
-			warnmsg_emitted = 1;
+	const int pri = getPRIi(pMsg);
+	if(pri % 8 <= glblIntMsgsSeverityFilter) {
+		if(bProcessInternalMessages) {
+			submitMsg2(pMsg);
+			pMsg = NULL; /* msg obj handed over; do not destruct */
+		} else {
+			uchar *const msg = getMSG(pMsg);
+			#ifdef ENABLE_LIBLOGGING_STDLOG
+			/* the "emit only once" rate limiter is quick and dirty and not
+			 * thread safe. However, that's no problem for the current intend
+			 * and it is not justified to create more robust code for the
+			 * functionality. -- rgerhards, 2018-05-14
+			 */
+			static warnmsg_emitted = 0;
+			if(warnmsg_emitted == 0) {
+				stdlog_log(stdlog_hdl, LOG_WARNING, "%s",
+					"RSYSLOG WARNING: liblogging-stdlog "
+					"functionality will go away soon. For details see "
+					"https://github.com/rsyslog/rsyslog/issues/2706");
+				warnmsg_emitted = 1;
+			}
+			stdlog_log(stdlog_hdl, pri2sev(pri), "%s", (char*)msg);
+			#else
+			syslog(pri, "%s", msg);
+			#endif
 		}
-		stdlog_log(stdlog_hdl, pri2sev(pri), "%s", (char*)msg);
-#		else
-		syslog(pri, "%s", msg);
-#		endif
-		/* we have emitted the message and must destruct it */
+	}
+	if(pMsg != NULL) {
 		msgDestruct(&pMsg);
 	}
 }
@@ -1298,9 +1299,9 @@ initAll(int argc, char **argv)
 	 * rgerhards, 2008-04-04
 	 */
 #if defined(_AIX)
-	while((ch = getopt(argc, argv, "46ACDdf:hi:l:M:nN:qQs:S:T:u:vwxR")) != EOF) {
+	while((ch = getopt(argc, argv, "46ACDdf:hi:M:nN:o:qQS:T:u:vwxR")) != EOF) {
 #else
-	while((ch = getopt(argc, argv, "46ACDdf:hi:l:M:nN:qQs:S:T:u:vwx")) != EOF) {
+	while((ch = getopt(argc, argv, "46ACDdf:hi:M:nN:o:qQS:T:u:vwx")) != EOF) {
 #endif
 		switch((char)ch) {
 		case '4':
@@ -1308,17 +1309,16 @@ initAll(int argc, char **argv)
 		case 'A':
 		case 'f': /* configuration file */
 		case 'i': /* pid file name */
-		case 'l':
 		case 'n': /* don't fork */
 		case 'N': /* enable config verify mode */
 		case 'q': /* add hostname if DNS resolving has failed */
 		case 'Q': /* dont resolve hostnames in ACL to IPs */
-		case 's':
 		case 'S': /* Source IP for local client to be used on multihomed host */
 		case 'T': /* chroot on startup (primarily for testing) */
 		case 'u': /* misc user settings */
 		case 'w': /* disable disallowed host warnings */
 		case 'C':
+		case 'o': /* write output config file */
 		case 'x': /* disable dns for remote messages */
 			CHKiRet(bufOptAdd(ch, optarg));
 			break;
@@ -1426,21 +1426,39 @@ initAll(int argc, char **argv)
 			free((void*)PidFile);
 			PidFile = arg;
 			break;
-		case 'l':
-			fprintf (stderr, "rsyslogd: the -l command line option will go away "
-				 "soon.\n Make yourself heard on the rsyslog mailing "
-				 "list if you need it any longer.\n");
-			if(glbl.GetLocalHosts() != NULL) {
-				fprintf (stderr, "rsyslogd: Only one -l argument allowed, the first one is taken.\n");
-			} else {
-				glbl.SetLocalHosts(syslogd_crunch_list(arg));
-			}
-			break;
 		case 'n':		/* don't fork */
 			doFork = 0;
 			break;
 		case 'N':		/* enable config verify mode */
 			iConfigVerify = (arg == NULL) ? 0 : atoi(arg);
+			break;
+		case 'o':
+			if(fp_rs_full_conf_output != NULL) {
+				fprintf(stderr, "warning: -o option given multiple times. Now "
+					"using value %s\n", (arg == NULL) ? "-" : arg);
+				fclose(fp_rs_full_conf_output);
+				fp_rs_full_conf_output = NULL;
+			}
+			if(arg == NULL || !strcmp(arg, "-")) {
+				fp_rs_full_conf_output = stdout;
+			} else {
+				fp_rs_full_conf_output = fopen(arg, "w");
+			}
+			if(fp_rs_full_conf_output == NULL) {
+				perror(arg);
+				fprintf (stderr, "rsyslogd: cannot open config output file %s - "
+					"-o option will be ignored\n", arg);
+			} else {
+				time_t tTime;
+				struct tm tp;
+				datetime.GetTime(&tTime);
+				localtime_r(&tTime, &tp);
+				fprintf(fp_rs_full_conf_output,
+					"## full conf created by rsyslog version %s at "
+					"%4.4d-%2.2d-%2.2d %2.2d:%2.2d:%2.2d ##\n",
+					VERSION, tp.tm_year + 1900, tp.tm_mon + 1, tp.tm_mday,
+					tp.tm_hour, tp.tm_min, tp.tm_sec);
+			}
 			break;
 		case 'q':               /* add hostname if DNS resolving has failed */
 			fprintf (stderr, "rsyslogd: the -q command line option will go away "
@@ -1454,16 +1472,6 @@ initAll(int argc, char **argv)
 				 "configuration parameter instead.\n");
 		        *(net.pACLDontResolve) = 1;
 		        break;
-		case 's':
-			fprintf (stderr, "rsyslogd: the -s command line option will go away "
-				 "soon.\n Make yourself heard on the rsyslog mailing "
-				 "list if you need it any longer.\n");
-			if(glbl.GetStripDomains() != NULL) {
-				fprintf (stderr, "rsyslogd: Only one -s argument allowed, the first one is taken.\n");
-			} else {
-				glbl.SetStripDomains(syslogd_crunch_list(arg));
-			}
-			break;
 		case 'T':/* chroot() immediately at program startup, but only for testing, NOT security yet */
 			if(arg == NULL) {
 				/* note this case should already be handled by getopt,
@@ -1531,6 +1539,13 @@ initAll(int argc, char **argv)
 
 	resetErrMsgsFlag();
 	localRet = rsconf.Load(&ourConf, ConfFile);
+
+	if(fp_rs_full_conf_output != NULL) {
+		if(fp_rs_full_conf_output != stdout) {
+			fclose(fp_rs_full_conf_output);
+		}
+		fp_rs_full_conf_output = NULL;
+	}
 
 	/* check for "hard" errors that needs us to abort in any case */
 	if(   (localRet == RS_RET_CONF_FILE_NOT_FOUND)
@@ -1780,13 +1795,13 @@ rsyslogdDoDie(int sig)
 	static int iRetries = 0; /* debug aid */
 	dbgprintf(MSG1);
 	if(Debug == DEBUG_FULL) {
-		if(write(1, MSG1, sizeof(MSG1) - 1)) {
+		if(write(1, MSG1, sizeof(MSG1) - 1) == -1) {
 			dbgprintf("%s:%d: write failed\n", __FILE__, __LINE__);
 		}
 	}
 	if(iRetries++ == 4) {
 		if(Debug == DEBUG_FULL) {
-			if(write(1, MSG2, sizeof(MSG2) - 1)) {
+			if(write(1, MSG2, sizeof(MSG2) - 1) == -1) {
 				dbgprintf("%s:%d: write failed\n", __FILE__, __LINE__);
 			}
 		}
@@ -1802,6 +1817,11 @@ rsyslogdDoDie(int sig)
 	}
 #	undef MSG1
 #	undef MSG2
+	/* at least on FreeBSD we seem not to necessarily awake the main thread.
+	 * So let's do it explicitely.
+	 */
+	dbgprintf("awaking mainthread\n");
+	pthread_kill(mainthread, SIGTTIN);
 }
 
 
@@ -2071,6 +2091,7 @@ main(int argc, char **argv)
 		}
 #endif
 
+	mainthread = pthread_self();
 	if((int) getpid() == 1) {
 		fprintf(stderr, "rsyslogd %s: running as pid 1, enabling "
 			"container-specific defaults, press ctl-c to "
@@ -2103,8 +2124,11 @@ main(int argc, char **argv)
 #endif
 	DBGPRINTF("max message size: %d\n", glblGetMaxLine());
 	DBGPRINTF("----RSYSLOGD INITIALIZED\n");
+	LogMsg(0, RS_RET_OK, LOG_DEBUG, "rsyslogd fully started up and initialized "
+		"- begin actual processing");
 
 	mainloop();
+	LogMsg(0, RS_RET_OK, LOG_DEBUG, "rsyslogd shutting down");
 	deinitAll();
 #ifdef ENABLE_LIBLOGGING_STDLOG
 	stdlog_close(stdlog_hdl);

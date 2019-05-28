@@ -138,6 +138,7 @@ TESTS +=  \
 	operatingstate-basic.sh \
 	operatingstate-empty.sh \
 	operatingstate-unclean.sh \
+	smtradfile.sh \
 	empty-hostname.sh \
 	hostname-getaddrinfo-fail.sh \
 	msleep_usage_output.sh \
@@ -152,6 +153,10 @@ TESTS +=  \
 	hostname-with-slash-dflt-slash-valid.sh \
 	stop-localvar.sh \
 	stop-msgvar.sh \
+	glbl-ruleset-queue-defaults.sh \
+	glbl-internalmsg_severity-info-shown.sh \
+	glbl-internalmsg_severity-debug-shown.sh \
+	glbl-internalmsg_severity-debug-not_shown.sh \
 	glbl-umask.sh \
 	glbl-unloadmodules.sh \
 	glbl-invld-param.sh \
@@ -175,6 +180,7 @@ TESTS +=  \
 	privdropuserid.sh \
 	privdropgroup.sh \
 	privdropgroupid.sh \
+	json-nonstring.sh \
 	template-json.sh \
 	template-pure-json.sh \
 	template-pos-from-to.sh \
@@ -208,6 +214,7 @@ TESTS +=  \
 	tcp_forwarding_tpl.sh \
 	tcp_forwarding_dflt_tpl.sh \
 	tcp_forwarding_retries.sh \
+	queue_errmsg-oversize.sh \
 	queue-minbatch.sh \
 	queue-minbatch-queuefull.sh \
 	arrayqueue.sh \
@@ -226,6 +233,7 @@ TESTS +=  \
 	imtcp-NUL-rawmsg.sh \
 	imtcp-multiport.sh \
 	imtcp_incomplete_frame_at_end.sh \
+	da-queue-persist.sh \
 	daqueue-persist.sh \
 	daqueue-invld-qi.sh \
 	daqueue-dirty-shutdown.sh \
@@ -233,6 +241,7 @@ TESTS +=  \
 	diskqueue.sh \
 	diskqueue-fsync.sh \
 	diskqueue-full.sh \
+	diskqueue-non-unique-prefix.sh \
 	rulesetmultiqueue.sh \
 	rulesetmultiqueue-v6.sh \
 	manytcp.sh \
@@ -357,6 +366,7 @@ TESTS +=  \
 	rscript_previous_action_suspended.sh \
 	rscript_str2num_negative.sh \
 	rscript-config_enable-on.sh \
+	config_output-o-option.sh \
 	rs-cnum.sh \
 	rs-substring.sh \
 	rs-int2hex.sh \
@@ -405,6 +415,7 @@ endif # ENABLE_LIBGCRYPT
 if HAVE_VALGRIND
 TESTS +=  \
 	tcpflood_wrong_option_output.sh \
+	smtradfile-vg.sh \
 	dnscache-TTL-0-vg.sh \
 	include-obj-outside-control-flow-vg.sh \
 	include-obj-in-if-vg.sh \
@@ -1143,6 +1154,7 @@ endif
 
 if ENABLE_OMUDPSPOOF
 TESTS += \
+	omudpspoof_errmsg_no_params.sh \
 	sndrcv_omudpspoof.sh \
 	sndrcv_omudpspoof_nonstdpt.sh
 endif
@@ -1248,6 +1260,7 @@ TESTS += \
 	imfile-endmsg.regex.sh \
 	imfile-statefile-no-file_id.sh \
 	imfile-statefile-no-file_id-TO-file_id.sh \
+	imfile-statefile-directory.sh \
 	imfile-persist-state-1.sh \
 	imfile-freshStartTail1.sh \
 	imfile-freshStartTail2.sh \
@@ -1271,7 +1284,8 @@ TESTS += \
 	imfile-logrotate-copytruncate.sh \
 	imfile-logrotate-nocopytruncate.sh \
 	imfile-growing-file-id.sh \
-	glbl-oversizeMsg-truncate-imfile.sh
+	glbl-oversizeMsg-truncate-imfile.sh \
+	config_enabled-off.sh
 
 if ENABLE_MMNORMALIZE
 TESTS += \
@@ -1381,11 +1395,18 @@ EXTRA_DIST= \
 	urlencode.py \
 	dnscache-TTL-0.sh \
 	dnscache-TTL-0-vg.sh \
+	smtradfile.sh \
+	smtradfile-vg.sh \
 	operatingstate-basic.sh \
 	operatingstate-empty.sh \
 	operatingstate-unclean.sh \
 	internal-errmsg-memleak-vg.sh \
+	glbl-ruleset-queue-defaults.sh \
+	glbl-internalmsg_severity-info-shown.sh \
+	glbl-internalmsg_severity-debug-shown.sh \
+	glbl-internalmsg_severity-debug-not_shown.sh \
 	glbl-oversizeMsg-log-vg.sh \
+	config_enabled-off.sh \
 	empty-hostname.sh \
 	hostname-getaddrinfo-fail.sh \
 	hostname-with-slash-pmrfc5424.sh \
@@ -1444,6 +1465,7 @@ EXTRA_DIST= \
 	tcp_forwarding_ns_tpl.sh \
 	tcp_forwarding_dflt_tpl.sh \
 	tcp_forwarding_retries.sh \
+	queue_errmsg-oversize.sh \
 	queue-minbatch.sh \
 	queue-minbatch-queuefull.sh \
 	killrsyslog.sh \
@@ -1483,11 +1505,13 @@ EXTRA_DIST= \
 	diskq-rfc5424.sh \
 	diskqueue-full.sh \
 	diskqueue.sh \
+	diskqueue-non-unique-prefix.sh \
 	arrayqueue.sh \
 	include-obj-text-from-file.sh \
 	include-obj-outside-control-flow-vg.sh \
 	include-obj-in-if-vg.sh \
 	include-obj-text-vg.sh \
+	config_output-o-option.sh \
 	rscript-config_enable-off-vg.sh \
 	rscript-config_enable-on.sh \
 	rscript_http_request.sh \
@@ -1608,6 +1632,7 @@ EXTRA_DIST= \
 	privdropuserid.sh \
 	privdropgroup.sh \
 	privdropgroupid.sh \
+	json-nonstring.sh \
 	template-json.sh \
 	template-pure-json.sh \
 	template-pos-from-to.sh \
@@ -1849,6 +1874,7 @@ EXTRA_DIST= \
 	queue-encryption-disk_keyfile-vg.sh \
 	queue-encryption-disk_keyprog.sh \
 	queue-encryption-da.sh \
+	da-queue-persist.sh \
 	daqueue-dirty-shutdown.sh \
 	daqueue-invld-qi.sh \
 	daqueue-persist.sh \
@@ -1889,6 +1915,7 @@ EXTRA_DIST= \
 	imudp_thread_hang.sh \
 	sndrcv_udp_nonstdpt.sh \
 	sndrcv_udp_nonstdpt_v6.sh \
+	omudpspoof_errmsg_no_params.sh \
 	sndrcv_omudpspoof.sh \
 	sndrcv_omudpspoof_nonstdpt.sh \
 	sndrcv_gzip.sh \
@@ -2016,6 +2043,7 @@ EXTRA_DIST= \
 	imfile-endmsg.regex.json.rulebase \
 	imfile-statefile-no-file_id.sh \
 	imfile-statefile-no-file_id-TO-file_id.sh \
+	imfile-statefile-directory.sh \
 	imfile-persist-state-1.sh \
 	imfile-freshStartTail1.sh \
 	imfile-freshStartTail2.sh \

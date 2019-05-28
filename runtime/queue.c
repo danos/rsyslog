@@ -82,11 +82,18 @@ DEFobjCurrIf(statsobj)
 unsigned int iOverallQueueSize = 0;
 #endif
 
+#define OVERSIZE_QUEUE_WATERMARK 500000 /* when is a queue considered to be "overly large"? */
+
 /* overridable default values (via global config) */
 int actq_dflt_toQShutdown = 10;		/* queue shutdown */
 int actq_dflt_toActShutdown = 1000;	/* action shutdown (in phase 2) */
 int actq_dflt_toEnq = 2000;		/* timeout for queue enque */
 int actq_dflt_toWrkShutdown = 60000;	/* timeout for worker thread shutdown */
+
+int ruleset_dflt_toQShutdown = 1500;	/* queue shutdown */
+int ruleset_dflt_toActShutdown = 1000;	/* action shutdown (in phase 2) */
+int ruleset_dflt_toEnq = 2000;		/* timeout for queue enque */
+int ruleset_dflt_toWrkShutdown = 60000;	/* timeout for worker thread shutdown */
 
 
 /* forward-definitions */
@@ -147,6 +154,14 @@ static struct cnfparamblk pblk =
 	  cnfpdescr
 	};
 
+/* support to detect duplicate queue file names */
+struct queue_filename {
+	struct queue_filename *next;
+	const char *dirname;
+	const char *filename;
+};
+struct queue_filename *queue_filename_root = NULL;
+
 /* debug aid */
 #if 0
 static inline void displayBatchState(batch_t *pBatch)
@@ -158,6 +173,21 @@ static inline void displayBatchState(batch_t *pBatch)
 }
 #endif
 static rsRetVal qqueuePersist(qqueue_t *pThis, int bIsCheckpoint);
+
+/* do cleanup when config is loaded */
+void qqueueDoneLoadCnf(void)
+{
+	struct queue_filename *next, *del;
+	next = queue_filename_root;
+	while(next != NULL) {
+		del = next;
+		next = next->next;
+		free((void*) del->filename);
+		free((void*) del->dirname);
+		free((void*) del);
+	}
+}
+
 
 /***********************************************************************
  * we need a private data structure, the "to-delete" list. As C does
@@ -854,6 +884,10 @@ qqueueTryLoadPersistedInfo(qqueue_t *pThis)
 	 * deleted when we are done with the persisted information.
 	 */
 	pThis->bNeedDelQIF = 1;
+	LogMsg(0, RS_RET_OK, LOG_INFO, "%s: queue files exist on disk, re-starting with "
+		"%d messages. This will keep the disk queue file open, details: "
+		"https://rainer.gerhards.net/2013/07/rsyslog-why-disk-assisted-queues-keep-a-file-open.html",
+		objGetName((obj_t*) pThis), getLogicalQueueSize(pThis));
 
 finalize_it:
 	if(psQIF != NULL)
@@ -1537,10 +1571,10 @@ qqueueSetDefaultsRulesetQueue(qqueue_t *pThis)
 	pThis->iMaxFileSize = 16*1024*1024;
 	pThis->iPersistUpdCnt = 0;		/* persist queue info every n updates */
 	pThis->bSyncQueueFiles = 0;
-	pThis->toQShutdown = 1500;			/* queue shutdown */
-	pThis->toActShutdown = 1000;		/* action shutdown (in phase 2) */
-	pThis->toEnq = 2000;			/* timeout for queue enque */
-	pThis->toWrkShutdown = 60000;		/* timeout for worker thread shutdown */
+	pThis->toQShutdown = ruleset_dflt_toQShutdown;
+	pThis->toActShutdown = ruleset_dflt_toActShutdown;
+	pThis->toEnq = ruleset_dflt_toEnq;
+	pThis->toWrkShutdown = ruleset_dflt_toWrkShutdown;
 	pThis->iMinMsgsPerWrkr = -1;		/* minimum messages per worker needed to start a new one */
 	pThis->bSaveOnShutdown = 1;		/* save queue on shutdown (when DA enabled)? */
 	pThis->sizeOnDiskMax = 0;		/* unlimited */
@@ -2434,6 +2468,11 @@ qqueueStart(qqueue_t *pThis) /* this is the ConstructionFinalizer */
 				(pThis->iMaxQueueSize == 1) ? 1 : pThis->iMaxQueueSize - 1;
 		}
 	}
+
+	if(pThis->iLightDlyMrk == 0) {
+		pThis->iLightDlyMrk = pThis->iMaxQueueSize;
+	}
+
 	if(pThis->iLightDlyMrk == -1 || pThis->iLightDlyMrk > pThis->iMaxQueueSize) {
 		pThis->iLightDlyMrk = (pThis->iMaxQueueSize / 100) * 70;
 		if(pThis->iLightDlyMrk == 0) {
@@ -2762,8 +2801,19 @@ CODESTARTobjDestruct(qqueue)
 		   && pThis->pWtpReg != NULL)
 			qqueueShutdownWorkers(pThis);
 
-		if(pThis->bIsDA && getPhysicalQueueSize(pThis) > 0 && pThis->bSaveOnShutdown) {
-			CHKiRet(DoSaveOnShutdown(pThis));
+		if(pThis->bIsDA && getPhysicalQueueSize(pThis) > 0){
+			if(pThis->bSaveOnShutdown) {
+				LogMsg(0, RS_RET_TIMED_OUT, LOG_INFO,
+					"%s: queue holds %d messages after shutdown of workers. "
+					"queue.saveonshutdown is set, so data will now be spooled to disk",
+					objGetName((obj_t*) pThis), getPhysicalQueueSize(pThis));
+				CHKiRet(DoSaveOnShutdown(pThis));
+			} else {
+				LogMsg(0, RS_RET_TIMED_OUT, LOG_WARNING,
+					"%s: queue holds %d messages after shutdown of workers. "
+					"queue.saveonshutdown is NOT set, so data will be discarded.",
+					objGetName((obj_t*) pThis), getPhysicalQueueSize(pThis));
+			}
 		}
 
 		/* finally destruct our (regular) worker thread pool
@@ -3209,6 +3259,47 @@ finalize_it:
 	RETiRet;
 }
 
+/* check the the queue file name is unique. */
+static rsRetVal ATTR_NONNULL()
+checkUniqueDiskFile(qqueue_t *const pThis)
+{
+	DEFiRet;
+	struct queue_filename *queue_fn_curr = queue_filename_root;
+	struct queue_filename *newetry = NULL;
+	const char *const curr_dirname = (pThis->pszSpoolDir == NULL) ? "" : (char*)pThis->pszSpoolDir;
+
+	if(pThis->pszFilePrefix == NULL) {
+		FINALIZE; /* no disk queue! */
+	}
+
+	while(queue_fn_curr != NULL) {
+		if(!strcmp((const char*) pThis->pszFilePrefix, queue_fn_curr->filename) &&
+			!strcmp(curr_dirname, queue_fn_curr->dirname)) {
+			parser_errmsg("queue directory '%s' and file name prefix '%s' already used. "
+				"This is not possible. Please make it unique.",
+				curr_dirname, pThis->pszFilePrefix);
+			ABORT_FINALIZE(RS_RET_ERR_QUEUE_FN_DUP);
+			}
+		queue_fn_curr = queue_fn_curr->next;
+	}
+
+	/* name ok, so let's add it to the list */
+	CHKmalloc(newetry = calloc(1, sizeof(struct queue_filename)));
+	CHKmalloc(newetry->filename = strdup((char*) pThis->pszFilePrefix));
+	CHKmalloc(newetry->dirname = strdup(curr_dirname));
+	newetry->next = queue_filename_root;
+	queue_filename_root = newetry;
+
+finalize_it:
+	if(iRet != RS_RET_OK) {
+		if(newetry != NULL) {
+			free((void*)newetry->filename);
+			free((void*)newetry);
+		}
+	}
+	RETiRet;
+}
+
 /* apply all params from param block to queue. Must be called before
  * finalizing. This supports the v6 config system. Defaults were already
  * set during queue creation. The pvals object is destructed by this
@@ -3250,6 +3341,12 @@ qqueueApplyCnfParam(qqueue_t *pThis, struct nvlst *lst)
 			}
 		} else if(!strcmp(pblk.descr[i].name, "queue.size")) {
 			pThis->iMaxQueueSize = pvals[i].val.d.n;
+			if(pThis->iMaxQueueSize > OVERSIZE_QUEUE_WATERMARK) {
+				parser_errmsg("queue.size=%d is very large - is this "
+					"really intended? More info at "
+					"https://www.rsyslog.com/avoid-overly-large-in-memory-queues/",
+					pThis->iMaxQueueSize);
+			}
 		} else if(!strcmp(pblk.descr[i].name, "queue.dequeuebatchsize")) {
 			pThis->iDeqBatchSize = pvals[i].val.d.n;
 		} else if(!strcmp(pblk.descr[i].name, "queue.mindequeuebatchsize")) {
@@ -3305,6 +3402,9 @@ qqueueApplyCnfParam(qqueue_t *pThis, struct nvlst *lst)
 			  "param '%s'\n", pblk.descr[i].name);
 		}
 	}
+
+	checkUniqueDiskFile(pThis);
+
 	if(pThis->qType == QUEUETYPE_DISK) {
 		if(pThis->pszFilePrefix == NULL) {
 			LogError(0, RS_RET_QUEUE_DISK_NO_FN, "error on queue '%s', disk mode selected, but "
