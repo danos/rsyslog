@@ -1,3 +1,13 @@
+rsyslog (8.1905.0-2) experimental; urgency=medium
+
+  * Bump Build-Depends on librelp to (>= 1.4.0) for
+    relpEngineSetTLSLibByName()
+  * Add Build-Depends on logroate and net-tools.
+    Those are required by the test suite: logrotate is used in the
+    imfile-logrotate* tests and ifconfig in sndrcv_tls_anon_ipv6.
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 29 May 2019 12:17:37 +0200
+
 rsyslog (8.1905.0-1) experimental; urgency=medium
 
   * New upstream version 8.1905.0
