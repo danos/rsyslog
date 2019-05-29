@@ -29,6 +29,8 @@ Build-Depends: debhelper-compat (= 12),
                libfaketime <!nocheck>,
                systemd [linux-any] <!nocheck>,
                lsof [linux-any] <!nocheck>,
+               logrotate <!nocheck>,
+               net-tools <!nocheck>,
 Standards-Version: 4.3.0
 Rules-Requires-Root: no
 Vcs-Git: https://salsa.debian.org/debian/rsyslog.git
