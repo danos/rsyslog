@@ -30,6 +30,7 @@ override_dh_auto_configure:
 		--enable-klog \
 		--enable-gssapi-krb5 \
 		--enable-gnutls \
+		--enable-openssl \
 		--enable-relp \
 		--enable-pmaixforwardedfrom \
 		--enable-pmcisconames \
