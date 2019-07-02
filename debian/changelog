@@ -1,3 +1,10 @@
+rsyslog (8.1905.0-3) experimental; urgency=medium
+
+  * Fix leading double space in rsyslog startup messages (Closes: #907755)
+  * Update URL in logcheck rule to use https instead of http (Closes: #927771)
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 02 Jul 2019 17:09:03 +0200
+
 rsyslog (8.1905.0-2) experimental; urgency=medium
 
   * Bump Build-Depends on librelp to (>= 1.4.0) for
