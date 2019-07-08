@@ -1,3 +1,10 @@
+rsyslog (8.1905.0-4) unstable; urgency=medium
+
+  * Stop installing /etc/default/rsyslog and remove it on upgrades
+  * Upload to unstable
+
+ -- Michael Biebl <biebl@debian.org>  Mon, 08 Jul 2019 14:38:18 +0200
+
 rsyslog (8.1905.0-3) experimental; urgency=medium
 
   * Fix leading double space in rsyslog startup messages (Closes: #907755)
