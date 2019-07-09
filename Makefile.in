@@ -243,11 +243,17 @@ sbin_PROGRAMS =
 @ENABLE_JOURNAL_TESTS_TRUE@am__append_104 = --enable-journal-tests
 @ENABLE_IMCZMQ_TRUE@am__append_105 = --enable-imczmq
 @ENABLE_OMCZMQ_TRUE@am__append_106 = --enable-omczmq
-@ENABLE_IMFILE_TRUE@am__append_107 = --enable-imfile
-@ENABLE_IMDOCKER_TRUE@am__append_108 = --enable-imdocker
-@ENABLE_OMRABBITMQ_TRUE@am__append_109 = --enable-omrabbitmq
-@ENABLE_DISTCHECK_WORKAROUND_TRUE@am__append_110 = --disable-testbench
-@ENABLE_DISTCHECK_WORKAROUND_FALSE@am__append_111 = --enable-testbench
+@ENABLE_MMTAGHOSTNAME_TRUE@am__append_107 = --enable-mmtaghostname
+@ENABLE_IMTUXEDOULOG_TRUE@am__append_108 = --enable-imtuxedolog
+@ENABLE_PMDB2DIAG_TRUE@am__append_109 = --enable-pmdb2diag
+@ENABLE_IMBATCHREPORT_TRUE@am__append_110 = --enable-imbatchreport
+@ENABLE_IMFILE_TRUE@am__append_111 = --enable-imfile
+@ENABLE_IMDOCKER_TRUE@am__append_112 = --enable-imdocker
+@ENABLE_OMRABBITMQ_TRUE@am__append_113 = --enable-omrabbitmq
+@ENABLE_MMKUBERNETES_TRUE@am__append_114 = --enable-mmkubernetes
+@ENABLE_OMAMQP1_TRUE@am__append_115 = --enable-omamqp1
+@ENABLE_DISTCHECK_WORKAROUND_TRUE@am__append_116 = --disable-testbench
+@ENABLE_DISTCHECK_WORKAROUND_FALSE@am__append_117 = --enable-testbench
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_check_define.m4 \
@@ -727,7 +733,9 @@ DISTCHECK_CONFIGURE_FLAGS = --with-systemdsystemunitdir=$$dc_install_base/$(syst
 	$(am__append_100) $(am__append_101) $(am__append_102) \
 	$(am__append_103) $(am__append_104) $(am__append_105) \
 	$(am__append_106) $(am__append_107) $(am__append_108) \
-	$(am__append_109) $(am__append_110) $(am__append_111)
+	$(am__append_109) $(am__append_110) $(am__append_111) \
+	$(am__append_112) $(am__append_113) $(am__append_114) \
+	$(am__append_115) $(am__append_116) $(am__append_117)
 ACLOCAL_AMFLAGS = -I m4
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive

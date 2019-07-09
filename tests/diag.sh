@@ -539,15 +539,18 @@ startup_vgthread() {
 # inject messages via our inject interface (imdiag)
 # $1 is start message number, env var NUMMESSAGES is number of messages to inject
 injectmsg() {
+	if [ "$3" != "" ] ; then
+		printf 'error: injectmsg only has two arguments, extra arg is %s\n' "$3"
+	fi
 	msgs=${2:-$NUMMESSAGES}
 	echo injecting $msgs messages
-	echo injectmsg ${1:-0} $msgs $3 $4 | $TESTTOOL_DIR/diagtalker -p$IMDIAG_PORT || error_exit  $?
+	echo injectmsg "${1:-0}" "$msgs" | $TESTTOOL_DIR/diagtalker -p$IMDIAG_PORT || error_exit  $?
 }
 
 # inject messages in INSTANCE 2 via our inject interface (imdiag)
 injectmsg2() {
 	echo injecting $2 messages
-	echo injectmsg $1 $2 $3 $4 | $TESTTOOL_DIR/diagtalker -p$IMDIAG_PORT2 || error_exit  $?
+	echo injectmsg "$1" "$2" $3 $4 | $TESTTOOL_DIR/diagtalker -p$IMDIAG_PORT2 || error_exit  $?
 	# TODO: some return state checking? (does it really make sense here?)
 }
 
@@ -889,7 +892,14 @@ wait_file_lines() {
 		count=0
 		if [ "$count_function" == "" ]; then
 			if [ -f "$file" ]; then
-				count=$(wc -l < "$file")
+				if [ "$COUNT_FILE_IS_ZIPPED" == "yes" ]; then
+					echo zipped
+					issue_HUP ""
+					count=$(gunzip < "$file" | wc -l)
+				else
+					echo NON zipped
+					count=$(wc -l < "$file")
+				fi
 			fi
 		else
 			count=$($count_function)
@@ -928,10 +938,15 @@ wait_file_lines() {
 # all parameters are passed to seq_check
 wait_seq_check() {
 	timeoutend=$(( $(date +%s) + TB_TEST_TIMEOUT ))
+	if [ "$SEQ_CHECK_FILE" == "" ]; then
+		filename="$RSYSLOG_OUT_LOG"
+	else
+		filename="$SEQ_CHECK_FILE"
+	fi
 
 	while true ; do
-		if [ -f "$RSYSLOG_OUT_LOG" ]; then
-			count=$(wc -l < "$RSYSLOG_OUT_LOG")
+		if [ -f "$filename" ]; then
+			count=$(wc -l < "$filename")
 		fi
 		seq_check --check-only "$@" #&>/dev/null
 		ret=$?
@@ -1006,8 +1021,14 @@ custom_assert_content_missing() {
 
 # shut rsyslogd down when main queue is empty. $1 is the instance.
 issue_HUP() {
+	if [ "$1" == "--sleep" ]; then
+		sleeptime="$2"
+		shift 2
+	else
+		sleeptime=1000
+	fi
 	kill -HUP $(cat $RSYSLOG_PIDBASE$1.pid)
-	$TESTTOOL_DIR/msleep 1000
+	$TESTTOOL_DIR/msleep $sleeptime
 }
 
 
@@ -1262,8 +1283,20 @@ seq_check2() {
 # do the usual sequence check, but for gzip files
 # $4... are just to have the abilit to pass in more options...
 gzip_seq_check() {
+	if [ "$1" == "" ]; then
+		if [ "$NUMMESSAGES" == "" ]; then
+			printf 'FAIL: gzip_seq_check called without parameters but NUMMESSAGES is unset!\n'
+			error_exit 100
+		fi
+		# use default parameters
+		startnum=0
+		endnum=$(( NUMMESSAGES - 1 ))
+	else
+		startnum=$1
+		endnum=$2
+	fi
 	ls -l ${RSYSLOG_OUT_LOG}
-	gunzip < ${RSYSLOG_OUT_LOG} | $RS_SORTCMD $RS_SORT_NUMERIC_OPT | ./chkseq -v -s$1 -e$2 $3 $4 $5 $6 $7
+	gunzip < ${RSYSLOG_OUT_LOG} | $RS_SORTCMD $RS_SORT_NUMERIC_OPT | ./chkseq -v -s$startnum -e$endnum $3 $4 $5 $6 $7
 	if [ "$?" -ne "0" ]; then
 		echo "sequence error detected"
 		error_exit 1
@@ -2185,10 +2218,16 @@ case $1 in
 		;;
 
    'check-ipv6-available')   # check if IPv6  - will exit 77 when not OK
-		ifconfig -a |grep ::1
+		if ip address > /dev/null ; then
+			cmd="ip address"
+		else
+			cmd="ifconfig -a"
+		fi
+		echo command used for ipv6 detection: $cmd
+		$cmd | grep ::1 > /dev/null
 		if [ $? -ne 0 ] ; then
 			printf 'this test requires an active IPv6 stack, which we do not have here\n'
-			exit 77
+			error_exit 77
 		fi
 		;;
    'kill-immediate') # kill rsyslog unconditionally
@@ -2252,7 +2291,7 @@ case $1 in
 		new_count=$prev_count
 		while [[ "x$prev_count" == "x$new_count" ]]; do
 				# busy spin, because it allows as close timing-coordination in actual test run as possible
-				new_count=$(grep -c'BEGIN$' <"$2")
+				new_count=$(grep -c 'BEGIN$' <"$2")
 		done
 		echo "stats push registered"
 		;;
@@ -2271,7 +2310,13 @@ case $1 in
 		echo "dyn-stats reset for bucket ${3} registered"
 		;;
    'first-column-sum-check') 
-		sum=$(grep $3 < $4 | sed -e $2 | awk '{s+=$1} END {print s}')
+		echo grep:
+		grep "$3" < "$4"
+		echo sed:
+		grep "$3" < "$4" | sed -e "$2"
+		echo akw:
+		grep "$3" < "$4" | sed -e "$2" | awk '{s+=$1} END {print s}'
+		sum=$(grep "$3" < "$4" | sed -e "$2" | awk '{s+=$1} END {print s}')
 		if [ "x${sum}" != "x$5" ]; then
 		    printf '\n============================================================\n'
 		    echo FAIL: sum of first column with edit-expr "'$2'" run over lines from file "'$4'" matched by "'$3'" equals "'$sum'" which is NOT equal to EXPECTED value of "'$5'"

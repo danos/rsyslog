@@ -1115,7 +1115,7 @@ smsg_t* MsgDup(smsg_t* pOld)
 	pNew->iFacility = pOld->iFacility;
 	pNew->msgFlags = pOld->msgFlags;
 	pNew->iProtocolVersion = pOld->iProtocolVersion;
-	pNew->ttGenTime = pOld->ttGenTime;
+	pNew->tRcvdAt = pOld->tRcvdAt;
 	pNew->offMSG = pOld->offMSG;
 	pNew->iLenRawMsg = pOld->iLenRawMsg;
 	pNew->iLenMSG = pOld->iLenMSG;
@@ -3352,10 +3352,6 @@ finalize_it:
 
 /* encode a property in JSON escaped format. This is a helper
  * to MsgGetProp. It needs to update all provided parameters.
- * Note: Code is borrowed from libee (my own code, so ASL 2.0
- * is fine with it); this function may later be replaced by
- * some "better" and more complete implementation (maybe from
- * libee or its helpers).
  * For performance reasons, we begin to copy the string only
  * when we recognice that we actually need to do some escaping.
  * rgerhards, 2012-03-16

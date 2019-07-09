@@ -151,7 +151,8 @@ host_triplet = @host@
 @ENABLE_TESTBENCH_TRUE@	$(am__append_95) $(am__append_96) \
 @ENABLE_TESTBENCH_TRUE@	$(am__append_97) $(am__append_98) \
 @ENABLE_TESTBENCH_TRUE@	$(am__append_99) $(am__append_100) \
-@ENABLE_TESTBENCH_TRUE@	$(am__append_101)
+@ENABLE_TESTBENCH_TRUE@	$(am__append_101) $(am__append_102) \
+@ENABLE_TESTBENCH_TRUE@	$(am__append_103)
 @ENABLE_ELASTICSEARCH_TESTS_MINIMAL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_2 = \
 @ENABLE_ELASTICSEARCH_TESTS_MINIMAL_TRUE@@ENABLE_TESTBENCH_TRUE@	es-basic.sh \
 @ENABLE_ELASTICSEARCH_TESTS_MINIMAL_TRUE@@ENABLE_TESTBENCH_TRUE@	es-basic-es6.0.sh \
@@ -226,6 +227,7 @@ host_triplet = @host@
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	omfile-whitespace-filename.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	omfile-read-only.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	omfile_both_files_set.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	omfile_hup.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	msgvar-concurrency.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	localvar-concurrency.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	exec_tpl-concurrency.sh \
@@ -254,6 +256,7 @@ host_triplet = @host@
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_invld2.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_invld3.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	fac_invld4_rfc5424.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	rfc5424parser-sp_at_msg_start.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	compresssp.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	compresssp-stringtpl.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	rawmsg-after-pri.sh \
@@ -267,7 +270,8 @@ host_triplet = @host@
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	tcp_forwarding_tpl.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	tcp_forwarding_dflt_tpl.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	tcp_forwarding_retries.sh \
-@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	queue_errmsg-oversize.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	mainq_actq_DA.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	queue_warnmsg-oversize.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	queue-minbatch.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	queue-minbatch-queuefull.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	arrayqueue.sh \
@@ -276,6 +280,7 @@ host_triplet = @host@
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	da-mainmsg-q.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	validation-run.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	msgdup.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	msgdup_props.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	empty-ruleset.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-discard-truncated-msg.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-basic.sh \
@@ -333,6 +338,7 @@ host_triplet = @host@
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	gzipwr_flushOnTXEnd.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	gzipwr_large.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	gzipwr_large_dynfile.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	gzipwr_hup.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	dynfile_invld_async.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	dynfile_invld_sync.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	dynfile_invalid2.sh \
@@ -466,6 +472,8 @@ host_triplet = @host@
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_LIBGCRYPT_TRUE@@ENABLE_TESTBENCH_TRUE@	queue-encryption-da.sh
 
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_11 = \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	omfile_hup-vg.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	gzipwr_hup-vg.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	tcpflood_wrong_option_output.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	smtradfile-vg.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	dnscache-TTL-0-vg.sh \
@@ -1184,12 +1192,18 @@ host_triplet = @host@
 @ENABLE_IMTUXEDOULOG_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_101 = \
 @ENABLE_IMTUXEDOULOG_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imtuxedoulog_errmsg_no_params-vg.sh
 
-@ENABLE_GNUTLS_TRUE@am__append_102 = $(GNUTLS_CFLAGS)
-@ENABLE_GNUTLS_TRUE@am__append_103 = $(GNUTLS_CFLAGS)
-@ENABLE_GNUTLS_TRUE@am__append_104 = $(GNUTLS_LIBS)
-@ENABLE_OPENSSL_TRUE@am__append_105 = $(OPENSSL_CFLAGS)
-@ENABLE_OPENSSL_TRUE@am__append_106 = $(OPENSSL_CFLAGS)
-@ENABLE_OPENSSL_TRUE@am__append_107 = $(OPENSSL_LIBS)
+@ENABLE_OMAMQP1_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_102 = \
+@ENABLE_OMAMQP1_TRUE@@ENABLE_TESTBENCH_TRUE@	omamqp1-basic.sh
+
+@ENABLE_OMAMQP1_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_103 = \
+@ENABLE_OMAMQP1_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	omamqp1-basic-vg.sh
+
+@ENABLE_GNUTLS_TRUE@am__append_104 = $(GNUTLS_CFLAGS)
+@ENABLE_GNUTLS_TRUE@am__append_105 = $(GNUTLS_CFLAGS)
+@ENABLE_GNUTLS_TRUE@am__append_106 = $(GNUTLS_LIBS)
+@ENABLE_OPENSSL_TRUE@am__append_107 = $(OPENSSL_CFLAGS)
+@ENABLE_OPENSSL_TRUE@am__append_108 = $(OPENSSL_CFLAGS)
+@ENABLE_OPENSSL_TRUE@am__append_109 = $(OPENSSL_LIBS)
 subdir = tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_check_define.m4 \
@@ -1892,6 +1906,30 @@ EXTRA_DIST = \
 	glbl_setenv_err.sh \
 	glbl_setenv_err_too_long.sh \
 	glbl_setenv.sh \
+	imtuxedoulog_errmsg_no_params.sh \
+	imtuxedoulog_data.sh \
+	imtuxedoulog_errmsg_no_params-vg.sh \
+	pmdb2diag_parse.sh \
+	mmtaghostname_tag.sh \
+	mmtaghostname_server.sh \
+	imbatchreport_errmsg_no_params.sh \
+	imbatchreport_errmsg_glob_not_regular.sh \
+	imbatchreport_errmsg_glob_dir_fake.sh \
+	imbatchreport_errmsg_glob_dir_not_dir.sh \
+	imbatchreport_errmsg_regex.match.reject.sh \
+	imbatchreport_errmsg_regex.match.rename.sh \
+	imbatchreport_errmsg_regex.nomatch.sh \
+	imbatchreport_errmsg_not_supported1.sh \
+	imbatchreport_errmsg_not_supported2.sh \
+	imbatchreport_errmsg_not_supported3.sh \
+	imbatchreport_errmsg_delete_params.sh \
+	imbatchreport_errmsg_rename_params.sh \
+	imbatchreport_delete_success.sh \
+	imbatchreport_delete_structdata.sh \
+	imbatchreport_rename_success.sh \
+	imbatchreport_delete_toolarge.sh \
+	imbatchreport_rename_toolarge.sh \
+	imbatchreport_errmsg_no_params-vg.sh \
 	mmexternal-SegFault-vg.sh \
 	mmexternal-SegFault-empty-jroot-vg.sh \
 	testsuites/mmexternal-SegFault-mm-python.py \
@@ -1931,7 +1969,8 @@ EXTRA_DIST = \
 	tcp_forwarding_ns_tpl.sh \
 	tcp_forwarding_dflt_tpl.sh \
 	tcp_forwarding_retries.sh \
-	queue_errmsg-oversize.sh \
+	mainq_actq_DA.sh \
+	queue_warnmsg-oversize.sh \
 	queue-minbatch.sh \
 	queue-minbatch-queuefull.sh \
 	killrsyslog.sh \
@@ -1969,6 +2008,7 @@ EXTRA_DIST = \
 	timestamp-subseconds.sh \
 	rsf_getenv.sh \
 	diskq-rfc5424.sh \
+	rfc5424parser-sp_at_msg_start.sh \
 	diskqueue-full.sh \
 	diskqueue.sh \
 	diskqueue-non-unique-prefix.sh \
@@ -2055,11 +2095,14 @@ EXTRA_DIST = \
 	stop-localvar.sh \
 	stop-msgvar.sh \
 	omfwd-keepalive.sh \
+	omfile_hup-vg.sh \
+	gzipwr_hup-vg.sh \
 	omfile-read-only-errmsg.sh \
 	omfile-null-filename.sh \
 	omfile-whitespace-filename.sh \
 	omfile-read-only.sh \
 	omfile_both_files_set.sh \
+	omfile_hup.sh \
 	omrabbitmq_no_params.sh \
 	omrabbitmq_params_missing0.sh \
 	omrabbitmq_params_missing1.sh \
@@ -2249,6 +2292,7 @@ EXTRA_DIST = \
 	da-mainmsg-q.sh \
 	diskqueue-fsync.sh \
 	msgdup.sh \
+	msgdup_props.sh \
 	empty-ruleset.sh \
 	imtcp-discard-truncated-msg.sh \
 	imtcp-basic.sh \
@@ -2471,6 +2515,7 @@ EXTRA_DIST = \
 	gzipwr_flushOnTXEnd.sh \
 	gzipwr_large.sh \
 	gzipwr_large_dynfile.sh \
+	gzipwr_hup.sh \
 	complex1.sh \
 	random.sh \
 	testsuites/imfile-old-state-file_imfile-state_.-rsyslog.input \
@@ -2808,6 +2853,8 @@ EXTRA_DIST = \
 	mmkubernetes-basic.out.json \
 	mmkubernetes-cache-expire.sh \
 	mmkubernetes-cache-expire-vg.sh \
+	mmkubernetes-cache-expire.out.expected \
+	mmkubernetes.supp \
 	es-writeoperation.sh \
 	imdocker-basic.sh \
 	imdocker-basic-vg.sh \
@@ -2822,7 +2869,10 @@ EXTRA_DIST = \
 	testsuites/include-std-omfile-action.conf \
 	testsuites/invalid.conf \
 	testsuites/valid.conf \
-	testsuites/variable_leading_underscore.conf
+	testsuites/variable_leading_underscore.conf \
+	omamqp1-common.sh \
+	omamqp1-basic.sh \
+	omamqp1-basic-vg.sh
 
 ourtail_SOURCES = ourtail.c
 msleep_SOURCES = msleep.c
@@ -2835,12 +2885,12 @@ test_id_SOURCES = test_id.c
 uxsockrcvr_SOURCES = uxsockrcvr.c
 uxsockrcvr_LDADD = $(SOL_LIBS)
 tcpflood_SOURCES = tcpflood.c
-tcpflood_CFLAGS = $(PTHREADS_CFLAGS) $(RELP_CFLAGS) $(am__append_102) \
-	$(am__append_105)
+tcpflood_CFLAGS = $(PTHREADS_CFLAGS) $(RELP_CFLAGS) $(am__append_104) \
+	$(am__append_107)
 tcpflood_CPPFLAGS = $(PTHREADS_CFLAGS) $(RELP_CFLAGS) \
-	$(am__append_103) $(am__append_106)
+	$(am__append_105) $(am__append_108)
 tcpflood_LDADD = $(SOL_LIBS) $(PTHREADS_LIBS) $(RELP_LIBS) \
-	$(am__append_104) $(am__append_107)
+	$(am__append_106) $(am__append_109)
 minitcpsrv_SOURCES = minitcpsrvr.c
 minitcpsrv_LDADD = $(SOL_LIBS)
 syslog_caller_SOURCES = syslog_caller.c
