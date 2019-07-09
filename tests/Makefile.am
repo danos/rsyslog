@@ -173,6 +173,7 @@ TESTS +=  \
 	omfile-whitespace-filename.sh \
 	omfile-read-only.sh \
 	omfile_both_files_set.sh \
+	omfile_hup.sh \
 	msgvar-concurrency.sh \
 	localvar-concurrency.sh \
 	exec_tpl-concurrency.sh \
@@ -201,6 +202,7 @@ TESTS +=  \
 	fac_invld2.sh \
 	fac_invld3.sh \
 	fac_invld4_rfc5424.sh \
+	rfc5424parser-sp_at_msg_start.sh \
 	compresssp.sh \
 	compresssp-stringtpl.sh \
 	rawmsg-after-pri.sh \
@@ -214,7 +216,8 @@ TESTS +=  \
 	tcp_forwarding_tpl.sh \
 	tcp_forwarding_dflt_tpl.sh \
 	tcp_forwarding_retries.sh \
-	queue_errmsg-oversize.sh \
+	mainq_actq_DA.sh \
+	queue_warnmsg-oversize.sh \
 	queue-minbatch.sh \
 	queue-minbatch-queuefull.sh \
 	arrayqueue.sh \
@@ -223,6 +226,7 @@ TESTS +=  \
 	da-mainmsg-q.sh \
 	validation-run.sh \
 	msgdup.sh \
+	msgdup_props.sh \
 	empty-ruleset.sh \
 	imtcp-discard-truncated-msg.sh \
 	imtcp-basic.sh \
@@ -280,6 +284,7 @@ TESTS +=  \
 	gzipwr_flushOnTXEnd.sh \
 	gzipwr_large.sh \
 	gzipwr_large_dynfile.sh \
+	gzipwr_hup.sh \
 	dynfile_invld_async.sh \
 	dynfile_invld_sync.sh \
 	dynfile_invalid2.sh \
@@ -414,6 +419,8 @@ TESTS +=  \
 endif # ENABLE_LIBGCRYPT
 if HAVE_VALGRIND
 TESTS +=  \
+	omfile_hup-vg.sh \
+	gzipwr_hup-vg.sh \
 	tcpflood_wrong_option_output.sh \
 	smtradfile-vg.sh \
 	dnscache-TTL-0-vg.sh \
@@ -1375,6 +1382,14 @@ TESTS +=  \
 endif # ENABLE_IMTUXEDOULOG
 endif
 
+if ENABLE_OMAMQP1
+TESTS += \
+	omamqp1-basic.sh
+if HAVE_VALGRIND
+TESTS +=  \
+	omamqp1-basic-vg.sh
+endif
+endif # ENABLE_OMAMQP1
 
 # test samples...
 #empty-hostname.log: hostname-getaddrinfo-fail.log
@@ -1426,6 +1441,30 @@ EXTRA_DIST= \
 	glbl_setenv_err.sh \
 	glbl_setenv_err_too_long.sh \
 	glbl_setenv.sh \
+	imtuxedoulog_errmsg_no_params.sh \
+	imtuxedoulog_data.sh \
+	imtuxedoulog_errmsg_no_params-vg.sh \
+	pmdb2diag_parse.sh \
+	mmtaghostname_tag.sh \
+	mmtaghostname_server.sh \
+	imbatchreport_errmsg_no_params.sh \
+	imbatchreport_errmsg_glob_not_regular.sh \
+	imbatchreport_errmsg_glob_dir_fake.sh \
+	imbatchreport_errmsg_glob_dir_not_dir.sh \
+	imbatchreport_errmsg_regex.match.reject.sh \
+	imbatchreport_errmsg_regex.match.rename.sh \
+	imbatchreport_errmsg_regex.nomatch.sh \
+	imbatchreport_errmsg_not_supported1.sh \
+	imbatchreport_errmsg_not_supported2.sh \
+	imbatchreport_errmsg_not_supported3.sh \
+	imbatchreport_errmsg_delete_params.sh \
+	imbatchreport_errmsg_rename_params.sh \
+	imbatchreport_delete_success.sh \
+	imbatchreport_delete_structdata.sh \
+	imbatchreport_rename_success.sh \
+	imbatchreport_delete_toolarge.sh \
+	imbatchreport_rename_toolarge.sh \
+	imbatchreport_errmsg_no_params-vg.sh \
 	mmexternal-SegFault-vg.sh \
 	mmexternal-SegFault-empty-jroot-vg.sh \
 	testsuites/mmexternal-SegFault-mm-python.py \
@@ -1465,7 +1504,8 @@ EXTRA_DIST= \
 	tcp_forwarding_ns_tpl.sh \
 	tcp_forwarding_dflt_tpl.sh \
 	tcp_forwarding_retries.sh \
-	queue_errmsg-oversize.sh \
+	mainq_actq_DA.sh \
+	queue_warnmsg-oversize.sh \
 	queue-minbatch.sh \
 	queue-minbatch-queuefull.sh \
 	killrsyslog.sh \
@@ -1503,6 +1543,7 @@ EXTRA_DIST= \
 	timestamp-subseconds.sh \
 	rsf_getenv.sh \
 	diskq-rfc5424.sh \
+	rfc5424parser-sp_at_msg_start.sh \
 	diskqueue-full.sh \
 	diskqueue.sh \
 	diskqueue-non-unique-prefix.sh \
@@ -1589,11 +1630,14 @@ EXTRA_DIST= \
 	stop-localvar.sh \
 	stop-msgvar.sh \
 	omfwd-keepalive.sh \
+	omfile_hup-vg.sh \
+	gzipwr_hup-vg.sh \
 	omfile-read-only-errmsg.sh \
 	omfile-null-filename.sh \
 	omfile-whitespace-filename.sh \
 	omfile-read-only.sh \
 	omfile_both_files_set.sh \
+	omfile_hup.sh \
 	omrabbitmq_no_params.sh \
 	omrabbitmq_params_missing0.sh \
 	omrabbitmq_params_missing1.sh \
@@ -1783,6 +1827,7 @@ EXTRA_DIST= \
 	da-mainmsg-q.sh \
 	diskqueue-fsync.sh \
 	msgdup.sh \
+	msgdup_props.sh \
 	empty-ruleset.sh \
 	imtcp-discard-truncated-msg.sh \
 	imtcp-basic.sh \
@@ -2005,6 +2050,7 @@ EXTRA_DIST= \
 	gzipwr_flushOnTXEnd.sh \
 	gzipwr_large.sh \
 	gzipwr_large_dynfile.sh \
+	gzipwr_hup.sh \
 	complex1.sh \
 	random.sh \
 	testsuites/imfile-old-state-file_imfile-state_.-rsyslog.input \
@@ -2342,6 +2388,8 @@ EXTRA_DIST= \
 	mmkubernetes-basic.out.json \
 	mmkubernetes-cache-expire.sh \
 	mmkubernetes-cache-expire-vg.sh \
+	mmkubernetes-cache-expire.out.expected \
+	mmkubernetes.supp \
 	es-writeoperation.sh \
 	imdocker-basic.sh \
 	imdocker-basic-vg.sh \
@@ -2356,7 +2404,10 @@ EXTRA_DIST= \
 	testsuites/include-std-omfile-action.conf \
 	testsuites/invalid.conf \
 	testsuites/valid.conf \
-	testsuites/variable_leading_underscore.conf
+	testsuites/variable_leading_underscore.conf \
+	omamqp1-common.sh \
+	omamqp1-basic.sh \
+	omamqp1-basic-vg.sh
 
 ourtail_SOURCES = ourtail.c
 msleep_SOURCES = msleep.c

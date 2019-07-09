@@ -1225,6 +1225,11 @@ static void
 hdlr_sighup(void)
 {
 	bHadHUP = 1;
+	/* at least on FreeBSD we seem not to necessarily awake the main thread.
+	 * So let's do it explicitely.
+	 */
+	dbgprintf("awaking mainthread on HUP\n");
+	pthread_kill(mainthread, SIGTTIN);
 }
 
 static void
@@ -1625,7 +1630,7 @@ initAll(int argc, char **argv)
 	if(ourConf->globals.bLogStatusMsgs) {
 		char bufStartUpMsg[512];
 		snprintf(bufStartUpMsg, sizeof(bufStartUpMsg),
-			 " [origin software=\"rsyslogd\" " "swVersion=\"" VERSION \
+			 "[origin software=\"rsyslogd\" " "swVersion=\"" VERSION \
 			 "\" x-pid=\"%d\" x-info=\"https://www.rsyslog.com\"] start",
 			 (int) glblGetOurPid());
 		logmsgInternal(NO_ERRCODE, LOG_SYSLOG|LOG_INFO, (uchar*)bufStartUpMsg, 0);
@@ -1760,7 +1765,7 @@ doHUP(void)
 
 	if(ourConf->globals.bLogStatusMsgs) {
 		snprintf(buf, sizeof(buf),
-			 " [origin software=\"rsyslogd\" " "swVersion=\"" VERSION
+			 "[origin software=\"rsyslogd\" " "swVersion=\"" VERSION
 			 "\" x-pid=\"%d\" x-info=\"https://www.rsyslog.com\"] rsyslogd was HUPed",
 			 (int) glblGetOurPid());
 			errno = 0;
@@ -1939,7 +1944,6 @@ mainloop(void)
 	do {
 		processImInternal();
 		wait_timeout();
-
 		if(bChildDied) {
 			reapChild();
 			bChildDied = 0;
@@ -2000,7 +2004,7 @@ deinitAll(void)
 	/* and THEN send the termination log message (see long comment above) */
 	if(bFinished && runConf->globals.bLogStatusMsgs) {
 		(void) snprintf(buf, sizeof(buf),
-		 " [origin software=\"rsyslogd\" " "swVersion=\"" VERSION \
+		 "[origin software=\"rsyslogd\" " "swVersion=\"" VERSION \
 		 "\" x-pid=\"%d\" x-info=\"https://www.rsyslog.com\"]" " exiting on signal %d.",
 		 (int) glblGetOurPid(), bFinished);
 		errno = 0;

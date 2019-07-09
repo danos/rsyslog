@@ -505,7 +505,9 @@ dynaFileFreeCacheEntries(instanceData *__restrict__ const pData)
 	for(i = 0 ; i < pData->iCurrCacheSize ; ++i) {
 		dynaFileDelCacheEntry(pData, i, 1);
 	}
-	pData->iCurrElt = -1; /* invalidate current element */
+	/* invalidate current element */
+	pData->iCurrElt = -1;
+	pData->pStrm = NULL;
 }
 
 
@@ -695,7 +697,8 @@ prepareDynFile(instanceData *__restrict__ const pData, const uchar *__restrict__
 	 * we do not know if we will otherwise come back to this file to flush it
 	 * at end of TX. see https://github.com/rsyslog/rsyslog/issues/2502
 	 */
-	if(pData->bFlushOnTXEnd && pData->pStrm != NULL) {
+	if(((glblDevOptions & DEV_OPTION_8_1905_HANG_TEST) == 0) &&
+	    pData->bFlushOnTXEnd && pData->pStrm != NULL) {
 		CHKiRet(strm.Flush(pData->pStrm));
 	}
 
