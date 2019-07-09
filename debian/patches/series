@@ -1,3 +1,2 @@
 Don-t-create-a-database.patch
 Don-t-fail-test-suite-on-flaky-tests.patch
-fix-leading-double-space-in-rsyslog-startup-messages.patch
