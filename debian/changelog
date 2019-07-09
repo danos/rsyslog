@@ -1,3 +1,9 @@
+rsyslog (8.1907.0-1) UNRELEASED; urgency=medium
+
+  * New upstream version 8.1907.0
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 09 Jul 2019 20:47:32 +0200
+
 rsyslog (8.1905.0-4) unstable; urgency=medium
 
   * Stop installing /etc/default/rsyslog and remove it on upgrades
