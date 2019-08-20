@@ -122,7 +122,7 @@ static uchar *pszDfltNetstrmDrvr = NULL; /* module name of default netstream dri
 static uchar *pszDfltNetstrmDrvrCAF = NULL; /* default CA file for the netstrm driver */
 static uchar *pszDfltNetstrmDrvrKeyFile = NULL; /* default key file for the netstrm driver (server) */
 static uchar *pszDfltNetstrmDrvrCertFile = NULL; /* default cert file for the netstrm driver (server) */
-static int bTerminateInputs = 0;		/* global switch that inputs shall terminate ASAP (1=> terminate) */
+int bTerminateInputs = 0;		/* global switch that inputs shall terminate ASAP (1=> terminate) */
 static uchar cCCEscapeChar = '#'; /* character to be used to start an escape sequence for control chars */
 static int bDropTrailingLF = 1; /* drop trailing LF's on reception? */
 static int bEscapeCCOnRcv = 1; /* escape control characters on reception: 0 - no, 1 - yes */
@@ -150,7 +150,7 @@ uint64_t glblDevOptions = 0; /* to be used by developers only */
 
 pid_t glbl_ourpid;
 #ifndef HAVE_ATOMIC_BUILTINS
-static DEF_ATOMIC_HELPER_MUT(mutTerminateInputs);
+DEF_ATOMIC_HELPER_MUT(mutTerminateInputs);
 #endif
 #ifdef USE_UNLIMITED_SELECT
 static int iFdSetSize = howmany(FD_SETSIZE, __NFDBITS) * sizeof (fd_mask); /* size of select() bitmask in bytes */

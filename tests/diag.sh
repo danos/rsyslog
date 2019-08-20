@@ -38,6 +38,10 @@
 #		sample can be seen in imjournal-basic[.vg].sh
 #		You may also use USE_VALGRIND="YES-NOLEAK" to request valgrind without
 #		leakcheck (this sometimes is needed).
+# ABORT_ALL_ON_TEST_FAIL
+#		if set to "YES" and one test fails, all others are not executed but skipped.
+#		This is useful in long-running CI jobs where we are happy with seeing the
+#		first failure (to save time).
 #
 #
 # EXIT STATES
@@ -77,7 +81,9 @@ export ZOOPIDFILE="$(pwd)/zookeeper.pid"
 TB_TIMEOUT_STARTSTOP=400 # timeout for start/stop rsyslogd in tenths (!) of a second 400 => 40 sec
 # note that 40sec for the startup should be sufficient even on very slow machines. we changed this from 2min on 2017-12-12
 TB_TEST_TIMEOUT=90  # number of seconds after which test checks timeout (eg. waits)
-TB_TEST_MAX_RUNTIME=580 # maximum runtuime in seconds for a test; testbench will abort test
+TB_TEST_MAX_RUNTIME=${TEST_MAX_RUNTIME:-580} # maximum runtuime in seconds for a test;
+			# default TEST_MAX_RUNTIME e.g. for long-running tests or special
+			# testbench use. Testbench will abort test
 			# after that time (iff it has a chance to, not strictly enforced)
 			# Note: 580 is slightly below the rsyslog-ci required max non-stdout writing timeout
 			# This is usually at 600 (10 minutes) and processes will be force-terminated if they
@@ -166,7 +172,7 @@ setvar_RS_HOSTNAME() {
 	printf '### Obtaining HOSTNAME (prequisite, not actual test) ###\n'
 	generate_conf ""
 	add_conf 'module(load="../plugins/imtcp/.libs/imtcp")
-input(type="imtcp" port="'$TCPFLOOD_PORT'")
+input(type="imtcp" port="0" listenPortFileName="'$RSYSLOG_DYNNAME'.tcpflood_port")
 
 $template hostname,"%hostname%"
 local0.* ./'${RSYSLOG_DYNNAME}'.HOSTNAME;hostname
@@ -358,6 +364,7 @@ wait_pid_termination() {
 # $1 : file to wait for
 # $2 (optional): error message to show if timeout occurs
 wait_file_exists() {
+	echo waiting for file $1
 	i=0
 	while true; do
 		if [ -f $1 ] && [ "$(cat $1 2> /dev/null)" != "" ]; then
@@ -467,6 +474,13 @@ wait_startup() {
 	fi
 }
 
+# reassign ports after rsyslog startup; must be called from all
+# functions that startup rsyslog
+reassign_ports() {
+	if grep -q 'listenPortFileName="'$RSYSLOG_DYNNAME'\.tcpflood_port"' $CONF_FILE; then
+		assign_tcpflood_port $RSYSLOG_DYNNAME.tcpflood_port
+	fi
+}
 
 # start rsyslogd with default params. $1 is the config file name to use
 # returns only after successful startup, $2 is the instance (blank or 2!)
@@ -489,8 +503,38 @@ startup() {
 	fi
 	eval LD_PRELOAD=$RSYSLOG_PRELOAD $valgrind ../tools/rsyslogd -C $n_option -i$RSYSLOG_PIDBASE$instance.pid -M../runtime/.libs:../.libs -f$CONF_FILE $RS_REDIR &
 	wait_startup $instance
+	reassign_ports
 }
 
+
+# assign TCPFLOOD_PORT from port file
+# $1 - port file
+assign_tcpflood_port() {
+	wait_file_exists "$1"
+	export TCPFLOOD_PORT=$(cat "$1")
+	echo "TCPFLOOD_PORT now: $TCPFLOOD_PORT"
+	if [ "$TCPFLOOD_PORT" == "" ]; then
+		echo "TESTBENCH ERROR: TCPFLOOD_PORT not found!"
+		ls -l $RSYSLOG_DYNNAME*
+		exit 100
+	fi
+}
+
+# wait for a file to exist, then export it's content to env var
+# intended to be used for very small files, e.g. listenPort files
+# $1 - env var name
+# $2 - port file
+assign_file_content() {
+	wait_file_exists "$2"
+	content=$(cat "$2")
+	if [ "$content" == "" ]; then
+		echo "TESTBENCH ERROR: get_file content had empty file $2"
+		ls -l $RSYSLOG_DYNNAME*
+		exit 100
+	fi
+	eval export $1="$content"
+	printf 'exported: %s=%s\n' $1 "$content"
+}
 
 # same as startup_vg, BUT we do NOT wait on the startup message!
 startup_vg_waitpid_only() {
@@ -507,7 +551,7 @@ startup_vg_waitpid_only() {
 startup_vg() {
 		startup_vg_waitpid_only $1 $2
 		wait_startup $2
-		echo startup_vg still running
+		reassign_ports
 }
 
 # same as startup-vg, except that --leak-check is set to "none". This
@@ -533,6 +577,7 @@ startup_vgthread_waitpid_only() {
 startup_vgthread() {
 	startup_vgthread_waitpid_only $1 $2
 	wait_startup $2
+	reassign_ports
 }
 
 
@@ -893,11 +938,9 @@ wait_file_lines() {
 		if [ "$count_function" == "" ]; then
 			if [ -f "$file" ]; then
 				if [ "$COUNT_FILE_IS_ZIPPED" == "yes" ]; then
-					echo zipped
 					issue_HUP ""
 					count=$(gunzip < "$file" | wc -l)
 				else
-					echo NON zipped
 					count=$(wc -l < "$file")
 				fi
 			fi
@@ -945,8 +988,10 @@ wait_seq_check() {
 	fi
 
 	while true ; do
-		if [ -f "$filename" ]; then
-			count=$(wc -l < "$filename")
+		if [ "${filename##.*}" != "gz" ]; then
+			if [ -f "$filename" ]; then
+				count=$(wc -l < "$filename")
+			fi
 		fi
 		seq_check --check-only "$@" #&>/dev/null
 		ret=$?
@@ -1028,6 +1073,7 @@ issue_HUP() {
 		sleeptime=1000
 	fi
 	kill -HUP $(cat $RSYSLOG_PIDBASE$1.pid)
+	printf 'HUP issued to pid %d\n' $(cat $RSYSLOG_PIDBASE$1.pid)
 	$TESTTOOL_DIR/msleep $sleeptime
 }
 
@@ -1155,7 +1201,7 @@ error_exit() {
 	#fi
 
 	# Extended debug output for dependencies started by testbench
-	if [[ "$EXTRA_EXITCHECK" == 'dumpkafkalogs' ]]; then
+	if [ "$EXTRA_EXITCHECK" == 'dumpkafkalogs' ] && [ "$TEST_OUTPUT" == "VERBOSE" ]; then
 		# Dump Zookeeper log
 		dump_zookeeper_serverlog
 		# Dump Kafka log
@@ -1180,6 +1226,9 @@ error_exit() {
 		fi
 	fi
 	printf '%s FAIL: Test %s (took %s seconds)\n' "$(tb_timestamp)" "$0" "$(( $(date +%s) - TB_STARTTEST ))"
+	if [ $exitval -ne 77 ]; then
+		echo $0 > testbench_test_failed_rsyslog
+	fi
 	exit $exitval
 }
 
@@ -1240,23 +1289,34 @@ seq_check() {
 		printf 'FAIL: %s does not exist in seq_check!\n' "$SEQ_CHECK_FILE"
 		error_exit 1
 	fi
-	$RS_SORTCMD $RS_SORT_NUMERIC_OPT < ${SEQ_CHECK_FILE} | ./chkseq -s$startnum -e$endnum $3 $4 $5 $6 $7
+	if [ "${SEQ_CHECK_FILE##*.}" == "gz" ]; then
+		gunzip -c "${SEQ_CHECK_FILE}" | $RS_SORTCMD $RS_SORT_NUMERIC_OPT | ./chkseq -s$startnum -e$endnum $3 $4 $5 $6 $7
+	else
+		$RS_SORTCMD $RS_SORT_NUMERIC_OPT < "${SEQ_CHECK_FILE}" | ./chkseq -s$startnum -e$endnum $3 $4 $5 $6 $7
+	fi
 	ret=$?
 	if [ "$check_only"  == "YES" ]; then
 		return $ret
 	fi
 	if [ $ret -ne 0 ]; then
-		$RS_SORTCMD $RS_SORT_NUMERIC_OPT < ${SEQ_CHECK_FILE} > $RSYSLOG_DYNNAME.error.log
+		if [ "${SEQ_CHECK_FILE##*.}" == "gz" ]; then
+			gunzip -c "${SEQ_CHECK_FILE}" | $RS_SORTCMD $RS_SORT_NUMERIC_OPT \
+				| ./chkseq -s$startnum -e$endnum $3 $4 $5 $6 $7 \
+				> $RSYSLOG_DYNNAME.error.log
+		else
+			$RS_SORTCMD $RS_SORT_NUMERIC_OPT < ${SEQ_CHECK_FILE} \
+				> $RSYSLOG_DYNNAME.error.log
+		fi
 		echo "sequence error detected in $SEQ_CHECK_FILE"
 		echo "number of lines in file: $(wc -l $SEQ_CHECK_FILE)"
 		echo "sorted data has been placed in error.log, first 10 lines are:"
-		cat -n $RSYSLOG_DYNNAME.error.log | head -10
+		cat -n "$RSYSLOG_DYNNAME.error.log" | head -10
 		echo "---last 10 lines are:"
-		cat -n $RSYSLOG_DYNNAME.error.log | tail -10
+		cat -n "$RSYSLOG_DYNNAME.error.log" | tail -10
 		echo "UNSORTED data, first 10 lines are:"
-		cat -n $SEQ_CHECK_FILE | head -10
+		cat -n "$RSYSLOG_DYNNAME.error.log" | head -10
 		echo "---last 10 lines are:"
-		cat -n $SEQ_CHECK_FILE | tail -10
+		cat -n "$RSYSLOG_DYNNAME.error.log" | tail -10
 		# for interactive testing, create a static filename. We know this may get
 		# mangled during a parallel test run
 		mv -f $RSYSLOG_DYNNAME.error.log error.log
@@ -2145,6 +2205,10 @@ case $1 in
 		# some default names (later to be set in other parts, once we support fully
 		# parallel tests)
 		export RSYSLOG_DFLT_LOG_INTERNAL=1 # testbench needs internal messages logged internally!
+		if [ -f testbench_test_failed_rsyslog ] && [ "$ABORT_ALL_ON_TEST_FAIL" == "YES" ]; then
+			echo NOT RUNNING TEST as previous test $(cat testbench_test_failed_rsyslog) failed.
+			exit 77
+		fi
 		if [ "$RSYSLOG_DYNNAME" != "" ]; then
 			echo "FAIL: \$RSYSLOG_DYNNAME already set in init"
 			echo "hint: was init accidently called twice?"

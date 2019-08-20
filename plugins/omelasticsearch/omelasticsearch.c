@@ -272,6 +272,26 @@ BEGINfreeInstance
 CODESTARTfreeInstance
 	if(pData->fdErrFile != -1)
 		close(pData->fdErrFile);
+
+	if(loadModConf != NULL) {
+		/* we keep our instances in our own internal list - this also
+		 * means we need to cleanup that list, else we cause grief.
+		 */
+		instanceData *prev = NULL;
+		for(instanceData *inst = loadModConf->root ; inst != NULL ; inst = inst->next) {
+			if(inst == pData) {
+				if(loadModConf->tail == inst) {
+					loadModConf->tail = prev;
+				}
+				prev->next = inst->next;
+				/* no need to correct inst back to prev - we exit now! */
+				break;
+			} else {
+				prev = inst;
+			}
+		}
+	}
+
 	pthread_mutex_destroy(&pData->mutErrFile);
 	for(i = 0 ; i < pData->numServers ; ++i)
 		free(pData->serverBaseUrls[i]);
@@ -1549,6 +1569,12 @@ curlPost(wrkrInstanceData_t *pWrkrData, uchar *message, int msglen, uchar **tpls
 	} else {
 		/* by default, reuse existing connections */
 		curl_easy_setopt(curl, CURLOPT_FRESH_CONNECT, 0);
+	}
+	if ((pWrkrData->pData->rebindInterval > -1) &&
+		(pWrkrData->nOperations == pWrkrData->pData->rebindInterval)) {
+		curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1);
+	} else {
+		curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 0);
 	}
 
 	if(pWrkrData->pData->numServers > 1) {

@@ -24,6 +24,7 @@
 #include "config.h"
 #include "rsyslog.h"
 #include <stdio.h>
+#include <dirent.h>
 #include <assert.h>
 #include <string.h>
 #include <stdarg.h>
@@ -81,6 +82,7 @@ static struct configSettings_s {
 	int bUseJnlPID;
 	char *usePid;
 	int bWorkAroundJournalBug;
+	int bFsync;
 } cs;
 
 static rsRetVal facilityHdlr(uchar **pp, void *pVal);
@@ -97,7 +99,8 @@ static struct cnfparamdescr modpdescr[] = {
 	{ "defaultfacility", eCmdHdlrString, 0 },
 	{ "usepidfromsystem", eCmdHdlrBinary, 0 },
 	{ "usepid", eCmdHdlrString, 0 },
-	{ "workaroundjournalbug", eCmdHdlrBinary, 0 }
+	{ "workaroundjournalbug", eCmdHdlrBinary, 0 },
+	{ "fsync", eCmdHdlrBinary, 0 }
 };
 static struct cnfparamblk modpblk =
 	{ CNFPARAMBLK_VERSION,
@@ -461,7 +464,7 @@ static rsRetVal
 persistJournalState(int trySave)
 {
 	DEFiRet;
-	FILE *sf; /* state file */
+	FILE *sf = NULL; /* state file */
 	char tmp_sf[MAXFNAME];
 	size_t n;
 
@@ -499,12 +502,6 @@ persistJournalState(int trySave)
 
 	if(fputs(last_cursor, sf) == EOF) {
 		LogError(errno, RS_RET_IO_ERROR, "imjournal: failed to save cursor to: '%s'", tmp_sf);
-		fclose(sf);
-		ABORT_FINALIZE(RS_RET_IO_ERROR);
-	}
-
-	if (fclose(sf) == EOF) {
-		LogError(errno, RS_RET_IO_ERROR, "imjournal: fclose() failed for path: '%s'", tmp_sf);
 		ABORT_FINALIZE(RS_RET_IO_ERROR);
 	}
 
@@ -514,7 +511,30 @@ persistJournalState(int trySave)
 		ABORT_FINALIZE(RS_RET_IO_ERROR);
 	}
 
+	if (cs.bFsync) {
+		if (fsync(fileno(sf)) != 0) {
+			LogError(errno, RS_RET_IO_ERROR, "imjournal: fsync on '%s' failed", cs.stateFile);
+			ABORT_FINALIZE(RS_RET_IO_ERROR);
+		}
+		/* In order to guarantee physical write we need to force parent sync as well */
+		DIR *wd;
+		if (!(wd = opendir((char *)glbl.GetWorkDir()))) {
+			LogError(errno, RS_RET_IO_ERROR, "imjournal: failed to open '%s' directory", glbl.GetWorkDir());
+			ABORT_FINALIZE(RS_RET_IO_ERROR);
+		}
+		if (fsync(dirfd(wd)) != 0) {
+			LogError(errno, RS_RET_IO_ERROR, "imjournal: fsync on '%s' failed", glbl.GetWorkDir());
+			ABORT_FINALIZE(RS_RET_IO_ERROR);
+		}
+	}
+
 finalize_it:
+	if (sf != NULL) {
+		if (fclose(sf) == EOF) {
+			LogError(errno, RS_RET_IO_ERROR, "imjournal: fclose() failed for path: '%s'", tmp_sf);
+			iRet = RS_RET_IO_ERROR;
+		}
+	}
 	RETiRet;
 }
 
@@ -804,6 +824,7 @@ CODESTARTbeginCnfLoad
 	cs.bUseJnlPID = -1;
 	cs.usePid = NULL;
 	cs.bWorkAroundJournalBug = 1;
+	cs.bFsync = 0;
 ENDbeginCnfLoad
 
 
@@ -943,6 +964,8 @@ CODESTARTsetModCnf
 			cs.usePid = (char *)es_str2cstr(pvals[i].val.d.estr, NULL);
 		} else if (!strcmp(modpblk.descr[i].name, "workaroundjournalbug")) {
 			cs.bWorkAroundJournalBug = (int) pvals[i].val.d.n;
+		} else if (!strcmp(modpblk.descr[i].name, "fsync")) {
+			cs.bFsync = (int) pvals[i].val.d.n;
 		} else {
 			dbgprintf("imjournal: program error, non-handled "
 				"param '%s' in beginCnfLoad\n", modpblk.descr[i].name);

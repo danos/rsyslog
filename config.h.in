@@ -213,6 +213,9 @@
 /* Define to 1 if you have the `prctl' function. */
 #undef HAVE_PRCTL
 
+/* Define to 1 if you have the <protocol.h> header file. */
+#undef HAVE_PROTOCOL_H
+
 /* Define to 1 if you have the <pthread.h> header file. */
 #undef HAVE_PTHREAD_H
 

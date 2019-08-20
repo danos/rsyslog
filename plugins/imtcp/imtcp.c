@@ -404,7 +404,8 @@ addListner(modConfData_t *modConf, instanceConf_t *inst)
 			|| ustrcmp(inst->pszBindPort, UCHAR_CONSTANT("0")) < 0) {
 		CHKmalloc(inst->pszBindPort = (uchar*)strdup("514"));
 	}
-	tcpsrv.configureTCPListen(pOurTcpsrv, inst->pszBindPort, inst->bSuppOctetFram, inst->pszBindAddr);
+	tcpsrv.configureTCPListen(pOurTcpsrv, inst->pszBindPort, inst->bSuppOctetFram,
+		inst->pszBindAddr, inst->pszLstnPortFileName);
 
 finalize_it:
 	if(iRet != RS_RET_OK) {
