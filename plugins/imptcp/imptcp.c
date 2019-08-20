@@ -329,6 +329,7 @@ struct ptcplstn_s {
 	STATSCOUNTER_DEF(ctrSessOpen, mutCtrSessOpen)
 	STATSCOUNTER_DEF(ctrSessOpenErr, mutCtrSessOpenErr)
 	STATSCOUNTER_DEF(ctrSessClose, mutCtrSessClose)
+	DEF_ATOMIC_HELPER_MUT64(mut_rcvdBytes)
 };
 
 
@@ -507,6 +508,7 @@ startupSrv(ptcpsrv_t *pSrv)
 	struct addrinfo hints, *res = NULL, *r;
 	uchar *lstnIP;
 	int isIPv6 = 0;
+	int port_override = 0; /* if dyn port (0): use this for actually bound port */
 
 	if (pSrv->bUnixSocket) {
 		return startupUXSrv(pSrv);
@@ -534,6 +536,13 @@ startupSrv(ptcpsrv_t *pSrv)
 
 	numSocks = 0;   /* num of sockets counter at start of array */
 	for(r = res; r != NULL ; r = r->ai_next) {
+		if(port_override != 0) {
+			if(r->ai_family == AF_INET6) {
+				((struct sockaddr_in6*)r->ai_addr)->sin6_port = port_override;
+			} else {
+				((struct sockaddr_in*)r->ai_addr)->sin_port = port_override;
+			}
+		}
 		sock = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
 		if(sock < 0) {
 			if(!(r->ai_family == PF_INET6 && errno == EAFNOSUPPORT)) {
@@ -605,35 +614,51 @@ startupSrv(ptcpsrv_t *pSrv)
 #endif
 	    ) {
 			/* TODO: check if *we* bound the socket - else we *have* an error! */
-			char errStr[1024];
-			rs_strerror_r(errno, errStr, sizeof(errStr));
 			LogError(errno, NO_ERRCODE, "Error while binding tcp socket");
-			dbgprintf("error %d while binding tcp socket: %s\n", errno, errStr);
 			close(sock);
 			sock = -1;
 			continue;
 		}
 
-		if(pSrv->pszLstnPortFileName) {
-			FILE *fp;
-			if(getsockname(sock, r->ai_addr, &r->ai_addrlen) == -1) {
-				LogError(errno, NO_ERRCODE, "imptcp: ListenPortFileName: getsockname:"
+		/* if we bind to dynamic port (port 0 given), we will do so consistently. Thus
+		 * once we got a dynamic port, we will keep it and use it for other protocols
+		 * as well. As of my understanding, this should always work as the OS does not
+		 * pick a port that is used by some protocol (well, at least this looks very
+		 * unlikely...). If our asusmption is wrong, we should iterate until we find a
+		 * combination that works - it is very unusual to have the same service listen
+		 * on differnt ports on IPv4 and IPv6.
+		 */
+		const int currport = (isIPv6) ?
+			(((struct sockaddr_in6*)r->ai_addr)->sin6_port) :
+			(((struct sockaddr_in*)r->ai_addr)->sin_port) ;
+		if(currport == 0) {
+			socklen_t socklen_r = r->ai_addrlen;
+			if(getsockname(sock, r->ai_addr, &socklen_r) == -1) {
+				LogError(errno, NO_ERRCODE, "nsd_ptcp: ListenPortFileName: getsockname:"
 						"error while trying to get socket");
 			}
-			if((fp = fopen((const char*)pSrv->pszLstnPortFileName, "w+")) == NULL) {
-				LogError(errno, RS_RET_IO_ERROR, "imptcp: ListenPortFileName: "
-						"error while trying to open file");
-				ABORT_FINALIZE(RS_RET_IO_ERROR);
+			r->ai_addrlen = socklen_r;
+			port_override = (isIPv6) ?
+				(((struct sockaddr_in6*)r->ai_addr)->sin6_port) :
+				(((struct sockaddr_in*)r->ai_addr)->sin_port) ;
+			if(pSrv->pszLstnPortFileName != NULL) {
+				FILE *fp;
+				if((fp = fopen((const char*)pSrv->pszLstnPortFileName, "w+")) == NULL) {
+					LogError(errno, RS_RET_IO_ERROR, "imptcp: ListenPortFileName: "
+							"error while trying to open file");
+					ABORT_FINALIZE(RS_RET_IO_ERROR);
+				}
+				if(isIPv6) {
+					fprintf(fp, "%d", ntohs((((struct sockaddr_in6*)r->ai_addr)->sin6_port)));
+				} else {
+					fprintf(fp, "%d", ntohs((((struct sockaddr_in*)r->ai_addr)->sin_port)));
+				}
+				fclose(fp);
 			}
-			if(isIPv6) {
-				fprintf(fp, "%d", ntohs((((struct sockaddr_in6*)r->ai_addr)->sin6_port)));
-			} else {
-				fprintf(fp, "%d", ntohs((((struct sockaddr_in*)r->ai_addr)->sin_port)));
-			}
-			fclose(fp);
 		}
 
 		if(listen(sock, pSrv->socketBacklog) < 0) {
+			LogError(errno, NO_ERRCODE, "imptcp error listening on port");
 			DBGPRINTF("tcp listen error %d, suspending\n", errno);
 			close(sock);
 			sock = -1;
@@ -1295,7 +1320,7 @@ DataRcvd(ptcpsess_t *pThis, char *pData, size_t iLen)
 {
 	struct syslogTime stTime;
 	DEFiRet;
-	pThis->pLstn->rcvdBytes += iLen;
+	ATOMIC_ADD_uint64(&pThis->pLstn->rcvdBytes, &pThis->pLstn->mut_rcvdBytes, iLen);
 	if(pThis->compressionMode >= COMPRESS_STREAM_ALWAYS)
 		iRet =  DataRcvdCompressed(pThis, pData, iLen);
 	else
@@ -1340,10 +1365,7 @@ addEPollSock(epolld_type_t typ, void *ptr, int sock, epolld_t **pEpd)
 	epd->ev.data.ptr = (void*) epd;
 
 	if(epoll_ctl(epollfd, EPOLL_CTL_ADD, sock, &(epd->ev)) != 0) {
-		char errStr[1024];
-		int eno = errno;
-		LogError(0, RS_RET_EPOLL_CTL_FAILED, "os error (%d) during epoll ADD: %s",
-			        eno, rs_strerror_r(eno, errStr, sizeof(errStr)));
+		LogError(errno, RS_RET_EPOLL_CTL_FAILED, "os error during epoll ADD");
 		ABORT_FINALIZE(RS_RET_EPOLL_CTL_FAILED);
 	}
 
@@ -1405,6 +1427,7 @@ addLstn(ptcpsrv_t *pSrv, int sock, int isIPv6)
 	 * that they may not be 100% correct */
 	pLstn->rcvdBytes = 0,
 	pLstn->rcvdDecompressed = 0;
+	INIT_ATOMIC_HELPER_MUT64(pLstn->mut_rcvdBytes);
 	CHKiRet(statsobj.AddCounter(pLstn->stats, UCHAR_CONSTANT("bytes.received"),
 		ctrType_IntCtr, CTR_FLAG_RESETTABLE, &(pLstn->rcvdBytes)));
 	CHKiRet(statsobj.AddCounter(pLstn->stats, UCHAR_CONSTANT("bytes.decompressed"),
@@ -1835,8 +1858,8 @@ startupServers(void)
 /* process new activity on listener. This means we need to accept a new
  * connection.
  */
-static rsRetVal
-lstnActivity(ptcplstn_t *pLstn)
+static rsRetVal ATTR_NONNULL()
+lstnActivity(ptcplstn_t *const pLstn)
 {
 	int newSock = -1;
 	prop_t *peerName;
@@ -1869,7 +1892,7 @@ finalize_it:
  * or close the session.
  */
 static rsRetVal
-sessActivity(ptcpsess_t *pSess, int *continue_polling)
+sessActivity(ptcpsess_t *const pSess, int *const continue_polling)
 {
 	int lenRcv;
 	int lenBuf;
@@ -1926,6 +1949,7 @@ finalize_it:
 static void
 processWorkItem(epolld_t *epd)
 {
+
 	int continue_polling = 1;
 
 	switch(epd->typ) {
@@ -1937,8 +1961,7 @@ processWorkItem(epolld_t *epd)
 		sessActivity((ptcpsess_t *) epd->ptr, &continue_polling);
 		break;
 	default:
-		LogError(0, RS_RET_INTERNAL_ERROR,
-						"error: invalid epolld_type_t %d after epoll", epd->typ);
+		LogError(0, RS_RET_INTERNAL_ERROR, "error: invalid epolld_type_t %d after epoll", epd->typ);
 		break;
 	}
 	if (continue_polling == 1) {

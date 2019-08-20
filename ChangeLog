@@ -1,4 +1,131 @@
 ----------------------------------------------------------------------------------------
+Version 8.1908.0 (aka 2019.08) 2019-08-20
+- 2019-08-19: testbench: add test for $allowedSender functionality
+- 2019-08-19: testbench: harden some tests against very slow CI machines
+- 2019-08-16: testbench: make most tests use a port file and assign listen port 0
+  This makes the test much more robust against heavily loaded test systems.
+- 2019-08-16: core/action: guard action.externalstate.file content against whitspace
+  remove trailing whitespace before checking the status string. This is
+  most important as a line usually ends with \n, which is considered
+  trailing whitespace. Accepting this increases usability.
+- 2019-08-16: imtcp bugfix: multiple listnerPortFile parameter did not work
+  ... because they were treated as module-global. If we had multiple imtcp
+  listeners with multiple port files, only the last filename was always used.
+  closes https://github.com/rsyslog/rsyslog/issues/3817
+- 2019-08-16: testbench: improve testbench plumbing for gzip and fail cases
+  We have added new capabilities to the testbench plumbing to automatically
+  deal with gzip-compressed files. This also permits to use the wait_seq_check
+  function to work for gzip tests as well. The known-timing-sensitive
+  gzipwr_large test now makes use of the new capabilities. This enables us
+  to more reliably detect when we can savely shutdown the tested instance.
+  This commit also adds an ability to "abort" the full testbench run on
+  first test failure. This is especially useful during CI.
+- 2019-08-13: testbench: add test for imuxsock legacy format
+  This was never tested. Ensures we don't accidently break existing
+  configurations.
+- 2019-08-13: omelasticsearch bugfix: segfault on unknown retryRuleset
+  omelasticsearch does some "interesting tricks" for an output module.
+  This causes a segfault if the retryRuleset is now known.
+  The action module interface currently expects that all config errors
+  be detected during instance creation. Instead omelasticsearch defers
+  the retry ruleset check to a later state. The reason is that it wants
+  to support the use the same rulesetname it is defined in - and this
+  is not yet available at action parsing.
+  We fix this by ensuring that any deleted instance is properly unlinked
+  from the instance list. One may argue the module interface should get
+  upgrade for such cases, but this is a longer-term approach.
+  closes https://github.com/rsyslog/rsyslog/pull/3796
+- 2019-08-12: imptcp bugfix: port="0" parameter did not work as expected
+  when multiple interfaces and/or protocols could be bound, each of
+  them used a different listener ports were assigned. While this is
+  basically correct, it makes things unusable, especially as
+  listenPortFileName will only contain the port number used for
+  the latest listener.
+  This patch now follows the model of nsd_ptcp.c to assign only
+  the first port randomly and then use that port consistently.
+- 2019-08-10: omelasticsearch bugfix: potential ressource leak whith "rebindinterval"
+  If the "rebindInterval" parameter was used connections could be linked. This
+  was especially the case with small intervals (such as "2"). This is fixed by
+  forcing libcurl to close the connection on rebind.
+  Thanks to Noriko Hosoi for providing the patch.
+- 2019-08-10: imjournal bugfix: state file close with fsync() was incorrect
+  This lead to fsync() now always applied where expected.
+  Thanks to Jiri Vymazal for the patch.
+- 2019-08-10: testbench: add addtl test for multithreading and HUP
+- 2019-08-10: imptcp bugfix: received bytes counter improperly maintained
+  imptcp counts the number of bytes received. However, receives
+  happen on different worker thread. The access to the counter
+  was not synchronized, which can cause loss of updates. Also,
+  thread debuggers validly flag this as an error, which creates
+  problems under CI.
+  This commit fixes the situation via atomic operations and
+  falls back to mutex calls if they are not available.
+  Detected by LLVM thread sanitizer.
+  closes https://github.com/rsyslog/rsyslog/issues/3798
+- 2019-08-07: testbench: add basic tests for omusrmsg
+- 2019-08-05: omhttp bugfix: enable checkpath configuration parameter
+  omhttp, 'checkpath' option, was not configurable in the past.
+  - add 'checkpath' to the cnfparamdescr table.
+  - fix issue with checkpath passing extra garbage characters in string.
+  - add 'checkpath' into unit test - omhttp-retry.sh
+  Thanks to Nelson Yen for the fix.
+- 2019-08-05: testbench bugfix: some tests were executed when req module was missing
+  In actual case if --enable-impstats was not given some other tests failed.
+- 2019-08-03: iminternal bugfix: race on termination
+  This could in theory lead to loss of shutdown messages, but was mostly a
+  cosmetic issues. We primarily fixed it to get TSAN-clean so that we can
+  utilize LLVM TSAN in CI.
+- 2019-08-02: testbench: new test for omfile outchannel functionality
+- 2019-08-02: core/janitor bugfix: properly maintain dynafile cache
+  When the janitor cleans out timed-out files, it does not
+  properly indicate the entry is gone. Especially when running
+  in async mode this can lead to use-after-free and thus
+  memory corruption or segfault.
+  see also https://github.com/rsyslog/rsyslog/issues/3756
+- 2019-08-01: omfile bugfix: race file when async writing is enabled
+  This seems to be a long-standing bug, introduced around 7 years ago.
+  It became more visible by properly closing files during HUP, which
+  was done in 8.1905.0 (and was another bugfix). Note that due to this
+  race a memory corruption can occur under bad circumstances. As such,
+  this may have also caused segfaults or system hangs (mutexes could
+  have been affected).
+  closes https://github.com/rsyslog/rsyslog/issues/3772
+- 2019-08-01: testbench: additional tests for HUP
+- 2019-07-31: imrelp bugfix: hang after HUP
+  termination condition was not properly checked; this lead to
+  premature termination after patch 1c8712415b9 was applied.
+  It is open to debate if patch 1c8712415b9 changed the module
+  interface. Actually it looks like this was previously not
+  well thought out.
+  closes https://github.com/rsyslog/rsyslog/issues/3760
+- 2019-07-24: mmdarwin: add new module
+  This is a contributed module. For details see doc.
+  Thanks to the Advens team for contributing it.
+- 2019-07-23 iminternal bugfix: suppress mutex double-unlock
+  If there is a burst of log messages during a time when rsyslog is unable
+  to output (either during log rotation, an out-of-space condition, or
+  some other similar condition), rsyslog can SEGFAULT due to a mutex
+  double-unlock.
+- 2019-07-23 imtcp: enable listenPortFileName parameter
+  this parameter was added, but it had no effect as it was not
+  passed down to the driver layer. This has been fixed. That also
+  now enables us to use dynamically-assigned port, which are
+  very useful for further testbench stabilization. Quite some
+  false positives occurred because the pre-selected port was
+  already in use again when rsyslog started.
+- 2019-07-19 imtcp: enable listenPortFileName parameter
+  this parameter was added, but it had no effect as it was not
+  passed down to the driver layer. This has been fixed. That also
+  now enables us to use dynamically-assigned port, which are
+  very useful for further testbench stabilization. Quite some
+  false positives occurred because the pre-selected port was
+  already in use again when rsyslog started.
+- 2019-07-18 core/action: no error file written if act suspended on TX commit
+  when an action was already disabled while the action was tried to be
+  committed, no error file was written. Note that this state is highly
+  unlikely to happen. Most probably, it can only happen if parameter
+  action.externalstate.file is used.
+----------------------------------------------------------------------------------------
 Version 8.1907.0 (aka 2019.07) 2019-07-09
 NOTE TO MAINTAINERS: libee is not used by rsyslog for quite some while.
 However, we never included this info into the changelog. So if you still

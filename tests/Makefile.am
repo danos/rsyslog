@@ -57,6 +57,9 @@ TESTS = $(TESTRUNS)
 
 if ENABLE_ELASTICSEARCH_TESTS_MINIMAL
 TESTS +=  \
+	es-duplicated-ruleset.sh
+# the following test need to be serialized:
+TESTS +=  \
 	es-basic.sh \
 	es-basic-es6.0.sh \
 	es-basic-bulk.sh
@@ -65,6 +68,7 @@ es-basic-bulk.log: es-basic-es6.0.log
 es-basic-server.log: es-basic-bulk.log
 if HAVE_VALGRIND
 TESTS += \
+	es-duplicated-ruleset-vg.sh \
 	es-basic-vg.sh
 es-basic-vg.log: es-basic-bulk.log
 # for next if block:
@@ -168,10 +172,15 @@ TESTS +=  \
 	dnscache-TTL-0.sh \
 	invalid_nested_include.sh \
 	omfwd-keepalive.sh \
+	omusrmsg-noabort-legacy.sh \
+	omusrmsg-errmsg-no-params.sh \
+	omusrmsg-noabort.sh \
+	omfile-module-params.sh \
 	omfile-read-only-errmsg.sh \
 	omfile-null-filename.sh \
 	omfile-whitespace-filename.sh \
 	omfile-read-only.sh \
+	omfile-outchannel.sh \
 	omfile_both_files_set.sh \
 	omfile_hup.sh \
 	msgvar-concurrency.sh \
@@ -228,8 +237,12 @@ TESTS +=  \
 	msgdup.sh \
 	msgdup_props.sh \
 	empty-ruleset.sh \
+	imtcp-listen-port-file-2.sh \
+	allowed-sender-tcp-ok.sh \
+	allowed-sender-tcp-fail.sh \
 	imtcp-discard-truncated-msg.sh \
 	imtcp-basic.sh \
+	imtcp-basic-hup.sh \
 	imtcp-maxFrameSize.sh \
 	imtcp-msg-truncation-on-number.sh \
 	imtcp-msg-truncation-on-number2.sh \
@@ -279,6 +292,8 @@ TESTS +=  \
 	abort-uncleancfg-badcfg-check.sh \
 	abort-uncleancfg-badcfg-check_1.sh \
 	variable_leading_underscore.sh \
+	gzipwr_hup_multi_file.sh \
+	gzipwr_hup_single_file.sh \
 	gzipwr_rscript.sh \
 	gzipwr_flushInterval.sh \
 	gzipwr_flushOnTXEnd.sh \
@@ -303,6 +318,7 @@ TESTS +=  \
 	pipe_noreader.sh \
 	dircreate_dflt.sh \
 	dircreate_off.sh \
+	imuxsock_legacy.sh \
 	imuxsock_logger.sh \
 	imuxsock_logger_ruleset.sh \
 	imuxsock_logger_ruleset_ratelimit.sh \
@@ -324,6 +340,7 @@ TESTS +=  \
 	failover-no-rptd.sh \
 	failover-no-basic.sh \
 	suspend-via-file.sh \
+	suspend-omfwd-via-file.sh \
 	externalstate-failed-rcvr.sh \
 	rcvr_fail_restore.sh \
 	rscript_contains.sh \
@@ -729,6 +746,16 @@ TESTS +=  \
 endif # ENABLE_IMPROG
 endif
 
+if ENABLE_MMDARWIN
+TESTS +=  \
+	mmdarwin_errmsg_no_params.sh \
+	mmdarwin_errmsg_no_sock.sh
+if HAVE_VALGRIND
+TESTS += \
+	mmdarwin_errmsg_no_sock-vg.sh
+endif # HAVE_VALGRIND
+endif # ENABLE_IMPROG
+
 if ENABLE_OMPROG
 TESTS +=  \
 	omprog-defaults.sh \
@@ -796,6 +823,7 @@ TESTS += \
 	imkafka-hang-on-no-kafka.sh \
 	imkafka-hang-other-action-on-no-kafka.sh \
 	imkafka_multi_single.sh \
+	imkafka_multi_group.sh \
 	sndrcv_kafka.sh \
 	sndrcv_kafka_multi_topics.sh
 # Tests below need to be stable first!
@@ -812,7 +840,8 @@ imkafka-hang-on-no-kafka.log: imkafka-config-err-param.log
 imkafka-hang-other-action-on-no-kafka.log: imkafka-hang-on-no-kafka.log
 imkafka_multi_single.log: imkafka-hang-other-action-on-no-kafka.log
 sndrcv_kafka.log: imkafka_multi_single.log
-sndrcv_kafka_multi_topics.log: sndrcv_kafka.log
+imkafka_multi_group.log: sndrcv_kafka.log
+sndrcv_kafka_multi_topics.log: imkafka_multi_group.log
 
 if HAVE_VALGRIND
 TESTS += \
@@ -918,6 +947,7 @@ TESTS +=  \
 	imptcp_spframingfix.sh \
 	imptcp_nonProcessingPoller.sh \
 	imptcp_veryLargeOctateCountedMessages.sh \
+	imptcp-basic-hup.sh \
 	imptcp-NUL.sh \
 	imptcp-NUL-rawmsg.sh \
 	rscript_random.sh \
@@ -1132,6 +1162,7 @@ TESTS += sndrcv_relp.sh \
 	 omrelp_errmsg_no_connect.sh \
 	 imrelp-basic.sh \
 	 imrelp-basic-oldstyle.sh \
+	 imrelp-basic-hup.sh \
 	 imrelp-manyconn.sh \
 	 imrelp-maxDataSize-error.sh \
 	 imrelp-long-msg.sh \
@@ -1233,14 +1264,14 @@ if ENABLE_EXTENDED_TESTS
 # random.sh is temporarily disabled as it needs some work
 # to rsyslog core to complete in reasonable time
 #TESTS += random.sh
-if ENABLE_IMFILE
+if ENABLE_IMFILE_TESTS
 TESTS += \
 	imfile-basic-2GB-file.sh \
 	imfile-truncate-2GB-file.sh
-endif # ENABLE_IMFILE
+endif # ENABLE_IMFILE_TESTS
 endif
 
-if ENABLE_IMFILE
+if ENABLE_IMFILE_TESTS
 TESTS += \
 	imfile-basic.sh \
 	imfile-basic-legacy.sh \
@@ -1319,7 +1350,7 @@ endif # ENABLE_MMNORMALIZE
 
 endif # HAVE_VALGRIND
 
-endif # ENABLE_IMFILE
+endif # ENABLE_IMFILE_TESTS
 
 if ENABLE_IMBATCHREPORT
 TESTS +=  \
@@ -1360,6 +1391,7 @@ endif
 if ENABLE_MMKUBERNETES
 if ENABLE_MMJSONPARSE
 if ENABLE_IMFILE
+if ENABLE_IMPSTATS
 TESTS += \
 	mmkubernetes-basic.sh \
 	mmkubernetes-cache-expire.sh
@@ -1367,6 +1399,7 @@ if HAVE_VALGRIND
 TESTS += \
 	mmkubernetes-basic-vg.sh \
 	mmkubernetes-cache-expire-vg.sh
+endif
 endif
 endif
 endif
@@ -1596,6 +1629,9 @@ EXTRA_DIST= \
 	rs-substring.sh \
 	omsnmp_errmsg_no_params.sh \
 	ommail_errmsg_no_params.sh \
+	mmdarwin_errmsg_no_params.sh \
+	mmdarwin_errmsg_no_sock.sh \
+	mmdarwin_errmsg_no_sock-vg.sh \
 	mmutf8fix_no_error.sh \
 	tcpflood_wrong_option_output.sh \
 	msleep_usage_output.sh \
@@ -1632,10 +1668,15 @@ EXTRA_DIST= \
 	omfwd-keepalive.sh \
 	omfile_hup-vg.sh \
 	gzipwr_hup-vg.sh \
+	omusrmsg-noabort-legacy.sh \
+	omusrmsg-errmsg-no-params.sh \
+	omusrmsg-noabort.sh \
+	omfile-module-params.sh \
 	omfile-read-only-errmsg.sh \
 	omfile-null-filename.sh \
 	omfile-whitespace-filename.sh \
 	omfile-read-only.sh \
+	omfile-outchannel.sh \
 	omfile_both_files_set.sh \
 	omfile_hup.sh \
 	omrabbitmq_no_params.sh \
@@ -1803,6 +1844,8 @@ EXTRA_DIST= \
 	clickhouse-bulk-load-vg.sh \
 	es_response_get_msgnum.py \
 	elasticsearch-error-format-check.py \
+	es-duplicated-ruleset.sh \
+	es-duplicated-ruleset-vg.sh \
 	es-basic-es6.0.sh \
 	es-basic.sh \
 	es-basic-vgthread.sh \
@@ -1829,8 +1872,12 @@ EXTRA_DIST= \
 	msgdup.sh \
 	msgdup_props.sh \
 	empty-ruleset.sh \
+	imtcp-listen-port-file-2.sh \
+	allowed-sender-tcp-ok.sh \
+	allowed-sender-tcp-fail.sh \
 	imtcp-discard-truncated-msg.sh \
 	imtcp-basic.sh \
+	imtcp-basic-hup.sh \
 	imtcp-maxFrameSize.sh \
 	imtcp-msg-truncation-on-number.sh \
 	imtcp-msg-truncation-on-number2.sh \
@@ -1865,6 +1912,7 @@ EXTRA_DIST= \
 	imtcp-tls-ossl-error-key2.sh \
 	manytcp.sh \
 	manyptcp.sh \
+	imptcp-basic-hup.sh \
 	imptcp-NUL.sh \
 	imptcp-NUL-rawmsg.sh \
 	imptcp_framing_regex.sh \
@@ -1907,6 +1955,7 @@ EXTRA_DIST= \
 	failover-async.sh \
 	failover-double.sh \
 	suspend-via-file.sh \
+	suspend-omfwd-via-file.sh \
 	externalstate-failed-rcvr.sh \
 	discard-rptdmsg.sh \
 	discard-rptdmsg-vg.sh \
@@ -1934,6 +1983,7 @@ EXTRA_DIST= \
 	sndrcv.sh \
 	omrelp_errmsg_no_connect.sh \
 	imrelp-basic.sh \
+	imrelp-basic-hup.sh \
 	imrelp-basic-vg.sh \
 	imrelp-basic-oldstyle.sh \
 	imrelp-manyconn.sh \
@@ -2045,6 +2095,8 @@ EXTRA_DIST= \
 	abort-uncleancfg-badcfg-check.sh \
 	abort-uncleancfg-badcfg-check_1.sh \
 	variable_leading_underscore.sh \
+	gzipwr_hup_multi_file.sh \
+	gzipwr_hup_single_file.sh \
 	gzipwr_rscript.sh \
 	gzipwr_flushInterval.sh \
 	gzipwr_flushOnTXEnd.sh \
@@ -2141,6 +2193,7 @@ EXTRA_DIST= \
 	tabescape_on.sh \
 	dircreate_dflt.sh \
 	dircreate_off.sh \
+	imuxsock_legacy.sh \
 	imuxsock_logger_parserchain.sh \
 	imuxsock_logger.sh \
 	imuxsock_logger_ruleset.sh \
@@ -2186,6 +2239,7 @@ EXTRA_DIST= \
 	imkafka.sh \
 	imkafka-vg.sh \
 	imkafka_multi_single.sh \
+	imkafka_multi_group.sh \
 	sndrcv_kafka.sh \
 	sndrcv_kafka_multi_topics.sh \
 	testsuites/kafka-server.properties \

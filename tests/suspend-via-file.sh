@@ -1,5 +1,6 @@
 #!/bin/bash
-# This tests the action suspension via a file
+# This tests the action suspension via a file; we use a SUSPENDED string
+# with trailing whitespace in this test.
 # This file is part of the rsyslog project, released under ASL 2.0
 # Written 2018-08-13 by Rainer Gerhards
 . ${srcdir:=.}/diag.sh init
@@ -13,7 +14,12 @@ check_q_empty_log2() {
 }
 generate_conf
 add_conf '
-$template outfmt,"%msg:F,58:2%\n"
+/* Filter out busy debug output, comment out if needed */
+global( debug.whitelist="on"
+	debug.files=["ruleset.c", "../action.c", "omfwd.c"]
+)
+
+template(name="outfmt" type="string" string="%msg:F,58:2%\n")
 
 :msg, contains, "msgnum:" {
 	action(name="primary" type="omfile" file="'$RSYSLOG2_OUT_LOG'" template="outfmt"
@@ -25,7 +31,7 @@ $template outfmt,"%msg:F,58:2%\n"
 startup
 
 printf '\n%s %s\n' "$(tb_timestamp)" \
-	'checking that action is active w/o external state file'
+	'STEP 1: checking that action is active w/o external state file'
 injectmsg 0 2500
 export SEQ_CHECK_FILE="$RSYSLOG2_OUT_LOG"
 export LOG2_EXPECTED_LASTNUM=2499
@@ -35,8 +41,8 @@ seq_check 0 $LOG2_EXPECTED_LASTNUM # full correctness check
 
 
 printf '\n%s %s\n' "$(tb_timestamp)" \
-	'checking that action becomes suspended via external state file'
-printf "%s" "SUSPENDED" > $RSYSLOG_DYNNAME.STATE
+	'STEP 2: checking that action becomes suspended via external state file'
+printf 'SUSPENDED \n' > $RSYSLOG_DYNNAME.STATE
 injectmsg 2500 2500
 export SEQ_CHECK_FILE="$RSYSLOG_OUT_LOG"
 export QUEUE_EMPTY_CHECK_FUNC=check_q_empty_log1
@@ -44,7 +50,7 @@ wait_queueempty
 seq_check 2500 4999 # full correctness check
 
 printf '\n%s %s\n' "$(tb_timestamp)" \
-	'checking that action becomes resumed again via external state file'
+	'STEP 3: checking that action becomes resumed again via external state file'
 printf "%s" "READY" > $RSYSLOG_DYNNAME.STATE
 ./msleep 2000 # ensure ResumeInterval expired (NOT sensitive to slow machines --> absolute time!)
 injectmsg 2500 2500

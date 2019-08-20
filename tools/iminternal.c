@@ -93,7 +93,6 @@ rsRetVal iminternalAddMsg(smsg_t *pMsg)
 	#else
 	r = pthread_mutex_trylock(&mutList); // must check
 	#endif
-	is_locked = 1;
 	if(r != 0) {
 		dbgprintf("iminternalAddMsg: timedlock for mutex failed with %d, msg %s\n",
 			r, getMSG(pMsg));
@@ -101,11 +100,12 @@ rsRetVal iminternalAddMsg(smsg_t *pMsg)
 		msgDestruct(&pMsg);
 		ABORT_FINALIZE(RS_RET_ERR);
 	}
+	is_locked = 1;
 	CHKiRet(iminternalConstruct(&pThis));
 	pThis->pMsg = pMsg;
 	CHKiRet(llAppend(&llMsgs,  NULL, (void*) pThis));
 
-	if(bHaveMainQueue) {
+	if(PREFER_FETCH_32BIT(bHaveMainQueue)) {
 		DBGPRINTF("signaling new internal message via SIGTTOU: '%s'\n",
 			pThis->pMsg->pszRawMsg);
 		kill(glblGetOurPid(), SIGTTOU);
