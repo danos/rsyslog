@@ -1,3 +1,15 @@
+rsyslog (8.1910.0-1) UNRELEASED; urgency=medium
+
+  * New upstream version 8.1910.0
+    - Support cross-platform build for mysql/mariadb
+      (Closes: #932068)
+    - Fix heap overflow in pmaixforwardedfrom module
+      (CVE-2019-17041, Closes: #942067)
+    - Fix heap overflow in pmcisconames module
+      (CVE-2019-17042, Closes: #942065)
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 01 Oct 2019 17:47:23 +0200
+
 rsyslog (8.1908.0-1) unstable; urgency=medium
 
   * New upstream version 8.1908.0
