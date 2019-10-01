@@ -672,10 +672,6 @@ wrkr(void *const myself)
 {
 	struct wrkrInfo_s *const me = (struct wrkrInfo_s*) myself;
 
-	/* block signals for this thread */
-	sigset_t sigSet;
-	sigfillset(&sigSet);
-	pthread_sigmask(SIG_SETMASK, &sigSet, NULL);
 
 	pthread_mutex_lock(&wrkrMut);
 	while(1) {
@@ -942,7 +938,7 @@ Run(tcpsrv_t *pThis)
 		DBGPRINTF("Added listener %d\n", i);
 	}
 
-	while(1) {
+	while(glbl.GetGlobalInputTermState() == 0) {
 		numEntries = sizeof(workset)/sizeof(nsd_epworkset_t);
 		localRet = nspoll.Wait(pPoll, -1, &numEntries, workset);
 		if(glbl.GetGlobalInputTermState() == 1)
@@ -1019,6 +1015,8 @@ tcpsrvConstructFinalize(tcpsrv_t *pThis)
 	if(pThis->pszDrvrName != NULL)
 		CHKiRet(netstrms.SetDrvrName(pThis->pNS, pThis->pszDrvrName));
 	CHKiRet(netstrms.SetDrvrMode(pThis->pNS, pThis->iDrvrMode));
+	CHKiRet(netstrms.SetDrvrCheckExtendedKeyUsage(pThis->pNS, pThis->DrvrChkExtendedKeyUsage));
+	CHKiRet(netstrms.SetDrvrPrioritizeSAN(pThis->pNS, pThis->DrvrPrioritizeSan));
 	if(pThis->pszDrvrAuthMode != NULL)
 		CHKiRet(netstrms.SetDrvrAuthMode(pThis->pNS, pThis->pszDrvrAuthMode));
 	if(pThis->pszDrvrPermitExpiredCerts != NULL)
@@ -1411,6 +1409,26 @@ SetDrvrPermPeers(tcpsrv_t *pThis, permittedPeers_t *pPermPeers)
 	RETiRet;
 }
 
+/* set the driver cert extended key usage check setting -- jvymazal, 2019-08-16 */
+static rsRetVal
+SetDrvrCheckExtendedKeyUsage(tcpsrv_t *pThis, int ChkExtendedKeyUsage)
+{
+	DEFiRet;
+	ISOBJ_TYPE_assert(pThis, tcpsrv);
+	pThis->DrvrChkExtendedKeyUsage = ChkExtendedKeyUsage;
+	RETiRet;
+}
+
+/* set the driver name checking policy -- jvymazal, 2019-08-16 */
+static rsRetVal
+SetDrvrPrioritizeSAN(tcpsrv_t *pThis, int prioritizeSan)
+{
+	DEFiRet;
+	ISOBJ_TYPE_assert(pThis, tcpsrv);
+	pThis->DrvrPrioritizeSan = prioritizeSan;
+	RETiRet;
+}
+
 
 /* End of methods to shuffle autentication settings to the driver.;
 
@@ -1528,6 +1546,8 @@ CODESTARTobjQueryInterface(tcpsrv)
 	pIf->SetLinuxLikeRatelimiters = SetLinuxLikeRatelimiters;
 	pIf->SetNotificationOnRemoteClose = SetNotificationOnRemoteClose;
 	pIf->SetPreserveCase = SetPreserveCase;
+	pIf->SetDrvrCheckExtendedKeyUsage = SetDrvrCheckExtendedKeyUsage;
+	pIf->SetDrvrPrioritizeSAN = SetDrvrPrioritizeSAN;
 
 finalize_it:
 ENDobjQueryInterface(tcpsrv)
@@ -1586,6 +1606,17 @@ startWorkerPool(void)
 	int r;
 	pthread_attr_t sessThrdAttr;
 
+	/* We need to temporarily block all signals because the new thread
+	 * inherits our signal mask. There is a race if we do not block them
+	 * now, and we have seen in practice that this race causes grief.
+	 * So we 1. save the current set, 2. block evertyhing, 3. start
+	 * threads, and 4 reset the current set to saved state.
+	 * rgerhards, 2019-08-16
+	 */
+	sigset_t sigSet, sigSetSave;
+	sigfillset(&sigSet);
+	pthread_sigmask(SIG_SETMASK, &sigSet, &sigSetSave);
+
 	wrkrRunning = 0;
 	pthread_cond_init(&wrkrIdle, NULL);
 	pthread_attr_init(&sessThrdAttr);
@@ -1599,14 +1630,11 @@ startWorkerPool(void)
 		if(r == 0) {
 			wrkrInfo[i].enabled = 1;
 		} else {
-			char errStr[1024];
-			wrkrInfo[i].enabled = 0;
-			rs_strerror_r(errno, errStr, sizeof(errStr));
-			LogError(0, NO_ERRCODE, "tcpsrv error creating thread %d: "
-			                "%s", i, errStr);
+			LogError(errno, NO_ERRCODE, "tcpsrv error creating thread");
 		}
 	}
 	pthread_attr_destroy(&sessThrdAttr);
+	pthread_sigmask(SIG_SETMASK, &sigSetSave, NULL);
 }
 
 /* destroy worker pool structures and wait for workers to terminate
