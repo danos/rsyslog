@@ -144,6 +144,9 @@
 /* Define to 1 if liblogging-stdlog is available. */
 #undef HAVE_LIBLOGGING_STDLOG
 
+/* Define to 1 if you have the `mysqlclient' library (-lmysqlclient). */
+#undef HAVE_LIBMYSQLCLIENT
+
 /* Define to 1 if you have the <libnet.h> header file. */
 #undef HAVE_LIBNET_H
 
