@@ -1,0 +1,353 @@
+From: Michael Biebl <biebl@debian.org>
+Date: Wed, 16 Oct 2019 20:07:12 +0200
+Subject: Use Python3 for running the test suite
+
+https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=938417
+---
+ tests/diag.sh                                      | 10 +++++-----
+ tests/es-basic.sh                                  |  2 +-
+ tests/es-bulk-errfile-popul-def-format.sh          |  2 +-
+ tests/es-bulk-errfile-popul-def-interleaved.sh     |  2 +-
+ tests/es-bulk-errfile-popul-erronly-interleaved.sh |  2 +-
+ tests/es-bulk-errfile-popul-erronly.sh             |  2 +-
+ tests/es-bulk-retry.sh                             |  6 +++---
+ tests/es-writeoperation.sh                         |  2 +-
+ tests/mmkubernetes-basic-vg.sh                     |  6 +++---
+ tests/mmkubernetes-basic.sh                        |  6 +++---
+ tests/mmkubernetes-cache-expire.sh                 |  6 +++---
+ tests/omamqp1-basic.sh                             |  2 +-
+ tests/omhttp_server.py                             |  2 +-
+ tests/rscript_parse_time.sh                        |  2 +-
+ tests/rscript_parse_time_get-ts.py                 |  2 +-
+ tests/testsuites/mmexternal-SegFault-mm-python.py  |  2 +-
+ tests/testsuites/omprog-output-capture-mt-bin.py   |  2 +-
+ tests/urlencode.py                                 |  2 +-
+ 18 files changed, 30 insertions(+), 30 deletions(-)
+
+diff --git a/tests/diag.sh b/tests/diag.sh
+index b9cbb94..76ef3c5 100755
+--- a/tests/diag.sh
++++ b/tests/diag.sh
+@@ -1434,7 +1434,7 @@ exit_test() {
+ # to work pretty well. In any case, we should probably call this as
+ # late as possible before the usage of the port.
+ get_free_port() {
+-python -c 'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()'
++python3 -c 'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()'
+ }
+ 
+ 
+@@ -1444,7 +1444,7 @@ get_inode() {
+ 		printf 'FAIL: file "%s" does not exist in get_inode\n' "$1"
+ 		error_exit 100
+ 	fi
+-	python -c 'import os; import stat; print(os.lstat("'$1'")[stat.ST_INO])'
++	python3 -c 'import os; import stat; print(os.lstat("'$1'")[stat.ST_INO])'
+ }
+ 
+ 
+@@ -2044,7 +2044,7 @@ start_elasticsearch() {
+ # $2 - ES port
+ es_getdata() {
+ 	curl --silent localhost:${2:-$ES_PORT}/rsyslog_testbench/_search?size=${1:-$NUMMESSAGES} > $RSYSLOG_DYNNAME.work
+-	python $srcdir/es_response_get_msgnum.py > ${RSYSLOG_OUT_LOG}
++	python3 $srcdir/es_response_get_msgnum.py > ${RSYSLOG_OUT_LOG}
+ }
+ 
+ # a standard method to support shutdown & queue empty check for a wide range
+@@ -2112,7 +2112,7 @@ omhttp_start_server() {
+ 
+     server_args="-p $omhttp_server_port ${*:2}"
+ 
+-    python ${omhttp_server_py} ${server_args} >> ${omhttp_server_logfile} 2>&1 &
++    python3 ${omhttp_server_py} ${server_args} >> ${omhttp_server_logfile} 2>&1 &
+     if [ ! $? -eq 0 ]; then
+         echo "Failed to start omhttp test server."
+         rm -rf $omhttp_work_dir
+@@ -2176,7 +2176,7 @@ omhttp_get_data() {
+     
+     omhttp_url="localhost:${omhttp_server_port}/${omhttp_path}"
+     curl -s ${omhttp_url} \
+-        | python -c "${python_parse}" | sort -n \
++        | python3 -c "${python_parse}" | sort -n \
+         > ${RSYSLOG_OUT_LOG}
+ }
+ 
+diff --git a/tests/es-basic.sh b/tests/es-basic.sh
+index 854a4a8..7177e61 100755
+--- a/tests/es-basic.sh
++++ b/tests/es-basic.sh
+@@ -44,7 +44,7 @@ es_getdata $NUMMESSAGES $ES_PORT
+ seq_check  0 $(( NUMMESSAGES - 1 ))
+ rc=0
+ if [ -f ${RSYSLOG_DYNNAME}.spool/omelasticsearch-stats.log ] ; then
+-	python <${RSYSLOG_DYNNAME}.spool/omelasticsearch-stats.log  -c '
++	python3 <${RSYSLOG_DYNNAME}.spool/omelasticsearch-stats.log  -c '
+ import sys,json
+ nrecs = int(sys.argv[1])
+ nrebinds = nrecs/int(sys.argv[2])-1
+diff --git a/tests/es-bulk-errfile-popul-def-format.sh b/tests/es-bulk-errfile-popul-def-format.sh
+index c833a51..aeb183f 100755
+--- a/tests/es-bulk-errfile-popul-def-format.sh
++++ b/tests/es-bulk-errfile-popul-def-format.sh
+@@ -45,7 +45,7 @@ startup
+ shutdown_when_empty
+ wait_shutdown
+ 
+-python $srcdir/elasticsearch-error-format-check.py default
++python3 $srcdir/elasticsearch-error-format-check.py default
+ if [ $? -ne 0 ]
+ then
+     echo "error: Format for error file different! " $?
+diff --git a/tests/es-bulk-errfile-popul-def-interleaved.sh b/tests/es-bulk-errfile-popul-def-interleaved.sh
+index 8b17c31..f36dcdb 100755
+--- a/tests/es-bulk-errfile-popul-def-interleaved.sh
++++ b/tests/es-bulk-errfile-popul-def-interleaved.sh
+@@ -47,7 +47,7 @@ startup
+ shutdown_when_empty
+ wait_shutdown
+ 
+-python $srcdir/elasticsearch-error-format-check.py interleaved
++python3 $srcdir/elasticsearch-error-format-check.py interleaved
+ 
+ if [ $? -ne 0 ]
+ then
+diff --git a/tests/es-bulk-errfile-popul-erronly-interleaved.sh b/tests/es-bulk-errfile-popul-erronly-interleaved.sh
+index d3c5049..81c9bf8 100755
+--- a/tests/es-bulk-errfile-popul-erronly-interleaved.sh
++++ b/tests/es-bulk-errfile-popul-erronly-interleaved.sh
+@@ -48,7 +48,7 @@ startup
+ shutdown_when_empty
+ wait_shutdown
+ 
+-python $srcdir/elasticsearch-error-format-check.py errorinterleaved
++python3 $srcdir/elasticsearch-error-format-check.py errorinterleaved
+ 
+ if [ $? -ne 0 ]
+ then
+diff --git a/tests/es-bulk-errfile-popul-erronly.sh b/tests/es-bulk-errfile-popul-erronly.sh
+index 075d013..2c71569 100755
+--- a/tests/es-bulk-errfile-popul-erronly.sh
++++ b/tests/es-bulk-errfile-popul-erronly.sh
+@@ -47,7 +47,7 @@ startup
+ shutdown_when_empty
+ wait_shutdown
+ 
+-python $srcdir/elasticsearch-error-format-check.py erroronly
++python3 $srcdir/elasticsearch-error-format-check.py erroronly
+ 
+ if [ $? -ne 0 ]
+ then
+diff --git a/tests/es-bulk-retry.sh b/tests/es-bulk-retry.sh
+index a24287a..3ab0a99 100755
+--- a/tests/es-bulk-retry.sh
++++ b/tests/es-bulk-retry.sh
+@@ -114,7 +114,7 @@ curl -s -H 'Content-Type: application/json' -XPUT localhost:${ES_PORT:-19200}/rs
+     }
+   }
+ }
+-' | python -mjson.tool
++' | python3 -mjson.tool
+ #export RSYSLOG_DEBUG="debug nostdout noprintmutexaction"
+ #export RSYSLOG_DEBUGLOG="debug.log"
+ startup
+@@ -136,7 +136,7 @@ cleanup_elasticsearch
+ 
+ if [ -f $RSYSLOG_DYNNAME.work ] ; then
+ 	< $RSYSLOG_DYNNAME.work  \
+-	python -c '
++	python3 -c '
+ import sys,json
+ records = int(sys.argv[1])
+ extra_recs = open(sys.argv[2], "w")
+@@ -175,7 +175,7 @@ else
+ fi
+ 
+ if [ -f ${RSYSLOG_DYNNAME}.spool/es-stats.log ] ; then
+-	python < ${RSYSLOG_DYNNAME}.spool/es-stats.log -c '
++	python3 < ${RSYSLOG_DYNNAME}.spool/es-stats.log -c '
+ import sys,json
+ success = int(sys.argv[1])
+ badarg = int(sys.argv[2])
+diff --git a/tests/es-writeoperation.sh b/tests/es-writeoperation.sh
+index 49457ff..4adf444 100755
+--- a/tests/es-writeoperation.sh
++++ b/tests/es-writeoperation.sh
+@@ -98,7 +98,7 @@ shutdown_when_empty
+ wait_shutdown
+ es_getdata 1 $ES_PORT
+ 
+-python <$RSYSLOG_DYNNAME.work -c '
++python3 <$RSYSLOG_DYNNAME.work -c '
+ import sys,json
+ hsh = json.load(sys.stdin)
+ try:
+diff --git a/tests/mmkubernetes-basic-vg.sh b/tests/mmkubernetes-basic-vg.sh
+index 4330c5a..f83bd08 100755
+--- a/tests/mmkubernetes-basic-vg.sh
++++ b/tests/mmkubernetes-basic-vg.sh
+@@ -38,7 +38,7 @@ action(type="omfile" file=`echo $RSYSLOG_OUT_LOG` template="mmk8s_template")
+ 
+ testsrv=mmk8s-test-server
+ echo starting kubernetes \"emulator\"
+-timeout 2m python -u $srcdir/mmkubernetes_test_server.py $k8s_srv_port ${RSYSLOG_DYNNAME}${testsrv}.pid ${RSYSLOG_DYNNAME}${testsrv}.started > ${RSYSLOG_DYNNAME}.spool/mmk8s_srv.log 2>&1 &
++timeout 2m python3 -u $srcdir/mmkubernetes_test_server.py $k8s_srv_port ${RSYSLOG_DYNNAME}${testsrv}.pid ${RSYSLOG_DYNNAME}${testsrv}.started > ${RSYSLOG_DYNNAME}.spool/mmk8s_srv.log 2>&1 &
+ BGPROCESS=$!
+ wait_process_startup ${RSYSLOG_DYNNAME}${testsrv} ${RSYSLOG_DYNNAME}${testsrv}.started
+ echo background mmkubernetes_test_server.py process id is $BGPROCESS
+@@ -109,7 +109,7 @@ wait_pid_termination ${RSYSLOG_DYNNAME}${testsrv}.pid
+ rc=0
+ # for each record in mmkubernetes-basic.out.json, see if the matching
+ # record is found in $RSYSLOG_OUT_LOG
+-python -c 'import sys,json
++python3 -c 'import sys,json
+ k8s_srv_port = sys.argv[3]
+ expected = {}
+ for hsh in json.load(open(sys.argv[1])):
+@@ -143,7 +143,7 @@ grep -q 'mmkubernetes: Too Many Requests: the server is too heavily loaded to pr
+ grep -q 'mmkubernetes: Too Many Requests: the server is too heavily loaded to provide the data for the requested url .*/pods\\\/pod-name-9-busy' $RSYSLOG_OUT_LOG || { echo fail4; rc=1; }
+ 
+ if [ -f ${RSYSLOG_DYNNAME}.spool/mmkubernetes-stats.log ] ; then
+-	python <${RSYSLOG_DYNNAME}.spool/mmkubernetes-stats.log  -c '
++	python3 <${RSYSLOG_DYNNAME}.spool/mmkubernetes-stats.log  -c '
+ import sys,json
+ k8s_srv_port = sys.argv[1]
+ expected = {"name": "mmkubernetes(http://localhost:{0})".format(k8s_srv_port),
+diff --git a/tests/mmkubernetes-basic.sh b/tests/mmkubernetes-basic.sh
+index a7d015f..d82cb00 100755
+--- a/tests/mmkubernetes-basic.sh
++++ b/tests/mmkubernetes-basic.sh
+@@ -38,7 +38,7 @@ action(type="omfile" file=`echo $RSYSLOG_OUT_LOG` template="mmk8s_template")
+ 
+ testsrv=mmk8s-test-server
+ echo starting kubernetes \"emulator\"
+-timeout 2m python -u $srcdir/mmkubernetes_test_server.py $k8s_srv_port ${RSYSLOG_DYNNAME}${testsrv}.pid ${RSYSLOG_DYNNAME}${testsrv}.started > ${RSYSLOG_DYNNAME}.spool/mmk8s_srv.log 2>&1 &
++timeout 2m python3 -u $srcdir/mmkubernetes_test_server.py $k8s_srv_port ${RSYSLOG_DYNNAME}${testsrv}.pid ${RSYSLOG_DYNNAME}${testsrv}.started > ${RSYSLOG_DYNNAME}.spool/mmk8s_srv.log 2>&1 &
+ BGPROCESS=$!
+ wait_process_startup ${RSYSLOG_DYNNAME}${testsrv} ${RSYSLOG_DYNNAME}${testsrv}.started
+ echo background mmkubernetes_test_server.py process id is $BGPROCESS
+@@ -109,7 +109,7 @@ wait_pid_termination ${RSYSLOG_DYNNAME}${testsrv}.pid
+ rc=0
+ # for each record in mmkubernetes-basic.out.json, see if the matching
+ # record is found in $RSYSLOG_OUT_LOG
+-python -c 'import sys,json
++python3 -c 'import sys,json
+ k8s_srv_port = sys.argv[3]
+ expected = {}
+ for hsh in json.load(open(sys.argv[1])):
+@@ -143,7 +143,7 @@ grep -q 'mmkubernetes: Too Many Requests: the server is too heavily loaded to pr
+ grep -q 'mmkubernetes: Too Many Requests: the server is too heavily loaded to provide the data for the requested url .*/pods\\\/pod-name-9-busy' $RSYSLOG_OUT_LOG || { echo fail4; rc=1; }
+ 
+ if [ -f ${RSYSLOG_DYNNAME}.spool/mmkubernetes-stats.log ] ; then
+-	python <${RSYSLOG_DYNNAME}.spool/mmkubernetes-stats.log  -c '
++	python3 <${RSYSLOG_DYNNAME}.spool/mmkubernetes-stats.log  -c '
+ import sys,json
+ k8s_srv_port = sys.argv[1]
+ expected = {"name": "mmkubernetes(http://localhost:{0})".format(k8s_srv_port),
+diff --git a/tests/mmkubernetes-cache-expire.sh b/tests/mmkubernetes-cache-expire.sh
+index c0adbee..e17a270 100755
+--- a/tests/mmkubernetes-cache-expire.sh
++++ b/tests/mmkubernetes-cache-expire.sh
+@@ -38,7 +38,7 @@ action(type="omfile" file=`echo $RSYSLOG_OUT_LOG` template="mmk8s_template")
+ 
+ testsrv=mmk8s-test-server
+ echo starting kubernetes \"emulator\"
+-timeout 2m python -u $srcdir/mmkubernetes_test_server.py $k8s_srv_port ${RSYSLOG_DYNNAME}${testsrv}.pid ${RSYSLOG_DYNNAME}${testsrv}.started > ${RSYSLOG_DYNNAME}.spool/mmk8s_srv.log 2>&1 &
++timeout 2m python3 -u $srcdir/mmkubernetes_test_server.py $k8s_srv_port ${RSYSLOG_DYNNAME}${testsrv}.pid ${RSYSLOG_DYNNAME}${testsrv}.started > ${RSYSLOG_DYNNAME}.spool/mmk8s_srv.log 2>&1 &
+ BGPROCESS=$!
+ wait_process_startup ${RSYSLOG_DYNNAME}${testsrv} ${RSYSLOG_DYNNAME}${testsrv}.started
+ echo background mmkubernetes_test_server.py process id is $BGPROCESS
+@@ -96,7 +96,7 @@ wait_pid_termination ${RSYSLOG_DYNNAME}${testsrv}.pid
+ rc=0
+ # for each record in mmkubernetes-cache-expire.out.json, see if the matching
+ # record is found in $RSYSLOG_OUT_LOG
+-python -c 'import sys,json
++python3 -c 'import sys,json
+ k8s_srv_port = sys.argv[3]
+ expected = {}
+ for hsh in json.load(open(sys.argv[1])):
+@@ -126,7 +126,7 @@ sys.exit(rc)
+ ' $srcdir/mmkubernetes-cache-expire.out.expected $RSYSLOG_OUT_LOG $k8s_srv_port || rc=$?
+ 
+ if [ -f ${RSYSLOG_DYNNAME}.spool/mmkubernetes-stats.log ] ; then
+-	python <${RSYSLOG_DYNNAME}.spool/mmkubernetes-stats.log  -c '
++	python3 <${RSYSLOG_DYNNAME}.spool/mmkubernetes-stats.log  -c '
+ import sys,json
+ # key is recordseen, value is hash of stats for that record
+ expectedvalues = {
+diff --git a/tests/omamqp1-basic.sh b/tests/omamqp1-basic.sh
+index 13a23e8..14b2e72 100755
+--- a/tests/omamqp1-basic.sh
++++ b/tests/omamqp1-basic.sh
+@@ -57,7 +57,7 @@ if [ $ii = $timeout ] ; then
+ 	error_exit 1
+ fi
+ 
+-python -c 'import sys
++python3 -c 'import sys
+ inp = file(sys.argv[1],"r").read()
+ last = 0
+ idx = inp.find("msgnum:",last)
+diff --git a/tests/omhttp_server.py b/tests/omhttp_server.py
+index d3fdb3a..376a06c 100644
+--- a/tests/omhttp_server.py
++++ b/tests/omhttp_server.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/python3
+ 
+ import argparse
+ import json
+diff --git a/tests/rscript_parse_time.sh b/tests/rscript_parse_time.sh
+index d8dcbf1..b8b380f 100755
+--- a/tests/rscript_parse_time.sh
++++ b/tests/rscript_parse_time.sh
+@@ -8,7 +8,7 @@
+ # we need a method of converting given date/time strings to UNIX timestamps.
+ # For that we use an external Python 2.x script to do the job.
+ 
+-getts="python $srcdir/rscript_parse_time_get-ts.py"
++getts="python3 $srcdir/rscript_parse_time_get-ts.py"
+ 
+ # Run the Python script's self-tests
+ $getts selftest
+diff --git a/tests/rscript_parse_time_get-ts.py b/tests/rscript_parse_time_get-ts.py
+index 552eb3e..568a521 100644
+--- a/tests/rscript_parse_time_get-ts.py
++++ b/tests/rscript_parse_time_get-ts.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/python3
+ # Added 2017-11-05 by Stephen Workman, released under ASL 2.0
+ 
+ #
+diff --git a/tests/testsuites/mmexternal-SegFault-mm-python.py b/tests/testsuites/mmexternal-SegFault-mm-python.py
+index 437ff1c..b5e4fc1 100755
+--- a/tests/testsuites/mmexternal-SegFault-mm-python.py
++++ b/tests/testsuites/mmexternal-SegFault-mm-python.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/python3
+ 
+ """A skeleton for a python rsyslog message modification plugin
+    Copyright (C) 2014 by Adiscon GmbH
+diff --git a/tests/testsuites/omprog-output-capture-mt-bin.py b/tests/testsuites/omprog-output-capture-mt-bin.py
+index 1d2a278..a0f820f 100755
+--- a/tests/testsuites/omprog-output-capture-mt-bin.py
++++ b/tests/testsuites/omprog-output-capture-mt-bin.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/python3
+ 
+ import sys
+ import os
+diff --git a/tests/urlencode.py b/tests/urlencode.py
+index 59e7c8c..17b5940 100755
+--- a/tests/urlencode.py
++++ b/tests/urlencode.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/python3
+ # a small url encoder for testbench purposes
+ # written 2018-11-05 by Rainer Gerhards
+ # part of the rsyslog testbench, released under ASL 2.0
