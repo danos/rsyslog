@@ -1,4 +1,4 @@
-rsyslog (8.1910.0-1) UNRELEASED; urgency=medium
+rsyslog (8.1910.0-1) unstable; urgency=medium
 
   * New upstream version 8.1910.0
     - Support cross-platform build for mysql/mariadb
@@ -7,8 +7,10 @@ rsyslog (8.1910.0-1) UNRELEASED; urgency=medium
       (CVE-2019-17041, Closes: #942067)
     - Fix heap overflow in pmcisconames module
       (CVE-2019-17042, Closes: #942065)
+  * Use Python3 for running the test suite (Closes: #938417)
+  * Enable imfile tests
 
- -- Michael Biebl <biebl@debian.org>  Tue, 01 Oct 2019 17:47:23 +0200
+ -- Michael Biebl <biebl@debian.org>  Thu, 17 Oct 2019 01:42:10 +0200
 
 rsyslog (8.1908.0-1) unstable; urgency=medium
 
