@@ -26,6 +26,7 @@ override_dh_auto_configure:
 		--enable-omkafka \
 		--enable-mail \
 		--enable-imfile \
+		--enable-imfile-tests \
 		--enable-impstats \
 		--enable-klog \
 		--enable-gssapi-krb5 \
