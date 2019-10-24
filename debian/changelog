@@ -1,3 +1,9 @@
+rsyslog (8.1910.0-2) unstable; urgency=medium
+
+  * Fix file handle leak in omfile (Closes: #935300)
+
+ -- Michael Biebl <biebl@debian.org>  Thu, 24 Oct 2019 14:13:12 +0200
+
 rsyslog (8.1910.0-1) unstable; urgency=medium
 
   * New upstream version 8.1910.0
