@@ -1,0 +1,42 @@
+From 666d2e1ce90c24448ec7319fe1ac90a37872fd6b Mon Sep 17 00:00:00 2001
+From: Nachiketa Prachanda <nachiketa.prachanda@att.com>
+Date: Tue, 31 Oct 2017 13:48:49 -0700
+Subject: [PATCH] imczmq: remove unallocated and unused pointer
+
+Fix a SIGSEGV in a call to
+371: zcert_destroy(&serverCert) called from rcvData().
+
+- remove serverCert as it is only used uninitialized in a call
+to zcert_destroy() - this causes a core dump at rsyslogd exit.
+- also initialize authActor at definition.
+
+Signed-off-by: Nachiketa Prachanda <nachiketa.prachanda@att.com>
+---
+ contrib/imczmq/imczmq.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/contrib/imczmq/imczmq.c b/contrib/imczmq/imczmq.c
+index ebf036dc8..e29431156 100644
+--- a/contrib/imczmq/imczmq.c
++++ b/contrib/imczmq/imczmq.c
+@@ -278,8 +278,7 @@ static rsRetVal rcvData(void){
+ 		}
+ 	}
+ 
+-	zactor_t *authActor;
+-	zcert_t *serverCert;
++	zactor_t *authActor = NULL;
+ 
+ 	if(runModConf->authenticator == 1) {
+ 		authActor = zactor_new(zauth, NULL);
+@@ -368,7 +367,6 @@ finalize_it:
+ 	}
+ 	zlist_destroy(&listenerList);
+ 	zactor_destroy(&authActor);
+-	zcert_destroy(&serverCert);
+ 	RETiRet;
+ }
+ 
+-- 
+2.17.1
+
