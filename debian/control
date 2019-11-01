@@ -1,9 +1,10 @@
 Source: rsyslog
 Section: admin
 Priority: important
-Maintainer: Michael Biebl <biebl@debian.org>
-Build-Depends: debhelper-compat (= 12),
+Maintainer: Vyatta Package Maintainers <DL-vyatta-help@att.com>
+Build-Depends: debhelper (>= 9),
                dh-exec,
+               dh-systemd,
                autoconf-archive,
                zlib1g-dev,
                libhiredis-dev,
@@ -46,8 +47,9 @@ Conflicts: system-log-daemon,
 Provides: system-log-daemon,
           linux-kernel-log-daemon
 Pre-Depends: ${misc:Pre-Depends}
-Depends: ${shlibs:Depends},
-         ${misc:Depends},
+Depends: lsb-base, 
+	${shlibs:Depends},
+        ${misc:Depends},
 Recommends: logrotate
 Suggests: rsyslog-mysql | rsyslog-pgsql,
           rsyslog-mongodb,
@@ -97,17 +99,6 @@ Suggests: postgresql
 Description: PostgreSQL output plugin for rsyslog
  This plugin allows rsyslog to write syslog messages into a PostgreSQL
  database.
-
-Package: rsyslog-mongodb
-Architecture: any
-Priority: optional
-Depends: ${shlibs:Depends},
-         ${misc:Depends},
-         rsyslog (= ${binary:Version}),
-Recommends: mongodb-server
-Description: MongoDB output plugin for rsyslog
- This plugin allows rsyslog to write syslog messages to MongoDB, a
- scalable, high-performance, open source NoSQL database.
 
 Package: rsyslog-elasticsearch
 Architecture: any

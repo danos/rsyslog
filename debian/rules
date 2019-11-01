@@ -6,7 +6,7 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 export DEB_CPPFLAGS_MAINT_APPEND = -DPATH_PIDFILE=\"/run/rsyslogd.pid\"
 
 %:
-	dh $@
+	dh $@ --with systemd
 
 ifeq ($(DEB_HOST_ARCH_OS), linux)
 confflags += 	--enable-imptcp \
@@ -20,7 +20,6 @@ override_dh_auto_configure:
 		$(confflags) \
 		--enable-mysql \
 		--enable-pgsql \
-		--enable-ommongodb \
 		--enable-elasticsearch \
 		--enable-imkafka \
 		--enable-omkafka \
