@@ -1,19 +1,19 @@
 #!/bin/bash
 # addd 2016-05-13 by RGerhards, released under ASL 2.0
-
-. $srcdir/diag.sh init
-. $srcdir/diag.sh generate-conf
-. $srcdir/diag.sh add-conf '
+. ${srcdir:=.}/diag.sh init
+export NUMMESSAGES=10000 # MUST be an even number!
+generate_conf
+add_conf '
 module(load="../plugins/imrelp/.libs/imrelp")
-input(type="imrelp" port="13514")
+input(type="imrelp" port="'$TCPFLOOD_PORT'")
 
 template(name="outfmt" type="string" string="%msg:F,58:2%\n")
 :msg, contains, "msgnum:" action(type="omfile" template="outfmt"
-			         file="rsyslog.out.log")
+			         file=`echo $RSYSLOG_OUT_LOG`)
 '
-. $srcdir/diag.sh startup
-. $srcdir/diag.sh tcpflood -Trelp-plain -p13514 -m10000
-. $srcdir/diag.sh shutdown-when-empty # shut down rsyslogd when done processing messages
-. $srcdir/diag.sh wait-shutdown
-. $srcdir/diag.sh seq-check 0 9999
-. $srcdir/diag.sh exit
+startup
+tcpflood -Trelp-plain -p$TCPFLOOD_PORT -m$NUMMESSAGES
+shutdown_when_empty
+wait_shutdown
+seq_check
+exit_test

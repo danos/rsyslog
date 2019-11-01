@@ -1,7 +1,9 @@
 #!/usr/bin/dh-exec
 debian/rsyslog.conf  etc/
+debian/rsyslog-rotate usr/lib/rsyslog/
 usr/sbin/
 usr/share/man/
+usr/lib/*/rsyslog/fmhash.so
 usr/lib/*/rsyslog/imfile.so
 usr/lib/*/rsyslog/imklog.so
 usr/lib/*/rsyslog/immark.so
@@ -13,7 +15,6 @@ usr/lib/*/rsyslog/lmnet.so
 usr/lib/*/rsyslog/lmnetstrms.so
 usr/lib/*/rsyslog/lmnsd_ptcp.so
 usr/lib/*/rsyslog/lmregexp.so
-usr/lib/*/rsyslog/lmstrmsrv.so
 usr/lib/*/rsyslog/lmtcpclt.so
 usr/lib/*/rsyslog/lmtcpsrv.so
 usr/lib/*/rsyslog/lmzlibw.so
@@ -24,6 +25,8 @@ usr/lib/*/rsyslog/mmjsonparse.so
 usr/lib/*/rsyslog/mmutf8fix.so
 usr/lib/*/rsyslog/mmpstrucdata.so
 usr/lib/*/rsyslog/mmsequence.so
+usr/lib/*/rsyslog/mmfields.so
+usr/lib/*/rsyslog/mmrm1stspace.so
 usr/lib/*/rsyslog/ommail.so
 usr/lib/*/rsyslog/omprog.so
 usr/lib/*/rsyslog/omuxsock.so

@@ -4,7 +4,7 @@
  * NOTE: read comments in module-template.h to understand how this file
  *       works!
  *
- * Copyright 2007-2016 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2007-2018 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
@@ -34,6 +34,7 @@
 #include <sys/socket.h>
 #include <pthread.h>
 #include <signal.h>
+#include <poll.h>
 #ifdef HAVE_SYS_EPOLL_H
 #	include <sys/epoll.h>
 #endif
@@ -66,7 +67,6 @@ MODULE_CNFNAME("imudp")
 
 /* Module static data */
 DEF_IMOD_STATIC_DATA
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(glbl)
 DEFobjCurrIf(net)
 DEFobjCurrIf(datetime)
@@ -84,16 +84,13 @@ static struct lstn_s {
 	ratelimit_t *ratelimiter;
 	uchar *dfltTZ;
 	STATSCOUNTER_DEF(ctrSubmit, mutCtrSubmit)
+	STATSCOUNTER_DEF(ctrDisallowed, mutCtrDisallowed)
 } *lcnfRoot = NULL, *lcnfLast = NULL;
 
 
 static int bLegacyCnfModGlobalsPermitted;/* are legacy module-global config parameters permitted? */
 static int bDoACLCheck;			/* are ACL checks neeed? Cached once immediately before listener startup */
 static int iMaxLine;			/* maximum UDP message size supported */
-static time_t ttLastDiscard = 0;	/* timestamp when a message from a non-permitted sender was last discarded
-					 * This shall prevent remote DoS when the "discard on disallowed sender"
-					 * message is configured to be logged on occurance of such a case.
-					 */
 #define BATCH_SIZE_DFLT 32		/* do not overdo, has heavy toll on memory, especially with large msgs */
 #define TIME_REQUERY_DFLT 2
 #define SCHED_PRIO_UNSET -12345678	/* a value that indicates that the scheduling priority has not been set */
@@ -155,6 +152,7 @@ struct modConfData_s {
 	int batchSize;			/* max nbr of input batch --> also recvmmsg() max count */
 	int8_t wrkrMax;			/* max nbr of worker threads */
 	sbool configSetViaV2Method;
+	sbool bPreserveCase;	/* preserves the case of fromhost; "off" by default */
 };
 static modConfData_t *loadModConf = NULL;/* modConf ptr to use for the current load process */
 static modConfData_t *runModConf = NULL;/* modConf ptr to use for the current load process */
@@ -165,7 +163,8 @@ static struct cnfparamdescr modpdescr[] = {
 	{ "schedulingpriority", eCmdHdlrInt, 0 },
 	{ "batchsize", eCmdHdlrInt, 0 },
 	{ "threads", eCmdHdlrPositiveInt, 0 },
-	{ "timerequery", eCmdHdlrInt, 0 }
+	{ "timerequery", eCmdHdlrInt, 0 },
+	{ "preservecase", eCmdHdlrBinary, 0 }
 };
 static struct cnfparamblk modpblk =
 	{ CNFPARAMBLK_VERSION,
@@ -206,7 +205,7 @@ createInstance(instanceConf_t **pinst)
 {
 	instanceConf_t *inst;
 	DEFiRet;
-	CHKmalloc(inst = MALLOC(sizeof(instanceConf_t)));
+	CHKmalloc(inst = malloc(sizeof(instanceConf_t)));
 	inst->next = NULL;
 	inst->pBindRuleset = NULL;
 
@@ -235,7 +234,7 @@ finalize_it:
 	RETiRet;
 }
 
-/* This function is called when a new listener instace shall be added to 
+/* This function is called when a new listener instace shall be added to
  * the current config object via the legacy config system. It just shuffles
  * all parameters to the listener in-memory instance.
  * rgerhards, 2011-05-04
@@ -301,7 +300,7 @@ addListner(instanceConf_t *inst)
 
 	DBGPRINTF("Trying to open syslog UDP ports at %s:%s.\n", bindName, inst->pszBindPort);
 
-	newSocks = net.create_udp_socket(bindAddr, port, 1, inst->rcvbuf, inst->ipfreebind, inst->pszBindDevice);
+	newSocks = net.create_udp_socket(bindAddr, port, 1, inst->rcvbuf, 0, inst->ipfreebind, inst->pszBindDevice);
 	if(newSocks != NULL) {
 		/* we now need to add the new sockets to the existing set */
 		/* ready to copy */
@@ -331,6 +330,7 @@ addListner(instanceConf_t *inst)
 			CHKiRet(prop.ConstructFinalize(newlcnfinfo->pInputName));
 			ratelimitSetLinuxLike(newlcnfinfo->ratelimiter, inst->ratelimitInterval,
 					      inst->ratelimitBurst);
+			ratelimitSetThreadSafe(newlcnfinfo->ratelimiter);
 			/* support statistics gathering */
 			CHKiRet(statsobj.Construct(&(newlcnfinfo->stats)));
 			CHKiRet(statsobj.SetName(newlcnfinfo->stats, dispname));
@@ -338,8 +338,11 @@ addListner(instanceConf_t *inst)
 			STATSCOUNTER_INIT(newlcnfinfo->ctrSubmit, newlcnfinfo->mutCtrSubmit);
 			CHKiRet(statsobj.AddCounter(newlcnfinfo->stats, UCHAR_CONSTANT("submitted"),
 				ctrType_IntCtr, CTR_FLAG_RESETTABLE, &(newlcnfinfo->ctrSubmit)));
+			STATSCOUNTER_INIT(newlcnfinfo->ctrDisallowed, newlcnfinfo->mutCtrDisallowed);
+			CHKiRet(statsobj.AddCounter(newlcnfinfo->stats, UCHAR_CONSTANT("disallowed"),
+				ctrType_IntCtr, CTR_FLAG_RESETTABLE, &(newlcnfinfo->ctrDisallowed)));
 			CHKiRet(statsobj.ConstructFinalize(newlcnfinfo->stats));
-			/* link to list. Order must be preserved to take care for 
+			/* link to list. Order must be preserved to take care for
 			 * conflicting matches.
 			 */
 			if(lcnfRoot == NULL)
@@ -351,6 +354,10 @@ addListner(instanceConf_t *inst)
 				lcnfLast = newlcnfinfo;
 			}
 		}
+	} else {
+		LogError(0, NO_ERRCODE, "imudp: Could not create udp listener,"
+				" ignoring port %s bind-address %s.",
+				port, bindAddr);
 	}
 
 finalize_it:
@@ -379,7 +386,7 @@ finalize_it:
 static inline void
 std_checkRuleset_genErrMsg(__attribute__((unused)) modConfData_t *modConf, instanceConf_t *inst)
 {
-	errmsg.LogError(0, NO_ERRCODE, "imudp: ruleset '%s' for %s:%s not found - "
+	LogError(0, NO_ERRCODE, "imudp: ruleset '%s' for %s:%s not found - "
 			"using default ruleset instead", inst->pszBindRuleset,
 			inst->pszBindAddr == NULL ? "*" : (char*) inst->pszBindAddr,
 			inst->pszBindPort);
@@ -418,14 +425,10 @@ processPacket(struct lstn_s *lstn, struct sockaddr_storage *frominetPrev, int *p
 	
 			if(*pbIsPermitted == 0) {
 				DBGPRINTF("msg is not from an allowed sender\n");
+				STATSCOUNTER_INC(lstn->ctrDisallowed, lstn->mutCtrDisallowed);
 				if(glbl.GetOption_DisallowWarning) {
-					time_t tt;
-					datetime.GetTime(&tt);
-					if(tt > ttLastDiscard + 60) {
-						ttLastDiscard = tt;
-						errmsg.LogError(0, NO_ERRCODE,
-						"UDP message from disallowed sender discarded");
-					}
+					LogError(0, NO_ERRCODE,
+						"imudp: UDP message from disallowed sender discarded");
 				}
 			}
 		}
@@ -433,7 +436,8 @@ processPacket(struct lstn_s *lstn, struct sockaddr_storage *frominetPrev, int *p
 		*pbIsPermitted = 1; /* no check -> everything permitted */
 	}
 
-	DBGPRINTF("recv(%d,%d),acl:%d,msg:%.*s\n", lstn->sock, (int) lenRcvBuf, *pbIsPermitted, (int)lenRcvBuf, rcvBuf);
+	DBGPRINTF("recv(%d,%d),acl:%d,msg:%.*s\n", lstn->sock, (int) lenRcvBuf, *pbIsPermitted,
+			(int)lenRcvBuf, rcvBuf);
 
 	if(*pbIsPermitted != 0)  {
 		/* we now create our own message object and submit it to the queue */
@@ -445,8 +449,12 @@ processPacket(struct lstn_s *lstn, struct sockaddr_storage *frominetPrev, int *p
 		if(lstn->dfltTZ != NULL)
 			MsgSetDfltTZ(pMsg, (char*) lstn->dfltTZ);
 		pMsg->msgFlags  = NEEDS_PARSING | PARSE_HOSTNAME | NEEDS_DNSRESOL;
-		if(*pbIsPermitted == 2)
-			pMsg->msgFlags  |= NEEDS_ACLCHK_U; /* request ACL check after resolution */
+		if(*pbIsPermitted == 2) {
+			pMsg->msgFlags |= NEEDS_ACLCHK_U; /* request ACL check after resolution */
+		}
+		if(runModConf->bPreserveCase) {
+			pMsg->msgFlags |= PRESERVE_CASE; /* preserve case of fromhost */
+		}
 		CHKiRet(msgSetFromSockinfo(pMsg, frominet));
 		CHKiRet(ratelimitAddMsg(lstn->ratelimiter, multiSub, pMsg));
 		STATSCOUNTER_INC(lstn->ctrSubmit, lstn->mutCtrSubmit);
@@ -454,7 +462,7 @@ processPacket(struct lstn_s *lstn, struct sockaddr_storage *frominetPrev, int *p
 
 finalize_it:
 	if(iRet != RS_RET_OK) {
-		if(pMsg != NULL) {
+		if(pMsg != NULL && iRet != RS_RET_DISCARDMSG) {
 			msgDestruct(&pMsg);
 		}
 	}
@@ -471,12 +479,13 @@ finalize_it:
  */
 #ifdef HAVE_RECVMMSG
 static rsRetVal
-processSocket(struct wrkrInfo_s *pWrkr, struct lstn_s *lstn, struct sockaddr_storage *frominetPrev, int *pbIsPermitted)
+processSocket(struct wrkrInfo_s *pWrkr, struct lstn_s *lstn, struct sockaddr_storage *frominetPrev,
+int *pbIsPermitted)
 {
 	DEFiRet;
 	int iNbrTimeUsed;
 	time_t ttGenTime = 0; /* to avoid clang static analyzer false positive */
-		/* note: we do never use this time, because we always get a 
+		/* note: we do never use this time, because we always get a
 		 * requery below on first loop iteration */
 	struct syslogTime stTime;
 	char errStr[1024];
@@ -497,7 +506,7 @@ processSocket(struct wrkrInfo_s *pWrkr, struct lstn_s *lstn, struct sockaddr_sto
 		for(i = 0 ; i < runModConf->batchSize ; ++i) {
 			pWrkr->recvmsg_iov[i].iov_base = pWrkr->pRcvBuf+(i*(iMaxLine+1));
 			pWrkr->recvmsg_iov[i].iov_len = iMaxLine;
-			pWrkr->recvmsg_mmh[i].msg_hdr.msg_namelen = sizeof(struct sockaddr_storage); 
+			pWrkr->recvmsg_mmh[i].msg_hdr.msg_namelen = sizeof(struct sockaddr_storage);
 			pWrkr->recvmsg_mmh[i].msg_hdr.msg_name = &(pWrkr->frominet[i]);
 			pWrkr->recvmsg_mmh[i].msg_hdr.msg_iov = &(pWrkr->recvmsg_iov[i]);
 			pWrkr->recvmsg_mmh[i].msg_hdr.msg_iovlen = 1;
@@ -519,9 +528,10 @@ processSocket(struct wrkrInfo_s *pWrkr, struct lstn_s *lstn, struct sockaddr_sto
 			if(errno != EINTR && errno != EAGAIN) {
 				rs_strerror_r(errno, errStr, sizeof(errStr));
 				DBGPRINTF("INET socket error: %d = %s.\n", errno, errStr);
-				errmsg.LogError(errno, NO_ERRCODE, "imudp: error receiving on socket: %s", errStr);
+				LogError(errno, NO_ERRCODE, "imudp: error receiving on socket: %s", errStr);
 			}
-			ABORT_FINALIZE(RS_RET_ERR); // this most often is NOT an error, state is not checked by caller!
+			ABORT_FINALIZE(RS_RET_ERR);
+			// this most often is NOT an error, state is not checked by caller!
 		}
 
 		if((runModConf->iTimeRequery == 0) || (iNbrTimeUsed++ % runModConf->iTimeRequery) == 0) {
@@ -530,9 +540,10 @@ processSocket(struct wrkrInfo_s *pWrkr, struct lstn_s *lstn, struct sockaddr_sto
 
 		pWrkr->ctrMsgsRcvd += nelem;
 		for(i = 0 ; i < nelem ; ++i) {
-			processPacket(lstn, frominetPrev, pbIsPermitted, pWrkr->recvmsg_mmh[i].msg_hdr.msg_iov->iov_base,
-				      pWrkr->recvmsg_mmh[i].msg_len, &stTime, ttGenTime, &(pWrkr->frominet[i]),
-				      pWrkr->recvmsg_mmh[i].msg_hdr.msg_namelen, &multiSub);
+			processPacket(lstn, frominetPrev, pbIsPermitted,
+				pWrkr->recvmsg_mmh[i].msg_hdr.msg_iov->iov_base,
+				pWrkr->recvmsg_mmh[i].msg_len, &stTime, ttGenTime, &(pWrkr->frominet[i]),
+				pWrkr->recvmsg_mmh[i].msg_hdr.msg_namelen, &multiSub);
 		}
 	}
 
@@ -556,7 +567,8 @@ finalize_it:
  * on scheduling order. -- rgerhards, 2008-10-02
  */
 static rsRetVal
-processSocket(struct wrkrInfo_s *pWrkr, struct lstn_s *lstn, struct sockaddr_storage *frominetPrev, int *pbIsPermitted)
+processSocket(struct wrkrInfo_s *pWrkr, struct lstn_s *lstn, struct sockaddr_storage *frominetPrev,
+int *pbIsPermitted)
 {
 	int iNbrTimeUsed;
 	time_t ttGenTime;
@@ -582,7 +594,7 @@ processSocket(struct wrkrInfo_s *pWrkr, struct lstn_s *lstn, struct sockaddr_sto
 		iov[0].iov_len = iMaxLine;
 		memset(&mh, 0, sizeof(mh));
 		mh.msg_name = &frominet;
-		mh.msg_namelen = sizeof(struct sockaddr_storage); 
+		mh.msg_namelen = sizeof(struct sockaddr_storage);
 		mh.msg_iov = iov;
 		mh.msg_iovlen = 1;
 		lenRcvBuf = recvmsg(lstn->sock, &mh, 0);
@@ -591,9 +603,10 @@ processSocket(struct wrkrInfo_s *pWrkr, struct lstn_s *lstn, struct sockaddr_sto
 			if(errno != EINTR && errno != EAGAIN) {
 				rs_strerror_r(errno, errStr, sizeof(errStr));
 				DBGPRINTF("INET socket error: %d = %s.\n", errno, errStr);
-				errmsg.LogError(errno, NO_ERRCODE, "imudp: error receiving on socket: %s", errStr);
+				LogError(errno, NO_ERRCODE, "imudp: error receiving on socket: %s", errStr);
 			}
-			ABORT_FINALIZE(RS_RET_ERR); // this most often is NOT an error, state is not checked by caller!
+			ABORT_FINALIZE(RS_RET_ERR);
+			// this most often is NOT an error, state is not checked by caller!
 		}
 
 		++pWrkr->ctrMsgsRcvd;
@@ -619,12 +632,12 @@ finalize_it:
 static rsRetVal
 checkSchedulingPriority(modConfData_t *modConf)
 {
-    	DEFiRet;
+	DEFiRet;
 
 #ifdef HAVE_SCHED_GET_PRIORITY_MAX
 	if(   modConf->iSchedPrio < sched_get_priority_min(modConf->iSchedPolicy)
 	   || modConf->iSchedPrio > sched_get_priority_max(modConf->iSchedPolicy)) {
-		errmsg.LogError(0, NO_ERRCODE,
+		LogError(0, NO_ERRCODE,
 			"imudp: scheduling priority %d out of range (%d - %d)"
 			" for scheduling policy '%s' - ignoring settings",
 			modConf->iSchedPrio,
@@ -639,7 +652,7 @@ finalize_it:
 }
 
 
-/* check scheduling policy string and, if valid, set its 
+/* check scheduling policy string and, if valid, set its
  * numeric equivalent in current load config
  */
 static rsRetVal
@@ -661,7 +674,7 @@ checkSchedulingPolicy(modConfData_t *modConf)
 		modConf->iSchedPolicy = SCHED_OTHER;
 #endif
 	} else {
-		errmsg.LogError(errno, NO_ERRCODE,
+		LogError(errno, NO_ERRCODE,
 			    "imudp: invalid scheduling policy '%s' "
 			    "- ignoring setting", modConf->pszSchedPolicy);
 		ABORT_FINALIZE(RS_RET_ERR_SCHED_PARAMS);
@@ -677,11 +690,11 @@ checkSchedParam(modConfData_t *modConf)
 	DEFiRet;
 
 	if(modConf->pszSchedPolicy != NULL && modConf->iSchedPrio == SCHED_PRIO_UNSET) {
-		errmsg.LogError(0, RS_RET_ERR_SCHED_PARAMS,
+		LogError(0, RS_RET_ERR_SCHED_PARAMS,
 			"imudp: scheduling policy set, but without priority - ignoring settings");
 		ABORT_FINALIZE(RS_RET_ERR_SCHED_PARAMS);
 	} else if(modConf->pszSchedPolicy == NULL && modConf->iSchedPrio != SCHED_PRIO_UNSET) {
-		errmsg.LogError(0, RS_RET_ERR_SCHED_PARAMS,
+		LogError(0, RS_RET_ERR_SCHED_PARAMS,
 			"imudp: scheduling priority set, but without policy - ignoring settings");
 		ABORT_FINALIZE(RS_RET_ERR_SCHED_PARAMS);
 	} else if(modConf->pszSchedPolicy != NULL && modConf->iSchedPrio != SCHED_PRIO_UNSET) {
@@ -692,7 +705,7 @@ checkSchedParam(modConfData_t *modConf)
 		modConf->iSchedPrio = SCHED_PRIO_UNSET; /* prevents doing the activation call */
 	}
 #ifndef HAVE_PTHREAD_SETSCHEDPARAM
-	errmsg.LogError(0, NO_ERRCODE,
+	LogError(0, NO_ERRCODE,
 		"imudp: cannot set thread scheduling policy, "
 		"pthread_setschedparam() not available");
 	ABORT_FINALIZE(RS_RET_ERR_SCHED_PARAMS);
@@ -724,7 +737,7 @@ setSchedParams(modConfData_t *modConf)
 		  modConf->pszSchedPolicy, modConf->iSchedPrio);
 	err = pthread_setschedparam(pthread_self(), modConf->iSchedPolicy, &sparam);
 	if(err != 0) {
-		errmsg.LogError(err, NO_ERRCODE, "imudp: pthread_setschedparam() failed - ignoring");
+		LogError(err, NO_ERRCODE, "imudp: pthread_setschedparam() failed - ignoring");
 	}
 finalize_it:
 #	endif
@@ -767,7 +780,7 @@ rcvMainLoop(struct wrkrInfo_s *const __restrict__ pWrkr)
 		++nLstn;
 
 	if(nLstn == 0) {
-		errmsg.LogError(errno, RS_RET_ERR,
+		LogError(errno, RS_RET_ERR,
 			"imudp error: we have 0 listeners, terminating"
 			"worker thread");
 		ABORT_FINALIZE(RS_RET_ERR);
@@ -799,7 +812,7 @@ rcvMainLoop(struct wrkrInfo_s *const __restrict__ pWrkr)
 			udpEPollEvt[i].data.ptr = lstn;
 			if(epoll_ctl(efd, EPOLL_CTL_ADD,  lstn->sock, &(udpEPollEvt[i])) < 0) {
 				rs_strerror_r(errno, errStr, sizeof(errStr));
-				errmsg.LogError(errno, NO_ERRCODE, "epoll_ctrl failed on fd %d with %s\n",
+				LogError(errno, NO_ERRCODE, "epoll_ctrl failed on fd %d with %s\n",
 					lstn->sock, errStr);
 			}
 		}
@@ -829,61 +842,77 @@ finalize_it:
 }
 #else /* #if HAVE_EPOLL_CREATE1 */
 /* this is the code for the select() interface */
-static rsRetVal
+static rsRetVal ATTR_NONNULL()
 rcvMainLoop(struct wrkrInfo_s *const __restrict__ pWrkr)
 {
 	DEFiRet;
-	int maxfds;
 	int nfds;
-	fd_set readfds;
 	struct sockaddr_storage frominetPrev;
 	int bIsPermitted;
+	int i = 0;
 	struct lstn_s *lstn;
 
+	DBGPRINTF("imudp uses poll() [ex-select]\n");
 	/* start "name caching" algo by making sure the previous system indicator
-	 * is invalidated.
-	 */
+	 * is invalidated. */
 	bIsPermitted = 0;
 	memset(&frominetPrev, 0, sizeof(frominetPrev));
-	DBGPRINTF("imudp uses select()\n");
+
+	/* setup poll() subsystem */
+	int nfd = 0;
+	for(lstn = lcnfRoot ; lstn != NULL ; lstn = lstn->next) {
+		if(lstn->sock != -1) {
+			if(Debug) {
+				net.debugListenInfo(lstn->sock, (char*)"UDP");
+			}
+			++nfd;
+		}
+	}
+	struct pollfd *const pollfds = calloc(nfd, sizeof(struct pollfd));
+	CHKmalloc(pollfds);
+
+	for(lstn = lcnfRoot ; lstn != NULL ; lstn = lstn->next) {
+		assert(i < nfd);
+		if (lstn->sock != -1) {
+			pollfds[i].fd = lstn->sock;
+			pollfds[i].events = POLLIN;
+			++i;
+		}
+	}
 
 	while(1) {
-		/* Add the Unix Domain Sockets to the list of read descriptors.
-		 */
-	        maxfds = 0;
-	        FD_ZERO(&readfds);
-
-		/* Add the UDP listen sockets to the list of read descriptors. */
-		for(lstn = lcnfRoot ; lstn != NULL ; lstn = lstn->next) {
-			if (lstn->sock != -1) {
-				if(Debug)
-					net.debugListenInfo(lstn->sock, (char*)"UDP");
-				FD_SET(lstn->sock, &readfds);
-				if(lstn->sock>maxfds) maxfds=lstn->sock;
-			}
-		}
-		if(Debug) {
-			dbgprintf("--------imUDP calling select, active file descriptors (max %d): ", maxfds);
-			for (nfds = 0; nfds <= maxfds; ++nfds)
-				if(FD_ISSET(nfds, &readfds))
-					dbgprintf("%d ", nfds);
-			dbgprintf("\n");
-		}
-
-		/* wait for io to become ready */
-		nfds = select(maxfds+1, (fd_set *) &readfds, NULL, NULL, NULL);
+		DBGPRINTF("--------imudp calling poll() on %d fds\n", nfd);
+		nfds = poll(pollfds, nfd, -1);
 		if(glbl.GetGlobalInputTermState() == 1)
 			break; /* terminate input! */
 
+		if(nfds < 0) {
+			if(errno == EINTR) {
+				DBGPRINTF("imudp: EINTR occured\n");
+			} else {
+				LogMsg(errno, RS_RET_POLL_ERR, LOG_WARNING, "imudp: poll "
+					"system call failed, may cause further troubles");
+			}
+			nfds = 0;
+		}
+
+		i = 0;
 		for(lstn = lcnfRoot ; nfds && lstn != NULL ; lstn = lstn->next) {
-			if(FD_ISSET(lstn->sock, &readfds)) {
-		       		processSocket(pWrkr, lstn, &frominetPrev, &bIsPermitted);
-			--nfds; /* indicate we have processed one descriptor */
+			assert(i < nfd);
+			if(lstn->sock != -1) {
+				if(glbl.GetGlobalInputTermState() == 1)
+					ABORT_FINALIZE(RS_RET_FORCE_TERM); /* terminate input! */
+				if(pollfds[i].revents & POLLIN) {
+					processSocket(pWrkr, lstn, &frominetPrev, &bIsPermitted);
+					--nfds;
+				}
+				++i;
 			}
 	       }
 	       /* end of a run, back to loop for next recv() */
 	}
 
+finalize_it:
 	RETiRet;
 }
 #endif /* #if HAVE_EPOLL_CREATE1 */
@@ -906,33 +935,33 @@ createListner(es_str_t *port, struct cnfparamvals *pvals)
 			continue;	/* array, handled by caller */
 		} else if(!strcmp(inppblk.descr[i].name, "name")) {
 			if(inst->inputname != NULL) {
-				errmsg.LogError(0, RS_RET_INVALID_PARAMS, "imudp: name and inputname "
+				LogError(0, RS_RET_INVALID_PARAMS, "imudp: name and inputname "
 						"parameter specified - only one can be used");
 				ABORT_FINALIZE(RS_RET_INVALID_PARAMS);
 			}
 			inst->inputname = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
 		} else if(!strcmp(inppblk.descr[i].name, "name.appendport")) {
 			if(bAppendPortUsed) {
-				errmsg.LogError(0, RS_RET_INVALID_PARAMS, "imudp: name.appendport and "
+				LogError(0, RS_RET_INVALID_PARAMS, "imudp: name.appendport and "
 						"inputname.appendport parameter specified - only one can be used");
 				ABORT_FINALIZE(RS_RET_INVALID_PARAMS);
 			}
 			inst->bAppendPortToInpname = (int) pvals[i].val.d.n;
 			bAppendPortUsed = 1;
 		} else if(!strcmp(inppblk.descr[i].name, "inputname")) {
-			errmsg.LogError(0, RS_RET_DEPRECATED , "imudp: deprecated parameter inputname "
+			LogError(0, RS_RET_DEPRECATED , "imudp: deprecated parameter inputname "
 					"used. Suggest to use name instead");
 			if(inst->inputname != NULL) {
-				errmsg.LogError(0, RS_RET_INVALID_PARAMS, "imudp: name and inputname "
+				LogError(0, RS_RET_INVALID_PARAMS, "imudp: name and inputname "
 						"parameter specified - only one can be used");
 				ABORT_FINALIZE(RS_RET_INVALID_PARAMS);
 			}
 			inst->inputname = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
 		} else if(!strcmp(inppblk.descr[i].name, "inputname.appendport")) {
-			errmsg.LogError(0, RS_RET_DEPRECATED , "imudp: deprecated parameter inputname.appendport "
+			LogError(0, RS_RET_DEPRECATED , "imudp: deprecated parameter inputname.appendport "
 					"used. Suggest to use name.appendport instead");
 			if(bAppendPortUsed) {
-				errmsg.LogError(0, RS_RET_INVALID_PARAMS, "imudp: name.appendport and "
+				LogError(0, RS_RET_INVALID_PARAMS, "imudp: name.appendport and "
 						"inputname.appendport parameter specified - only one can be used");
 				ABORT_FINALIZE(RS_RET_INVALID_PARAMS);
 			}
@@ -953,7 +982,7 @@ createListner(es_str_t *port, struct cnfparamvals *pvals)
 		} else if(!strcmp(inppblk.descr[i].name, "rcvbufsize")) {
 			const uint64_t val = pvals[i].val.d.n;
 			if(val > 1024 * 1024 * 1024) {
-				errmsg.LogError(0, RS_RET_MISSING_CNFPARAMS,
+				LogError(0, RS_RET_MISSING_CNFPARAMS,
 					"imudp: rcvbufsize maximum is 1 GiB, using "
 					"default instead");
 			} else {
@@ -1009,6 +1038,7 @@ CODESTARTbeginCnfLoad
 	loadModConf->iTimeRequery = TIME_REQUERY_DFLT;
 	loadModConf->iSchedPrio = SCHED_PRIO_UNSET;
 	loadModConf->pszSchedPolicy = NULL;
+	loadModConf->bPreserveCase = 0; /* off */
 	bLegacyCnfModGlobalsPermitted = 1;
 	/* init legacy config vars */
 	cs.pszBindRuleset = NULL;
@@ -1027,7 +1057,7 @@ BEGINsetModCnf
 CODESTARTsetModCnf
 	pvals = nvlstGetParams(lst, &modpblk, NULL);
 	if(pvals == NULL) {
-		errmsg.LogError(0, RS_RET_MISSING_CNFPARAMS, "imudp: error processing module "
+		LogError(0, RS_RET_MISSING_CNFPARAMS, "imudp: error processing module "
 				"config parameters [module(...)]");
 		ABORT_FINALIZE(RS_RET_MISSING_CNFPARAMS);
 	}
@@ -1051,13 +1081,15 @@ CODESTARTsetModCnf
 		} else if(!strcmp(modpblk.descr[i].name, "threads")) {
 			wrkrMax = (int) pvals[i].val.d.n;
 			if(wrkrMax > MAX_WRKR_THREADS) {
-				errmsg.LogError(0, RS_RET_PARAM_ERROR, "imudp: configured for %d"
+				LogError(0, RS_RET_PARAM_ERROR, "imudp: configured for %d"
 						"worker threads, but maximum permitted is %d",
 						wrkrMax, MAX_WRKR_THREADS);
 				loadModConf->wrkrMax = MAX_WRKR_THREADS;
 			} else {
 				loadModConf->wrkrMax = wrkrMax;
 			}
+		} else if(!strcmp(modpblk.descr[i].name, "preservecase")) {
+			loadModConf->bPreserveCase = (int) pvals[i].val.d.n;
 		} else {
 			dbgprintf("imudp: program error, non-handled "
 			  "param '%s' in beginCnfLoad\n", modpblk.descr[i].name);
@@ -1104,7 +1136,7 @@ CODESTARTcheckCnf
 		std_checkRuleset(pModConf, inst);
 	}
 	if(pModConf->root == NULL) {
-		errmsg.LogError(0, RS_RET_NO_LISTNERS , "imudp: module loaded, but "
+		LogError(0, RS_RET_NO_LISTNERS , "imudp: module loaded, but "
 				"no listeners defined - no input will be gathered");
 		iRet = RS_RET_NO_LISTNERS;
 	}
@@ -1120,7 +1152,7 @@ CODESTARTactivateCnfPrePrivDrop
 	}
 	/* if we could not set up any listeners, there is no point in running... */
 	if(lcnfRoot == NULL) {
-		errmsg.LogError(0, NO_ERRCODE, "imudp: no listeners could be started, "
+		LogError(0, NO_ERRCODE, "imudp: no listeners could be started, "
 				"input not activated.\n");
 		ABORT_FINALIZE(RS_RET_NO_RUN);
 	}
@@ -1142,11 +1174,11 @@ CODESTARTactivateCnf
 	DBGPRINTF("imudp: config params iMaxLine %d, lenRcvBuf %d\n", iMaxLine, lenRcvBuf);
 	for(i = 0 ; i < runModConf->wrkrMax ; ++i) {
 #		ifdef HAVE_RECVMMSG
-		CHKmalloc(wrkrInfo[i].recvmsg_iov = MALLOC(runModConf->batchSize * sizeof(struct iovec)));
-		CHKmalloc(wrkrInfo[i].recvmsg_mmh = MALLOC(runModConf->batchSize * sizeof(struct mmsghdr)));
-		CHKmalloc(wrkrInfo[i].frominet = MALLOC(runModConf->batchSize * sizeof(struct sockaddr_storage)));
+		CHKmalloc(wrkrInfo[i].recvmsg_iov = malloc(runModConf->batchSize * sizeof(struct iovec)));
+		CHKmalloc(wrkrInfo[i].recvmsg_mmh = malloc(runModConf->batchSize * sizeof(struct mmsghdr)));
+		CHKmalloc(wrkrInfo[i].frominet = malloc(runModConf->batchSize * sizeof(struct sockaddr_storage)));
 #		endif
-		CHKmalloc(wrkrInfo[i].pRcvBuf = MALLOC(lenRcvBuf));
+		CHKmalloc(wrkrInfo[i].pRcvBuf = malloc(lenRcvBuf));
 		wrkrInfo[i].id = i;
 	}
 finalize_it:
@@ -1189,7 +1221,7 @@ wrkr(void *myself)
 
 	/* Note well: the setting of scheduling parameters will not work
 	 * when we dropped privileges (if the user is not sufficiently
-	 * privileged, of course). Howerver, we can't change the 
+	 * privileged, of course). Howerver, we can't change the
 	 * scheduling params in PrePrivDrop(), as at that point our thread
 	 * is not yet created. So at least as an interim solution, we do
 	 * NOT support both setting sched parameters and dropping
@@ -1286,7 +1318,6 @@ ENDafterRun
 BEGINmodExit
 CODESTARTmodExit
 	/* release what we no longer need */
-	objRelease(errmsg, CORE_COMPONENT);
 	objRelease(glbl, CORE_COMPONENT);
 	objRelease(statsobj, CORE_COMPONENT);
 	objRelease(datetime, CORE_COMPONENT);
@@ -1333,7 +1364,6 @@ BEGINmodInit()
 CODESTARTmodInit
 	*ipIFVersProvided = CURR_MOD_IF_VERSION; /* we only support the current interface specification */
 CODEmodInit_QueryRegCFSLineHdlr
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 	CHKiRet(objUse(glbl, CORE_COMPONENT));
 	CHKiRet(objUse(statsobj, CORE_COMPONENT));
 	CHKiRet(objUse(datetime, CORE_COMPONENT));

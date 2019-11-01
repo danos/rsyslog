@@ -12,11 +12,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,7 +25,6 @@
  */
 #include "config.h"
 
-#include "rsyslog.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -35,17 +34,18 @@
 #include <pwd.h>
 #include <grp.h>
 
+#include "rsyslog.h"
 #include "cfsysline.h"
 #include "obj.h"
 #include "conf.h"
 #include "errmsg.h"
 #include "srUtils.h"
 #include "unicode-helper.h"
+#include "parserif.h"
 
 
 /* static data */
 DEFobjCurrIf(obj)
-DEFobjCurrIf(errmsg)
 
 linkedList_t llCmdList; /* this is NOT a pointer - no typo here ;) */
 
@@ -69,7 +69,7 @@ static rsRetVal doGetChar(uchar **pp, rsRetVal (*pSetHdlr)(void*, uid_t), void *
 
 	/* if we are not at a '\0', we have our new char - no validity checks here... */
 	if(**pp == '\0') {
-		errmsg.LogError(0, RS_RET_NOT_FOUND, "No character available");
+		LogError(0, RS_RET_NOT_FOUND, "No character available");
 		iRet = RS_RET_NOT_FOUND;
 	} else {
 		if(pSetHdlr == NULL) {
@@ -114,7 +114,7 @@ static rsRetVal parseIntVal(uchar **pp, int64 *pVal)
 {
 	DEFiRet;
 	uchar *p;
-	int64 i;	
+	int64 i;
 	int bWasNegative;
 
 	assert(pp != NULL);
@@ -133,7 +133,7 @@ static rsRetVal parseIntVal(uchar **pp, int64 *pVal)
 
 	if(!isdigit((int) *p)) {
 		errno = 0;
-		errmsg.LogError(0, RS_RET_INVALID_INT, "invalid number");
+		LogError(0, RS_RET_INVALID_INT, "invalid number");
 		ABORT_FINALIZE(RS_RET_INVALID_INT);
 	}
 
@@ -185,13 +185,13 @@ static rsRetVal doGetSize(uchar **pp, rsRetVal (*pSetHdlr)(void*, int64), void *
 		case 'e': i *= (int64) 1024 * 1024 * 1024 * 1024 * 1024 * 1024; ++(*pp); break; /* exa */
 		/* and now the "new" 1000-based definitions */
 		case 'K': i *= 1000; ++(*pp); break;
-	        case 'M': i *= 1000000; ++(*pp); break;
-                case 'G': i *= 1000000000; ++(*pp); break;
+		case 'M': i *= 1000000; ++(*pp); break;
+		case 'G': i *= 1000000000; ++(*pp); break;
 			  /* we need to use the multiplication below because otherwise
 			   * the compiler gets an error during constant parsing */
-                case 'T': i *= (int64) 1000       * 1000000000; ++(*pp); break; /* tera */
-                case 'P': i *= (int64) 1000000    * 1000000000; ++(*pp); break; /* peta */
-                case 'E': i *= (int64) 1000000000 * 1000000000; ++(*pp); break; /* exa */
+		case 'T': i *= (int64) 1000       * 1000000000; ++(*pp); break; /* tera */
+		case 'P': i *= (int64) 1000000    * 1000000000; ++(*pp); break; /* peta */
+		case 'E': i *= (int64) 1000000000 * 1000000000; ++(*pp); break; /* exa */
 	}
 
 	/* done */
@@ -215,7 +215,7 @@ static rsRetVal doGetInt(uchar **pp, rsRetVal (*pSetHdlr)(void*, uid_t), void *p
 {
 	uchar *p;
 	DEFiRet;
-	int64 i;	
+	int64 i;
 
 	assert(pp != NULL);
 	assert(*pp != NULL);
@@ -223,7 +223,7 @@ static rsRetVal doGetInt(uchar **pp, rsRetVal (*pSetHdlr)(void*, uid_t), void *p
 	CHKiRet(doGetSize(pp, NULL,&i));
 	p = *pp;
 	if(i > 2147483648ll) { /*2^31*/
-		errmsg.LogError(0, RS_RET_INVALID_VALUE, 
+		LogError(0, RS_RET_INVALID_VALUE,
 		         "value %lld too large for integer argument.", i);
 		ABORT_FINALIZE(RS_RET_INVALID_VALUE);
 	}
@@ -259,7 +259,7 @@ static rsRetVal doFileCreateMode(uchar **pp, rsRetVal (*pSetHdlr)(void*, uid_t),
 {
 	uchar *p;
 	DEFiRet;
-	int iVal;	
+	int iVal;
 
 	assert(pp != NULL);
 	assert(*pp != NULL);
@@ -275,7 +275,7 @@ static rsRetVal doFileCreateMode(uchar **pp, rsRetVal (*pSetHdlr)(void*, uid_t),
 	     && (*(p+1) && *(p+1) >= '0' && *(p+1) <= '7')
 	     && (*(p+2) && *(p+2) >= '0' && *(p+2) <= '7')
 	     && (*(p+3) && *(p+3) >= '0' && *(p+3) <= '7')  )  ) {
-		errmsg.LogError(0, RS_RET_INVALID_VALUE, "value must be octal (e.g 0644).");
+		LogError(0, RS_RET_INVALID_VALUE, "value must be octal (e.g 0644).");
 		ABORT_FINALIZE(RS_RET_INVALID_VALUE);
 	}
 
@@ -320,7 +320,7 @@ static int doParseOnOffOption(uchar **pp)
 	skipWhiteSpace(pp); /* skip over any whitespace */
 
 	if(getSubString(pp, (char*) szOpt, sizeof(szOpt), ' ')  != 0) {
-		errmsg.LogError(0, NO_ERRCODE, "Invalid $-configline - could not extract on/off option");
+		LogError(0, NO_ERRCODE, "Invalid $-configline - could not extract on/off option");
 		return -1;
 	}
 	
@@ -329,7 +329,7 @@ static int doParseOnOffOption(uchar **pp)
 	} else if(!strcmp((char*)szOpt, "off")) {
 		return 0;
 	} else {
-		errmsg.LogError(0, NO_ERRCODE, "Option value must be on or off, but is '%s'", (char*)pOptStart);
+		LogError(0, NO_ERRCODE, "Option value must be on or off, but is '%s'", (char*)pOptStart);
 		return -1;
 	}
 }
@@ -352,7 +352,7 @@ static rsRetVal doGetGID(uchar **pp, rsRetVal (*pSetHdlr)(void*, uid_t), void *p
 	assert(*pp != NULL);
 
 	if(getSubString(pp, (char*) szName, sizeof(szName), ' ')  != 0) {
-		errmsg.LogError(0, RS_RET_NOT_FOUND, "could not extract group name");
+		LogError(0, RS_RET_NOT_FOUND, "could not extract group name");
 		ABORT_FINALIZE(RS_RET_NOT_FOUND);
 	}
 
@@ -368,10 +368,10 @@ static rsRetVal doGetGID(uchar **pp, rsRetVal (*pSetHdlr)(void*, uid_t), void *p
 
 	if(pgBuf == NULL) {
 		if (err != 0) {
-			errmsg.LogError(err, RS_RET_NOT_FOUND, "Query for group '%s' resulted in an error",
+			LogError(err, RS_RET_NOT_FOUND, "Query for group '%s' resulted in an error",
 				szName);
 		} else {
-			errmsg.LogError(0, RS_RET_NOT_FOUND, "ID for group '%s' could not be found", szName);
+			LogError(0, RS_RET_NOT_FOUND, "ID for group '%s' could not be found", szName);
 		}
 		iRet = RS_RET_NOT_FOUND;
 	} else {
@@ -408,14 +408,14 @@ static rsRetVal doGetUID(uchar **pp, rsRetVal (*pSetHdlr)(void*, uid_t), void *p
 	assert(*pp != NULL);
 
 	if(getSubString(pp, (char*) szName, sizeof(szName), ' ')  != 0) {
-		errmsg.LogError(0, RS_RET_NOT_FOUND, "could not extract user name");
+		LogError(0, RS_RET_NOT_FOUND, "could not extract user name");
 		ABORT_FINALIZE(RS_RET_NOT_FOUND);
 	}
 
 	getpwnam_r((char*)szName, &pwBuf, stringBuf, sizeof(stringBuf), &ppwBuf);
 
 	if(ppwBuf == NULL) {
-		errmsg.LogError(0, RS_RET_NOT_FOUND, "ID for user '%s' could not be found or error", (char*)szName);
+		LogError(0, RS_RET_NOT_FOUND, "ID for user '%s' could not be found or error", (char*)szName);
 		iRet = RS_RET_NOT_FOUND;
 	} else {
 		if(pSetHdlr == NULL) {
@@ -477,9 +477,9 @@ getWord(uchar **pp, cstr_t **ppStrB)
 	DEFiRet;
 	uchar *p;
 
-	ASSERT(pp != NULL);
-	ASSERT(*pp != NULL);
-	ASSERT(ppStrB != NULL);
+	assert(pp != NULL);
+	assert(*pp != NULL);
+	assert(ppStrB != NULL);
 
 	CHKiRet(cstrConstruct(ppStrB));
 
@@ -521,8 +521,8 @@ static rsRetVal doGetWord(uchar **pp, rsRetVal (*pSetHdlr)(void*, uchar*), void 
 	cstr_t *pStrB = NULL;
 	uchar *pNewVal;
 
-	ASSERT(pp != NULL);
-	ASSERT(*pp != NULL);
+	assert(pp != NULL);
+	assert(*pp != NULL);
 
 	CHKiRet(getWord(pp, &pStrB));
 	CHKiRet(cstrConvSzStrAndDestruct(&pStrB, &pNewVal, 0));
@@ -565,8 +565,8 @@ doSyslogName(uchar **pp, rsRetVal (*pSetHdlr)(void*, int),
 	cstr_t *pStrB;
 	int iNewVal;
 
-	ASSERT(pp != NULL);
-	ASSERT(*pp != NULL);
+	assert(pp != NULL);
+	assert(*pp != NULL);
 
 	CHKiRet(getWord(pp, &pStrB)); /* get word */
 	iNewVal = decodeSyslogName(cstrGetSzStrNoNULL(pStrB), pNameTable);
@@ -606,7 +606,7 @@ doGoneAway(__attribute__((unused)) uchar **pp,
 	   __attribute__((unused)) rsRetVal (*pSetHdlr)(void*, int),
 	   __attribute__((unused)) void *pVal)
 {
-	errmsg.LogError(0, RS_RET_CMD_GONE_AWAY, "config directive is no longer supported -- ignored");
+	parser_warnmsg("config directive is no longer supported -- ignored");
 	return RS_RET_CMD_GONE_AWAY;
 }
 
@@ -630,7 +630,7 @@ doSeverity(uchar **pp, rsRetVal (*pSetHdlr)(void*, int), void *pVal)
  */
 static rsRetVal cslchDestruct(void *pThis)
 {
-	ASSERT(pThis != NULL);
+	assert(pThis != NULL);
 	free(pThis);
 	
 	return RS_RET_OK;
@@ -655,7 +655,7 @@ finalize_it:
 }
 
 /* destructor for linked list keys. As we do not use any dynamic memory,
- * we simply return. However, this entry point must be defined for the 
+ * we simply return. However, this entry point must be defined for the
  * linkedList class to make sure we have not forgotten a destructor.
  * rgerhards, 2007-11-21
  */
@@ -683,7 +683,8 @@ static int cslchKeyCompare(void *pKey1, void *pKey2)
 
 /* set data members for this object
  */
-static rsRetVal cslchSetEntry(cslCmdHdlr_t *pThis, ecslCmdHdrlType eType, rsRetVal (*pHdlr)(), void *pData, int *permitted)
+static rsRetVal cslchSetEntry(cslCmdHdlr_t *pThis, ecslCmdHdrlType eType, rsRetVal (*pHdlr)(), void *pData,
+int *permitted)
 {
 	assert(pThis != NULL);
 	assert(eType != eCmdHdlrInvalid);
@@ -751,6 +752,7 @@ static rsRetVal cslchCallHdlr(cslCmdHdlr_t *pThis, uchar **ppConfLine)
 	case eCmdHdlrArray:
 	case eCmdHdlrQueueType:
 	default:
+		dbgprintf("error: command handler type %d not implemented in legacy system\n", pThis->eType);
 		iRet = RS_RET_NOT_IMPLEMENTED;
 		goto finalize_it;
 	}
@@ -815,7 +817,8 @@ finalize_it:
 
 /* add a handler entry to a known command
  */
-static rsRetVal cslcAddHdlr(cslCmd_t *pThis, ecslCmdHdrlType eType, rsRetVal (*pHdlr)(), void *pData, void *pOwnerCookie, int *permitted)
+static rsRetVal cslcAddHdlr(cslCmd_t *pThis, ecslCmdHdrlType eType, rsRetVal (*pHdlr)(), void *pData,
+void *pOwnerCookie, int *permitted)
 {
 	DEFiRet;
 	cslCmdHdlr_t *pCmdHdlr = NULL;
@@ -850,7 +853,8 @@ finalize_it:
  * v2 function and supplies a "don't care (NULL)" pointer as this argument.
  * rgerhards, 2012-06-26
  */
-rsRetVal regCfSysLineHdlr2(const uchar *pCmdName, int bChainingPermitted, ecslCmdHdrlType eType, rsRetVal (*pHdlr)(), void *pData, void *pOwnerCookie, int *permitted)
+rsRetVal regCfSysLineHdlr2(const uchar *pCmdName, int bChainingPermitted, ecslCmdHdrlType eType, rsRetVal (*pHdlr)(),
+void *pData, void *pOwnerCookie, int *permitted)
 {
 	DEFiRet;
 	cslCmd_t *pThis;
@@ -890,7 +894,8 @@ finalize_it:
 	RETiRet;
 }
 
-rsRetVal regCfSysLineHdlr(const uchar *pCmdName, int bChainingPermitted, ecslCmdHdrlType eType, rsRetVal (*pHdlr)(), void *pData, void *pOwnerCookie)
+rsRetVal regCfSysLineHdlr(const uchar *pCmdName, int bChainingPermitted, ecslCmdHdrlType eType, rsRetVal (*pHdlr)(),
+void *pData, void *pOwnerCookie)
 {
 	DEFiRet;
 	iRet = regCfSysLineHdlr2(pCmdName, bChainingPermitted, eType, pHdlr, pData, pOwnerCookie, NULL);
@@ -967,12 +972,11 @@ rsRetVal processCfSysLineCommand(uchar *pCmdName, uchar **p)
 	uchar *pHdlrP; /* the handler's private p (else we could only call one handler) */
 	int bWasOnceOK; /* was the result of an handler at least once RS_RET_OK? */
 	uchar *pOKp = NULL; /* returned conf line pointer when it was OK */
-	int bHadScopingErr = 0; /* set if a scoping error occured */
 
 	iRet = llFind(&llCmdList, (void *) pCmdName, (void*) &pCmd);
 
 	if(iRet == RS_RET_NOT_FOUND) {
-		errmsg.LogError(0, RS_RET_NOT_FOUND, "invalid or yet-unknown config file command '%s' - "
+		LogError(0, RS_RET_NOT_FOUND, "invalid or yet-unknown config file command '%s' - "
 			"have you forgotten to load a module?", pCmdName);
 	}
 
@@ -991,7 +995,7 @@ rsRetVal processCfSysLineCommand(uchar *pCmdName, uchar **p)
 		 */
 		pHdlrP = *p;
 		if(pCmdHdlr->permitted != NULL && !*(pCmdHdlr->permitted)) {
-			errmsg.LogError(0, RS_RET_PARAM_NOT_PERMITTED, "command '%s' is currently not "
+			LogError(0, RS_RET_PARAM_NOT_PERMITTED, "command '%s' is currently not "
 				"permitted - did you already set it via a RainerScript command (v6+ config)?",
 				pCmdName);
 			ABORT_FINALIZE(RS_RET_PARAM_NOT_PERMITTED);
@@ -1008,10 +1012,6 @@ rsRetVal processCfSysLineCommand(uchar *pCmdName, uchar **p)
 
 	if(iRetLL != RS_RET_END_OF_LINKEDLIST)
 		iRet = iRetLL;
-
-	if(bHadScopingErr) {
-		iRet = RS_RET_CONF_INVLD_SCOPE;
-	}
 
 finalize_it:
 	RETiRet;
@@ -1053,7 +1053,6 @@ cfsyslineInit(void)
 {
 	DEFiRet;
 	CHKiRet(objGetObjInterface(&obj));
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 
 	CHKiRet(llInit(&llCmdList, cslcDestruct, cslcKeyDestruct, strcasecmp));
 

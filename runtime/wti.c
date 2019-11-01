@@ -1,26 +1,26 @@
 /* wti.c
  *
  * This file implements the worker thread instance (wti) class.
- * 
- * File begun on 2008-01-20 by RGerhards based on functions from the 
+ *
+ * File begun on 2008-01-20 by RGerhards based on functions from the
  * previous queue object class (the wti functions have been extracted)
  *
  * There is some in-depth documentation available in doc/dev_queue.html
- * (and in the web doc set on http://www.rsyslog.com/doc). Be sure to read it
+ * (and in the web doc set on https://www.rsyslog.com/doc/). Be sure to read it
  * if you are getting aquainted to the object.
  *
- * Copyright 2008-2016 Adiscon GmbH.
+ * Copyright 2008-2019 Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -40,6 +40,7 @@
 #include "rsyslog.h"
 #include "stringbuf.h"
 #include "srUtils.h"
+#include "errmsg.h"
 #include "wtp.h"
 #include "wti.h"
 #include "obj.h"
@@ -61,8 +62,8 @@ pthread_key_t thrd_wti_key;
 /* get the header for debug messages
  * The caller must NOT free or otherwise modify the returned string!
  */
-static uchar *
-wtiGetDbgHdr(wti_t *pThis)
+uchar * ATTR_NONNULL()
+wtiGetDbgHdr(const wti_t *const pThis)
 {
 	ISOBJ_TYPE_assert(pThis, wti);
 
@@ -76,17 +77,39 @@ wtiGetDbgHdr(wti_t *pThis)
 /* return the current worker processing state. For the sake of
  * simplicity, we do not use the iRet interface. -- rgerhards, 2009-07-17
  */
-sbool
+int ATTR_NONNULL()
 wtiGetState(wti_t *pThis)
 {
 	return ATOMIC_FETCH_32BIT(&pThis->bIsRunning, &pThis->mutIsRunning);
 }
 
+/* join terminated worker thread
+ * This may be called in any thread state, it will be a NOP if the
+ * thread is not to join.
+ */
+void ATTR_NONNULL()
+wtiJoinThrd(wti_t *const pThis)
+{
+	ISOBJ_TYPE_assert(pThis, wti);
+	if(wtiGetState(pThis) == WRKTHRD_WAIT_JOIN) {
+		DBGPRINTF("%s: joining terminated worker\n", wtiGetDbgHdr(pThis));
+		if(pthread_join(pThis->thrdID, NULL) != 0) {
+			LogMsg(errno, RS_RET_INTERNAL_ERROR, LOG_WARNING,
+				"rsyslog bug? wti cannot join terminated wrkr");
+		}
+		DBGPRINTF("%s: worker fully terminated\n", wtiGetDbgHdr(pThis));
+		wtiSetState(pThis, WRKTHRD_STOPPED);
+		if(dbgTimeoutToStderr) {
+			fprintf(stderr, "rsyslog debug: %s: thread joined\n",
+				wtiGetDbgHdr(pThis));
+		}
+	}
+}
 
 /* Set this thread to "always running" state (can not be unset)
  * rgerhards, 2009-07-20
  */
-rsRetVal
+rsRetVal ATTR_NONNULL()
 wtiSetAlwaysRunning(wti_t *pThis)
 {
 	ISOBJ_TYPE_assert(pThis, wti);
@@ -98,14 +121,14 @@ wtiSetAlwaysRunning(wti_t *pThis)
  * use for wtp, but we need to have it per thread instance (thus it
  * is inside wti). -- rgerhards, 2009-07-17
  */
-rsRetVal
-wtiSetState(wti_t *pThis, sbool bNewVal)
+rsRetVal ATTR_NONNULL()
+wtiSetState(wti_t *pThis, const int newVal)
 {
 	ISOBJ_TYPE_assert(pThis, wti);
-	if(bNewVal) {
-		ATOMIC_STORE_1_TO_INT(&pThis->bIsRunning, &pThis->mutIsRunning);
-	} else {
+	if(newVal == WRKTHRD_STOPPED) {
 		ATOMIC_STORE_0_TO_INT(&pThis->bIsRunning, &pThis->mutIsRunning);
+	} else {
+		ATOMIC_OR_INT_TO_INT(&pThis->bIsRunning, &pThis->mutIsRunning, newVal);
 	}
 	return RS_RET_OK;
 }
@@ -120,7 +143,6 @@ wtiWakeupThrd(wti_t *pThis)
 	DEFiRet;
 
 	ISOBJ_TYPE_assert(pThis, wti);
-
 
 	if(wtiGetState(pThis)) {
 		/* we first try the cooperative "cancel" interface */
@@ -141,31 +163,44 @@ wtiWakeupThrd(wti_t *pThis)
  * kind of non-optimal wait is considered preferable over using condition variables.
  * rgerhards, 2008-02-26
  */
-rsRetVal
-wtiCancelThrd(wti_t *pThis)
+rsRetVal ATTR_NONNULL()
+wtiCancelThrd(wti_t *pThis, const uchar *const cancelobj)
 {
 	DEFiRet;
 
 	ISOBJ_TYPE_assert(pThis, wti);
 
-
-	if(wtiGetState(pThis)) {
+	wtiJoinThrd(pThis);
+	if(wtiGetState(pThis) != WRKTHRD_STOPPED) {
+		LogMsg(0, RS_RET_ERR, LOG_WARNING, "%s: need to do cooperative cancellation "
+			"- some data may be lost, increase timeout?", cancelobj);
 		/* we first try the cooperative "cancel" interface */
 		pthread_kill(pThis->thrdID, SIGTTIN);
-		DBGPRINTF("sent SIGTTIN to worker thread %p, giving it a chance to terminate\n", (void *) pThis->thrdID);
-		srSleep(0, 10000);
+		DBGPRINTF("sent SIGTTIN to worker thread %p, giving it a chance to terminate\n",
+			(void *) pThis->thrdID);
+		srSleep(0, 50000);
+		wtiJoinThrd(pThis);
 	}
 
-	if(wtiGetState(pThis)) {
+	if(wtiGetState(pThis) != WRKTHRD_STOPPED) {
+		LogMsg(0, RS_RET_ERR, LOG_WARNING, "%s: need to do hard cancellation", cancelobj);
+		if(dbgTimeoutToStderr) {
+			fprintf(stderr, "rsyslog debug: %s: need to do hard cancellation\n",
+				cancelobj);
+		}
+		pthread_cancel(pThis->thrdID);
+		pthread_kill(pThis->thrdID, SIGTTIN);
 		DBGPRINTF("cooperative worker termination failed, using cancellation...\n");
 		DBGOPRINT((obj_t*) pThis, "canceling worker thread\n");
 		pthread_cancel(pThis->thrdID);
 		/* now wait until the thread terminates... */
-		while(wtiGetState(pThis)) {
+		while(wtiGetState(pThis) != WRKTHRD_STOPPED && wtiGetState(pThis) != WRKTHRD_WAIT_JOIN) {
+			DBGOPRINT((obj_t*) pThis, "waiting on termination, state %d\n", wtiGetState(pThis));
 			srSleep(0, 10000);
 		}
 	}
 
+	wtiJoinThrd(pThis);
 	RETiRet;
 }
 
@@ -201,6 +236,16 @@ finalize_it:
 /* Destructor */
 BEGINobjDestruct(wti) /* be sure to specify the object type also in END and CODESTART macros! */
 CODESTARTobjDestruct(wti)
+	if(wtiGetState(pThis) != WRKTHRD_STOPPED) {
+		DBGPRINTF("%s: rsyslog bug: worker not stopped during shutdown\n",
+			wtiGetDbgHdr(pThis));
+		if(dbgTimeoutToStderr) {
+			fprintf(stderr, "RSYSLOG BUG: %s: worker not stopped during shutdown\n",
+				wtiGetDbgHdr(pThis));
+		} else {
+			assert(wtiGetState(pThis) == WRKTHRD_STOPPED);
+		}
+	}
 	/* actual destruction */
 	batchFree(&pThis->batch);
 	free(pThis->actWrkrInfo);
@@ -233,7 +278,7 @@ wtiConstructFinalize(wti_t *pThis)
 		  wtiGetDbgHdr(pThis), iActionNbr);
 
 	/* initialize our thread instance descriptor (no concurrency here) */
-	pThis->bIsRunning = RSFALSE; 
+	pThis->bIsRunning = WRKTHRD_STOPPED;
 
 	/* must use calloc as we need zero-init */
 	CHKmalloc(pThis->actWrkrInfo = calloc(iActionNbr, sizeof(actWrkrInfo_t)));
@@ -264,7 +309,6 @@ wtiWorkerCancelCleanup(void *arg)
 	wti_t *pThis = (wti_t*) arg;
 	wtp_t *pWtp;
 
-	BEGINfunc
 	ISOBJ_TYPE_assert(pThis, wti);
 	pWtp = pThis->pWtp;
 	ISOBJ_TYPE_assert(pWtp, wtp);
@@ -273,7 +317,29 @@ wtiWorkerCancelCleanup(void *arg)
 	pWtp->pfObjProcessed(pWtp->pUsr, pThis);
 	DBGPRINTF("%s: done cancelation cleanup handler.\n", wtiGetDbgHdr(pThis));
 	
-	ENDfunc
+}
+
+
+/* wait for queue to become non-empty or timeout
+ * this is introduced as helper to support queue minimum batch sizes, but may
+ * also be used for other cases. This function waits until the queue is non-empty
+ * or a timeout occurs. The timeout must be passed in as absolute value.
+ * @returns 0 if timeout occurs (queue still empty), something else otherwise
+ */
+int ATTR_NONNULL()
+wtiWaitNonEmpty(wti_t *const pThis, const struct timespec timeout)
+{
+	wtp_t *__restrict__ const pWtp = pThis->pWtp;
+	int r;
+
+	DBGOPRINT((obj_t*) pThis, "waiting on queue to become non-empty\n");
+	if(d_pthread_cond_timedwait(&pThis->pcondBusy, pWtp->pmutUsr, &timeout) != 0) {
+		r = 0;
+	} else {
+		r = 1;
+	}
+	DBGOPRINT((obj_t*) pThis, "waited on queue to become non-empty, result %d\n", r);
+	return r;
 }
 
 
@@ -282,12 +348,11 @@ wtiWorkerCancelCleanup(void *arg)
  * re-tested by the caller, so it is OK to NOT do it here.
  * rgerhards, 2009-05-20
  */
-static void
-doIdleProcessing(wti_t *pThis, wtp_t *pWtp, int *pbInactivityTOOccured)
+static void ATTR_NONNULL()
+doIdleProcessing(wti_t *const pThis, wtp_t *const pWtp, int *const pbInactivityTOOccured)
 {
 	struct timespec t;
 
-	BEGINfunc
 	DBGPRINTF("%s: worker IDLE, waiting for work.\n", wtiGetDbgHdr(pThis));
 
 	if(pThis->bAlwaysRunning) {
@@ -301,7 +366,6 @@ doIdleProcessing(wti_t *pThis, wtp_t *pWtp, int *pbInactivityTOOccured)
 		}
 	}
 	DBGOPRINT((obj_t*) pThis, "worker awoke from idle processing\n");
-	ENDfunc
 }
 
 
@@ -311,9 +375,8 @@ doIdleProcessing(wti_t *pThis, wtp_t *pWtp, int *pbInactivityTOOccured)
  * long (during shutdown). So what we do is block cancellation, and every
  * consumer must enable it during the periods where it is safe.
  */
-#if !defined(_AIX)
-#pragma GCC diagnostic ignored "-Wempty-body"
-#endif
+PRAGMA_DIAGNOSTIC_PUSH
+PRAGMA_IGNORE_Wempty_body
 rsRetVal
 wtiWorker(wti_t *__restrict__ const pThis)
 {
@@ -350,7 +413,7 @@ wtiWorker(wti_t *__restrict__ const pThis)
 		if(pWtp->pfRateLimiter != NULL) { /* call rate-limiter, if defined */
 			pWtp->pfRateLimiter(pWtp->pUsr);
 		}
-		
+
 		/* first check if we are in shutdown process (but evaluate a bit later) */
 		terminateRet = wtpChkStopWrkr(pWtp, MUTEX_ALREADY_LOCKED);
 		if(terminateRet == RS_RET_TERMINATE_NOW) {
@@ -368,8 +431,8 @@ wtiWorker(wti_t *__restrict__ const pThis)
 			break;	/* end of loop */
 		} else if(localRet == RS_RET_IDLE) {
 			if(terminateRet == RS_RET_TERMINATE_WHEN_IDLE || bInactivityTOOccured) {
-				DBGOPRINT((obj_t*) pThis, "terminating worker terminateRet=%d, bInactivityTOOccured=%d\n",
-					  terminateRet, bInactivityTOOccured);
+				DBGOPRINT((obj_t*) pThis, "terminating worker terminateRet=%d, "
+					"bInactivityTOOccured=%d\n", terminateRet, bInactivityTOOccured);
 				break;	/* end of loop */
 			}
 			doIdleProcessing(pThis, pWtp, &bInactivityTOOccured);
@@ -411,13 +474,11 @@ wtiWorker(wti_t *__restrict__ const pThis)
 	/* indicate termination */
 	pthread_cleanup_pop(0); /* remove cleanup handler */
 	pthread_setcancelstate(iCancelStateSave, NULL);
-	dbgprintf("wti %p: worker exiting\n", pThis);
+	dbgprintf("wti %p: exiting\n", pThis);
 
 	RETiRet;
 }
-#if !defined(_AIX)
-#pragma GCC diagnostic warning "-Wempty-body"
-#endif
+PRAGMA_DIAGNOSTIC_POP
 
 
 /* some simple object access methods */
@@ -443,7 +504,7 @@ wtiSetDbgHdr(wti_t *pThis, uchar *pszMsg, size_t lenMsg)
 		free(pThis->pszDbgHdr);
 	}
 
-	if((pThis->pszDbgHdr = MALLOC(lenMsg + 1)) == NULL)
+	if((pThis->pszDbgHdr = malloc(lenMsg + 1)) == NULL)
 		ABORT_FINALIZE(RS_RET_OUT_OF_MEMORY);
 
 	memcpy(pThis->pszDbgHdr, pszMsg, lenMsg + 1); /* always think about the \0! */
@@ -482,7 +543,7 @@ wtiGetDummy(void)
 }
 
 /* dummy */
-static rsRetVal wtiQueryInterface(void) { return RS_RET_NOT_IMPLEMENTED; }
+static rsRetVal wtiQueryInterface(interface_t __attribute__((unused)) *i) { return RS_RET_NOT_IMPLEMENTED; }
 
 /* exit our class
  */
@@ -508,6 +569,3 @@ BEGINObjClassInit(wti, 1, OBJ_IS_CORE_MODULE) /* one is the object version (most
 		ABORT_FINALIZE(RS_RET_ERR);
 	}
 ENDObjClassInit(wti)
-
-/* vi:set ai:
- */

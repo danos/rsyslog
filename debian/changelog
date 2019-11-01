@@ -1,8 +1,347 @@
-rsyslog (8.24.0-1vyatta4) unstable; urgency=medium
+rsyslog (8.1908.0-1) unstable; urgency=medium
 
-  * DANOS Import
+  * New upstream version 8.1908.0
 
- -- Vyatta Package Maintainers <DL-vyatta-help@att.com>  Thu, 31 Oct 2019 16:33:46 +0000
+ -- Michael Biebl <biebl@debian.org>  Tue, 20 Aug 2019 15:40:03 +0200
+
+rsyslog (8.1907.0-2) unstable; urgency=medium
+
+  * Enable OpenSSL network stream driver.
+    Split the driver into a separate package named rsyslog-openssl and
+    update the Suggests accordingly to make it the preferred TLS driver.
+    (Closes: #930816)
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 09 Jul 2019 23:42:07 +0200
+
+rsyslog (8.1907.0-1) unstable; urgency=medium
+
+  * New upstream version 8.1907.0
+  * Rebase patches
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 09 Jul 2019 22:11:42 +0200
+
+rsyslog (8.1905.0-4) unstable; urgency=medium
+
+  * Stop installing /etc/default/rsyslog and remove it on upgrades
+  * Upload to unstable
+
+ -- Michael Biebl <biebl@debian.org>  Mon, 08 Jul 2019 14:38:18 +0200
+
+rsyslog (8.1905.0-3) experimental; urgency=medium
+
+  * Fix leading double space in rsyslog startup messages (Closes: #907755)
+  * Update URL in logcheck rule to use https instead of http (Closes: #927771)
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 02 Jul 2019 17:09:03 +0200
+
+rsyslog (8.1905.0-2) experimental; urgency=medium
+
+  * Bump Build-Depends on librelp to (>= 1.4.0) for
+    relpEngineSetTLSLibByName()
+  * Add Build-Depends on logrotate and net-tools.
+    Those are required by the test suite: logrotate is used in the
+    imfile-logrotate* tests and ifconfig in sndrcv_tls_anon_ipv6.
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 29 May 2019 12:17:37 +0200
+
+rsyslog (8.1905.0-1) experimental; urgency=medium
+
+  * New upstream version 8.1905.0
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 28 May 2019 20:06:53 +0200
+
+rsyslog (8.1904.0-1) experimental; urgency=medium
+
+  * New upstream version 8.1904.0
+  * Rebase patches
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 17 Apr 2019 11:36:23 +0200
+
+rsyslog (8.1903.0-4) experimental; urgency=medium
+
+  * Drop dependency on lsb-base.
+    It is only needed when booting with sysvinit and initscripts, but
+    initscripts already Depends on lsb-base (see #864999).
+
+ -- Michael Biebl <biebl@debian.org>  Thu, 11 Apr 2019 11:12:50 +0200
+
+rsyslog (8.1903.0-3) experimental; urgency=medium
+
+  * Revert "Enlarged msg offset types for bigger structured messages"
+    Seems to break the test-suite on various architectures.
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 26 Mar 2019 23:15:59 +0100
+
+rsyslog (8.1903.0-2) experimental; urgency=medium
+
+  * Properly respect the nocheck build option
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 26 Mar 2019 10:40:01 +0100
+
+rsyslog (8.1903.0-1) experimental; urgency=medium
+
+  * New upstream version 8.1903.0
+  * Rebase patches
+    - Drop Run-queue-encryption-tests-only-if-gcrypt-support-is-enab.patch,
+      merged upstream.
+    - Update Don-t-fail-test-suite-on-flaky-tests.patch to no longer treat
+      daqueue-dirty-shutdown as flaky. This test should work reliably now.
+      (Closes: #913984)
+  * Always dump test-suite.log to stdout.
+    In case of a flaky test which is skipped on failure we want to see the
+    test output.
+  * Remove migration code from pre-jessie
+
+ -- Michael Biebl <biebl@debian.org>  Mon, 25 Mar 2019 22:47:54 +0100
+
+rsyslog (8.1901.0-1) unstable; urgency=medium
+
+  * New upstream version 8.1901.0
+  * Use debhelper-compat (= 12) Build-Depends and drop debian/compat
+  * Rebase patches
+  * Fix reference to HTML documentation in rsyslog.conf (Closes: #920922)
+  * Bump Standards-Version to 4.3.0
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 26 Feb 2019 18:43:39 +0100
+
+rsyslog (8.40.0-1) unstable; urgency=medium
+
+  * New upstream version 8.40.0
+  * Rebase patches
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 11 Dec 2018 22:07:26 +0100
+
+rsyslog (8.39.0-3) unstable; urgency=medium
+
+  * Don't fail test-suite on flaky tests.
+    The tests daqueue-dirty-shutdown.sh and imfile-truncate.sh don't seem to
+    work reliably. We still want to execute them, but if they fail, return 77.
+    This way the test-runner considers them as skipped.
+
+ -- Michael Biebl <biebl@debian.org>  Thu, 06 Dec 2018 13:01:00 +0100
+
+rsyslog (8.39.0-2) unstable; urgency=medium
+
+  * Mark lsof Build-Depends as linux-any
+  * Switch to debhelper compat level 12 and dh_installsystemd
+
+ -- Michael Biebl <biebl@debian.org>  Sun, 18 Nov 2018 19:34:45 +0100
+
+rsyslog (8.39.0-1) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * d/copyright: Use https protocol in Format field
+  * d/changelog: Remove trailing whitespaces
+
+  [ Michael Biebl ]
+  * New upstream version 8.39.0
+  * Add Build-Depends on lsof.
+    Required by omprog-restart-terminated.sh and
+    omprog-restart-terminated-outfile.sh which are otherwise skipped when
+    running the test-suite.
+  * Drop lmstrmsrv.so module.
+    The module was removed upstream as it was no longer needed.
+  * Run queue-encryption-* tests only if gcrypt support is enabled
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 31 Oct 2018 10:45:39 +0100
+
+rsyslog (8.38.0-1) unstable; urgency=medium
+
+  * New upstream version 8.38.0
+  * Bump Standards-Version to 4.2.1
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 18 Sep 2018 19:46:09 +0200
+
+rsyslog (8.37.0-2) unstable; urgency=medium
+
+  * Bump Build-Depends on librelp to (>= 1.2.16)
+  * Simplify dh_auto_test override a bit
+
+ -- Michael Biebl <biebl@debian.org>  Fri, 17 Aug 2018 02:44:37 +0200
+
+rsyslog (8.37.0-1) unstable; urgency=medium
+
+  * New upstream version 8.37.0
+  * Rebase patches
+  * Enable mmrm1stspace module
+  * Enable fmhash module
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 08 Aug 2018 09:49:32 +0200
+
+rsyslog (8.36.0-1) unstable; urgency=medium
+
+  * New upstream version 8.36.0
+  * Rebase patches
+  * Disable liblogging-stdlog support.
+    This functionality is scheduled to be removed upstream in one of the
+    upcoming releases.
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 26 Jun 2018 19:29:08 +0200
+
+rsyslog (8.35.0-1) unstable; urgency=medium
+
+  * New upstream version 8.35.0
+  * Rebase patches
+  * Drop obsolete --disable-libcurl configure switch
+  * rsyslog.service: move LimitNOFILE to correct section
+  * Drop versioned init-system-helpers dependency.
+    The version in stable is recent enough and init-system-helpers is
+    Essential, so the dependency is no longer needed.
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 06 Jun 2018 17:13:45 +0200
+
+rsyslog (8.34.0-1) unstable; urgency=medium
+
+  * New upstream version 8.34.0
+  * Fix configure switch for atomic operations
+  * Disable fmhttp function module.
+    http_requrest is now implemented as a loadable function module, but
+    since we disable libcurl support, disable fmhttp as well.
+
+ -- Michael Biebl <biebl@debian.org>  Fri, 06 Apr 2018 21:40:49 +0200
+
+rsyslog (8.33.1-1) unstable; urgency=medium
+
+  * New upstream version 8.33.1
+  * Rebase patches
+  * Drop old upgrade code from pre-jessie
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 06 Mar 2018 18:52:11 +0100
+
+rsyslog (8.32.0-1) unstable; urgency=medium
+
+  * New upstream version 8.32.0
+  * Bump Build-Depends as per configure.ac.
+    Bump libfastjson-dev to (>= 0.99.8) and libczmq-dev to (>= 3.0.2).
+  * Disable valgrind testbench again.
+    Those tests using valgrind turned out to be too brittle. (Closes: #884305)
+  * Disable libcurl support.
+    This means that the new http_request() functionality is not available
+    but avoids a dependency on libcurl in rsyslog core.
+  * Update Vcs-* to point to salsa.debian.org (gitlab)
+
+ -- Michael Biebl <biebl@debian.org>  Sun, 14 Jan 2018 12:48:11 +0100
+
+rsyslog (8.31.0-2) unstable; urgency=medium
+
+  * Add Build-Depends on systemd to allow journal related tests to run
+  * Extend list of architectures for valgrind Build-Depends.
+    Run valgrind related tests on all release architectures where valgrind
+    is available.
+  * Bump Standards-Version to 4.1.2
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 13 Dec 2017 13:09:35 +0100
+
+rsyslog (8.31.0-1) unstable; urgency=medium
+
+  * New upstream version 8.31.0
+  * Switch from libmongo-client to libmongoc
+  * Rebase patches
+  * Set Rules-Requires-Root to no
+  * Add Build-Depends on python for running the test suite
+  * Add Build-Depends on libfaketime and valgrind.
+    This allows more tests to run which would otherwise be skipped.
+    As valgrind is currently not available everywhere, restrict it to amd64
+    for now.
+  * Modernize config syntax for rsyslog-mysql and rsyslog-pgsql
+
+ -- Michael Biebl <biebl@debian.org>  Thu, 30 Nov 2017 01:19:36 +0100
+
+rsyslog (8.30.0-3) unstable; urgency=medium
+
+  * Cherry-pick upstream patch to fix broken imjournal module (Closes: #882261)
+
+ -- Michael Biebl <biebl@debian.org>  Mon, 27 Nov 2017 01:52:56 +0100
+
+rsyslog (8.30.0-2) unstable; urgency=medium
+
+  * Add Build-Depends on flex for generating grammar/lexer.c.
+    This ensures we can build twice in a row. The pre-generated files in
+    grammar/ are removed on make clean.
+  * Revert "Use dh_auto_test instead of calling make check directly"
+    Somehow this broke the test suite and made lots of tests fail.
+  * Add Build-Depends on autoconf-archive for the AX_COMPILER_FLAGS macro
+
+ -- Michael Biebl <biebl@debian.org>  Thu, 02 Nov 2017 11:48:02 +0100
+
+rsyslog (8.30.0-1) unstable; urgency=medium
+
+  * New upstream version 8.30.0
+  * Rebase patches
+  * Bump Build-Depends on libfastjson-dev to (>= 0.99.7) as per configure.ac
+  * Switch from dh_install --list-missing to dh_missing --list-missing
+  * Cherry-pick upstream patches to fix imgssapi build failures
+  * Bump Standards-Version to 4.1.1
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 01 Nov 2017 22:51:44 +0100
+
+rsyslog (8.29.0-2) unstable; urgency=medium
+
+  * Change priority of all extra packages to optional
+  * Bump Standards-Version to 4.0.1
+  * Cherry-pick upstream patch to fix build failures on platforms without
+    64-bit atomics (Closes: #872568)
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 05 Sep 2017 19:09:49 +0200
+
+rsyslog (8.29.0-1) unstable; urgency=medium
+
+  * New upstream version 8.29.0
+  * Rebase patches
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 08 Aug 2017 21:35:12 +0200
+
+rsyslog (8.28.0-1) unstable; urgency=medium
+
+  * New upstream version 8.28.0
+  * Bump Build-Depends on librelp-dev to (>= 1.2.14) as per configure.ac
+  * Drop versioned Build-Depends on dpkg-dev (>= 1.17.14)
+    No longer required as even jessie ships a newer version.
+  * Bump Standards-Version to 4.0.0
+  * Enable mmfields module (Closes: #852269)
+  * Enable but do not install omstdout module.
+    This module is required to successfully run the test suite.
+
+ -- Michael Biebl <biebl@debian.org>  Sun, 09 Jul 2017 23:52:51 +0200
+
+rsyslog (8.27.0-4) unstable; urgency=medium
+
+  * Fix PID file to actually be /run/rsyslogd.pid (Closes: #865276)
+  * Don't rely on SysV init script in logrotate config.
+    Add a small helper to send SIGHUP to rsyslogd to close open log files.
+    Use systemctl directly if systemd is the active PID 1. Keep the SysV
+    init script as fallback only.
+
+ -- Michael Biebl <biebl@debian.org>  Sun, 25 Jun 2017 18:27:04 +0200
+
+rsyslog (8.27.0-3) unstable; urgency=medium
+
+  * Change PID file to use /run/rsyslog.pid instead of /var/run/rsyslog.pid
+
+ -- Michael Biebl <biebl@debian.org>  Mon, 19 Jun 2017 00:46:43 +0200
+
+rsyslog (8.27.0-2) unstable; urgency=medium
+
+  * Upload to unstable
+
+ -- Michael Biebl <biebl@debian.org>  Sun, 18 Jun 2017 18:17:40 +0200
+
+rsyslog (8.27.0-1) experimental; urgency=medium
+
+  * New upstream version 8.27.0
+  * Rebase patches
+  * Bump Build-Depends on liblognorm-dev to (>= 2.0.3)
+  * Enable imkafka input plugin
+
+ -- Michael Biebl <biebl@debian.org>  Sat, 03 Jun 2017 22:18:39 +0200
+
+rsyslog (8.25.0-1) experimental; urgency=medium
+
+  * New upstream release
+  * Update Vcs-* following the latest recommendation
+  * Rebase patches
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 21 Feb 2017 18:08:16 +0100
 
 rsyslog (8.24.0-1) unstable; urgency=medium
 
@@ -1515,7 +1854,7 @@ rsyslog (1.19.12-1) unstable; urgency=low
   * debian/control
     - Add Depends: lsb-base (>= 3.0-6) as the init script uses the LSB logging
       functions.
-    - Bump Standards-Version to 3.7.3. No further changes required. 
+    - Bump Standards-Version to 3.7.3. No further changes required.
 
  -- Michael Biebl <biebl@debian.org>  Mon, 03 Dec 2007 19:42:19 +0100
 
@@ -1578,7 +1917,7 @@ rsyslog (1.19.2-1) unstable; urgency=low
     - Pass --enable-mysql to ./configure.
     - Install the SQL schema file for dbconfig-common.
   * debian/rsyslog-mysql.config
-    - Setup the default values for dbconfig-common. 
+    - Setup the default values for dbconfig-common.
   * debian/rsyslog-mysql.{postinst,prerm,postrm}
     - Include the dbconfig-common scripts and call the dbc_go function.
     - Use ucf and ucfr to manage the generated configuration file mysql.conf.

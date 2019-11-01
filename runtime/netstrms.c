@@ -1,5 +1,5 @@
 /* netstrms.c
- * 
+ *
  * Work on this module begung 2008-04-23 by Rainer Gerhards.
  *
  * Copyright 2008 Rainer Gerhards and Adiscon GmbH.
@@ -43,7 +43,6 @@ MODULE_TYPE_NOKEEP
 
 /* static data */
 DEFobjStaticHelpers
-//DEFobjCurrIf(errmsg)
 DEFobjCurrIf(glbl)
 DEFobjCurrIf(netstrm)
 
@@ -52,7 +51,7 @@ DEFobjCurrIf(netstrm)
  * driver-specific functions (allmost all...) can be carried
  * out. Note that the driver's .ifIsLoaded is correctly
  * initialized by calloc() and we depend on that.
- * WARNING: this code is mostly identical to similar code in 
+ * WARNING: this code is mostly identical to similar code in
  * nssel.c - TODO: abstract it and move it to some common place.
  * rgerhards, 2008-04-18
  */
@@ -71,7 +70,7 @@ loadDrvr(netstrms_t *pThis)
 	CHKmalloc(pThis->pDrvrName = (uchar*) strdup((char*)szDrvrName));
 
 	pThis->Drvr.ifVersion = nsdCURR_IF_VERSION;
-	/* The pDrvrName+2 below is a hack to obtain the object name. It 
+	/* The pDrvrName+2 below is a hack to obtain the object name. It
 	 * safes us to have yet another variable with the name without "lm" in
 	 * front of it. If we change the module load interface, we may re-think
 	 * about this hack, but for the time being it is efficient and clean
@@ -81,9 +80,10 @@ loadDrvr(netstrms_t *pThis)
 
 finalize_it:
 	if(iRet != RS_RET_OK) {
-		if(pThis->pDrvrName != NULL)
+		if(pThis->pDrvrName != NULL) {
 			free(pThis->pDrvrName);
 			pThis->pDrvrName = NULL;
+		}
 	}
 	RETiRet;
 }
@@ -99,7 +99,7 @@ BEGINobjDestruct(netstrms) /* be sure to specify the object type also in END and
 CODESTARTobjDestruct(netstrms)
 	/* and now we must release our driver, if we got one. We use the presence of
 	 * a driver name string as load indicator (because we also need that string
-	 * to release the driver 
+	 * to release the driver
 	 */
 	if(pThis->pDrvrName != NULL) {
 		obj.ReleaseObj(__FILE__, pThis->pDrvrName+2, pThis->pDrvrName, (void*) &pThis->Drvr);
@@ -109,9 +109,17 @@ CODESTARTobjDestruct(netstrms)
 		free(pThis->pszDrvrAuthMode);
 		pThis->pszDrvrAuthMode = NULL;
 	}
+	if(pThis->pszDrvrPermitExpiredCerts != NULL) {
+		free(pThis->pszDrvrPermitExpiredCerts);
+		pThis->pszDrvrPermitExpiredCerts = NULL;
+	}
 	if(pThis->pBaseDrvrName != NULL) {
 		free(pThis->pBaseDrvrName);
 		pThis->pBaseDrvrName = NULL;
+	}
+	if(pThis->gnutlsPriorityString != NULL) {
+		free(pThis->gnutlsPriorityString);
+		pThis->gnutlsPriorityString = NULL;
 	}
 ENDobjDestruct(netstrms)
 
@@ -122,8 +130,7 @@ netstrmsConstructFinalize(netstrms_t *pThis)
 {
 	DEFiRet;
 	ISOBJ_TYPE_assert(pThis, netstrms);
-	CHKiRet(loadDrvr(pThis));
-finalize_it:
+	iRet = loadDrvr(pThis);
 	RETiRet;
 }
 
@@ -183,6 +190,8 @@ SetDrvrAuthMode(netstrms_t *pThis, uchar *mode)
 finalize_it:
 	RETiRet;
 }
+
+
 /* return the driver auth mode
  * We use non-standard calling conventions because it makes an awful lot
  * of sense here.
@@ -193,6 +202,56 @@ GetDrvrAuthMode(netstrms_t *pThis)
 {
 	ISOBJ_TYPE_assert(pThis, netstrms);
 	return pThis->pszDrvrAuthMode;
+}
+
+
+/* return the driver permitexpiredcerts mode
+ * We use non-standard calling conventions because it makes an awful lot
+ * of sense here.
+ * alorbach, 2018-12-21
+ */
+static uchar*
+GetDrvrPermitExpiredCerts(netstrms_t *pThis)
+{
+	ISOBJ_TYPE_assert(pThis, netstrms);
+	return pThis->pszDrvrPermitExpiredCerts;
+}
+
+/* set the driver permitexpiredcerts mode -- alorbach, 2018-12-20
+ */
+static rsRetVal
+SetDrvrPermitExpiredCerts(netstrms_t *pThis, uchar *mode)
+{
+	DEFiRet;
+	ISOBJ_TYPE_assert(pThis, netstrms);
+	CHKmalloc(pThis->pszDrvrPermitExpiredCerts = (uchar*)strdup((char*)mode));
+finalize_it:
+	RETiRet;
+}
+
+
+/* Set the priorityString for GnuTLS
+ * PascalWithopf 2017-08-16
+ */
+static rsRetVal
+SetDrvrGnutlsPriorityString(netstrms_t *pThis, uchar *iVal)
+{
+	DEFiRet;
+	ISOBJ_TYPE_assert(pThis, netstrms);
+	CHKmalloc(pThis->gnutlsPriorityString = (uchar*)strdup((char*)iVal));
+finalize_it:
+	RETiRet;
+}
+
+
+/* return the priorityString for GnuTLS
+ * PascalWithopf, 2017-08-16
+ */
+static uchar*
+GetDrvrGnutlsPriorityString(netstrms_t *pThis)
+{
+	ISOBJ_TYPE_assert(pThis, netstrms);
+	return pThis->gnutlsPriorityString;
 }
 
 
@@ -232,14 +291,14 @@ CreateStrm(netstrms_t *pThis, netstrm_t **ppStrm)
 
 	CHKiRet(objUse(netstrm, DONT_LOAD_LIB));
 	CHKiRet(netstrm.Construct(&pStrm));
-	/* we copy over our driver structure. We could provide a pointer to 
+	/* we copy over our driver structure. We could provide a pointer to
 	 * ourselves, but that costs some performance on each driver invocation.
 	 * As we already have hefty indirection (and thus performance toll), I
 	 * prefer to copy over the function pointers here. -- rgerhards, 2008-04-23
 	 */
 	memcpy(&pStrm->Drvr, &pThis->Drvr, sizeof(pThis->Drvr));
 	pStrm->pNS = pThis;
-	
+
 	*ppStrm = pStrm;
 
 finalize_it:
@@ -272,6 +331,10 @@ CODESTARTobjQueryInterface(netstrms)
 	pIf->GetDrvrMode = GetDrvrMode;
 	pIf->SetDrvrAuthMode = SetDrvrAuthMode;
 	pIf->GetDrvrAuthMode = GetDrvrAuthMode;
+	pIf->SetDrvrPermitExpiredCerts = SetDrvrPermitExpiredCerts;
+	pIf->GetDrvrPermitExpiredCerts = GetDrvrPermitExpiredCerts;
+	pIf->SetDrvrGnutlsPriorityString = SetDrvrGnutlsPriorityString;
+	pIf->GetDrvrGnutlsPriorityString = GetDrvrGnutlsPriorityString;
 	pIf->SetDrvrPermPeers = SetDrvrPermPeers;
 	pIf->GetDrvrPermPeers = GetDrvrPermPeers;
 finalize_it:

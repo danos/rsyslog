@@ -1,10 +1,10 @@
 /* netstrm.c
- * 
+ *
  * This class implements a generic netstrmwork stream class. It supports
  * sending and receiving data streams over a netstrmwork. The class abstracts
  * the transport, though it is a safe assumption that TCP is being used.
  * The class has a number of properties, among which are also ones to
- * select privacy settings, eg by enabling TLS and/or GSSAPI. In the 
+ * select privacy settings, eg by enabling TLS and/or GSSAPI. In the
  * long run, this class shall provide all stream-oriented netstrmwork
  * functionality inside rsyslog.
  *
@@ -52,7 +52,6 @@
 
 /* static data */
 DEFobjStaticHelpers
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(netstrms)
 
 
@@ -64,7 +63,6 @@ ENDobjConstruct(netstrm)
 /* destructor for the netstrm object */
 BEGINobjDestruct(netstrm) /* be sure to specify the object type also in END and CODESTART macros! */
 CODESTARTobjDestruct(netstrm)
-//printf("destruct driver data %p\n", pThis->pDrvrData);
 	if(pThis->pDrvrData != NULL)
 		iRet = pThis->Drvr.Destruct(&pThis->pDrvrData);
 ENDobjDestruct(netstrm)
@@ -74,11 +72,8 @@ ENDobjDestruct(netstrm)
 static rsRetVal
 netstrmConstructFinalize(netstrm_t *pThis)
 {
-	DEFiRet;
 	ISOBJ_TYPE_assert(pThis, netstrm);
-	CHKiRet(pThis->Drvr.Construct(&pThis->pDrvrData));
-finalize_it:
-	RETiRet;
+	return pThis->Drvr.Construct(&pThis->pDrvrData);
 }
 
 /* abort a connection. This is much like Destruct(), but tries
@@ -101,7 +96,7 @@ AbortDestruct(netstrm_t **ppThis)
 
 /* accept an incoming connection request
  * The netstrm instance that had the incoming request must be provided. If
- * the connection request succeeds, a new netstrm object is created and 
+ * the connection request succeeds, a new netstrm object is created and
  * passed back to the caller. The caller is responsible for destructing it.
  * pReq is the nsd_t obj that has the accept request.
  * rgerhards, 2008-04-21
@@ -141,7 +136,8 @@ finalize_it:
  */
 static rsRetVal
 LstnInit(netstrms_t *pNS, void *pUsr, rsRetVal(*fAddLstn)(void*,netstrm_t*),
-	 uchar *pLstnPort, uchar *pLstnIP, int iSessMax)
+	 uchar *pLstnPort, uchar *pLstnIP, int iSessMax,
+	 uchar *pszLstnPortFileName)
 {
 	DEFiRet;
 
@@ -149,7 +145,7 @@ LstnInit(netstrms_t *pNS, void *pUsr, rsRetVal(*fAddLstn)(void*,netstrm_t*),
 	assert(fAddLstn != NULL);
 	assert(pLstnPort != NULL);
 
-	CHKiRet(pNS->Drvr.LstnInit(pNS, pUsr, fAddLstn, pLstnPort, pLstnIP, iSessMax));
+	CHKiRet(pNS->Drvr.LstnInit(pNS, pUsr, fAddLstn, pLstnPort, pLstnIP, iSessMax, pszLstnPortFileName));
 
 finalize_it:
 	RETiRet;
@@ -162,16 +158,15 @@ finalize_it:
  * never blocks, not even when called on a blocking socket. That is important
  * for client sockets, which are set to block during send, but should not
  * block when trying to read data. If *pLenBuf is -1, an error occured and
- * errno holds the exact error cause.
+ * oserr holds the exact error cause.
  * rgerhards, 2008-03-17
  */
 static rsRetVal
-Rcv(netstrm_t *pThis, uchar *pBuf, ssize_t *pLenBuf)
+Rcv(netstrm_t *pThis, uchar *pBuf, ssize_t *pLenBuf, int *const oserr)
 {
 	DEFiRet;
 	ISOBJ_TYPE_assert(pThis, netstrm);
-//printf("Rcv %p\n", pThis);
-	iRet = pThis->Drvr.Rcv(pThis->pDrvrData, pBuf, pLenBuf);
+	iRet = pThis->Drvr.Rcv(pThis->pDrvrData, pBuf, pLenBuf, oserr);
 	RETiRet;
 }
 
@@ -204,6 +199,17 @@ SetDrvrAuthMode(netstrm_t *pThis, uchar *mode)
 	RETiRet;
 }
 
+
+/* set the driver permitexpiredcerts mode -- alorbach, 2018-12-20
+ */
+static rsRetVal
+SetDrvrPermitExpiredCerts(netstrm_t *pThis, uchar *mode)
+{
+	DEFiRet;
+	ISOBJ_TYPE_assert(pThis, netstrm);
+	iRet = pThis->Drvr.SetPermitExpiredCerts(pThis->pDrvrData, mode);
+	RETiRet;
+}
 
 /* set the driver's permitted peers -- rgerhards, 2008-05-19 */
 static rsRetVal
@@ -277,6 +283,16 @@ SetKeepAliveIntvl(netstrm_t *pThis, int keepAliveIntvl)
 	DEFiRet;
 	ISOBJ_TYPE_assert(pThis, netstrm);
 	iRet = pThis->Drvr.SetKeepAliveIntvl(pThis->pDrvrData, keepAliveIntvl);
+	RETiRet;
+}
+
+/* gnutls priority string */
+static rsRetVal
+SetGnutlsPriorityString(netstrm_t *pThis, uchar *gnutlsPriorityString)
+{
+	DEFiRet;
+	ISOBJ_TYPE_assert(pThis, netstrm);
+	iRet = pThis->Drvr.SetGnutlsPriorityString(pThis->pDrvrData, gnutlsPriorityString);
 	RETiRet;
 }
 
@@ -380,6 +396,7 @@ CODESTARTobjQueryInterface(netstrm)
 	pIf->GetRemAddr = GetRemAddr;
 	pIf->SetDrvrMode = SetDrvrMode;
 	pIf->SetDrvrAuthMode = SetDrvrAuthMode;
+	pIf->SetDrvrPermitExpiredCerts = SetDrvrPermitExpiredCerts;
 	pIf->SetDrvrPermPeers = SetDrvrPermPeers;
 	pIf->CheckConnection = CheckConnection;
 	pIf->GetSock = GetSock;
@@ -387,6 +404,7 @@ CODESTARTobjQueryInterface(netstrm)
 	pIf->SetKeepAliveProbes = SetKeepAliveProbes;
 	pIf->SetKeepAliveTime = SetKeepAliveTime;
 	pIf->SetKeepAliveIntvl = SetKeepAliveIntvl;
+	pIf->SetGnutlsPriorityString = SetGnutlsPriorityString;
 finalize_it:
 ENDobjQueryInterface(netstrm)
 
@@ -396,7 +414,6 @@ ENDobjQueryInterface(netstrm)
 BEGINObjClassExit(netstrm, OBJ_IS_LOADABLE_MODULE) /* CHANGE class also in END MACRO! */
 CODESTARTObjClassExit(netstrm)
 	/* release objects we no longer need */
-	objRelease(errmsg, CORE_COMPONENT);
 	objRelease(netstrms, DONT_LOAD_LIB);
 ENDObjClassExit(netstrm)
 
@@ -407,7 +424,6 @@ ENDObjClassExit(netstrm)
  */
 BEGINAbstractObjClassInit(netstrm, 1, OBJ_IS_CORE_MODULE) /* class, version */
 	/* request objects we use */
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 
 	/* set our own handlers */
 ENDObjClassInit(netstrm)

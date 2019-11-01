@@ -43,7 +43,6 @@
 /* definitions for objects we access */
 DEFobjStaticHelpers
 DEFobjCurrIf(glbl)
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(ruleset)
 
 /* static data */
@@ -103,7 +102,7 @@ AddStrgenToList(strgenList_t **ppListRoot, strgen_t *pStrgen)
 	strgenList_t *pTail;
 	DEFiRet;
 
-	CHKmalloc(pThis = MALLOC(sizeof(strgenList_t)));
+	CHKmalloc(pThis = malloc(sizeof(strgenList_t)));
 	pThis->pStrgen = pStrgen;
 	pThis->pNext = NULL;
 
@@ -262,7 +261,6 @@ destroyMasterStrgenList(void)
 BEGINObjClassExit(strgen, OBJ_IS_CORE_MODULE) /* class, version */
 	destroyMasterStrgenList();
 	objRelease(glbl, CORE_COMPONENT);
-	objRelease(errmsg, CORE_COMPONENT);
 	objRelease(ruleset, CORE_COMPONENT);
 ENDObjClassExit(strgen)
 
@@ -274,7 +272,6 @@ ENDObjClassExit(strgen)
 BEGINObjClassInit(strgen, 1, OBJ_IS_CORE_MODULE) /* class, version */
 	/* request objects we use */
 	CHKiRet(objUse(glbl, CORE_COMPONENT));
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 	CHKiRet(objUse(ruleset, CORE_COMPONENT));
 	InitStrgenList(&pStrgenLstRoot);
 ENDObjClassInit(strgen)

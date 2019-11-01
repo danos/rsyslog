@@ -7,11 +7,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -41,7 +41,8 @@ BEGINinterface(nssel) /* name must also be changed in ENDinterface macro! */
 	rsRetVal (*Destruct)(nssel_t **ppThis);
 	rsRetVal (*Add)(nssel_t *pThis, netstrm_t *pStrm, nsdsel_waitOp_t waitOp);
 	rsRetVal (*Wait)(nssel_t *pThis, int *pNumReady);
-	rsRetVal (*IsReady)(nssel_t *pThis, netstrm_t *pStrm, nsdsel_waitOp_t waitOp, int *pbIsReady, int *piNumReady);
+	rsRetVal (*IsReady)(nssel_t *pThis, netstrm_t *pStrm, nsdsel_waitOp_t waitOp, int *pbIsReady,
+		int *piNumReady);
 	/* v2 - 2013-09-17 by rgerhards */
 	rsRetVal (*SetDrvrName)(nssel_t *pThis, uchar *name);
 ENDinterface(nssel)

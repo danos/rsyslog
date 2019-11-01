@@ -1,6 +1,6 @@
 /* module-template.h
- * This header contains macros that can be used to implement the 
- * plumbing of modules. 
+ * This header contains macros that can be used to implement the
+ * plumbing of modules.
  *
  * File begun on 2007-07-25 by RGerhards
  *
@@ -11,11 +11,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -33,7 +33,8 @@
 /* macro to define standard output-module static data members
  */
 #define DEF_MOD_STATIC_DATA \
-	static __attribute__((unused)) rsRetVal (*omsdRegCFSLineHdlr)(uchar *pCmdName, int bChainingPermitted, ecslCmdHdrlType eType, rsRetVal (*pHdlr)(), void *pData, void *pOwnerCookie);
+	static __attribute__((unused)) rsRetVal (*omsdRegCFSLineHdlr)(uchar *pCmdName, int bChainingPermitted, \
+	ecslCmdHdrlType eType, rsRetVal (*pHdlr)(), void *pData, void *pOwnerCookie);
 
 #define DEF_OMOD_STATIC_DATA \
 	DEF_MOD_STATIC_DATA \
@@ -48,6 +49,9 @@
 	DEFobjCurrIf(obj) \
 	DEF_MOD_STATIC_DATA
 #define DEF_SMOD_STATIC_DATA \
+	DEFobjCurrIf(obj) \
+	DEF_MOD_STATIC_DATA
+#define DEF_FMOD_STATIC_DATA \
 	DEFobjCurrIf(obj) \
 	DEF_MOD_STATIC_DATA
 
@@ -71,11 +75,12 @@ static rsRetVal modGetType(eModType_t *modType) \
 #define MODULE_TYPE_OUTPUT MODULE_TYPE(eMOD_OUT)
 #define MODULE_TYPE_PARSER MODULE_TYPE(eMOD_PARSER)
 #define MODULE_TYPE_STRGEN MODULE_TYPE(eMOD_STRGEN)
+#define MODULE_TYPE_FUNCTION MODULE_TYPE(eMOD_FUNCTION)
 #define MODULE_TYPE_LIB \
 	DEF_LMOD_STATIC_DATA \
 	MODULE_TYPE(eMOD_LIB)
 
-/* Macro to define whether the module should be kept dynamically linked. 
+/* Macro to define whether the module should be kept dynamically linked.
  */
 #define MODULE_KEEP_TYPE(x)\
 static rsRetVal modGetKeepType(eModKeepType_t *modKeepType) \
@@ -88,9 +93,9 @@ static rsRetVal modGetKeepType(eModKeepType_t *modKeepType) \
 
 /* macro to define a unique module id. This must be able to fit in a void*. The
  * module id must be unique inside a running rsyslogd application. It is used to
- * track ownership of several objects. Most importantly, when the module is 
+ * track ownership of several objects. Most importantly, when the module is
  * unloaded the module id value is used to find what needs to be destroyed.
- * We currently use a pointer to modExit() as the module id. This sounds to be 
+ * We currently use a pointer to modExit() as the module id. This sounds to be
  * reasonable save, as each module must have this entry point AND there is no valid
  * reason for twice this entry point being in memory.
  * rgerhards, 2007-11-21
@@ -140,7 +145,6 @@ static rsRetVal createInstance(instanceData **ppData)\
 #define CODESTARTcreateInstance \
 	if((pData = calloc(1, sizeof(instanceData))) == NULL) {\
 		*ppData = NULL;\
-		ENDfunc \
 		return RS_RET_OUT_OF_MEMORY;\
 	}
 
@@ -184,7 +188,6 @@ static rsRetVal createWrkrInstance(wrkrInstanceData_t **ppWrkrData, instanceData
 #define CODESTARTcreateWrkrInstance \
 	if((pWrkrData = calloc(1, sizeof(wrkrInstanceData_t))) == NULL) {\
 		*ppWrkrData = NULL;\
-		ENDfunc \
 		return RS_RET_OUT_OF_MEMORY;\
 	} \
 	pWrkrData->pData = pData;
@@ -217,7 +220,6 @@ static rsRetVal freeWrkrInstance(void* pd)\
 static rsRetVal isCompatibleWithFeature(syslogFeature __attribute__((unused)) eFeat)\
 {\
 	rsRetVal iRet = RS_RET_INCOMPATIBLE; \
-	BEGINfunc
 
 #define CODESTARTisCompatibleWithFeature
 
@@ -248,7 +250,8 @@ static rsRetVal beginTransaction(wrkrInstanceData_t __attribute__((unused)) *pWr
  * introduced in v8.1.3 -- rgerhards, 2013-12-04
  */
 #define BEGINcommitTransaction \
-static rsRetVal commitTransaction(wrkrInstanceData_t __attribute__((unused)) *const pWrkrData, actWrkrIParams_t *const pParams, const unsigned nParams)\
+static rsRetVal commitTransaction(wrkrInstanceData_t __attribute__((unused)) *const pWrkrData, \
+	actWrkrIParams_t *const pParams, const unsigned nParams)\
 {\
 	DEFiRet;
 
@@ -347,7 +350,7 @@ static rsRetVal parseSelectorAct(uchar **pp, void **ppModData, omodStringRequest
 	CHKiRet(OMSRconstruct(ppOMSR, NumStrReqEntries));
 
 #define CODE_STD_FINALIZERparseSelectorAct \
-finalize_it:\
+finalize_it: ATTR_UNUSED; /* semi-colon needed according to gcc doc! */\
 	if(iRet == RS_RET_OK || iRet == RS_RET_OK_WARN || iRet == RS_RET_SUSPENDED) {\
 		*ppModData = pData;\
 		*pp = p;\
@@ -366,6 +369,13 @@ finalize_it:\
 	RETiRet;\
 }
 
+/* a special replacement macro for modules that do not support legacy config at all */
+#define NO_LEGACY_CONF_parseSelectorAct \
+static rsRetVal parseSelectorAct(uchar **pp ATTR_UNUSED, void **ppModData ATTR_UNUSED, \
+	omodStringRequest_t **ppOMSR ATTR_UNUSED)\
+{\
+	return RS_RET_LEGA_ACT_NOT_SUPPORTED;\
+}
 
 /* newActInst()
  * Extra comments:
@@ -502,7 +512,7 @@ static rsRetVal initConfVars(void)\
 {\
 	DEFiRet;
 
-#define CODESTARTinitConfVars 
+#define CODESTARTinitConfVars
 
 #define ENDinitConfVars \
 	RETiRet;\
@@ -519,7 +529,6 @@ static rsRetVal queryEtryPt(uchar *name, rsRetVal (**pEtryPoint)())\
 
 #define CODESTARTqueryEtryPt \
 	if((name == NULL) || (pEtryPoint == NULL)) {\
-		ENDfunc \
 		return RS_RET_PARAM_ERROR;\
 	} \
 	*pEtryPoint = NULL;
@@ -648,7 +657,7 @@ static rsRetVal queryEtryPt(uchar *name, rsRetVal (**pEtryPoint)())\
 	} else if(!strcmp((char*) name, "freeCnf")) {\
 		*pEtryPoint = freeCnf;\
 	} \
-	CODEqueryEtryPt_STD_CONF2_CNFNAME_QUERIES 
+	CODEqueryEtryPt_STD_CONF2_CNFNAME_QUERIES
 
 /* the following block is to be added for modules that support v2
  * module global parameters [module(...)]
@@ -665,7 +674,7 @@ static rsRetVal queryEtryPt(uchar *name, rsRetVal (**pEtryPoint)())\
 	  else if(!strcmp((char*) name, "newActInst")) {\
 		*pEtryPoint = newActInst;\
 	} \
-	CODEqueryEtryPt_STD_CONF2_CNFNAME_QUERIES 
+	CODEqueryEtryPt_STD_CONF2_CNFNAME_QUERIES
 
 
 /* the following block is to be added for input modules that support the v2
@@ -675,7 +684,7 @@ static rsRetVal queryEtryPt(uchar *name, rsRetVal (**pEtryPoint)())\
 	  else if(!strcmp((char*) name, "newInpInst")) {\
 		*pEtryPoint = newInpInst;\
 	} \
-	CODEqueryEtryPt_STD_CONF2_CNFNAME_QUERIES 
+	CODEqueryEtryPt_STD_CONF2_CNFNAME_QUERIES
 
 
 /* the following block is to be added for modules that require
@@ -729,9 +738,19 @@ static rsRetVal queryEtryPt(uchar *name, rsRetVal (**pEtryPoint)())\
 	} else if(!strcmp((char*) name, "freeParserInst")) {\
 		*pEtryPoint = freeParserInst;\
 	} \
-	CODEqueryEtryPt_STD_CONF2_CNFNAME_QUERIES 
+	CODEqueryEtryPt_STD_CONF2_CNFNAME_QUERIES
 
 
+
+/* the following definition is the standard block for queryEtryPt for rscript function
+ * modules. This can be used if no specific handling (e.g. to cover version
+ * differences) is needed.
+ */
+#define CODEqueryEtryPt_STD_FMOD_QUERIES \
+	CODEqueryEtryPt_STD_MOD_QUERIES \
+	else if(!strcmp((char*) name, "getFunctArray")) {\
+		*pEtryPoint = getFunctArray;\
+	}
 
 /* the following definition is the standard block for queryEtryPt for Strgen
  * modules. This can be used if no specific handling (e.g. to cover version
@@ -771,8 +790,12 @@ static rsRetVal queryEtryPt(uchar *name, rsRetVal (**pEtryPoint)())\
  * cached, left-in-memory copy of a previous incarnation.
  */
 #define BEGINmodInit(uniqName) \
-rsRetVal __attribute__((unused)) modInit##uniqName(int iIFVersRequested __attribute__((unused)), int *ipIFVersProvided, rsRetVal (**pQueryEtryPt)(), rsRetVal (*pHostQueryEtryPt)(uchar*, rsRetVal (**)()), modInfo_t __attribute__((unused)) *pModInfo);\
-rsRetVal __attribute__((unused)) modInit##uniqName(int iIFVersRequested __attribute__((unused)), int *ipIFVersProvided, rsRetVal (**pQueryEtryPt)(), rsRetVal (*pHostQueryEtryPt)(uchar*, rsRetVal (**)()), modInfo_t __attribute__((unused)) *pModInfo)\
+rsRetVal __attribute__((unused)) modInit##uniqName(int iIFVersRequested __attribute__((unused)), \
+int *ipIFVersProvided, rsRetVal (**pQueryEtryPt)(), rsRetVal (*pHostQueryEtryPt)(uchar*, rsRetVal (**)()), \
+modInfo_t __attribute__((unused)) *pModInfo);\
+rsRetVal __attribute__((unused)) modInit##uniqName(int iIFVersRequested __attribute__((unused)), \
+int *ipIFVersProvided, rsRetVal (**pQueryEtryPt)(), rsRetVal (*pHostQueryEtryPt)(uchar*, rsRetVal (**)()), \
+modInfo_t __attribute__((unused)) *pModInfo)\
 {\
 	DEFiRet; \
 	rsRetVal (*pObjGetObjInterface)(obj_if_t *pIf);
@@ -780,8 +803,8 @@ rsRetVal __attribute__((unused)) modInit##uniqName(int iIFVersRequested __attrib
 #define CODESTARTmodInit \
 	assert(pHostQueryEtryPt != NULL);\
 	iRet = pHostQueryEtryPt((uchar*)"objGetObjInterface", &pObjGetObjInterface); \
-	if((iRet != RS_RET_OK) || (pQueryEtryPt == NULL) || (ipIFVersProvided == NULL) || (pObjGetObjInterface == NULL)) { \
-		ENDfunc \
+	if((iRet != RS_RET_OK) || (pQueryEtryPt == NULL) || (ipIFVersProvided == NULL) || \
+		(pObjGetObjInterface == NULL)) { \
 		return (iRet == RS_RET_OK) ? RS_RET_PARAM_ERROR : iRet; \
 	} \
 	/* now get the obj interface so that we can access other objects */ \
@@ -846,7 +869,7 @@ static rsRetVal modExit(void)\
 {\
 	DEFiRet;
 
-#define CODESTARTmodExit 
+#define CODESTARTmodExit
 
 #define ENDmodExit \
 	RETiRet;\
@@ -867,7 +890,6 @@ static rsRetVal beginCnfLoad(modConfData_t **ptr, __attribute__((unused)) rsconf
 #define CODESTARTbeginCnfLoad \
 	if((pModConf = calloc(1, sizeof(modConfData_t))) == NULL) {\
 		*ptr = NULL;\
-		ENDfunc \
 		return RS_RET_OUT_OF_MEMORY;\
 	}
 
@@ -892,7 +914,7 @@ static rsRetVal setModCnf(struct nvlst *lst)\
 {\
 	DEFiRet;
 
-#define CODESTARTsetModCnf 
+#define CODESTARTsetModCnf
 
 #define ENDsetModCnf \
 	RETiRet;\
@@ -901,7 +923,7 @@ static rsRetVal setModCnf(struct nvlst *lst)\
 
 /* endCnfLoad()
  * This is a function tells an input module that the current config load ended.
- * It gets a last chance to make changes to its in-memory config object. After 
+ * It gets a last chance to make changes to its in-memory config object. After
  * this call, the config object must no longer be changed.
  * The pModConf pointer passed into the module must no longer be used.
  * rgerards, 2011-05-03
@@ -923,7 +945,7 @@ static rsRetVal endCnfLoad(modConfData_t *ptr)\
  * Check the provided config object for errors, inconsistencies and other things
  * that do not work out.
  * NOTE: no part of the config must be activated, so some checks that require
- * activation can not be done in this entry point. They must be done in the 
+ * activation can not be done in this entry point. They must be done in the
  * activateConf() stage, where the caller must also be prepared for error
  * returns.
  * rgerhards, 2011-05-03
@@ -1022,7 +1044,7 @@ static rsRetVal runInput(thrdInfo_t __attribute__((unused)) *pThrd)\
  * This is a function that will be replaced in the longer term. It is used so
  * that a module can tell the caller if it will run or not. This is to be replaced
  * when we introduce input module instances. However, these require config syntax
- * changes and I may (or may not... ;)) hold that until another config file 
+ * changes and I may (or may not... ;)) hold that until another config file
  * format is available. -- rgerhards, 2007-12-17
  * returns RS_RET_NO_RUN if it will not run (RS_RET_OK or error otherwise)
  */
@@ -1031,7 +1053,7 @@ static rsRetVal willRun(void)\
 {\
 	DEFiRet;
 
-#define CODESTARTwillRun 
+#define CODESTARTwillRun
 
 #define ENDwillRun \
 	RETiRet;\
@@ -1050,7 +1072,7 @@ static rsRetVal afterRun(void)\
 {\
 	DEFiRet;
 
-#define CODESTARTafterRun 
+#define CODESTARTafterRun
 
 #define ENDafterRun \
 	RETiRet;\
@@ -1078,7 +1100,7 @@ static rsRetVal doHUP(instanceData __attribute__((unused)) *pData)\
 {\
 	DEFiRet;
 
-#define CODESTARTdoHUP 
+#define CODESTARTdoHUP
 
 #define ENDdoHUP \
 	RETiRet;\
@@ -1098,7 +1120,7 @@ static rsRetVal doHUPWrkr(wrkrInstanceData_t __attribute__((unused)) *pWrkrData)
 {\
 	DEFiRet;
 
-#define CODESTARTdoHUPWrkr 
+#define CODESTARTdoHUPWrkr
 
 #define ENDdoHUPWrkr \
 	RETiRet;\
@@ -1106,7 +1128,7 @@ static rsRetVal doHUPWrkr(wrkrInstanceData_t __attribute__((unused)) *pWrkrData)
 
 
 /* SetShutdownImmdtPtr()
- * This function is optional. If defined by an output plugin, it is called 
+ * This function is optional. If defined by an output plugin, it is called
  * each time the action is invoked to set the "ShutdownImmediate" pointer,
  * which is used during termination to indicate the action should shutdown
  * as quickly as possible.
@@ -1120,7 +1142,7 @@ static rsRetVal SetShutdownImmdtPtr(instanceData __attribute__((unused)) *pData,
 {\
 	DEFiRet;
 
-#define CODESTARTSetShutdownImmdtPtr 
+#define CODESTARTSetShutdownImmdtPtr
 
 #define ENDSetShutdownImmdtPtr \
 	RETiRet;\
@@ -1175,6 +1197,27 @@ static rsRetVal strgen(smsg_t *const pMsg, actWrkrIParams_t *const iparam) \
 	assert(pMsg != NULL);
 
 #define ENDstrgen \
+	RETiRet;\
+}
+
+
+
+/* getFunctArray() - main entry point of parser modules
+ * Note that we do NOT use size_t as this permits us to store the
+ * values directly into optimized heap structures.
+ * ppBuf is the buffer pointer
+ * pLenBuf is the current max size of this buffer
+ * pStrLen is an output parameter that MUST hold the length
+ *         of the generated string on exit (this is cached)
+ */
+#define BEGINgetFunctArray \
+static rsRetVal getFunctArray(int *const version, const struct scriptFunct**const functArray) \
+{\
+	DEFiRet;
+
+#define CODESTARTgetFunctArray
+
+#define ENDgetFunctArray \
 	RETiRet;\
 }
 

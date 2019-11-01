@@ -10,11 +10,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -69,14 +69,16 @@ rsRetVal OMSRconstruct(omodStringRequest_t **ppThis, int iNumEntries)
 	CHKmalloc(pThis = calloc(1, sizeof(omodStringRequest_t)));
 
 	/* got the structure, so fill it */
-	pThis->iNumEntries = iNumEntries;
-	/* allocate string for template name array. The individual strings will be
-	 * allocated as the code progresses (we do not yet know the string sizes)
-	 */
-	CHKmalloc(pThis->ppTplName = calloc(iNumEntries, sizeof(uchar*)));
+	if(iNumEntries > 0) {
+		pThis->iNumEntries = iNumEntries;
+		/* allocate string for template name array. The individual strings will be
+		 * allocated as the code progresses (we do not yet know the string sizes)
+		 */
+		CHKmalloc(pThis->ppTplName = calloc(iNumEntries, sizeof(uchar*)));
 
 	/* allocate the template options array. */
-	CHKmalloc(pThis->piTplOpts = calloc(iNumEntries, sizeof(int)));
+		CHKmalloc(pThis->piTplOpts = calloc(iNumEntries, sizeof(int)));
+	}
 	
 finalize_it:
 	if(iRet != RS_RET_OK) {
@@ -115,7 +117,7 @@ int OMSRgetEntryCount(omodStringRequest_t *pThis)
 }
 
 
-/* return data for a specific entry. All data returned is 
+/* return data for a specific entry. All data returned is
  * read-only and lasts only as long as the object lives. If the caller
  * needs it for an extended period of time, the caller must copy the
  * strings. Please note that the string pointer may be NULL, which is the

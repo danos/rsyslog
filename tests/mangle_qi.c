@@ -70,7 +70,7 @@ processQI(FILE *const __restrict__ qi)
 		fprintf(stderr, "queuesize: %d\n", queuesize);
 		fprintf(stderr, "maxval_for_length: %d\n", maxval_for_length);
 	}
-	 
+	
 	queuesize += 1; /* fake invalid queue size */
 	if(queuesize > maxval_for_length)
 		++length;
@@ -85,7 +85,7 @@ processQI(FILE *const __restrict__ qi)
 int
 main(int argc, char *argv[])
 {
-	char *qifile;
+	char *qifile = NULL;
 	FILE *qi;
 	int opt;
 	while((opt = getopt(argc, argv, "dq:")) != -1) {
@@ -97,6 +97,11 @@ main(int argc, char *argv[])
 		default:	usage();
 				break;
 		}
+	}
+
+	if(qifile == NULL) {
+		fprintf(stderr, "ERROR: -q option MUST be specified\n");
+		usage();
 	}
 
 	if((qi = fopen(qifile, "r")) == NULL) {

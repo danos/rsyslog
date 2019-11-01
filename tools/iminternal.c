@@ -3,21 +3,21 @@
  * Note: we currently do not have an input module spec, but
  * we will have one in the future. This module needs then to be
  * adapted.
- * 
+ *
  * File begun on 2007-08-03 by RGerhards
  *
- * Copyright 2007-2016 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2007-2017 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,12 +30,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <sys/types.h>
+#include <signal.h>
 
 #include "syslogd.h"
 #include "linkedlist.h"
 #include "iminternal.h"
 
 static linkedList_t llMsgs;
+static pthread_mutex_t mutList = PTHREAD_MUTEX_INITIALIZER;
 
 
 /* destructs an iminternal object
@@ -58,20 +62,9 @@ static rsRetVal iminternalDestruct(iminternal_t *pThis)
 static rsRetVal iminternalConstruct(iminternal_t **ppThis)
 {
 	DEFiRet;
-	iminternal_t *pThis;
-
-	if((pThis = (iminternal_t*) calloc(1, sizeof(iminternal_t))) == NULL) {
-		ABORT_FINALIZE(RS_RET_OUT_OF_MEMORY);
+	if((*ppThis = (iminternal_t*) calloc(1, sizeof(iminternal_t))) == NULL) {
+		iRet = RS_RET_OUT_OF_MEMORY;
 	}
-
-finalize_it:
-	if(iRet != RS_RET_OK) {
-		if(pThis != NULL)
-			iminternalDestruct(pThis);
-	}
-
-	*ppThis = pThis;
-
 	RETiRet;
 }
 
@@ -80,19 +73,48 @@ finalize_it:
  * Note: the pMsg reference counter is not incremented. Consequently,
  * the caller must NOT decrement it. The caller actually hands over
  * full ownership of the pMsg object.
- * The interface of this function is modelled after syslogd/logmsg(),
- * for which it is an "replacement".
  */
 rsRetVal iminternalAddMsg(smsg_t *pMsg)
 {
 	DEFiRet;
-	iminternal_t *pThis;
+	iminternal_t *pThis = NULL;
+	struct timespec to;
+	int r;
+	int is_locked = 0;
 
+	/* we guard against deadlock, so we can guarantee rsyslog will never
+	 * block due to internal messages. The 1 second timeout should be
+	 * sufficient under all circumstances.
+	 */
+	to.tv_sec = time(NULL) + 1;
+	to.tv_nsec = 0;
+	#if !defined(__APPLE__)
+	r = pthread_mutex_timedlock(&mutList, &to);
+	#else
+	r = pthread_mutex_trylock(&mutList); // must check
+	#endif
+	if(r != 0) {
+		dbgprintf("iminternalAddMsg: timedlock for mutex failed with %d, msg %s\n",
+			r, getMSG(pMsg));
+		/* the message is lost, nothing we can do against this! */
+		msgDestruct(&pMsg);
+		ABORT_FINALIZE(RS_RET_ERR);
+	}
+	is_locked = 1;
 	CHKiRet(iminternalConstruct(&pThis));
 	pThis->pMsg = pMsg;
 	CHKiRet(llAppend(&llMsgs,  NULL, (void*) pThis));
 
+	if(PREFER_FETCH_32BIT(bHaveMainQueue)) {
+		DBGPRINTF("signaling new internal message via SIGTTOU: '%s'\n",
+			pThis->pMsg->pszRawMsg);
+		kill(glblGetOurPid(), SIGTTOU);
+	}
+
 finalize_it:
+	if(is_locked) {
+		pthread_mutex_unlock(&mutList);
+	}
 	if(iRet != RS_RET_OK) {
 		dbgprintf("iminternalAddMsg() error %d - can not otherwise report this error, message lost\n", iRet);
 		if(pThis != NULL)
@@ -113,6 +135,7 @@ rsRetVal iminternalRemoveMsg(smsg_t **ppMsg)
 	iminternal_t *pThis;
 	linkedListCookie_t llCookie = NULL;
 
+	pthread_mutex_lock(&mutList);
 	CHKiRet(llGetNextElt(&llMsgs, &llCookie, (void*)&pThis));
 	*ppMsg = pThis->pMsg;
 	pThis->pMsg = NULL; /* we do no longer own it - important for destructor */
@@ -124,16 +147,8 @@ rsRetVal iminternalRemoveMsg(smsg_t **ppMsg)
 	}
 
 finalize_it:
+	pthread_mutex_unlock(&mutList);
 	RETiRet;
-}
-
-/* tell the caller if we have any messages ready for processing.
- * 0 means we have none, everything else means there is at least
- * one message ready.
- */
-rsRetVal iminternalHaveMsgReady(int* pbHaveOne)
-{
-	return llGetNumElts(&llMsgs, pbHaveOne);
 }
 
 

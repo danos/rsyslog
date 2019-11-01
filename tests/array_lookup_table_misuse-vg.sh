@@ -1,34 +1,45 @@
 #!/bin/bash
+# test cleanup for array lookup-table and HUP based reloading of it
 # added 2015-10-30 by singh.janmejay
 # This file is part of the rsyslog project, released under ASL 2.0
-echo ===============================================================================
-echo \[array_lookup_table-vg.sh\]: test cleanup for array lookup-table and HUP based reloading of it
-. $srcdir/diag.sh init
-cp $srcdir/testsuites/xlate_array_misuse.lkp_tbl $srcdir/xlate_array.lkp_tbl
-. $srcdir/diag.sh startup-vg array_lookup_table.conf
-. $srcdir/diag.sh injectmsg  0 3
-. $srcdir/diag.sh wait-queueempty
-. $srcdir/diag.sh assert-content-missing "foo"
-. $srcdir/diag.sh assert-content-missing "bar"
-. $srcdir/diag.sh assert-content-missing "baz"
-cp $srcdir/testsuites/xlate_array_more_misuse.lkp_tbl $srcdir/xlate_array.lkp_tbl
-. $srcdir/diag.sh issue-HUP
-. $srcdir/diag.sh await-lookup-table-reload
-. $srcdir/diag.sh injectmsg  0 3
-. $srcdir/diag.sh wait-queueempty
-. $srcdir/diag.sh assert-content-missing "foo"
-. $srcdir/diag.sh assert-content-missing "bar"
-. $srcdir/diag.sh assert-content-missing "baz"
-cp $srcdir/testsuites/xlate_array_more.lkp_tbl $srcdir/xlate_array.lkp_tbl
-. $srcdir/diag.sh issue-HUP
-. $srcdir/diag.sh await-lookup-table-reload
-. $srcdir/diag.sh injectmsg  0 3
+. ${srcdir:=.}/diag.sh init
+generate_conf
+add_conf '
+lookup_table(name="xlate" file="'$RSYSLOG_DYNNAME'.xlate_array.lkp_tbl")
+
+template(name="outfmt" type="string" string="%msg% %$.lkp%\n")
+
+set $.num = field($msg, 58, 2);
+
+set $.lkp = lookup("xlate", $.num);
+
+action(type="omfile" file=`echo $RSYSLOG_OUT_LOG` template="outfmt")
+'
+cp -f $srcdir/testsuites/xlate_array_misuse.lkp_tbl $RSYSLOG_DYNNAME.xlate_array.lkp_tbl
+startup_vg
+injectmsg  0 3
+wait_queueempty
+assert_content_missing "foo"
+assert_content_missing "bar"
+assert_content_missing "baz"
+cp -f $srcdir/testsuites/xlate_array_more_misuse.lkp_tbl $RSYSLOG_DYNNAME.xlate_array.lkp_tbl
+issue_HUP
+await_lookup_table_reload
+injectmsg  0 3
+wait_queueempty
+assert_content_missing "foo"
+assert_content_missing "bar"
+assert_content_missing "baz"
+cp -f $srcdir/testsuites/xlate_array_more.lkp_tbl $RSYSLOG_DYNNAME.xlate_array.lkp_tbl
+issue_HUP
+await_lookup_table_reload
+injectmsg  0 3
 echo doing shutdown
-. $srcdir/diag.sh shutdown-when-empty
+shutdown_when_empty
 echo wait on shutdown
-. $srcdir/diag.sh wait-shutdown-vg
-. $srcdir/diag.sh check-exit-vg
-. $srcdir/diag.sh content-check "msgnum:00000000: foo_new"
-. $srcdir/diag.sh content-check "msgnum:00000001: bar_new"
-. $srcdir/diag.sh content-check "msgnum:00000002: baz"
-. $srcdir/diag.sh exit
+wait_shutdown_vg
+check_exit_vg
+content_check "msgnum:00000000: foo_new"
+content_check "msgnum:00000001: bar_new"
+content_check "msgnum:00000002: baz"
+exit_test

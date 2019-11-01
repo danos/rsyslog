@@ -49,7 +49,6 @@
 /* definitions for objects we access */
 DEFobjStaticHelpers
 DEFobjCurrIf(glbl)
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(datetime)
 DEFobjCurrIf(ruleset)
 
@@ -118,7 +117,7 @@ AddParserToList(parserList_t **ppListRoot, parser_t *pParser)
 	parserList_t *pTail;
 	DEFiRet;
 
-	CHKmalloc(pThis = MALLOC(sizeof(parserList_t)));
+	CHKmalloc(pThis = malloc(sizeof(parserList_t)));
 	pThis->pParser = pParser;
 	pThis->pNext = NULL;
 
@@ -334,7 +333,7 @@ static rsRetVal uncompressMessage(smsg_t *pMsg)
 		 */
 		int ret;
 		iLenDefBuf = glbl.GetMaxLine();
-		CHKmalloc(deflateBuf = MALLOC(iLenDefBuf + 1));
+		CHKmalloc(deflateBuf = malloc(iLenDefBuf + 1));
 		ret = uncompress((uchar *) deflateBuf, &iLenDefBuf, (uchar *) pszMsg+1, lenMsg-1);
 		DBGPRINTF("Compressed message uncompressed with status %d, length: new %ld, old %d.\n",
 		        ret, (long) iLenDefBuf, (int) (lenMsg-1));
@@ -347,7 +346,7 @@ static rsRetVal uncompressMessage(smsg_t *pMsg)
 		 * rgerhards, 2006-12-07
 		 */
 		if(ret != Z_OK) {
-			errmsg.LogError(0, NO_ERRCODE, "Uncompression of a message failed with return code %d "
+			LogError(0, NO_ERRCODE, "Uncompression of a message failed with return code %d "
 			            "- enable debug logging if you need further information. "
 				    "Message ignored.", ret);
 			FINALIZE; /* unconditional exit, nothing left to do... */
@@ -463,10 +462,16 @@ SanitizeMsg(smsg_t *pMsg)
 		maxDest = iMaxLine;	/* but not more than the max size! */
 	if(maxDest < sizeof(szSanBuf))
 		pDst = szSanBuf;
-	else 
-		CHKmalloc(pDst = MALLOC(iMaxLine + 1));
+	else
+		CHKmalloc(pDst = malloc(maxDest + 1));
 	if(iSrc > 0) {
 		iSrc--; /* go back to where everything is OK */
+		if(iSrc > maxDest) {
+			DBGPRINTF("parser.Sanitize: have oversize index %zd, "
+				"max %zd - corrected, but should not happen\n",
+				iSrc, maxDest);
+			iSrc = maxDest;
+		}
 		memcpy(pDst, pszMsg, iSrc); /* fast copy known good */
 	}
 	iDst = iSrc;
@@ -493,7 +498,7 @@ SanitizeMsg(smsg_t *pMsg)
 					case '\b':
 						pDst[iDst++] = 'b';
 						break;
-					case '\e':
+					case '\x1b': /* equivalent to '\e' which is not accepted by XLC */
 						pDst[iDst++] = 'e';
 						break;
 					case '\f':
@@ -671,9 +676,9 @@ ParseMsg(smsg_t *pMsg)
 	 * matter if we log a handful messages more than we should...
 	 */
 	if(localRet != RS_RET_OK) {
-		if(++iErrMsgRateLimiter > 1000) {
-			errmsg.LogError(0, localRet, "Error: one message could not be processed by "
-			 	"any parser, message is being discarded (start of raw msg: '%.50s')", 
+		if(++iErrMsgRateLimiter < 1000) {
+			LogError(0, localRet, "Error: one message could not be processed by "
+				"any parser, message is being discarded (start of raw msg: '%.60s')",
 				pMsg->pszRawMsg);
 		}
 		DBGPRINTF("No parser could process the message (state %d), we need to discard it.\n", localRet);
@@ -741,7 +746,6 @@ BEGINObjClassExit(parser, OBJ_IS_CORE_MODULE) /* class, version */
 	DestructParserList(&pDfltParsLst);
 	destroyMasterParserList();
 	objRelease(glbl, CORE_COMPONENT);
-	objRelease(errmsg, CORE_COMPONENT);
 	objRelease(datetime, CORE_COMPONENT);
 	objRelease(ruleset, CORE_COMPONENT);
 ENDObjClassExit(parser)
@@ -754,7 +758,6 @@ ENDObjClassExit(parser)
 BEGINObjClassInit(parser, 1, OBJ_IS_CORE_MODULE) /* class, version */
 	/* request objects we use */
 	CHKiRet(objUse(glbl, CORE_COMPONENT));
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 	CHKiRet(objUse(datetime, CORE_COMPONENT));
 	CHKiRet(objUse(ruleset, CORE_COMPONENT));
 

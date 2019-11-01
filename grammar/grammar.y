@@ -27,14 +27,7 @@
  * limitations under the License.
  */
 %{
-#if !defined(_AIX)
-/* shut off warnings that we can't change anyhow */
-#pragma GCC diagnostic ignored "-Wpragmas"
-#pragma GCC diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"
-#pragma GCC diagnostic ignored "-Wredundant-decls"
-#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
-#pragma GCC diagnostic ignored "-Wswitch-default"
-#endif
+#define IN_GRAMMAR_Y /* tell parserif.h not to redefine things! */
 
 #include "config.h"
 #include <stdio.h>
@@ -70,6 +63,7 @@ extern int yyerror(const char*);
 %token <estr> FUNC
 %token <objType> BEGINOBJ
 %token ENDOBJ
+%token BEGIN_INCLUDE
 %token BEGIN_ACTION
 %token BEGIN_PROPERTY
 %token BEGIN_CONSTANT
@@ -142,6 +136,7 @@ conf:	/* empty (to end recursion) */
 	| conf LEGACY_RULESET		{ cnfDoCfsysline($2); }
 	| conf BSD_TAG_SELECTOR		{ cnfDoBSDTag($2); }
 	| conf BSD_HOST_SELECTOR	{ cnfDoBSDHost($2); }
+include:  BEGIN_INCLUDE nvlst ENDOBJ	{ includeProcessCnf($2); }
 obj:	  BEGINOBJ nvlst ENDOBJ 	{ $$ = cnfobjNew($1, $2); }
         | BEGIN_TPL nvlst ENDOBJ	{ $$ = cnfobjNew(CNFOBJ_TPL, $2); }
         | BEGIN_TPL nvlst ENDOBJ '{' propconst '}'
@@ -186,6 +181,7 @@ stmt:	  actlst			{ $$ = $1; }
 	| PRIFILT block			{ $$ = cnfstmtNewPRIFILT($1, $2); }
 	| PROPFILT block		{ $$ = cnfstmtNewPROPFILT($1, $2); }
 	| RELOAD_LOOKUP_TABLE_PROCEDURE '(' fparams ')' { $$ = cnfstmtNewReloadLookupTable($3);}
+	| include			{ $$ = NULL; }
 	| BEGINOBJ			{ $$ = NULL; parser_errmsg("declarative object '%s' not permitted in action block [stmt]", yytext);}
 block:    stmt				{ $$ = $1; }
 	| '{' script '}'		{ $$ = $2; }

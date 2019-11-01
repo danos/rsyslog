@@ -1,5 +1,5 @@
 /* This is a tool for processing rsyslog encrypted log files.
- * 
+ *
  * Copyright 2013-2016 Adiscon GmbH
  *
  * This file is part of rsyslog.
@@ -7,11 +7,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either exprs or implied.
@@ -58,9 +58,17 @@ static int optionForce = 0;
  * in order to satisfy the needs of the common code.
  */
 int Debug = 0;
-void dbgprintf(const char *fmt __attribute__((unused)), ...) {};
-void srSleep(int a __attribute__((unused)), int b __attribute__((unused))); /* prototype (avoid compiler warning) */
-void srSleep(int a __attribute__((unused)), int b __attribute__((unused))) {}; /* this is not really needed by any of our code */
+#ifndef DEBUGLESS
+void r_dbgprintf(const char *srcname __attribute__((unused)), const char *fmt __attribute__((unused)), ...) {};
+#endif
+void srSleep(int a __attribute__((unused)), int b __attribute__((unused)));
+/* prototype (avoid compiler warning) */
+void srSleep(int a __attribute__((unused)), int b __attribute__((unused))) {}
+/* this is not really needed by any of our code */
+long randomNumber(void);
+/* prototype (avoid compiler warning) */
+long randomNumber(void) {return 0l;}
+/* this is not really needed by any of our code */
 
 /* rectype/value must be EIF_MAX_*_LEN+1 long!
  * returns 0 on success or something else on error/EOF
@@ -80,14 +88,14 @@ eiGetRecord(FILE *eifp, char *rectype, char *value)
 	for(i = 0 ; i < EIF_MAX_RECTYPE_LEN && buf[i] != ':' ; ++i)
 		if(buf[i] == '\0') {
 			r = 2; goto done;
-		} else 
+		} else
 			rectype[i] = buf[i];
 	rectype[i] = '\0';
 	j = 0;
 	for(++i ; i < EIF_MAX_VALUE_LEN && buf[i] != '\n' ; ++i, ++j)
 		if(buf[i] == '\0') {
 			r = 3; goto done;
-		} else 
+		} else
 			value[j] = buf[i];
 	value[j] = '\0';
 	r = 0;
@@ -174,7 +182,7 @@ done:	return r;
 static int
 initCrypt(FILE *eifp)
 {
- 	int r = 0;
+	int r = 0;
 	gcry_error_t gcryError;
 	char iv[4096];
 
@@ -288,21 +296,21 @@ doDecrypt(FILE *logfp, FILE *eifp, FILE *outfp)
 	off64_t currOffs = 0;
 	int r = 1;
 	int fd;
-        struct stat buf;
+	struct stat buf;
 
 	while(1) {
 		/* process block */
 		if(initCrypt(eifp) != 0)
 			goto done;
 		/* set blkEnd to size of logfp and proceed. */
-                if((fd = fileno(logfp)) == -1) {
-                        r = -1;
-                        goto done;
-                }
-                if((r = fstat(fd, &buf)) != 0) goto done;
-                blkEnd = buf.st_size;
-                r = eiGetEND(eifp, &blkEnd);
-                if(r != 0 && r != 1) goto done;
+		if((fd = fileno(logfp)) == -1) {
+			r = -1;
+			goto done;
+		}
+		if((r = fstat(fd, &buf)) != 0) goto done;
+		blkEnd = buf.st_size;
+		r = eiGetEND(eifp, &blkEnd);
+		if(r != 0 && r != 1) goto done;
 		decryptBlock(logfp, outfp, blkEnd, &currOffs);
 		gcry_cipher_close(gcry_chd);
 	}
@@ -335,7 +343,8 @@ decrypt(const char *name)
 			goto err;
 	}
 
-	doDecrypt(logfp, eifp, stdout);
+	if((r = doDecrypt(logfp, eifp, stdout)) != 0)
+		goto err;
 
 	fclose(logfp); logfp = NULL;
 	fclose(eifp); eifp = NULL;
@@ -343,6 +352,8 @@ decrypt(const char *name)
 
 err:
 	fprintf(stderr, "error %d processing file %s\n", r, name);
+	if(eifp != NULL)
+		fclose(eifp);
 	if(logfp != NULL)
 		fclose(logfp);
 }
@@ -375,12 +386,11 @@ write_keyfile(char *fn)
 }
 
 static void
-getKeyFromFile(char *fn)
+getKeyFromFile(const char *fn)
 {
-	int r;
-	r = gcryGetKeyFromFile(fn, &cry_key, &cry_keylen);
+	const int r = gcryGetKeyFromFile(fn, &cry_key, &cry_keylen);
 	if(r != 0) {
-		fprintf(stderr, "Error %d reading key from file '%s'\n", r, fn);
+		perror(fn);
 		exit(1);
 	}
 }
@@ -398,8 +408,11 @@ getRandomKey(void)
 	 * unavailability of /dev/urandom is just a theoretic thing, it
 	 * will always work...).  -- TODO -- rgerhards, 2013-03-06
 	 */
-	if((fd = open("/dev/urandom", O_RDONLY)) > 0) {
-		if(read(fd, cry_key, randomKeyLen)) {}; /* keep compiler happy */
+	if((fd = open("/dev/urandom", O_RDONLY)) >= 0) {
+		if(read(fd, cry_key, randomKeyLen) != randomKeyLen) {
+			fprintf(stderr, "warning: could not read sufficient data "
+				"from /dev/urandom - key may be weak\n");
+		};
 		close(fd);
 	}
 }
@@ -420,8 +433,8 @@ setKey(void)
 	}
 }
 
-static struct option long_options[] = 
-{ 
+static struct option long_options[] =
+{
 	{"verbose", no_argument, NULL, 'v'},
 	{"version", no_argument, NULL, 'V'},
 	{"decrypt", no_argument, NULL, 'd'},
@@ -433,8 +446,8 @@ static struct option long_options[] =
 	{"key-program", required_argument, NULL, 'p'},
 	{"algo", required_argument, NULL, 'a'},
 	{"mode", required_argument, NULL, 'm'},
-	{NULL, 0, NULL, 0} 
-}; 
+	{NULL, 0, NULL, 0}
+};
 
 int
 main(int argc, char *argv[])

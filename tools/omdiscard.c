@@ -13,11 +13,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -43,7 +43,6 @@ MODULE_TYPE_NOKEEP
 /* internal structures
  */
 DEF_OMOD_STATIC_DATA
-DEFobjCurrIf(errmsg);
 
 typedef struct _instanceData {
 	EMPTY_STRUCT
@@ -110,19 +109,35 @@ CODE_STD_STRING_REQUESTparseSelectorAct(0)
 
 	if(*p == '~') {
 		dbgprintf("discard\n");
-		errmsg.LogMsg(0, RS_RET_DEPRECATED, LOG_WARNING,
+		LogMsg(0, RS_RET_DEPRECATED, LOG_WARNING,
 			"warning: ~ action is deprecated, consider "
 			"using the 'stop' statement instead");
 	} else {
 		iRet = RS_RET_CONFLINE_UNPROCESSED;
 	}
-CODE_STD_FINALIZERparseSelectorAct
+/* we do not use the macro
+ * CODE_STD_FINALIZERparseSelectorAct
+ * here as this causes a Coverity ID "false positive" (CID 185431).
+ * We don't see an issue with using the copy&pasted code as it is unlikly
+ * to change for this (outdated) module.
+ */
+finalize_it: ATTR_UNUSED; /* semi-colon needed according to gcc doc! */
+	if(iRet == RS_RET_OK || iRet == RS_RET_OK_WARN || iRet == RS_RET_SUSPENDED) {
+		*ppModData = pData;
+		*pp = p;
+	} else {
+		/* cleanup, we failed */
+		if(*ppOMSR != NULL) {
+			OMSRdestruct(*ppOMSR);
+			*ppOMSR = NULL;
+		}
+	}
+/* END modified macro text */
 ENDparseSelectorAct
 
 
 BEGINmodExit
 CODESTARTmodExit
-	objRelease(errmsg, CORE_COMPONENT);
 ENDmodExit
 
 
@@ -137,7 +152,6 @@ BEGINmodInit(Discard)
 CODESTARTmodInit
 	*ipIFVersProvided = CURR_MOD_IF_VERSION; /* we only support the current interface specification */
 CODEmodInit_QueryRegCFSLineHdlr
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 ENDmodInit
 /*
  * vi:set ai:

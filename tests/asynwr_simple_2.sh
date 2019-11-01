@@ -1,19 +1,22 @@
 #!/bin/bash
 # This is test driver for testing asynchronous file output.
-#
-# added 2010-03-09 by Rgerhards
-# This file is part of the rsyslog project, released  under GPLv3
-echo ===============================================================================
-echo TEST: \[asynwr_simple_2.sh\]: simple test for async file writing
-. $srcdir/diag.sh init
-# uncomment for debugging support:
-#export RSYSLOG_DEBUG="debug nostdout noprintmutexaction"
-#export RSYSLOG_DEBUGLOG="log"
-. $srcdir/diag.sh startup asynwr_simple.conf
+# added 2010-03-09 by Rgerhards, re-written 2019-08-15
+# This is part of the rsyslog testbench, licensed under ASL 2.0
+. ${srcdir:=.}/diag.sh init
 # send 35555 messages, make sure file size is not a multiple of
 # 4K, the buffer size!
-. $srcdir/diag.sh tcpflood -m35555
-. $srcdir/diag.sh shutdown-when-empty # shut down rsyslogd when done processing messages
-. $srcdir/diag.sh wait-shutdown       # and wait for it to terminate
-. $srcdir/diag.sh seq-check 0 35554
-. $srcdir/diag.sh exit
+export NUMMESSAGES=355555
+export QUEUE_EMPTY_CHECK_FUNC=wait_seq_check
+generate_conf
+add_conf '
+template(name="outfmt" type="string" string="%msg:F,58:2%\n")
+:msg, contains, "msgnum:"
+	action(type="omfile" file="'$RSYSLOG_OUT_LOG'" template="outfmt"
+		asyncWriting="on" flushOnTXEnd="off" flushInterval="2" ioBufferSize="4k")
+'
+startup
+injectmsg
+shutdown_when_empty
+wait_shutdown
+seq_check
+exit_test

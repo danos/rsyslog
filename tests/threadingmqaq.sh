@@ -7,16 +7,41 @@
 # in practice many threading bugs result in an abort rather quickly and these
 # should be covered by this test here.
 # rgerhards, 2009-06-26
-echo \[threadingmqaq.sh\]: main/action queue concurrency
-. $srcdir/diag.sh init
-. $srcdir/diag.sh startup threadingmqaq.conf
-#. $srcdir/diag.sh tcpflood -c2 -m100000
-#. $srcdir/diag.sh shutdown-when-empty # shut down rsyslogd when done processing messages
-. $srcdir/diag.sh injectmsg 0 100000
+
+uname
+if [ $(uname) = "SunOS" ] ; then
+   echo "This test currently does not work on all flavors of Solaris."
+   exit 77
+fi
+
+. ${srcdir:=.}/diag.sh init
+generate_conf
+add_conf '
+$MainMsgQueueTimeoutShutdown 10000
+
+$MainMsgQueueWorkerThreadMinimumMessages 10
+$MainMsgQueueWorkerThreads 5
+
+$template outfmt,"%msg:F,58:2%\n"
+template(name="dynfile" type="string" string=`echo $RSYSLOG_OUT_LOG`) # trick to use relative path names!
+# write quickly to the output file:
+$OMFileFlushOnTXEnd off
+$OMFileIOBufferSize 256k 
+# This time, also run the action queue detached
+$ActionQueueWorkerThreadMinimumMessages 10
+$ActionQueueWorkerThreads 5
+$ActionQueueTimeoutEnqueue 10000
+$ActionQueueType LinkedList
+:msg, contains, "msgnum:" ?dynfile;outfmt
+'
+startup
+#tcpflood -c2 -m100000
+#shutdown_when_empty # shut down rsyslogd when done processing messages
+injectmsg 0 100000
 # we need to sleep a bit on some environments, as imdiag can not correctly
 # diagnose when the action queues are empty...
 sleep 3
-. $srcdir/diag.sh shutdown-when-empty # shut down rsyslogd when done processing messages
-. $srcdir/diag.sh wait-shutdown
-. $srcdir/diag.sh seq-check 0 99999
-. $srcdir/diag.sh exit
+shutdown_when_empty # shut down rsyslogd when done processing messages
+wait_shutdown
+seq_check 0 99999
+exit_test

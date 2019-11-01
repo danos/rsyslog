@@ -3,6 +3,7 @@
 include /usr/share/dpkg/architecture.mk
 
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export DEB_CPPFLAGS_MAINT_APPEND = -DPATH_PIDFILE=\"/run/rsyslogd.pid\"
 
 %:
 	dh $@
@@ -21,19 +22,21 @@ override_dh_auto_configure:
 		--enable-pgsql \
 		--enable-ommongodb \
 		--enable-elasticsearch \
+		--enable-imkafka \
 		--enable-omkafka \
 		--enable-mail \
 		--enable-imfile \
 		--enable-impstats \
 		--enable-klog \
-		--enable-liblogging-stdlog \
 		--enable-gssapi-krb5 \
 		--enable-gnutls \
+		--enable-openssl \
 		--enable-relp \
 		--enable-pmaixforwardedfrom \
 		--enable-pmcisconames \
 		--enable-pmlastmsg \
 		--enable-pmsnare \
+		--enable-omstdout \
 		--enable-omprog \
 		--enable-omuxsock \
 		--enable-mmanon \
@@ -42,13 +45,19 @@ override_dh_auto_configure:
 		--enable-mmutf8fix \
 		--enable-mmpstrucdata \
 		--enable-mmsequence \
+		--enable-mmfields \
+		--enable-mmrm1stspace \
 		--enable-imczmq \
 		--enable-omczmq \
 		--enable-omhiredis \
+		--enable-fmhash \
 		--disable-libgcrypt \
 		--enable-testbench \
 		--enable-imdiag \
 		--disable-generate-man-pages \
+		--disable-fmhttp \
+		--disable-liblogging-stdlog \
+		--without-valgrind-testbench \
 		--with-systemdsystemunitdir=/lib/systemd/system
 
 override_dh_auto_install:
@@ -59,9 +68,13 @@ override_dh_auto_install:
 		debian/rsyslog-pgsql/usr/share/dbconfig-common/data/rsyslog-pgsql/install/pgsql
 
 override_dh_install:
-	dh_install -X .la --list-missing
+	find debian/tmp -name '*.la' -print -delete
+	dh_install
+
+override_dh_missing:
+	dh_missing --list-missing
 
 override_dh_auto_test:
-ifeq (, $(findstring nocheck, $(DEB_BUILD_OPTIONS)))
-	make check || ( cat tests/test-suite.log; exit 1; )
+ifeq (, $(filter nocheck, $(DEB_BUILD_OPTIONS)))
+	dh_auto_test --no-parallel || ( cat tests/test-suite.log; exit 1 ) && ( cat tests/test-suite.log )
 endif

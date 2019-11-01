@@ -1,5 +1,5 @@
 sbin_PROGRAMS =
-pkglib_LTLIBRARIES = 
+pkglib_LTLIBRARIES =
 
 pkgconfigdir = $(libdir)/pkgconfig
 
@@ -67,6 +67,10 @@ if ENABLE_RELP
 SUBDIRS += plugins/omrelp plugins/imrelp
 endif
 
+if ENABLE_OMFILE_HARDENED
+SUBDIRS += contrib/omfile-hardened
+endif
+
 if ENABLE_MYSQL
 SUBDIRS += plugins/ommysql
 endif
@@ -97,6 +101,10 @@ endif
 
 if ENABLE_PMNULL
 SUBDIRS += plugins/pmnull
+endif
+
+if ENABLE_PMNORMALIZE
+SUBDIRS += plugins/pmnormalize
 endif
 
 if ENABLE_PMAIXFORWARDEDFROM
@@ -131,20 +139,12 @@ if ENABLE_OMHIREDIS
 SUBDIRS += contrib/omhiredis
 endif
 
-if ENABLE_OMZMQ3
-SUBDIRS += contrib/omzmq3
-endif
-
 if ENABLE_OMCZMQ
 SUBDIRS += contrib/omczmq
 endif
 
 if ENABLE_OMRABBITMQ
 SUBDIRS += contrib/omrabbitmq
-endif
-
-if ENABLE_IMZMQ3
-SUBDIRS += contrib/imzmq3
 endif
 
 if ENABLE_IMCZMQ
@@ -171,12 +171,24 @@ if ENABLE_ELASTICSEARCH
 SUBDIRS += plugins/omelasticsearch
 endif
 
+if ENABLE_CLICKHOUSE
+SUBDIRS += plugins/omclickhouse
+endif
+
+if ENABLE_OMHTTP
+SUBDIRS += contrib/omhttp
+endif
+
 if ENABLE_MMSNMPTRAPD
 SUBDIRS += plugins/mmsnmptrapd
 endif
 
 if ENABLE_IMFILE
 SUBDIRS += plugins/imfile
+endif
+
+if ENABLE_IMDOCKER
+SUBDIRS += contrib/imdocker
 endif
 
 if ENABLE_IMPTCP
@@ -191,8 +203,20 @@ if ENABLE_MAIL
 SUBDIRS += plugins/ommail
 endif
 
+if ENABLE_FMHTTP
+SUBDIRS += plugins/fmhttp
+endif
+
+if ENABLE_FMHASH
+SUBDIRS += contrib/fmhash
+endif
+
 if ENABLE_OMKAFKA
 SUBDIRS += plugins/omkafka
+endif
+
+if ENABLE_IMKAFKA
+SUBDIRS += plugins/imkafka
 endif
 
 if ENABLE_OMPROG
@@ -240,9 +264,12 @@ SUBDIRS += contrib/mmsequence
 endif
 
 if ENABLE_MMDBLOOKUP
-SUBDIRS += contrib/mmdblookup
+SUBDIRS += plugins/mmdblookup
 endif
 
+if ENABLE_MMDARWIN
+SUBDIRS += contrib/mmdarwin
+endif
 
 if ENABLE_MMFIELDS
 SUBDIRS += plugins/mmfields
@@ -266,9 +293,39 @@ if ENABLE_OMAMQP1
 SUBDIRS += contrib/omamqp1
 endif
 
+# imbatchreport
+if ENABLE_IMBATCHREPORT
+SUBDIRS += contrib/imbatchreport
+endif
+
 # omtcl
 if ENABLE_OMTCL
 SUBDIRS += contrib/omtcl
+endif
+
+# mmkubernetes
+if ENABLE_MMKUBERNETES
+SUBDIRS += contrib/mmkubernetes
+endif
+
+# imtuxedoulog
+if ENABLE_IMTUXEDOULOG
+SUBDIRS += contrib/imtuxedoulog
+endif
+
+# improg
+if ENABLE_IMPROG
+SUBDIRS += contrib/improg
+endif
+
+# mmtaghostname
+if ENABLE_MMTAGHOSTNAME
+SUBDIRS += contrib/mmtaghostname
+endif
+
+# imdb2diag
+if ENABLE_PMDB2DIAG
+SUBDIRS += contrib/pmdb2diag
 endif
 
 # tests are added as last element, because tests may need different
@@ -277,52 +334,235 @@ SUBDIRS += tests
 
 
 
+DISTCHECK_CONFIGURE_FLAGS=
 # make sure "make distcheck" tries to build all modules. This means that
 # a developer must always have an environment where every supporting library
 # is available. If that is not the case, the respective configure option may
 # temporarily be removed below. The intent behind forcing everthing to compile
 # in a make distcheck is so that we detect code that accidently was not updated
 # when some global update happened.
-DISTCHECK_CONFIGURE_FLAGS= \
-	--disable-silent-rules \
-	--disable-testbench \
-	--with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir) 
-
-THIS_IS_TEMPORARILY_DISABLED = \
-	--enable-distcheck-workaround \
-	--enable-testbench \
+DISTCHECK_CONFIGURE_FLAGS+= \
+	--with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir) \
+	--enable-silent-rules \
+	--enable-rsyslogd \
+	--enable-omstdout \
 	--enable-imdiag \
 	--enable-testbench \
-	--enable-imfile \
-	--enable-snmp \
-	--enable-libdbi \
-	--enable-mysql \
-	--enable-relp \
-	--enable-rsyslogd \
-	--enable-mail \
-	--enable-klog \
+	--enable-valgrind
+# currently not supported in make distcheck:
+# --enable-pgsql-tests
+# --enable-extended-tests --> should probably never be enabled due to runtime
+
+if ENABLE_DEFAULT_TESTS
+DISTCHECK_CONFIGURE_FLAGS+= \
 	--enable-diagtools \
-	--enable-mmgrok \
-	--enable-gnutls \
-	--enable-omstdout \
-	--enable-pmlastmsg \
-	--enable-omruleset \
-	--enable-omprog \
-	--enable-imptcp \
-	--enable-omuxsock \
 	--enable-impstats \
-	--enable-memcheck \
+	--enable-imptcp \
+	--enable-klog \
+	--enable-mail \
+	--enable-mmanon \
+	--enable-mmaudit \
+	--enable-mmcount \
+	--enable-mmexternal \
+	--enable-mmfields \
+	--enable-mmjsonparse \
+	--enable-mmpstrucdata \
+	--enable-mmrm1stspace \
+	--enable-mmsequence \
+	--enable-mmutf8fix \
+	--enable-omruleset \
+	--enable-omuxsock \
 	--enable-pmaixforwardedfrom \
+	--enable-pmciscoios \
 	--enable-pmcisconames \
+	--enable-pmlastmsg \
+	--enable-pmnull \
 	--enable-pmsnare \
-	--enable-elasticsearch \
-	--enable-valgrind \
-	--with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir) 
-# temporarily disable these checks for make distcheck 2012-09-06 rgerhards
-#				--enable-mmsnmptrapd \
-#				--enable-gssapi_krb5 \
-#				--enable-extended-tests \
-#				--enable-pgsql 
+	--enable-usertools
+
+endif  # if ENABLE_DEFAULT_TESTS
+
+if ENABLE_IMPROG
+DISTCHECK_CONFIGURE_FLAGS+= --enable-improg
+endif
+
+if ENABLE_OMPROG
+DISTCHECK_CONFIGURE_FLAGS+= --enable-omprog
+endif
+
+if ENABLE_GSSAPI
+DISTCHECK_CONFIGURE_FLAGS+= --enable-gssapi-krb5
+endif
+
+if ENABLE_PMNORMALIZE
+DISTCHECK_CONFIGURE_FLAGS+= --enable-pmnormalize
+endif
+
+if ENABLE_MMDBLOOKUP
+DISTCHECK_CONFIGURE_FLAGS+= --enable-mmdblookup
+endif
+
+if ENABLE_MMDARWIN
+DISTCHECK_CONFIGURE_FLAGS+= --enable-mmdarwin
+endif
+
+if ENABLE_MMNORMALIZE
+DISTCHECK_CONFIGURE_FLAGS+= --enable-mmnormalize
+endif
+
+if ENABLE_OMMONGODB
+DISTCHECK_CONFIGURE_FLAGS+= --enable-ommongodb
+endif
+
+if ENABLE_OMHIREDIS
+DISTCHECK_CONFIGURE_FLAGS+= --enable-omhiredis
+endif
+
+if ENABLE_MMSNMPTRAPD
+DISTCHECK_CONFIGURE_FLAGS+= --enable-mmsnmptrapd
+endif
+
+if ENABLE_OMLIBDBI
+DISTCHECK_CONFIGURE_FLAGS+= --enable-libdbi
+endif
+
+if ENABLE_LIBGCRYPT
+DISTCHECK_CONFIGURE_FLAGS+= --enable-libgcrypt
+endif
+
+if ENABLE_OMHTTP
+DISTCHECK_CONFIGURE_FLAGS+= --enable-omhttp
+endif
+
+if ENABLE_OMHTTPFS
+DISTCHECK_CONFIGURE_FLAGS+= --enable-omhttpfs
+endif
+
+if ENABLE_OMTCL
+DISTCHECK_CONFIGURE_FLAGS+= --enable-omtcl
+endif
+
+if ENABLE_SNMP
+DISTCHECK_CONFIGURE_FLAGS+= --enable-snmp
+endif
+
+if ENABLE_FMHTTP
+DISTCHECK_CONFIGURE_FLAGS+= --enable-fmhttp
+endif
+
+if ENABLE_OMUDPSPOOF
+DISTCHECK_CONFIGURE_FLAGS+= --enable-omudpspoof
+endif
+
+if ENABLE_PGSQL
+DISTCHECK_CONFIGURE_FLAGS+= --enable-pgsql
+endif
+
+if ENABLE_GNUTLS
+DISTCHECK_CONFIGURE_FLAGS+= --enable-gnutls
+endif
+
+if ENABLE_OPENSSL
+DISTCHECK_CONFIGURE_FLAGS+= --enable-openssl
+endif
+
+if ENABLE_MYSQL
+DISTCHECK_CONFIGURE_FLAGS+= --enable-mysql
+endif
+if ENABLE_MYSQL_TESTS
+DISTCHECK_CONFIGURE_FLAGS+= --enable-mysql-tests
+endif
+
+if ENABLE_ELASTICSEARCH
+DISTCHECK_CONFIGURE_FLAGS+= --enable-elasticsearch
+endif
+if ENABLE_ELASTICSEARCH_TESTS
+DISTCHECK_CONFIGURE_FLAGS+= --enable-elasticsearch-tests
+endif
+
+if ENABLE_CLICKHOUSE
+DISTCHECK_CONFIGURE_FLAGS+= --enable-clickhouse
+endif
+if ENABLE_CLICKHOUSE_TESTS
+DISTCHECK_CONFIGURE_FLAGS+= --enable-clickhouse-tests
+endif
+
+if ENABLE_MMGROK
+DISTCHECK_CONFIGURE_FLAGS+= --enable-mmgrok
+endif
+
+if ENABLE_RELP
+DISTCHECK_CONFIGURE_FLAGS+= --enable-relp --enable-omrelp-default-port=13515
+endif
+
+if ENABLE_IMKAFKA
+DISTCHECK_CONFIGURE_FLAGS+= --enable-imkafka
+endif
+if ENABLE_OMKAFKA
+DISTCHECK_CONFIGURE_FLAGS+= --enable-omkafka
+endif
+if ENABLE_KAFKA_TESTS
+DISTCHECK_CONFIGURE_FLAGS+= --enable-kafka-tests
+endif
+
+if ENABLE_IMJOURNAL
+DISTCHECK_CONFIGURE_FLAGS+= --enable-imjournal
+endif
+if ENABLE_OMJOURNAL
+DISTCHECK_CONFIGURE_FLAGS+= --enable-omjournal
+endif
+if ENABLE_JOURNAL_TESTS
+DISTCHECK_CONFIGURE_FLAGS+= --enable-journal-tests
+endif
+
+if ENABLE_IMCZMQ
+DISTCHECK_CONFIGURE_FLAGS+= --enable-imczmq
+endif
+if ENABLE_OMCZMQ
+DISTCHECK_CONFIGURE_FLAGS+= --enable-omczmq
+endif
+
+if ENABLE_MMTAGHOSTNAME
+DISTCHECK_CONFIGURE_FLAGS+= --enable-mmtaghostname
+endif
+
+if ENABLE_IMTUXEDOULOG
+DISTCHECK_CONFIGURE_FLAGS+= --enable-imtuxedolog
+endif
+
+if ENABLE_PMDB2DIAG
+DISTCHECK_CONFIGURE_FLAGS+= --enable-pmdb2diag
+endif
+
+if ENABLE_IMBATCHREPORT
+DISTCHECK_CONFIGURE_FLAGS+= --enable-imbatchreport
+endif
+
+if ENABLE_IMFILE
+DISTCHECK_CONFIGURE_FLAGS+= --enable-imfile
+endif
+
+if ENABLE_IMDOCKER
+DISTCHECK_CONFIGURE_FLAGS+= --enable-imdocker
+endif
+
+if ENABLE_OMRABBITMQ
+DISTCHECK_CONFIGURE_FLAGS+= --enable-omrabbitmq
+endif
+
+if ENABLE_MMKUBERNETES
+DISTCHECK_CONFIGURE_FLAGS+= --enable-mmkubernetes
+endif
+
+if ENABLE_OMAMQP1
+DISTCHECK_CONFIGURE_FLAGS+= --enable-omamqp1
+endif
+
+if ENABLE_DISTCHECK_WORKAROUND
+DISTCHECK_CONFIGURE_FLAGS+= --disable-testbench
+else
+DISTCHECK_CONFIGURE_FLAGS+= --enable-testbench
+endif
 
 dist-hook:
 	$(AM_V_GEN)echo $(VERSION) > $(distdir)/.tarball-version

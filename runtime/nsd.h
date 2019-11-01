@@ -11,11 +11,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -52,16 +52,15 @@ BEGINinterface(nsd) /* name must also be changed in ENDinterface macro! */
 	rsRetVal (*Construct)(nsd_t **ppThis);
 	rsRetVal (*Destruct)(nsd_t **ppThis);
 	rsRetVal (*Abort)(nsd_t *pThis);
-	rsRetVal (*Rcv)(nsd_t *pThis, uchar *pRcvBuf, ssize_t *pLenBuf);
+	rsRetVal (*Rcv)(nsd_t *pThis, uchar *pRcvBuf, ssize_t *pLenBuf, int *oserr);
 	rsRetVal (*Send)(nsd_t *pThis, uchar *pBuf, ssize_t *pLenBuf);
 	rsRetVal (*Connect)(nsd_t *pThis, int family, unsigned char *port, unsigned char *host, char *device);
-	rsRetVal (*LstnInit)(netstrms_t *pNS, void *pUsr, rsRetVal(*fAddLstn)(void*,netstrm_t*),
-			     uchar *pLstnPort, uchar *pLstnIP, int iSessMax);
 	rsRetVal (*AcceptConnReq)(nsd_t *pThis, nsd_t **ppThis);
 	rsRetVal (*GetRemoteHName)(nsd_t *pThis, uchar **pszName);
 	rsRetVal (*GetRemoteIP)(nsd_t *pThis, prop_t **ip);
 	rsRetVal (*SetMode)(nsd_t *pThis, int mode); /* sets a driver specific mode - see driver doc for details */
 	rsRetVal (*SetAuthMode)(nsd_t *pThis, uchar*); /* sets a driver specific mode - see driver doc for details */
+	rsRetVal (*SetPermitExpiredCerts)(nsd_t *pThis, uchar*); /* sets a driver specific permitexpiredcerts mode */
 	rsRetVal (*SetPermPeers)(nsd_t *pThis, permittedPeers_t*); /* sets driver permitted peers for auth needs */
 	rsRetVal (*CheckConnection)(nsd_t *pThis);	/* This is a trick mostly for plain tcp syslog */
 	rsRetVal (*GetSock)(nsd_t *pThis, int *pSock);
@@ -83,14 +82,20 @@ BEGINinterface(nsd) /* name must also be changed in ENDinterface macro! */
 	rsRetVal (*SetKeepAliveIntvl)(nsd_t *pThis, int keepAliveIntvl);
 	rsRetVal (*SetKeepAliveProbes)(nsd_t *pThis, int keepAliveProbes);
 	rsRetVal (*SetKeepAliveTime)(nsd_t *pThis, int keepAliveTime);
+	rsRetVal (*SetGnutlsPriorityString)(nsd_t *pThis, uchar *gnutlsPriorityString);
+	/* v12 -- parameter pszLstnPortFileName added to LstnInit()*/
+	rsRetVal (*LstnInit)(netstrms_t *pNS, void *pUsr, rsRetVal(*fAddLstn)(void*,netstrm_t*),
+			     uchar *pLstnPort, uchar *pLstnIP, int iSessMax, uchar *pszLstnPortFileName);
 ENDinterface(nsd)
-#define nsdCURR_IF_VERSION 9 /* increment whenever you change the interface structure! */
+#define nsdCURR_IF_VERSION 11 /* increment whenever you change the interface structure! */
 /* interface version 4 added GetRemAddr()
  * interface version 5 added EnableKeepAlive() -- rgerhards, 2009-06-02
  * interface version 6 changed return of CheckConnection from void to rsRetVal -- alorbach, 2012-09-06
  * interface version 7 changed signature ofGetRempoteIP() -- rgerhards, 2013-01-21
  * interface version 8 added keep alive parameter set functions
  * interface version 9 changed signature of Connect() -- dsa, 2016-11-14
+ * interface version 10 added SetGnutlsPriorityString() -- PascalWithopf, 2017-08-08
+ * interface version 11 added oserr to Rcv() signature -- rgerhards, 2017-09-04
  */
 
 /* interface  for the select call */

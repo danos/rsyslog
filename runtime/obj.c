@@ -38,28 +38,28 @@
  * than will be defined global and be queriable via pHostQueryEtryPoint().
  * I agree, technically this is much the same, but from an architecture
  * point of view it looks cleaner (at least to me).
- * 
+ *
  * Please note that there is another egg-hen problem: we use a linked list,
  * which is provided by the linkedList object. However, we need to
  * initialize the linked list before we can provide the UseObj()
- * functionality. That, in turn, would probably be required by the 
+ * functionality. That, in turn, would probably be required by the
  * linkedList object. So the solution is to use a backdoor just to
  * init the linked list and from then on use the usual interfaces.
  *
  * File begun on 2008-01-04 by RGerhards
  *
- * Copyright 2008-2016 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2008-2019 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -74,6 +74,8 @@
 #include <ctype.h>
 #include <assert.h>
 #include <pthread.h>
+
+#define DEV_DEBUG 0	/* set to 1 to enable very verbose developer debugging messages */
 
 /* how many objects are supported by rsyslogd? */
 #define OBJ_NUM_IDS 100 /* TODO change to a linked list?  info: 16 were currently in use 2008-02-29 */
@@ -93,7 +95,6 @@
 DEFobjCurrIf(obj) /* we define our own interface, as this is expected by some macros! */
 DEFobjCurrIf(var)
 DEFobjCurrIf(module)
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(strm)
 static objInfo_t *arrObjInfo[OBJ_NUM_IDS]; /* array with object information pointers */
 pthread_mutex_t mutObjGlobalOp;	/* mutex to guard global operations of the object system */
@@ -111,7 +112,7 @@ static rsRetVal FindObjInfo(const char *szObjName, objInfo_t **ppInfo);
 /* methods */
 
 /* This is a dummy method to be used when a standard method has not been
- * implemented by an object. Having it allows us to simply call via the 
+ * implemented by an object. Having it allows us to simply call via the
  * jump table without any NULL pointer checks - which gains quite
  * some performance. -- rgerhards, 2008-01-04
  */
@@ -134,8 +135,8 @@ static rsRetVal objInfoNotImplementedDummy(void __attribute__((unused)) *pThis)
  */
 static rsRetVal
 InfoConstruct(objInfo_t **ppThis, uchar *pszID, int iObjVers,
-              rsRetVal (*pConstruct)(void *), rsRetVal (*pDestruct)(void *),
-	      rsRetVal (*pQueryIF)(interface_t*), modInfo_t *pModInfo)
+		rsRetVal (*pConstruct)(void *), rsRetVal (*pDestruct)(void *),
+		rsRetVal (*pQueryIF)(interface_t*), modInfo_t *pModInfo)
 {
 	DEFiRet;
 	int i;
@@ -267,7 +268,7 @@ finalize_it:
 /* begin serialization of an object's property bag
  * Note: a property bag is used to serialize some of an objects
  * properties, but not necessarily all. A good example is the queue
- * object, which at some stage needs to serialize a number of its 
+ * object, which at some stage needs to serialize a number of its
  * properties, but not the queue data itself. From the object point
  * of view, a property bag can not be used to re-instantiate an object.
  * Otherwise, the serialization is exactly the same.
@@ -303,7 +304,8 @@ SerializeProp(strm_t *pStrm, uchar *pszPropName, propType_t propType, void *pUsr
 	ISOBJ_TYPE_assert(pStrm, strm);
 	assert(pszPropName != NULL);
 
-	/*dbgprintf("objSerializeProp: strm %p, propName '%s', type %d, pUsr %p\n", pStrm, pszPropName, propType, pUsr);*/
+	/*dbgprintf("objSerializeProp: strm %p, propName '%s', type %d, pUsr %p\n",
+		pStrm, pszPropName, propType, pUsr);*/
 	/* if we have no user pointer, there is no need to write this property.
 	 * TODO: think if that's the righ point of view
 	 * rgerhards, 2008-01-06
@@ -664,6 +666,14 @@ rsRetVal objDeserializeProperty(var_t *pProp, strm_t *pStrm)
 	if(c != '\n') ABORT_FINALIZE(RS_RET_INVALID_PROPFRAME);
 
 finalize_it:
+	/* ensure the type of var is reset back to VARTYPE_NONE since
+	* the deconstruct method of var might free unallocated memory
+	*/
+	if(iRet != RS_RET_OK && iRet != RS_RET_NO_PROPLINE) {
+		if(step <= 2) {
+			pProp->varType = VARTYPE_NONE;
+		}
+	}
 	if(Debug && iRet != RS_RET_OK && iRet != RS_RET_NO_PROPLINE) {
 		strm.GetCurrOffset(pStrm, &offs);
 		dbgprintf("error %d deserializing property name, offset %lld, step %d\n",
@@ -720,6 +730,10 @@ static rsRetVal objDeserializeTrailer(strm_t *pStrm)
 	NEXTC; if(c != '\n') ABORT_FINALIZE(RS_RET_INVALID_TRAILER);
 
 finalize_it:
+	if(Debug && iRet != RS_RET_OK) {
+		dbgprintf("objDeserializeTrailer fails with %d\n", iRet);
+	}
+
 	RETiRet;
 }
 
@@ -840,7 +854,8 @@ Deserialize(void *ppObj, uchar *pszTypeExpected, strm_t *pStrm, rsRetVal (*fFixu
 		}
 	} while(iRetLocal != RS_RET_OK);
 
-	if(rsCStrSzStrCmp(pstrID, pszTypeExpected, ustrlen(pszTypeExpected))) /* TODO: optimize strlen() - caller shall provide */
+	if(rsCStrSzStrCmp(pstrID, pszTypeExpected, ustrlen(pszTypeExpected)))
+	/* TODO: optimize strlen() - caller shall provide */
 		ABORT_FINALIZE(RS_RET_INVALID_OID);
 
 	CHKiRet(FindObjInfo((char*)cstrGetSzStrNoNULL(pstrID), &pObjInfo));
@@ -878,7 +893,9 @@ finalize_it:
  * rgerhards, 2012-11-03
  */
 rsRetVal
-objDeserializeWithMethods(void *ppObj, uchar *pszTypeExpected, int lenTypeExpected, strm_t *pStrm, rsRetVal (*fFixup)(obj_t*,void*), void *pUsr, rsRetVal (*objConstruct)(), rsRetVal (*objConstructFinalize)(), rsRetVal (*objDeserialize)())
+objDeserializeWithMethods(void *ppObj, uchar *pszTypeExpected, int lenTypeExpected, strm_t *pStrm,
+rsRetVal (*fFixup)(obj_t*,void*), void *pUsr, rsRetVal (*objConstruct)(), rsRetVal (*objConstructFinalize)(),
+rsRetVal (*objDeserialize)())
 {
 	DEFiRet;
 	rsRetVal iRetLocal;
@@ -935,39 +952,12 @@ finalize_it:
 	if(pstrID != NULL)
 		rsCStrDestruct(&pstrID);
 
-	RETiRet;
-}
-
-/* This is a dummy deserializer, to be used for the delete queue reader
- * specifically. This is kind of a hack, but also to be replace (hopefully) soon
- * by totally different code. So let's make it as simple as possible...
- * rgerhards, 2012-11-06
- */
-rsRetVal
-objDeserializeDummy(obj_t __attribute__((unused)) *pObj, strm_t *pStrm)
-{
-	DEFiRet;
-	var_t *pVar = NULL;
-
-	CHKiRet(var.Construct(&pVar));
-	CHKiRet(var.ConstructFinalize(pVar));
-
-	iRet = objDeserializeProperty(pVar, pStrm);
-	while(iRet == RS_RET_OK) {
-		/* this loop does actually NOGHTING but read the file... */
-		/* re-init var object - TODO: method of var! */
-		rsCStrDestruct(&pVar->pcsName); /* no longer needed */
-		if(pVar->varType == VARTYPE_STR) {
-			if(pVar->val.pStr != NULL)
-				rsCStrDestruct(&pVar->val.pStr);
-		}
-		iRet = objDeserializeProperty(pVar, pStrm);
+	if(Debug && iRet != RS_RET_OK) {
+		dbgprintf("objDeserializeWithMethods fails with %d, stream state:\n", iRet);
+		strmDebugOutBuf(pStrm);
 	}
-finalize_it:
-	if(iRet == RS_RET_NO_PROPLINE)
-		iRet = RS_RET_OK; /* NO_PROPLINE is OK and a kind of EOF! */
-	if(pVar != NULL)
-		var.Destruct(&pVar);
+
+
 	RETiRet;
 }
 
@@ -1051,13 +1041,12 @@ finalize_it:
  * is returned.
  * rgerhards, 2008-01-30
  */
-static uchar *
-GetName(obj_t *pThis)
+uchar * ATTR_NONNULL()
+objGetName(obj_t *const pThis)
 {
 	uchar *ret;
 	uchar szName[128];
 
-	BEGINfunc
 	ISOBJ_assert(pThis);
 
 	if(pThis->pszName == NULL) {
@@ -1075,7 +1064,6 @@ GetName(obj_t *pThis)
 		ret = pThis->pszName;
 	}
 
-	ENDfunc
 	return ret;
 }
 
@@ -1106,10 +1094,7 @@ FindObjInfo(const char *const __restrict__ strOID, objInfo_t **ppInfo)
 	*ppInfo = arrObjInfo[i];
 
 finalize_it:
-	if(iRet == RS_RET_OK) {
-		/* DEV DEBUG ONLY dbgprintf("caller requested object '%s', found at index %d\n", (*ppInfo)->pszID, i);*/
-		/*EMPTY BY INTENSION*/;
-	} else {
+	if(iRet != RS_RET_OK) {
 		dbgprintf("caller requested object '%s', not found (iRet %d)\n", strOID, iRet);
 	}
 
@@ -1149,11 +1134,14 @@ RegisterObj(uchar *pszObjName, objInfo_t *pInfo)
 	if(i >= OBJ_NUM_IDS) ABORT_FINALIZE(RS_RET_OBJ_REGISTRY_OUT_OF_SPACE);
 
 	arrObjInfo[i] = pInfo;
-	/* DEV debug only: dbgprintf("object '%s' successfully registered with index %d, qIF %p\n", pszObjName, i, pInfo->QueryIF); */
+	#if DEV_DEBUG == 1
+	dbgprintf("object '%s' successfully registered with "
+		"index %d, qIF %p\n", pszObjName, i, pInfo->QueryIF);
+	#endif
 
 finalize_it:
 	if(iRet != RS_RET_OK) {
-		errmsg.LogError(0, NO_ERRCODE, "registering object '%s' failed with error code %d", pszObjName, iRet);
+		LogError(0, NO_ERRCODE, "registering object '%s' failed with error code %d", pszObjName, iRet);
 	}
 
 	RETiRet;
@@ -1188,7 +1176,9 @@ UnregisterObj(uchar *pszObjName)
 		ABORT_FINALIZE(RS_RET_OBJ_NOT_REGISTERED);
 
 	InfoDestruct(&arrObjInfo[i]);
-	/* DEV debug only: dbgprintf("object '%s' successfully unregistered with index %d\n", pszObjName, i); */
+	#if DEV_DEBUG == 1
+	dbgprintf("object '%s' successfully unregistered with index %d\n", pszObjName, i);
+	#endif
 
 finalize_it:
 	if(iRet != RS_RET_OK) {
@@ -1211,7 +1201,10 @@ UseObj(const char *srcFile, uchar *pObjName, uchar *pObjFile, interface_t *pIf)
 	objInfo_t *pObjInfo;
 
 
-	/* DEV debug only: dbgprintf("source file %s requests object '%s', ifIsLoaded %d\n", srcFile, pObjName, pIf->ifIsLoaded); */
+	#if DEV_DEBUG == 1
+	dbgprintf("source file %s requests object '%s', "
+		" ifIsLoaded %d\n", srcFile, pObjName, pIf->ifIsLoaded);
+	#endif
 	pthread_mutex_lock(&mutObjGlobalOp);
 
 	if(pIf->ifIsLoaded == 1) {
@@ -1268,7 +1261,8 @@ ReleaseObj(const char *srcFile, uchar *pObjName, uchar *pObjFile, interface_t *p
 	DEFiRet;
 	objInfo_t *pObjInfo;
 
-	/* dev debug only dbgprintf("source file %s releasing object '%s', ifIsLoaded %d\n", srcFile, pObjName, pIf->ifIsLoaded); */
+	/* dev debug only dbgprintf("source file %s releasing object '%s',
+	ifIsLoaded %d\n", srcFile, pObjName, pIf->ifIsLoaded); */
 	pthread_mutex_lock(&mutObjGlobalOp);
 
 	if(pObjFile == NULL)
@@ -1324,7 +1318,7 @@ CODESTARTobjQueryInterface(obj)
 	pIf->Deserialize = Deserialize;
 	pIf->DeserializePropBag = DeserializePropBag;
 	pIf->SetName = SetName;
-	pIf->GetName = GetName;
+	pIf->GetName = objGetName;
 finalize_it:
 ENDobjQueryInterface(obj)
 
@@ -1357,23 +1351,21 @@ objClassExit(void)
 	objRelease(strm, CORE_COMPONENT);
 	objRelease(var, CORE_COMPONENT);
 	objRelease(module, CORE_COMPONENT);
-	objRelease(errmsg, CORE_COMPONENT);
 
 	/* TODO: implement the class exits! */
 #if 0
 	cfsyslineExit(pModInfo);
 	varClassExit(pModInfo);
 #endif
-	errmsgClassExit();
 	moduleClassExit();
 	RETiRet;
 }
 
 
-/* initialize our own class 
+/* initialize our own class
  * Please note that this also initializes those classes that we rely on.
  * Though this is a bit dirty, we need to do it - otherwise we can't get
- * around that bootstrap problem. We need to face the fact the the obj 
+ * around that bootstrap problem. We need to face the fact the the obj
  * class is a little different from the rest of the system, as it provides
  * the core class loader functionality.
  * rgerhards, 2008-02-29
@@ -1403,7 +1395,6 @@ objClassInit(modInfo_t *pModInfo)
 	CHKiRet(objGetObjInterface(&obj)); /* get ourselves ;) */
 
 	/* init classes we use (limit to as few as possible!) */
-	CHKiRet(errmsgClassInit(pModInfo));
 	CHKiRet(datetimeClassInit(pModInfo));
 	CHKiRet(cfsyslineInit());
 	CHKiRet(varClassInit(pModInfo));
@@ -1411,12 +1402,8 @@ objClassInit(modInfo_t *pModInfo)
 	CHKiRet(strmClassInit(pModInfo));
 	CHKiRet(objUse(var, CORE_COMPONENT));
 	CHKiRet(objUse(module, CORE_COMPONENT));
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 	CHKiRet(objUse(strm, CORE_COMPONENT));
 
 finalize_it:
 	RETiRet;
 }
-
-/* vi:set ai:
- */

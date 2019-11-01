@@ -3,18 +3,18 @@
  *
  * begun 2005-09-15 rgerhards
  *
- * Copyright 2005-2012 Adiscon GmbH.
+ * Copyright 2005-2017 Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -243,11 +243,12 @@ rsRetVal parsSkipWhitespace(rsParsObj *pThis)
  *   - bTrimLeading
  *   - bTrimTrailing
  *   - bConvLower - convert string to lower case?
- * 
+ *
  * Output:
  * ppCStr Pointer to the parsed string - must be freed by caller!
  */
-rsRetVal parsDelimCStr(rsParsObj *pThis, cstr_t **ppCStr, char cDelim, int bTrimLeading, int bTrimTrailing, int bConvLower)
+rsRetVal parsDelimCStr(rsParsObj *pThis, cstr_t **ppCStr, char cDelim, int bTrimLeading, int bTrimTrailing,
+	int bConvLower)
 {
 	DEFiRet;
 	register unsigned char *pC;
@@ -364,10 +365,10 @@ finalize_it:
 	RETiRet;
 }
 
-/* 
+/*
  * Parsing routine for IPv4, IPv6 and domain name wildcards.
- * 
- * Parses string in the format <addr>[/bits] where 
+ *
+ * Parses string in the format <addr>[/bits] where
  * addr can be a IPv4 address (e.g.: 127.0.0.1), IPv6 address (e.g.: [::1]),
  * full hostname (e.g.: localhost.localdomain) or hostname wildcard
  * (e.g.: *.localdomain).
@@ -376,7 +377,7 @@ finalize_it:
 rsRetVal parsAddrWithBits(rsParsObj *pThis, struct NetAddr **pIP, int *pBits)
 {
 	register uchar *pC;
-	uchar *pszIP;
+	uchar *pszIP = NULL;
 	uchar *pszTmp;
 	struct addrinfo hints, *res = NULL;
 	cstr_t *pCStr;
@@ -408,8 +409,8 @@ rsRetVal parsAddrWithBits(rsParsObj *pThis, struct NetAddr **pIP, int *pBits)
 
 	/* now we have the string and must check/convert it to
 	 * an NetAddr structure.
-	 */	
-  	CHKiRet(cstrConvSzStrAndDestruct(&pCStr, &pszIP, 0));
+	 */
+	CHKiRet(cstrConvSzStrAndDestruct(&pCStr, &pszIP, 0));
 
 	if((*pIP = calloc(1, sizeof(struct NetAddr))) == NULL)
 		ABORT_FINALIZE(RS_RET_OUT_OF_MEMORY);
@@ -417,7 +418,6 @@ rsRetVal parsAddrWithBits(rsParsObj *pThis, struct NetAddr **pIP, int *pBits)
 	if (*((char*)pszIP) == '[') {
 		pszTmp = (uchar*)strchr ((char*)pszIP, ']');
 		if (pszTmp == NULL) {
-			free (pszIP);
 			free (*pIP);
 			ABORT_FINALIZE(RS_RET_INVALID_IP);
 		}
@@ -428,8 +428,8 @@ rsRetVal parsAddrWithBits(rsParsObj *pThis, struct NetAddr **pIP, int *pBits)
 		hints.ai_flags  = AI_NUMERICHOST;
 
 		switch(getaddrinfo ((char*)pszIP+1, NULL, &hints, &res)) {
-		case 0: 
-			(*pIP)->addr.NetAddr = MALLOC (res->ai_addrlen);
+		case 0:
+			(*pIP)->addr.NetAddr = malloc (res->ai_addrlen);
 			memcpy ((*pIP)->addr.NetAddr, res->ai_addr, res->ai_addrlen);
 			freeaddrinfo (res);
 			break;
@@ -439,18 +439,16 @@ rsRetVal parsAddrWithBits(rsParsObj *pThis, struct NetAddr **pIP, int *pBits)
 			(*pIP)->addr.HostWildcard = strdup ((const char*)pszIP+1);
 			break;
 		default:
-			free (pszIP);
 			free (*pIP);
 			ABORT_FINALIZE(RS_RET_ERR);
 		}
-		
+
 		if(*pC == '/') {
 			/* mask bits follow, let's parse them! */
 			++pThis->iCurrPos; /* eat slash */
 			if((iRet = parsInt(pThis, pBits)) != RS_RET_OK) {
 				free((*pIP)->addr.NetAddr);
 				free((*pIP)->addr.HostWildcard);
-				free (pszIP);
 				free (*pIP);
 				FINALIZE;
 			}
@@ -466,8 +464,8 @@ rsRetVal parsAddrWithBits(rsParsObj *pThis, struct NetAddr **pIP, int *pBits)
 		hints.ai_flags  = AI_NUMERICHOST;
 
 		switch(getaddrinfo ((char*)pszIP, NULL, &hints, &res)) {
-		case 0: 
-			(*pIP)->addr.NetAddr = MALLOC (res->ai_addrlen);
+		case 0:
+			(*pIP)->addr.NetAddr = malloc (res->ai_addrlen);
 			memcpy ((*pIP)->addr.NetAddr, res->ai_addr, res->ai_addrlen);
 			freeaddrinfo (res);
 			break;
@@ -477,18 +475,16 @@ rsRetVal parsAddrWithBits(rsParsObj *pThis, struct NetAddr **pIP, int *pBits)
 			(*pIP)->addr.HostWildcard = strdup ((const char*)pszIP);
 			break;
 		default:
-			free (pszIP);
 			free (*pIP);
 			ABORT_FINALIZE(RS_RET_ERR);
 		}
-			
+
 		if(*pC == '/') {
 			/* mask bits follow, let's parse them! */
 			++pThis->iCurrPos; /* eat slash */
 			if((iRet = parsInt(pThis, pBits)) != RS_RET_OK) {
 				free((*pIP)->addr.NetAddr);
 				free((*pIP)->addr.HostWildcard);
-				free (pszIP);
 				free (*pIP);
 				FINALIZE;
 			}
@@ -499,7 +495,6 @@ rsRetVal parsAddrWithBits(rsParsObj *pThis, struct NetAddr **pIP, int *pBits)
 			*pBits = 32;
 		}
 	}
-	free(pszIP); /* no longer needed */
 
 	/* skip to next processable character */
 	while(pThis->iCurrPos < rsCStrLen(pThis->pCStr)
@@ -511,6 +506,7 @@ rsRetVal parsAddrWithBits(rsParsObj *pThis, struct NetAddr **pIP, int *pBits)
 	iRet = RS_RET_OK;
 
 finalize_it:
+	free(pszIP);
 	RETiRet;
 }
 #endif  /* #ifdef SYSLOG_INET */

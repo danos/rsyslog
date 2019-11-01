@@ -16,11 +16,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -54,7 +54,7 @@ DEF_SMOD_STATIC_DATA
 
 
 /* This strgen tries to minimize the amount of reallocs be first obtaining pointers to all strings
- * needed (including their length) and then calculating the actual space required. So when we 
+ * needed (including their length) and then calculating the actual space required. So when we
  * finally copy, we know exactly what we need. So we do at most one alloc.
  */
 BEGINstrgen
@@ -78,7 +78,7 @@ CODESTARTstrgen
 	lenTimeStamp = ustrlen(pTimeStamp);
 	pHOSTNAME = (uchar*) getHOSTNAME(pMsg);
 	lenHOSTNAME = getHOSTNAMELen(pMsg);
-	getTAG(pMsg, &pTAG, &lenTAG);
+	getTAG(pMsg, &pTAG, &lenTAG, LOCK_MUTEX);
 	if(lenTAG > 32)
 		lenTAG = 32; /* for forwarding, a max of 32 chars is permitted (RFC!) */
 	pMSG = getMSG(pMsg);
@@ -140,5 +140,6 @@ CODESTARTmodInit
 	*ipIFVersProvided = CURR_MOD_IF_VERSION; /* we only support the current interface specification */
 CODEmodInit_QueryRegCFSLineHdlr
 
-	dbgprintf("rsyslog standard (network) forward format strgen init called, compiled with version %s\n", VERSION);
+	dbgprintf("rsyslog standard (network) forward format strgen init called, compiled with version"
+		" %s\n", VERSION);
 ENDmodInit

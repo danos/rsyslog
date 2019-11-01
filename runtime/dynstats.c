@@ -30,7 +30,6 @@
 
 /* definitions for objects we access */
 DEFobjStaticHelpers
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(statsobj)
 
 #define DYNSTATS_PARAM_NAME "name"
@@ -54,22 +53,22 @@ static struct cnfparamdescr modpdescr[] = {
 };
 
 static struct cnfparamblk modpblk =
-{ CNFPARAMBLK_VERSION,
-  sizeof(modpdescr)/sizeof(struct cnfparamdescr),
-  modpdescr
+{
+	CNFPARAMBLK_VERSION,
+	sizeof(modpdescr)/sizeof(struct cnfparamdescr),
+	modpdescr
 };
 
 rsRetVal
 dynstatsClassInit(void) {
 	DEFiRet;
 	CHKiRet(objGetObjInterface(&obj));
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 	CHKiRet(objUse(statsobj, CORE_COMPONENT));
 finalize_it:
 	RETiRet;
 }
 
-static inline void
+static void
 dynstats_destroyCtr(dynstats_ctr_t *ctr) {
 	statsobj.DestructUnlinkedCounter(ctr->pCtr);
 	free(ctr->metric);
@@ -88,7 +87,7 @@ dynstats_destroyCountersIn(dynstats_bucket_t *b, htable *table, dynstats_ctr_t *
 		ctrs_purged++;
 	}
 	STATSCOUNTER_ADD(b->ctrMetricsPurged, b->mutCtrMetricsPurged, ctrs_purged);
-	ATOMIC_SUB(&b->metricCount, ctrs_purged, &b->mutMetricCount);
+	ATOMIC_SUB_unsigned(&b->metricCount, ctrs_purged, &b->mutMetricCount);
 }
 
 static void /* assumes exclusive access to bucket */
@@ -130,7 +129,7 @@ dynstats_addBucketMetrics(dynstats_buckets_t *bkts, dynstats_bucket_t *b, const 
 	name_len = ustrlen(name);
 	CHKmalloc(metric_name_buff = malloc((name_len + DYNSTATS_MAX_BUCKET_NS_METRIC_LENGTH + 1) * sizeof(uchar)));
 
-	ustrncpy(metric_name_buff, name, name_len);
+	strcpy((char*)metric_name_buff, (char*)name);
 	metric_suffix = metric_name_buff + name_len;
 	*metric_suffix = DYNSTATS_METRIC_NAME_SEPARATOR;
 	metric_suffix++;
@@ -139,37 +138,49 @@ dynstats_addBucketMetrics(dynstats_buckets_t *bkts, dynstats_bucket_t *b, const 
 	ustrncpy(metric_suffix, suffix_litteral, DYNSTATS_MAX_BUCKET_NS_METRIC_LENGTH);
 	STATSCOUNTER_INIT(b->ctrOpsOverflow, b->mutCtrOpsOverflow);
 	CHKiRet(statsobj.AddManagedCounter(bkts->global_stats, metric_name_buff, ctrType_IntCtr,
-									   CTR_FLAG_RESETTABLE, &(b->ctrOpsOverflow), &b->pOpsOverflowCtr, 1));
+									   CTR_FLAG_RESETTABLE,
+										&(b->ctrOpsOverflow),
+										&b->pOpsOverflowCtr, 1));
 
 	suffix_litteral = UCHAR_CONSTANT("new_metric_add");
 	ustrncpy(metric_suffix, suffix_litteral, DYNSTATS_MAX_BUCKET_NS_METRIC_LENGTH);
 	STATSCOUNTER_INIT(b->ctrNewMetricAdd, b->mutCtrNewMetricAdd);
 	CHKiRet(statsobj.AddManagedCounter(bkts->global_stats, metric_name_buff, ctrType_IntCtr,
-									   CTR_FLAG_RESETTABLE, &(b->ctrNewMetricAdd), &b->pNewMetricAddCtr, 1));
+									   CTR_FLAG_RESETTABLE,
+										&(b->ctrNewMetricAdd),
+										&b->pNewMetricAddCtr, 1));
 
 	suffix_litteral = UCHAR_CONSTANT("no_metric");
 	ustrncpy(metric_suffix, suffix_litteral, DYNSTATS_MAX_BUCKET_NS_METRIC_LENGTH);
 	STATSCOUNTER_INIT(b->ctrNoMetric, b->mutCtrNoMetric);
 	CHKiRet(statsobj.AddManagedCounter(bkts->global_stats, metric_name_buff, ctrType_IntCtr,
-									   CTR_FLAG_RESETTABLE, &(b->ctrNoMetric), &b->pNoMetricCtr, 1));
+									   CTR_FLAG_RESETTABLE,
+										&(b->ctrNoMetric),
+										&b->pNoMetricCtr, 1));
 
 	suffix_litteral = UCHAR_CONSTANT("metrics_purged");
 	ustrncpy(metric_suffix, suffix_litteral, DYNSTATS_MAX_BUCKET_NS_METRIC_LENGTH);
 	STATSCOUNTER_INIT(b->ctrMetricsPurged, b->mutCtrMetricsPurged);
 	CHKiRet(statsobj.AddManagedCounter(bkts->global_stats, metric_name_buff, ctrType_IntCtr,
-									   CTR_FLAG_RESETTABLE, &(b->ctrMetricsPurged), &b->pMetricsPurgedCtr, 1));
+									   CTR_FLAG_RESETTABLE,
+										&(b->ctrMetricsPurged),
+										&b->pMetricsPurgedCtr, 1));
 
 	suffix_litteral = UCHAR_CONSTANT("ops_ignored");
 	ustrncpy(metric_suffix, suffix_litteral, DYNSTATS_MAX_BUCKET_NS_METRIC_LENGTH);
 	STATSCOUNTER_INIT(b->ctrOpsIgnored, b->mutCtrOpsIgnored);
 	CHKiRet(statsobj.AddManagedCounter(bkts->global_stats, metric_name_buff, ctrType_IntCtr,
-									   CTR_FLAG_RESETTABLE, &(b->ctrOpsIgnored), &b->pOpsIgnoredCtr, 1));
+									   CTR_FLAG_RESETTABLE,
+										&(b->ctrOpsIgnored),
+										&b->pOpsIgnoredCtr, 1));
 
 	suffix_litteral = UCHAR_CONSTANT("purge_triggered");
 	ustrncpy(metric_suffix, suffix_litteral, DYNSTATS_MAX_BUCKET_NS_METRIC_LENGTH);
 	STATSCOUNTER_INIT(b->ctrPurgeTriggered, b->mutCtrPurgeTriggered);
 	CHKiRet(statsobj.AddManagedCounter(bkts->global_stats, metric_name_buff, ctrType_IntCtr,
-									   CTR_FLAG_RESETTABLE, &(b->ctrPurgeTriggered), &b->pPurgeTriggeredCtr, 1));
+									   CTR_FLAG_RESETTABLE,
+										&(b->ctrPurgeTriggered),
+										&b->pPurgeTriggeredCtr, 1));
 
 finalize_it:
 	free(metric_name_buff);
@@ -208,7 +219,8 @@ dynstats_rebuildSurvivorTable(dynstats_bucket_t *b) {
 	
 	htab_sz = (size_t) (DYNSTATS_HASHTABLE_SIZE_OVERPROVISIONING * b->maxCardinality + 1);
 	if (b->table == NULL) {
-		CHKmalloc(survivor_table = create_hashtable(htab_sz, hash_from_string, key_equals_string, no_op_free));
+		CHKmalloc(survivor_table = create_hashtable(htab_sz, hash_from_string, key_equals_string,
+			no_op_free));
 	}
 	CHKmalloc(new_table = create_hashtable(htab_sz, hash_from_string, key_equals_string, no_op_free));
 	statsobj.UnlinkAllCounters(b->stats);
@@ -221,15 +233,20 @@ dynstats_rebuildSurvivorTable(dynstats_bucket_t *b) {
 	b->ctrs = NULL;
 finalize_it:
 	if (iRet != RS_RET_OK) {
-		errmsg.LogError(errno, RS_RET_INTERNAL_ERROR, "error trying to evict TTL-expired metrics of dyn-stats bucket named: %s", b->name);
+		LogError(errno, RS_RET_INTERNAL_ERROR, "error trying to evict "
+			"TTL-expired metrics of dyn-stats bucket named: %s", b->name);
 		if (new_table == NULL) {
-			errmsg.LogError(errno, RS_RET_INTERNAL_ERROR, "error trying to initialize hash-table for dyn-stats bucket named: %s", b->name);
+			LogError(errno, RS_RET_INTERNAL_ERROR, "error trying to "
+				"initialize hash-table for dyn-stats bucket named: %s", b->name);
 		} else {
+			assert(0); /* "can" not happen -- triggers Coverity CID 184307:
 			hashtable_destroy(new_table, 0);
+			We keep this as guard should code above change in the future */
 		}
 		if (b->table == NULL) {
 			if (survivor_table == NULL) {
-				errmsg.LogError(errno, RS_RET_INTERNAL_ERROR, "error trying to initialize ttl-survivor hash-table for dyn-stats bucket named: %s", b->name);
+				LogError(errno, RS_RET_INTERNAL_ERROR, "error trying to initialize "
+				"ttl-survivor hash-table for dyn-stats bucket named: %s", b->name);
 			} else {
 				hashtable_destroy(survivor_table, 0);
 			}
@@ -257,7 +274,7 @@ dynstats_resetIfExpired(dynstats_bucket_t *b) {
 	timeout = timeoutVal(&b->metricCleanupTimeout);
 	pthread_rwlock_unlock(&b->lock);
 	if (timeout == 0) {
-		errmsg.LogMsg(0, RS_RET_TIMED_OUT, LOG_INFO, "dynstats: bucket '%s' is being reset", b->name);
+		LogMsg(0, RS_RET_TIMED_OUT, LOG_INFO, "dynstats: bucket '%s' is being reset", b->name);
 		dynstats_resetBucket(b);
 	}
 }
@@ -304,7 +321,7 @@ dynstats_newBucket(const uchar* name, uint8_t resettable, uint32_t maxCardinalit
 		CHKmalloc(b = calloc(1, sizeof(dynstats_bucket_t)));
 		b->resettable = resettable;
 		b->maxCardinality = maxCardinality;
-		b->unusedMetricLife = 1000 * unusedMetricLife; 
+		b->unusedMetricLife = 1000 * unusedMetricLife;
 		CHKmalloc(b->name = ustrdup(name));
 
 		pthread_rwlockattr_init(&bucket_lock_attr);
@@ -332,7 +349,8 @@ dynstats_newBucket(const uchar* name, uint8_t resettable, uint32_t maxCardinalit
 		}
 		pthread_rwlock_unlock(&bkts->lock);
 	} else {
-		errmsg.LogError(0, RS_RET_INTERNAL_ERROR, "dynstats: bucket creation failed, as global-initialization of buckets was unsuccessful");
+		LogError(0, RS_RET_INTERNAL_ERROR, "dynstats: bucket creation failed, as "
+		"global-initialization of buckets was unsuccessful");
 		ABORT_FINALIZE(RS_RET_INTERNAL_ERROR);
 	}
 finalize_it:
@@ -453,7 +471,8 @@ dynstats_findBucket(const uchar* name) {
 		pthread_rwlock_unlock(&bkts->lock);
 	} else {
 		b = NULL;
-		errmsg.LogError(0, RS_RET_INTERNAL_ERROR, "dynstats: bucket lookup failed, as global-initialization of buckets was unsuccessful");
+		LogError(0, RS_RET_INTERNAL_ERROR, "dynstats: bucket lookup failed, as global-initialization "
+		"of buckets was unsuccessful");
 	}
 
 	return b;
@@ -467,8 +486,8 @@ dynstats_createCtr(dynstats_bucket_t *b, const uchar* metric, dynstats_ctr_t **c
 	CHKmalloc((*ctr)->metric = ustrdup(metric));
 	STATSCOUNTER_INIT((*ctr)->ctr, (*ctr)->mutCtr);
 	CHKiRet(statsobj.AddManagedCounter(b->stats, metric, ctrType_IntCtr,
-									   b->resettable ? CTR_FLAG_MUST_RESET : CTR_FLAG_NONE,
-									   &(*ctr)->ctr, &(*ctr)->pCtr, 0));
+				b->resettable ? CTR_FLAG_MUST_RESET : CTR_FLAG_NONE,
+				&(*ctr)->ctr, &(*ctr)->pCtr, 0));
 finalize_it:
 	if (iRet != RS_RET_OK) {
 		if ((*ctr) != NULL) {
@@ -480,6 +499,10 @@ finalize_it:
 	RETiRet;
 }
 
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized" /* TODO: how can we fix these warnings? */
+#endif
 static rsRetVal
 dynstats_addNewCtr(dynstats_bucket_t *b, const uchar* metric, uint8_t doInitialIncrement) {
 	dynstats_ctr_t *ctr;
@@ -491,7 +514,7 @@ dynstats_addNewCtr(dynstats_bucket_t *b, const uchar* metric, uint8_t doInitialI
 	created = 0;
 	ctr = NULL;
 
-	if (ATOMIC_FETCH_32BIT(&b->metricCount, &b->mutMetricCount) >= b->maxCardinality) {
+	if ((unsigned) ATOMIC_FETCH_32BIT_unsigned(&b->metricCount, &b->mutMetricCount) >= b->maxCardinality) {
 		ABORT_FINALIZE(RS_RET_OUT_OF_MEMORY);
 	}
 	
@@ -557,6 +580,9 @@ finalize_it:
 	}
 	RETiRet;
 }
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 rsRetVal
 dynstats_inc(dynstats_bucket_t *b, uchar* metric) {
@@ -588,7 +614,8 @@ dynstats_inc(dynstats_bucket_t *b, uchar* metric) {
 finalize_it:
 	if (iRet != RS_RET_OK) {
 		if (iRet == RS_RET_NOENTRY) {
-			/* NOTE: this is not tested (because it requires very strong orchestration to gurantee contended lock for testing) */
+			/* NOTE: this is not tested (because it requires very strong orchestration to
+			guarantee contended lock for testing) */
 			STATSCOUNTER_INC(b->ctrOpsIgnored, b->mutCtrOpsIgnored);
 		} else {
 			STATSCOUNTER_INC(b->ctrOpsOverflow, b->mutCtrOpsOverflow);

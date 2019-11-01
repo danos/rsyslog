@@ -21,11 +21,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -55,10 +55,8 @@
 MODULE_TYPE_OUTPUT
 MODULE_TYPE_NOKEEP
 
-static rsRetVal resetConfigVariables(uchar __attribute__((unused)) *pp, void __attribute__((unused)) *pVal);
 
 /* static data */
-DEFobjCurrIf(errmsg);
 
 /* internal structures
  */
@@ -74,8 +72,7 @@ typedef struct wrkrInstanceData {
 
 
 BEGINinitConfVars		/* (re)set config variables to default values */
-CODESTARTinitConfVars 
-	resetConfigVariables(NULL, NULL);
+CODESTARTinitConfVars
 ENDinitConfVars
 
 
@@ -129,7 +126,6 @@ parseName(uchar **buf, char *name, unsigned lenName)
 	--lenName; /* reserve space for '\0' */
 	i = 0;
 	while(**buf && **buf != '=' && lenName) {
-//dbgprintf("parseNAme, buf: %s\n", *buf);
 		name[i++] = **buf;
 		++(*buf), --lenName;
 	}
@@ -160,7 +156,6 @@ parseValue(uchar **buf, char *val, unsigned lenval)
 	}
 
 	while(**buf && **buf != termc && lenval) {
-//dbgprintf("parseValue, termc '%c', buf: %s\n", termc, *buf);
 		val[i++] = **buf;
 		++(*buf), --lenval;
 	}
@@ -171,7 +166,7 @@ finalize_it:
 }
 
 
-/* parse the audit record and create libee structure
+/* parse the audit record and create json structure
  */
 static rsRetVal
 audit_parse(uchar *buf, struct json_object **jsonRoot)
@@ -297,14 +292,13 @@ CODE_STD_STRING_REQUESTparseSelectorAct(1)
 	/* we call the function below because we need to call it via our interface definition. However,
 	 * the format specified (if any) is always ignored.
 	 */
-	CHKiRet(cflineParseTemplateName(&p, *ppOMSR, 0, OMSR_TPL_AS_MSG, (uchar*) "RSYSLOG_FileFormat"));
+	iRet = cflineParseTemplateName(&p, *ppOMSR, 0, OMSR_TPL_AS_MSG, (uchar*) "RSYSLOG_FileFormat");
 CODE_STD_FINALIZERparseSelectorAct
 ENDparseSelectorAct
 
 
 BEGINmodExit
 CODESTARTmodExit
-	objRelease(errmsg, CORE_COMPONENT);
 ENDmodExit
 
 
@@ -313,16 +307,6 @@ CODESTARTqueryEtryPt
 CODEqueryEtryPt_STD_OMOD_QUERIES
 CODEqueryEtryPt_STD_OMOD8_QUERIES
 ENDqueryEtryPt
-
-
-
-/* Reset config variables for this module to default values.
- */
-static rsRetVal resetConfigVariables(uchar __attribute__((unused)) *pp, void __attribute__((unused)) *pVal)
-{
-	DEFiRet;
-	RETiRet;
-}
 
 
 BEGINmodInit()
@@ -354,10 +338,6 @@ CODEmodInit_QueryRegCFSLineHdlr
 		ABORT_FINALIZE(RS_RET_NO_MSG_PASSING);
 	}
 
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
-	
-	CHKiRet(omsdRegCFSLineHdlr((uchar *)"resetconfigvariables", 1, eCmdHdlrCustomHandler,
-				    resetConfigVariables, NULL, STD_LOADABLE_MODULE_ID));
 ENDmodInit
 
 /* vi:set ai:

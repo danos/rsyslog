@@ -3,7 +3,7 @@
  * This object provides a statistics-gathering facility inside rsyslog. This
  * functionality will be pragmatically implemented and extended.
  *
- * Copyright 2010-2016 Adiscon GmbH.
+ * Copyright 2010-2017 Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -49,7 +49,6 @@ int GatherStats = 0;
 
 /* static data */
 DEFobjStaticHelpers
-DEFobjCurrIf(errmsg)
 
 /* doubly linked list of stats objects. Object is automatically linked to it
  * upon construction. Enqueue always happens at the front (simplifies logic).
@@ -202,7 +201,8 @@ finalize_it:
  * is called.
  */
 static rsRetVal
-addManagedCounter(statsobj_t *pThis, const uchar *ctrName, statsCtrType_t ctrType, int8_t flags, void *pCtr, ctr_t **entryRef, int8_t linked)
+addManagedCounter(statsobj_t *pThis, const uchar *ctrName, statsCtrType_t ctrType, int8_t flags, void *pCtr,
+ctr_t **entryRef, int8_t linked)
 {
 	ctr_t *ctr;
 	DEFiRet;
@@ -232,12 +232,12 @@ addManagedCounter(statsobj_t *pThis, const uchar *ctrName, statsCtrType_t ctrTyp
 	*entryRef = ctr;
 
 finalize_it:
-    if (iRet != RS_RET_OK) {
-        if (ctr != NULL) {
-            free(ctr->name);
-            free(ctr);
-        }
-    }
+	if (iRet != RS_RET_OK) {
+		if (ctr != NULL) {
+			free(ctr->name);
+			free(ctr);
+		}
+	}
 	RETiRet;
 }
 
@@ -254,8 +254,7 @@ addCounter(statsobj_t *pThis, const uchar *ctrName, statsCtrType_t ctrType, int8
 {
 	ctr_t *ctr;
 	DEFiRet;
-	CHKiRet(addManagedCounter(pThis, ctrName, ctrType, flags, pCtr, &ctr, 1));
-finalize_it:
+	iRet = addManagedCounter(pThis, ctrName, ctrType, flags, pCtr, &ctr, 1);
 	RETiRet;
 }
 
@@ -268,7 +267,7 @@ destructUnlinkedCounter(ctr_t *ctr) {
 static void
 destructCounter(statsobj_t *pThis, ctr_t *pCtr)
 {
-    pthread_mutex_lock(&pThis->mutCtr);
+	pthread_mutex_lock(&pThis->mutCtr);
 	if (pCtr->prev != NULL) {
 		pCtr->prev->next = pCtr->next;
 	}
@@ -303,7 +302,7 @@ resetResettableCtr(ctr_t *pCtr, int8_t bResetCtrs)
 
 static rsRetVal
 addCtrForReporting(json_object *to, const uchar* field_name, intctr_t value) {
-	json_object *v = NULL;
+	json_object *v;
 	DEFiRet;
 
 	/*We should migrate libfastjson to support uint64_t in addition to int64_t.
@@ -313,28 +312,21 @@ addCtrForReporting(json_object *to, const uchar* field_name, intctr_t value) {
 
 	json_object_object_add(to, (const char*) field_name, v);
 finalize_it:
-	if (iRet != RS_RET_OK) {
-		if (v != NULL) {
-			json_object_put(v);
-		}
-	}
+	/* v cannot be NULL in error case, as this would only happen during malloc fail,
+	 * which itself sets it to NULL -- so not doing cleanup here.
+	 */
 	RETiRet;
 }
 
 static rsRetVal
 addContextForReporting(json_object *to, const uchar* field_name, const uchar* value) {
-	json_object *v = NULL;
+	json_object *v;
 	DEFiRet;
 
 	CHKmalloc(v = json_object_new_string((const char*) value));
 
 	json_object_object_add(to, (const char*) field_name, v);
 finalize_it:
-	if (iRet != RS_RET_OK) {
-		if (v != NULL) {
-			json_object_put(v);
-		}
-	}
 	RETiRet;
 }
 
@@ -354,9 +346,10 @@ accumulatedValue(ctr_t *pCtr) {
 static rsRetVal
 getStatsLineCEE(statsobj_t *pThis, cstr_t **ppcstr, const statsFmtType_t fmt, const int8_t bResetCtrs)
 {
-	cstr_t *pcstr;
+	cstr_t *pcstr = NULL;
 	ctr_t *pCtr;
 	json_object *root, *values;
+	int locked = 0;
 	DEFiRet;
 
 	root = values = NULL;
@@ -364,7 +357,7 @@ getStatsLineCEE(statsobj_t *pThis, cstr_t **ppcstr, const statsFmtType_t fmt, co
 	CHKiRet(cstrConstruct(&pcstr));
 
 	if (fmt == statsFmt_CEE)
-		CHKiRet(rsCStrAppendStrWithLen(pcstr, UCHAR_CONSTANT("@cee: "), 6));
+		CHKiRet(rsCStrAppendStrWithLen(pcstr, UCHAR_CONSTANT(CONST_CEE_COOKIE" "), CONST_LEN_CEE_COOKIE + 1));
 
 	CHKmalloc(root = json_object_new_object());
 
@@ -383,6 +376,7 @@ getStatsLineCEE(statsobj_t *pThis, cstr_t **ppcstr, const statsFmtType_t fmt, co
 
 	/* now add all counters to this line */
 	pthread_mutex_lock(&pThis->mutCtr);
+	locked = 1;
 	for(pCtr = pThis->ctrRoot ; pCtr != NULL ; pCtr = pCtr->next) {
 		if (fmt == statsFmt_JSON_ES) {
 			/* work-around for broken Elasticsearch JSON implementation:
@@ -403,12 +397,21 @@ getStatsLineCEE(statsobj_t *pThis, cstr_t **ppcstr, const statsFmtType_t fmt, co
 		resetResettableCtr(pCtr, bResetCtrs);
 	}
 	pthread_mutex_unlock(&pThis->mutCtr);
+	locked = 0;
 	CHKiRet(rsCStrAppendStr(pcstr, (const uchar*) json_object_to_json_string(root)));
 
 	cstrFinalize(pcstr);
 	*ppcstr = pcstr;
+	pcstr = NULL;
 
 finalize_it:
+	if(locked) {
+		pthread_mutex_unlock(&pThis->mutCtr);
+	}
+
+	if (pcstr != NULL) {
+		cstrDestruct(&pcstr);
+	}
 	if (root != NULL) {
 		json_object_put(root);
 	}
@@ -475,7 +478,7 @@ getSenderStats(rsRetVal(*cb)(void*, const char*),
 	statsFmtType_t fmt,
 	const int8_t bResetCtrs)
 {
-	struct hashtable_itr *itr;
+	struct hashtable_itr *itr = NULL;
 	struct sender_stats *stat;
 	char fmtbuf[2048];
 
@@ -507,6 +510,7 @@ getSenderStats(rsRetVal(*cb)(void*, const char*),
 		} while (hashtable_iterator_advance(itr));
 	}
 
+	free(itr);
 	pthread_mutex_unlock(&mutSenders);
 }
 
@@ -518,10 +522,10 @@ getSenderStats(rsRetVal(*cb)(void*, const char*),
  * line. If the callback reports an error, processing is stopped.
  */
 static rsRetVal
-getAllStatsLines(rsRetVal(*cb)(void*, const char*), void *usrptr, statsFmtType_t fmt, const int8_t bResetCtrs)
+getAllStatsLines(rsRetVal(*cb)(void*, const char*), void *const usrptr, statsFmtType_t fmt, const int8_t bResetCtrs)
 {
 	statsobj_t *o;
-	cstr_t *cstr;
+	cstr_t *cstr = NULL;
 	DEFiRet;
 
 	for(o = objRoot ; o != NULL ; o = o->next) {
@@ -545,6 +549,9 @@ getAllStatsLines(rsRetVal(*cb)(void*, const char*), void *usrptr, statsFmtType_t
 	getSenderStats(cb, usrptr, fmt, bResetCtrs);
 
 finalize_it:
+	if(cstr != NULL) {
+		rsCStrDestruct(&cstr);
+	}
 	RETiRet;
 }
 
@@ -579,12 +586,12 @@ statsRecordSender(const uchar *sender, unsigned nMsgs, time_t lastSeen)
 		stat->sender = (const uchar*)strdup((const char*)sender);
 		stat->nMsgs = 0;
 		if(glblReportNewSenders) {
-			errmsg.LogMsg(0, RS_RET_SENDER_APPEARED,
+			LogMsg(0, RS_RET_SENDER_APPEARED,
 				LOG_INFO, "new sender '%s'", stat->sender);
 		}
 		if(hashtable_insert(stats_senders, (void*)stat->sender,
 			(void*)stat) == 0) {
-			errmsg.LogError(errno, RS_RET_INTERNAL_ERROR,
+			LogError(errno, RS_RET_INTERNAL_ERROR,
 				"error inserting sender '%s' into sender "
 				"hash table", sender);
 			ABORT_FINALIZE(RS_RET_INTERNAL_ERROR);
@@ -593,7 +600,8 @@ statsRecordSender(const uchar *sender, unsigned nMsgs, time_t lastSeen)
 
 	stat->nMsgs += nMsgs;
 	stat->lastSeen = lastSeen;
-	DBGPRINTF("DDDDD: statsRecordSender: '%s', nmsgs %u [%llu], lastSeen %llu\n", sender, nMsgs, (long long unsigned) stat->nMsgs, (long long unsigned) lastSeen);
+	DBGPRINTF("DDDDD: statsRecordSender: '%s', nmsgs %u [%llu], lastSeen %llu\n", sender, nMsgs,
+	(long long unsigned) stat->nMsgs, (long long unsigned) lastSeen);
 
 finalize_it:
 	if(mustUnlock)
@@ -629,7 +637,7 @@ destructUnlinkedCounters(ctr_t *ctr) {
 void
 checkGoneAwaySenders(const time_t tCurr)
 {
-	struct hashtable_itr *itr;
+	struct hashtable_itr *itr = NULL;
 	struct sender_stats *stat;
 	const time_t rqdLast = tCurr - glblSenderStatsTimeout;
 	struct tm tm;
@@ -646,7 +654,7 @@ checkGoneAwaySenders(const time_t tCurr)
 			if(stat->lastSeen < rqdLast) {
 				if(glblReportGoneAwaySenders) {
 					localtime_r(&stat->lastSeen, &tm);
-					errmsg.LogMsg(0, RS_RET_SENDER_GONE_AWAY,
+					LogMsg(0, RS_RET_SENDER_GONE_AWAY,
 						LOG_WARNING,
 						"removing sender '%s' from connection "
 						"table, last seen at "
@@ -661,6 +669,7 @@ checkGoneAwaySenders(const time_t tCurr)
 	}
 
 	pthread_mutex_unlock(&mutSenders);
+	free(itr);
 }
 
 /* destructor for the statsobj object */
@@ -728,14 +737,13 @@ BEGINAbstractObjClassInit(statsobj, 1, OBJ_IS_CORE_MODULE) /* class, version */
 	/* set our own handlers */
 	OBJSetMethodHandler(objMethod_DEBUGPRINT, statsobjDebugPrint);
 	OBJSetMethodHandler(objMethod_CONSTRUCTION_FINALIZER, statsobjConstructFinalize);
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 
 	/* init other data items */
 	pthread_mutex_init(&mutStats, NULL);
 	pthread_mutex_init(&mutSenders, NULL);
 
 	if((stats_senders = create_hashtable(100, hash_from_string, key_equals_string, NULL)) == NULL) {
-		errmsg.LogError(0, RS_RET_INTERNAL_ERROR, "error trying to initialize hash-table "
+		LogError(0, RS_RET_INTERNAL_ERROR, "error trying to initialize hash-table "
 			"for sender table. Sender statistics and warnings are disabled.");
 		ABORT_FINALIZE(RS_RET_INTERNAL_ERROR);
 	}

@@ -2,12 +2,12 @@
  *
  * This is a udp-based output module that support spoofing.
  *
- * This file builds on UDP spoofing code contributed by 
+ * This file builds on UDP spoofing code contributed by
  * David Lang <david@lang.hm>. I then created a "real" rsyslog module
  * out of that code and omfwd. I decided to make it a separate module because
  * omfwd already mixes up too many things (TCP & UDP & a different modes,
  * this has historic reasons), it would not be a good idea to also add
- * spoofing to it. And, looking at the requirements, there is little in 
+ * spoofing to it. And, looking at the requirements, there is little in
  * common between omfwd and this module.
  *
  * Note: I have briefly checked libnet source code and I somewhat have the feeling
@@ -85,7 +85,6 @@ MODULE_CNFNAME("omudpspoof")
 /* internal structures
  */
 DEF_OMOD_STATIC_DATA
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(glbl)
 DEFobjCurrIf(net)
 
@@ -159,7 +158,7 @@ static modConfData_t *runModConf = NULL;/* modConf ptr to use for the current ex
 
 
 BEGINinitConfVars		/* (re)set config variables to default values */
-CODESTARTinitConfVars 
+CODESTARTinitConfVars
 	cs.tplName = NULL;
 	cs.pszSourceNameTemplate = NULL;
 	cs.pszTargetHost = NULL;
@@ -204,7 +203,7 @@ setLegacyDfltTpl(void __attribute__((unused)) *pVal, uchar* newVal)
 
 	if(loadModConf != NULL && loadModConf->tplName != NULL) {
 		free(newVal);
-		errmsg.LogError(0, RS_RET_ERR, "omudpspoof default template already set via module "
+		LogError(0, RS_RET_ERR, "omudpspoof default template already set via module "
 			"global parameter - can no longer be changed");
 		ABORT_FINALIZE(RS_RET_ERR);
 	}
@@ -255,7 +254,7 @@ BEGINsetModCnf
 CODESTARTsetModCnf
 	pvals = nvlstGetParams(lst, &modpblk, NULL);
 	if(pvals == NULL) {
-		errmsg.LogError(0, RS_RET_MISSING_CNFPARAMS, "error processing module "
+		LogError(0, RS_RET_MISSING_CNFPARAMS, "error processing module "
 				"config parameters [module(...)]");
 		ABORT_FINALIZE(RS_RET_MISSING_CNFPARAMS);
 	}
@@ -271,7 +270,7 @@ CODESTARTsetModCnf
 		if(!strcmp(modpblk.descr[i].name, "template")) {
 			loadModConf->tplName = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
 			if(cs.tplName != NULL) {
-				errmsg.LogError(0, RS_RET_DUP_PARAM, "omudpspoof: warning: default template "
+				LogError(0, RS_RET_DUP_PARAM, "omudpspoof: warning: default template "
 						"was already set via legacy directive - may lead to inconsistent "
 						"results.");
 			}
@@ -355,9 +354,11 @@ ENDdbgPrintInstInfo
  * Note: libnet is not thread-safe, so we need to ensure that only one
  * instance ever is calling libnet code.
  * rgehards, 2007-12-20
- */ 
+ */
+#ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-align"
+#endif
 static rsRetVal
 UDPSend(wrkrInstanceData_t *pWrkrData, uchar *pszSourcename, char *msg, size_t len)
 {
@@ -371,7 +372,7 @@ UDPSend(wrkrInstanceData_t *pWrkrData, uchar *pszSourcename, char *msg, size_t l
 	sbool bNeedUnlock = 0;
 	/* hdrOffs = fragmentation flags + offset (in bytes)
 	* divided by 8 */
-	unsigned msgOffs, hdrOffs; 
+	unsigned msgOffs, hdrOffs;
 	unsigned maxPktLen, pktLen;
 	DEFiRet;
 
@@ -425,7 +426,8 @@ UDPSend(wrkrInstanceData_t *pWrkrData, uchar *pszSourcename, char *msg, size_t l
 			pWrkrData->libnet_handle,	/* libnet handle */
 			udp);			/* libnet id */
 		if (udp == -1) {
-			DBGPRINTF("omudpspoof: can't build UDP header: %s\n", libnet_geterror(pWrkrData->libnet_handle));
+			DBGPRINTF("omudpspoof: can't build UDP header: %s\n",
+				libnet_geterror(pWrkrData->libnet_handle));
 		}
 
 		ip = libnet_build_ipv4(
@@ -443,7 +445,8 @@ UDPSend(wrkrInstanceData_t *pWrkrData, uchar *pszSourcename, char *msg, size_t l
 			pWrkrData->libnet_handle,		/* libnet handle */
 			ip);				/* libnet id */
 		if (ip == -1) {
-			DBGPRINTF("omudpspoof: can't build IP header: %s\n", libnet_geterror(pWrkrData->libnet_handle));
+			DBGPRINTF("omudpspoof: can't build IP header: %s\n",
+				libnet_geterror(pWrkrData->libnet_handle));
 		}
 
 		/* Write it to the wire. */
@@ -497,13 +500,15 @@ UDPSend(wrkrInstanceData_t *pWrkrData, uchar *pszSourcename, char *msg, size_t l
 				pWrkrData->libnet_handle,		/* libnet handle */
 				ip);				/* libnet id */
 			if (ip == -1) {
-				DBGPRINTF("omudpspoof: can't build IP fragment header: %s\n", libnet_geterror(pWrkrData->libnet_handle));
+				DBGPRINTF("omudpspoof: can't build IP fragment header: %s\n",
+					libnet_geterror(pWrkrData->libnet_handle));
 			}
 			/* Write it to the wire. */
 			lsent = libnet_write(pWrkrData->libnet_handle);
 			if(lsent != (int) (LIBNET_IPV4_H+pktLen)) {
 				DBGPRINTF("omudpspoof: fragment write error len %d, sent %d: %s\n",
-					  (int) (LIBNET_IPV4_H+LIBNET_UDP_H+len), lsent, libnet_geterror(pWrkrData->libnet_handle));
+					  (int) (LIBNET_IPV4_H+LIBNET_UDP_H+len), lsent,
+						libnet_geterror(pWrkrData->libnet_handle));
 				bSendSuccess = RSFALSE;
 				continue;
 			}
@@ -523,8 +528,9 @@ finalize_it:
 	}
 	RETiRet;
 }
+#ifdef _GNUC__
 #pragma GCC diagnostic pop
-
+#endif
 
 /* try to resume connection if it is not ready
  * rgerhards, 2007-08-02
@@ -552,7 +558,7 @@ static rsRetVal doTryResume(wrkrInstanceData_t *pWrkrData)
 
 		if(pWrkrData->libnet_handle == NULL) {
 			if(pData->bReportLibnetInitErr) {
-				errmsg.LogError(0, RS_RET_ERR_LIBNET_INIT, "omudpsoof: error "
+				LogError(0, RS_RET_ERR_LIBNET_INIT, "omudpsoof: error "
 				                "initializing libnet - are you running as root?");
 				pData->bReportLibnetInitErr = 0;
 			}
@@ -576,7 +582,7 @@ static rsRetVal doTryResume(wrkrInstanceData_t *pWrkrData)
 	}
 	DBGPRINTF("%s found, resuming.\n", pData->host);
 	pWrkrData->f_addr = res;
-	pWrkrData->pSockArray = net.create_udp_socket((uchar*)pData->host, NULL, 0, 0, 0, NULL);
+	pWrkrData->pSockArray = net.create_udp_socket((uchar*)pData->host, NULL, 0, 0, 0, 0, NULL);
 
 finalize_it:
 	if(iRet != RS_RET_OK) {
@@ -639,7 +645,7 @@ CODESTARTnewActInst
 
 	pvals = nvlstGetParams(lst, &actpblk, NULL);
 	if(pvals == NULL) {
-		errmsg.LogError(0, RS_RET_MISSING_CNFPARAMS, "omudpspoof: mandatory "
+		LogError(0, RS_RET_MISSING_CNFPARAMS, "omudpspoof: mandatory "
 		                "parameters missing");
 		ABORT_FINALIZE(RS_RET_MISSING_CNFPARAMS);
 	}
@@ -703,7 +709,8 @@ CODE_STD_STRING_REQUESTparseSelectorAct(2)
 						    : cs.pszSourceNameTemplate;
 
 	if(cs.pszTargetHost == NULL) {
-		errmsg.LogError(0, NO_ERRCODE, "No $ActionOMUDPSpoofTargetHost given, can not continue with this action.");
+		LogError(0, NO_ERRCODE, "No $ActionOMUDPSpoofTargetHost given, can not continue "
+			"with this action.");
 		ABORT_FINALIZE(RS_RET_HOST_NOT_SPECIFIED);
 	}
 
@@ -711,7 +718,7 @@ CODE_STD_STRING_REQUESTparseSelectorAct(2)
 	CHKmalloc(pData->host = ustrdup(cs.pszTargetHost));
 	if(cs.pszTargetPort == NULL)
 		pData->port = NULL;
-	else 
+	else
 		CHKmalloc(pData->port = ustrdup(cs.pszTargetPort));
 	CHKiRet(OMSRsetEntry(*ppOMSR, 1, ustrdup(sourceTpl), OMSR_NO_RQD_TPL_OPTS));
 	pData->sourcePortStart = cs.iSourcePortStart;
@@ -745,7 +752,6 @@ CODESTARTmodExit
 	/* destroy the libnet state needed for forged UDP sources */
 	pthread_mutex_destroy(&mutLibnet);
 	/* release what we no longer need */
-	objRelease(errmsg, CORE_COMPONENT);
 	objRelease(glbl, CORE_COMPONENT);
 	objRelease(net, LM_NET_FILENAME);
 	freeConfigVars();
@@ -781,18 +787,24 @@ INITLegCnfVars
 	*ipIFVersProvided = CURR_MOD_IF_VERSION; /* we only support the current interface specification */
 CODEmodInit_QueryRegCFSLineHdlr
 	CHKiRet(objUse(glbl, CORE_COMPONENT));
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 	CHKiRet(objUse(net,LM_NET_FILENAME));
 
 	pthread_mutex_init(&mutLibnet, NULL);
 
-	CHKiRet(regCfSysLineHdlr((uchar *)"actionomudpspoofdefaulttemplate", 0, eCmdHdlrGetWord, setLegacyDfltTpl, NULL, NULL));
-	CHKiRet(regCfSysLineHdlr((uchar *)"actionomudpspoofsourcenametemplate", 0, eCmdHdlrGetWord, NULL, &cs.pszSourceNameTemplate, NULL));
-	CHKiRet(regCfSysLineHdlr((uchar *)"actionomudpspooftargethost", 0, eCmdHdlrGetWord, NULL, &cs.pszTargetHost, NULL));
-	CHKiRet(regCfSysLineHdlr((uchar *)"actionomudpspooftargetport", 0, eCmdHdlrGetWord, NULL, &cs.pszTargetPort, NULL));
-	CHKiRet(regCfSysLineHdlr((uchar *)"actionomudpspoofsourceportstart", 0, eCmdHdlrInt, NULL, &cs.iSourcePortStart, NULL));
-	CHKiRet(regCfSysLineHdlr((uchar *)"actionomudpspoofsourceportend", 0, eCmdHdlrInt, NULL, &cs.iSourcePortEnd, NULL));
-	CHKiRet(omsdRegCFSLineHdlr((uchar *)"resetconfigvariables", 1, eCmdHdlrCustomHandler, resetConfigVariables, NULL, STD_LOADABLE_MODULE_ID));
+	CHKiRet(regCfSysLineHdlr((uchar *)"actionomudpspoofdefaulttemplate", 0, eCmdHdlrGetWord,
+	setLegacyDfltTpl, NULL, NULL));
+	CHKiRet(regCfSysLineHdlr((uchar *)"actionomudpspoofsourcenametemplate", 0, eCmdHdlrGetWord, NULL,
+	&cs.pszSourceNameTemplate, NULL));
+	CHKiRet(regCfSysLineHdlr((uchar *)"actionomudpspooftargethost", 0, eCmdHdlrGetWord, NULL,
+	&cs.pszTargetHost, NULL));
+	CHKiRet(regCfSysLineHdlr((uchar *)"actionomudpspooftargetport", 0, eCmdHdlrGetWord, NULL,
+	&cs.pszTargetPort, NULL));
+	CHKiRet(regCfSysLineHdlr((uchar *)"actionomudpspoofsourceportstart", 0, eCmdHdlrInt, NULL,
+	&cs.iSourcePortStart, NULL));
+	CHKiRet(regCfSysLineHdlr((uchar *)"actionomudpspoofsourceportend", 0, eCmdHdlrInt, NULL,
+	&cs.iSourcePortEnd, NULL));
+	CHKiRet(omsdRegCFSLineHdlr((uchar *)"resetconfigvariables", 1, eCmdHdlrCustomHandler, resetConfigVariables,
+	NULL, STD_LOADABLE_MODULE_ID));
 ENDmodInit
 
 /* vim:set ai:

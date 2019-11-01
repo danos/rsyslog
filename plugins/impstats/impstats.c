@@ -1,18 +1,18 @@
 /* impstats.c
  * A module to periodically output statistics gathered by rsyslog.
  *
- * Copyright 2010-2016 Adiscon GmbH.
+ * Copyright 2010-2018 Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,12 +30,14 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/uio.h>
-#if defined(__FreeBSD__)
 #include <sys/stat.h>
-#endif
 #include <errno.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#ifdef OS_LINUX
+#include <sys/types.h>
+#include <dirent.h>
+#endif
 
 #include "dirty.h"
 #include "cfsysline.h"
@@ -48,6 +50,7 @@
 #include "statsobj.h"
 #include "prop.h"
 #include "ruleset.h"
+#include "parserif.h"
 
 
 MODULE_TYPE_INPUT
@@ -64,7 +67,6 @@ DEF_IMOD_STATIC_DATA
 DEFobjCurrIf(glbl)
 DEFobjCurrIf(prop)
 DEFobjCurrIf(statsobj)
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(ruleset)
 
 typedef struct configSettings_s {
@@ -117,16 +119,21 @@ static struct cnfparamblk modpblk =
 
 
 /* resource use stats counters */
+#ifdef OS_LINUX
+static int st_openfiles;
+#endif
 static intctr_t st_ru_utime;
 static intctr_t st_ru_stime;
-static int st_ru_maxrss;
-static int st_ru_minflt;
-static int st_ru_majflt;
-static int st_ru_inblock;
-static int st_ru_oublock;
-static int st_ru_nvcsw;
-static int st_ru_nivcsw;
+static intctr_t st_ru_maxrss;
+static intctr_t st_ru_minflt;
+static intctr_t st_ru_majflt;
+static intctr_t st_ru_inblock;
+static intctr_t st_ru_oublock;
+static intctr_t st_ru_nvcsw;
+static intctr_t st_ru_nivcsw;
 static statsobj_t *statsobj_resources;
+
+static pthread_mutex_t hup_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 BEGINmodExit
 CODESTARTmodExit
@@ -134,7 +141,6 @@ CODESTARTmodExit
 	/* release objects we used */
 	objRelease(glbl, CORE_COMPONENT);
 	objRelease(prop, CORE_COMPONENT);
-	objRelease(errmsg, CORE_COMPONENT);
 	objRelease(statsobj, CORE_COMPONENT);
 	objRelease(ruleset, CORE_COMPONENT);
 ENDmodExit
@@ -145,6 +151,35 @@ CODESTARTisCompatibleWithFeature
 	if(eFeat == sFEATURENonCancelInputTermination)
 		iRet = RS_RET_OK;
 ENDisCompatibleWithFeature
+
+
+#ifdef OS_LINUX
+/* count number of open files (linux specific) */
+static void
+countOpenFiles(void)
+{
+	char proc_path[MAXFNAME];
+	DIR *dp;
+	struct dirent *files;
+
+	st_openfiles = 0;
+	snprintf(proc_path, sizeof(proc_path), "/proc/%d/fd", glblGetOurPid());
+	if((dp = opendir(proc_path)) == NULL) {
+		LogError(errno, RS_RET_ERR, "impstats: error reading %s\n", proc_path);
+		goto done;
+	}
+	while((files=readdir(dp)) != NULL) {
+		if(!strcmp(files->d_name, ".") || !strcmp(files->d_name, ".."))
+			continue;
+		st_openfiles++;
+	}
+	closedir(dp);
+
+done:
+	return;
+}
+#endif
+
 
 static void
 initConfigSettings(void)
@@ -198,13 +233,20 @@ doLogToFile(const char *ln, const size_t lenLn)
 	time_t t;
 	char timebuf[32];
 
+	pthread_mutex_lock(&hup_mutex);
+
 	if(lenLn == 0)
 		goto done;
+
 	if(runModConf->logfd == -1) {
 		runModConf->logfd = open(runModConf->logfile, O_WRONLY|O_CREAT|O_APPEND|O_CLOEXEC, S_IRUSR|S_IWUSR);
 		if(runModConf->logfd == -1) {
-			dbgprintf("error opening stats file %s\n", runModConf->logfile);
+			DBGPRINTF("impstats: error opening stats file %s\n",
+				runModConf->logfile);
 			goto done;
+		} else {
+			DBGPRINTF("impstats: opened stats file %s\n",
+				runModConf->logfile);
 		}
 	}
 
@@ -226,7 +268,9 @@ doLogToFile(const char *ln, const size_t lenLn)
 			dbgprintf("error writing stats file %s, nwritten %lld, expected %lld\n",
 				  runModConf->logfile, (long long) nwritten, (long long) nexpect);
 	}
-done:	return;
+done:
+	pthread_mutex_unlock(&hup_mutex);
+	return;
 }
 
 
@@ -269,6 +313,9 @@ generateStatsMsgs(void)
 		dbgprintf("impstats: getrusage() failed with error %d, zeroing out\n", errno);
 		memset(&ru, 0, sizeof(ru));
 	}
+#	ifdef OS_LINUX
+	countOpenFiles();
+#	endif
 	st_ru_utime = ru.ru_utime.tv_sec * 1000000 + ru.ru_utime.tv_usec;
 	st_ru_stime = ru.ru_stime.tv_sec * 1000000 + ru.ru_stime.tv_usec;
 	st_ru_maxrss = ru.ru_maxrss;
@@ -311,7 +358,7 @@ BEGINsetModCnf
 CODESTARTsetModCnf
 	pvals = nvlstGetParams(lst, &modpblk, NULL);
 	if(pvals == NULL) {
-		errmsg.LogError(0, RS_RET_MISSING_CNFPARAMS, "error processing module "
+		LogError(0, RS_RET_MISSING_CNFPARAMS, "error processing module "
 				"config parameters [module(...)]");
 		ABORT_FINALIZE(RS_RET_MISSING_CNFPARAMS);
 	}
@@ -349,7 +396,7 @@ CODESTARTsetModCnf
 			} else if(!strcasecmp(mode, "legacy")) {
 				loadModConf->statsFmt = statsFmt_Legacy;
 			} else {
-				errmsg.LogError(0, RS_RET_ERR, "impstats: invalid format %s",
+				LogError(0, RS_RET_ERR, "impstats: invalid format %s",
 						mode);
 			}
 			free(mode);
@@ -359,6 +406,14 @@ CODESTARTsetModCnf
 			dbgprintf("impstats: program error, non-handled "
 			  "param '%s' in beginCnfLoad\n", modpblk.descr[i].name);
 		}
+	}
+
+	if(loadModConf->pszBindRuleset != NULL && loadModConf->bLogToSyslog == 0) {
+		parser_warnmsg("impstats: log.syslog set to \"off\" but ruleset specified - with "
+			"these settings, the ruleset will never be used, because regular syslog "
+			"processing is turned off - ruleset parameter is ignored");
+		free(loadModConf->pszBindRuleset);
+		loadModConf->pszBindRuleset = NULL;
 	}
 
 	loadModConf->configSetViaV2Method = 1;
@@ -403,7 +458,7 @@ checkRuleset(modConfData_t *modConf)
 
 	localRet = ruleset.GetRuleset(modConf->pConf, &pRuleset, modConf->pszBindRuleset);
 	if(localRet == RS_RET_NOT_FOUND) {
-		errmsg.LogError(0, NO_ERRCODE, "impstats: ruleset '%s' not found - "
+		LogError(0, NO_ERRCODE, "impstats: ruleset '%s' not found - "
 				"using default ruleset instead", modConf->pszBindRuleset);
 	}
 	CHKiRet(localRet);
@@ -412,14 +467,35 @@ finalize_it:
 	RETiRet;
 }
 
+
+/* to use HUP, we need to have an instanceData type, as this was
+ * originally designed for actions. However, we do not, and cannot,
+ * use the content. The core will always provide a NULL pointer.
+ */
+typedef struct _instanceData {
+	int dummy;
+} instanceData;
+BEGINdoHUP
+CODESTARTdoHUP
+	DBGPRINTF("impstats: received HUP\n")
+	pthread_mutex_lock(&hup_mutex);
+	if(runModConf->logfd != -1) {
+		DBGPRINTF("impstats: closing log file due to HUP\n");
+		close(runModConf->logfd);
+		runModConf->logfd = -1;
+	}
+	pthread_mutex_unlock(&hup_mutex);
+ENDdoHUP
+
+
 BEGINcheckCnf
 CODESTARTcheckCnf
 	if(pModConf->iStatsInterval == 0) {
-		errmsg.LogError(0, NO_ERRCODE, "impstats: stats interval zero not permitted, using "
+		LogError(0, NO_ERRCODE, "impstats: stats interval zero not permitted, using "
 				"default of %d seconds", DEFAULT_STATS_PERIOD);
 		pModConf->iStatsInterval = DEFAULT_STATS_PERIOD;
 	}
-	iRet = checkRuleset(pModConf);
+	checkRuleset(pModConf);
 ENDcheckCnf
 
 
@@ -432,7 +508,7 @@ CODESTARTactivateCnf
 		  runModConf->logfile == NULL ? "deactivated" : (char*)runModConf->logfile);
 	localRet = statsobj.EnableStats();
 	if(localRet != RS_RET_OK) {
-		errmsg.LogError(0, localRet, "impstats: error enabling statistics gathering");
+		LogError(0, localRet, "impstats: error enabling statistics gathering");
 		ABORT_FINALIZE(RS_RET_NO_RUN);
 	}
 	/* initialize our own counters */
@@ -444,23 +520,27 @@ CODESTARTactivateCnf
 	CHKiRet(statsobj.AddCounter(statsobj_resources, UCHAR_CONSTANT("stime"),
 		ctrType_IntCtr, CTR_FLAG_NONE, &st_ru_stime));
 	CHKiRet(statsobj.AddCounter(statsobj_resources, UCHAR_CONSTANT("maxrss"),
-		ctrType_Int, CTR_FLAG_NONE, &st_ru_maxrss));
+		ctrType_IntCtr, CTR_FLAG_NONE, &st_ru_maxrss));
 	CHKiRet(statsobj.AddCounter(statsobj_resources, UCHAR_CONSTANT("minflt"),
-		ctrType_Int, CTR_FLAG_NONE, &st_ru_minflt));
+		ctrType_IntCtr, CTR_FLAG_NONE, &st_ru_minflt));
 	CHKiRet(statsobj.AddCounter(statsobj_resources, UCHAR_CONSTANT("majflt"),
-		ctrType_Int, CTR_FLAG_NONE, &st_ru_majflt));
+		ctrType_IntCtr, CTR_FLAG_NONE, &st_ru_majflt));
 	CHKiRet(statsobj.AddCounter(statsobj_resources, UCHAR_CONSTANT("inblock"),
-		ctrType_Int, CTR_FLAG_NONE, &st_ru_inblock));
+		ctrType_IntCtr, CTR_FLAG_NONE, &st_ru_inblock));
 	CHKiRet(statsobj.AddCounter(statsobj_resources, UCHAR_CONSTANT("oublock"),
-		ctrType_Int, CTR_FLAG_NONE, &st_ru_oublock));
+		ctrType_IntCtr, CTR_FLAG_NONE, &st_ru_oublock));
 	CHKiRet(statsobj.AddCounter(statsobj_resources, UCHAR_CONSTANT("nvcsw"),
-		ctrType_Int, CTR_FLAG_NONE, &st_ru_nvcsw));
+		ctrType_IntCtr, CTR_FLAG_NONE, &st_ru_nvcsw));
 	CHKiRet(statsobj.AddCounter(statsobj_resources, UCHAR_CONSTANT("nivcsw"),
-		ctrType_Int, CTR_FLAG_NONE, &st_ru_nivcsw));
+		ctrType_IntCtr, CTR_FLAG_NONE, &st_ru_nivcsw));
+#	ifdef OS_LINUX
+	CHKiRet(statsobj.AddCounter(statsobj_resources, UCHAR_CONSTANT("openfiles"),
+		ctrType_Int, CTR_FLAG_NONE, &st_openfiles));
+#	endif
 	CHKiRet(statsobj.ConstructFinalize(statsobj_resources));
 finalize_it:
 	if(iRet != RS_RET_OK) {
-		errmsg.LogError(0, iRet, "impstats: error activating module");
+		LogError(0, iRet, "impstats: error activating module");
 		iRet = RS_RET_NO_RUN;
 	}
 ENDactivateCnf
@@ -511,6 +591,7 @@ CODEqueryEtryPt_STD_IMOD_QUERIES
 CODEqueryEtryPt_STD_CONF2_QUERIES
 CODEqueryEtryPt_STD_CONF2_setModCnf_QUERIES
 CODEqueryEtryPt_IsCompatibleWithFeature_IF_OMOD_QUERIES
+CODEqueryEtryPt_doHUP
 ENDqueryEtryPt
 
 static rsRetVal resetConfigVariables(uchar __attribute__((unused)) *pp, void __attribute__((unused)) *pVal)
@@ -528,17 +609,23 @@ CODEmodInit_QueryRegCFSLineHdlr
 	initConfigSettings();
 	CHKiRet(objUse(glbl, CORE_COMPONENT));
 	CHKiRet(objUse(prop, CORE_COMPONENT));
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 	CHKiRet(objUse(statsobj, CORE_COMPONENT));
 	CHKiRet(objUse(ruleset, CORE_COMPONENT));
 	/* the pstatsinverval is an alias to support a previous screwed-up syntax... */
-	CHKiRet(regCfSysLineHdlr2((uchar *)"pstatsinterval", 0, eCmdHdlrInt, NULL, &cs.iStatsInterval, STD_LOADABLE_MODULE_ID, &bLegacyCnfModGlobalsPermitted));
-	CHKiRet(regCfSysLineHdlr2((uchar *)"pstatinterval", 0, eCmdHdlrInt, NULL, &cs.iStatsInterval, STD_LOADABLE_MODULE_ID, &bLegacyCnfModGlobalsPermitted));
-	CHKiRet(regCfSysLineHdlr2((uchar *)"pstatfacility", 0, eCmdHdlrInt, NULL, &cs.iFacility, STD_LOADABLE_MODULE_ID, &bLegacyCnfModGlobalsPermitted));
-	CHKiRet(regCfSysLineHdlr2((uchar *)"pstatseverity", 0, eCmdHdlrInt, NULL, &cs.iSeverity, STD_LOADABLE_MODULE_ID, &bLegacyCnfModGlobalsPermitted));
-	CHKiRet(regCfSysLineHdlr2((uchar *)"pstatjson", 0, eCmdHdlrBinary, NULL, &cs.bJSON, STD_LOADABLE_MODULE_ID, &bLegacyCnfModGlobalsPermitted));
-	CHKiRet(regCfSysLineHdlr2((uchar *)"pstatcee", 0, eCmdHdlrBinary, NULL, &cs.bCEE, STD_LOADABLE_MODULE_ID, &bLegacyCnfModGlobalsPermitted));
-	CHKiRet(omsdRegCFSLineHdlr((uchar *)"resetconfigvariables", 1, eCmdHdlrCustomHandler, resetConfigVariables, NULL, STD_LOADABLE_MODULE_ID));
+	CHKiRet(regCfSysLineHdlr2((uchar *)"pstatsinterval", 0, eCmdHdlrInt, NULL, &cs.iStatsInterval,
+	STD_LOADABLE_MODULE_ID, &bLegacyCnfModGlobalsPermitted));
+	CHKiRet(regCfSysLineHdlr2((uchar *)"pstatinterval", 0, eCmdHdlrInt, NULL, &cs.iStatsInterval,
+	STD_LOADABLE_MODULE_ID, &bLegacyCnfModGlobalsPermitted));
+	CHKiRet(regCfSysLineHdlr2((uchar *)"pstatfacility", 0, eCmdHdlrInt, NULL, &cs.iFacility,
+	STD_LOADABLE_MODULE_ID, &bLegacyCnfModGlobalsPermitted));
+	CHKiRet(regCfSysLineHdlr2((uchar *)"pstatseverity", 0, eCmdHdlrInt, NULL, &cs.iSeverity,
+	STD_LOADABLE_MODULE_ID, &bLegacyCnfModGlobalsPermitted));
+	CHKiRet(regCfSysLineHdlr2((uchar *)"pstatjson", 0, eCmdHdlrBinary, NULL, &cs.bJSON,
+	STD_LOADABLE_MODULE_ID, &bLegacyCnfModGlobalsPermitted));
+	CHKiRet(regCfSysLineHdlr2((uchar *)"pstatcee", 0, eCmdHdlrBinary, NULL, &cs.bCEE,
+	STD_LOADABLE_MODULE_ID, &bLegacyCnfModGlobalsPermitted));
+	CHKiRet(omsdRegCFSLineHdlr((uchar *)"resetconfigvariables", 1, eCmdHdlrCustomHandler, resetConfigVariables,
+	NULL, STD_LOADABLE_MODULE_ID));
 
 	CHKiRet(prop.Construct(&pInputName));
 	CHKiRet(prop.SetString(pInputName, UCHAR_CONSTANT("impstats"), sizeof("impstats") - 1));

@@ -19,11 +19,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -84,7 +84,7 @@ static rsRetVal SetString(prop_t *pThis, const uchar *psz, const int len)
 	if(len < CONF_PROP_BUFSIZE) {
 		memcpy(pThis->szVal.sz, psz, len + 1);
 	} else {
-		CHKmalloc(pThis->szVal.psz = MALLOC(len + 1));
+		CHKmalloc(pThis->szVal.psz = malloc(len + 1));
 		memcpy(pThis->szVal.psz, psz, len + 1);
 	}
 
@@ -103,7 +103,6 @@ static int GetStringLen(prop_t *pThis)
 /* get string */
 static rsRetVal GetString(prop_t *pThis, uchar **ppsz, int *plen)
 {
-	BEGINfunc
 	ISOBJ_TYPE_assert(pThis, prop);
 	if(pThis->len < CONF_PROP_BUFSIZE) {
 		*ppsz = pThis->szVal.sz;
@@ -111,7 +110,6 @@ static rsRetVal GetString(prop_t *pThis, uchar **ppsz, int *plen)
 		*ppsz = pThis->szVal.psz;
 	}
 	*plen = pThis->len;
-	ENDfunc
 	return RS_RET_OK;
 }
 
@@ -133,7 +131,13 @@ propConstructFinalize(prop_t __attribute__((unused)) *pThis)
  */
 static rsRetVal AddRef(prop_t *pThis)
 {
+	if(pThis == NULL)  {
+		DBGPRINTF("prop/AddRef is passed a NULL ptr - ignoring it "
+			"- further problems may occur\n");
+		FINALIZE;
+	}
 	ATOMIC_INC(&pThis->iRefCount, &pThis->mutRefCount);
+finalize_it:
 	return RS_RET_OK;
 }
 
@@ -166,7 +170,7 @@ finalize_it:
  * If the string is different (or the pointer NULL), the current property
  * is destructed and a new one created. This can be used to get a specific
  * name in those cases where there is a good chance that the property
- * immediatly previously processed already contained the value we need - in 
+ * immediatly previously processed already contained the value we need - in
  * which case we save us all the creation overhead by just reusing the already
  * existing property).
  * rgerhards, 2009-07-01
@@ -179,7 +183,7 @@ static rsRetVal CreateOrReuseStringProp(prop_t **ppThis, const uchar *psz, const
 	assert(ppThis != NULL);
 
 	if(*ppThis == NULL) {
-		/* we need to create a property */ 
+		/* we need to create a property */
 		CHKiRet(CreateStringProp(ppThis, psz, len));
 	} else {
 		/* already exists, check if we can re-use it */
@@ -236,7 +240,6 @@ ENDobjQueryInterface(prop)
  * rgerhards, 2009-04-06
  */
 BEGINObjClassExit(prop, OBJ_IS_CORE_MODULE) /* class, version */
-//	objRelease(errmsg, CORE_COMPONENT);
 ENDObjClassExit(prop)
 
 
@@ -246,7 +249,6 @@ ENDObjClassExit(prop)
  */
 BEGINObjClassInit(prop, 1, OBJ_IS_CORE_MODULE) /* class, version */
 	/* request objects we use */
-//	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 
 	/* set our own handlers */
 	OBJSetMethodHandler(objMethod_DEBUGPRINT, propDebugPrint);

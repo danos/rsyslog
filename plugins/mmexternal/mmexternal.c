@@ -2,18 +2,18 @@
  * This core plugin is an interface module to message modification
  * modules written in languages other than C.
  *
- * Copyright 2014-2016 by Rainer Gerhards
+ * Copyright 2014-2018 by Rainer Gerhards
  *
  * This file is part of rsyslog.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,7 +21,6 @@
  * limitations under the License.
  */
 #include "config.h"
-#include "rsyslog.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -31,15 +30,9 @@
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
-#if defined(_AIX) || defined(__FreeBSD__) 
 #include <sys/wait.h>
-#else
-#include <wait.h>
-#endif
-#ifdef _AIX /* AIXPORT */
-#include <errno.h>
-#endif /* AIXPORT */
 #include <sys/uio.h>
+#include "rsyslog.h"
 #include "conf.h"
 #include "syslogd-types.h"
 #include "srUtils.h"
@@ -47,6 +40,7 @@
 #include "msg.h"
 #include "errmsg.h"
 #include "cfsysline.h"
+#include "glbl.h"
 
 
 MODULE_TYPE_OUTPUT
@@ -56,7 +50,6 @@ MODULE_CNFNAME("mmexternal")
 /* internal structures
  */
 DEF_OMOD_STATIC_DATA
-DEFobjCurrIf(errmsg)
 
 typedef struct _instanceData {
 	uchar *szBinary;	/* name of binary to call */
@@ -105,7 +98,7 @@ static struct cnfparamblk actpblk =
 	};
 
 BEGINinitConfVars		/* (re)set config variables to default values */
-CODESTARTinitConfVars 
+CODESTARTinitConfVars
 	cs.szBinary = NULL;	/* name of binary to call */
 ENDinitConfVars
 
@@ -187,7 +180,7 @@ writeOutputDebug(wrkrInstanceData_t *__restrict__ const pWrkrData,
 				       O_WRONLY | O_APPEND | O_CREAT, 0600);
 		if(pWrkrData->fdOutput == -1) {
 			DBGPRINTF("mmexternal: error opening output file %s: %s\n",
-				   pWrkrData->pData->outputFileName, 
+				   pWrkrData->pData->outputFileName,
 				   rs_strerror_r(errno, errStr, sizeof(errStr)));
 			goto done;
 		}
@@ -256,7 +249,7 @@ processProgramReply(wrkrInstanceData_t *__restrict__ const pWrkrData, smsg_t *co
 	pWrkrData->respBuf[numCharsRead-1] = '\0';
 	iRet = MsgSetPropsViaJSON(pMsg, (uchar*)pWrkrData->respBuf);
 	if(iRet != RS_RET_OK) {
-		errmsg.LogError(0, iRet, "mmexternal: invalid reply '%s' from program '%s'",
+		LogError(0, iRet, "mmexternal: invalid reply '%s' from program '%s'",
 				pWrkrData->respBuf, pWrkrData->pData->szBinary);
 	}
 
@@ -267,28 +260,26 @@ processProgramReply(wrkrInstanceData_t *__restrict__ const pWrkrData, smsg_t *co
 
 /* execute the child process (must be called in child context
  * after fork).
+ * Note: all output will go to std[err/out] of the **child**, so
+ * rsyslog will never see it except as script output. Do NOT
+ * use dbgprintf() or LogError() and friends.
  */
 static void __attribute__((noreturn))
-execBinary(wrkrInstanceData_t *pWrkrData, int fdStdin, int fdStdOutErr)
+execBinary(wrkrInstanceData_t *pWrkrData, const int fdStdin, const int fdStdOutErr)
 {
-	int i, iRet;
+	int i;
 	struct sigaction sigAct;
 	sigset_t set;
-	char errStr[1024];
 	char *newenviron[] = { NULL };
 
-	fclose(stdin);
-	if(dup(fdStdin) == -1) {
-		DBGPRINTF("mmexternal: dup() stdin failed\n");
+	if(dup2(fdStdin, STDIN_FILENO) == -1) {
+		perror("mmexternal: dup() stdin failed\n");
 	}
-	close(1);
-	if(dup(fdStdOutErr) == -1) {
-		DBGPRINTF("mmexternal: dup() stdout failed\n");
+	if(dup2(fdStdOutErr, STDOUT_FILENO) == -1) {
+		perror("mmexternal: dup() stdout failed\n");
 	}
-	/* todo: different pipe for stderr? */
-	close(2);
-	if(dup(fdStdOutErr) == -1) {
-		DBGPRINTF("mmexternal: dup() stderr failed\n");
+	if(dup2(fdStdOutErr, STDERR_FILENO) == -1) {
+		perror("mmexternal: dup() stderr failed\n");
 	}
 
 	/* we close all file handles as we fork soon
@@ -311,23 +302,26 @@ execBinary(wrkrInstanceData_t *pWrkrData, int fdStdin, int fdStdOutErr)
 	sigAct.sa_handler = SIG_IGN;
 	sigaction(SIGINT, &sigAct, NULL);
 	sigemptyset(&set);
-        sigprocmask(SIG_SETMASK, &set, NULL);
+	sigprocmask(SIG_SETMASK, &set, NULL);
 
 	alarm(0);
 
 	/* finally exec child */
-	iRet = execve((char*)pWrkrData->pData->szBinary, pWrkrData->pData->aParams, newenviron);
-	if(iRet == -1) {
-		/* Note: this will go to stdout of the **child**, so rsyslog will never
-		 * see it except when stdout is captured. If we use the plugin interface,
-		 * we can use this to convey a proper status back!
-		 */
-		rs_strerror_r(errno, errStr, sizeof(errStr));
-		DBGPRINTF("mmexternal: failed to execute binary '%s': %s\n",
-			  pWrkrData->pData->szBinary, errStr);
+	execve((char*)pWrkrData->pData->szBinary, pWrkrData->pData->aParams, newenviron);
+
+	/* we should never reach this point, but if we do, we complain and terminate */
+	char errstr[1024];
+	char errbuf[2048];
+	rs_strerror_r(errno, errstr, sizeof(errstr));
+	errstr[sizeof(errstr)-1] = '\0';
+	const size_t lenbuf = snprintf(errbuf, sizeof(errbuf),
+		"mmexternal: failed to execute binary '%s': %s\n",
+		  pWrkrData->pData->szBinary, errstr);
+	errbuf[sizeof(errbuf)-1] = '\0';
+	if(write(2, errbuf, lenbuf) != (ssize_t) lenbuf) {
+		/* just keep static analyzers happy... */
+		exit(2);
 	}
-	
-	/* we should never reach this point, but if we do, we terminate */
 	exit(1);
 }
 
@@ -353,15 +347,18 @@ openPipe(wrkrInstanceData_t *pWrkrData)
 	DBGPRINTF("mmexternal: executing program '%s' with '%d' parameters\n",
 		  pWrkrData->pData->szBinary, pWrkrData->pData->iParams);
 
-	/* NO OUTPUT AFTER FORK! */
+	/* final sanity check */
+	assert(pWrkrData->pData->szBinary != NULL);
+	assert(pWrkrData->pData->aParams != NULL);
 
+	/* NO OUTPUT AFTER FORK! */
 	cpid = fork();
 	if(cpid == -1) {
 		ABORT_FINALIZE(RS_RET_ERR_FORK);
 	}
 	pWrkrData->pid = cpid;
 
-	if(cpid == 0) {    
+	if(cpid == 0) {
 		/* we are now the child, just exec the binary. */
 		close(pipestdin[1]); /* close those pipe "ports" that */
 		close(pipestdout[0]); /* we don't need */
@@ -388,26 +385,15 @@ cleanup(wrkrInstanceData_t *pWrkrData)
 {
 	int status;
 	int ret;
-	char errStr[1024];
 	DEFiRet;
 
 	assert(pWrkrData->bIsRunning == 1);
 	ret = waitpid(pWrkrData->pid, &status, 0);
-	if(ret != pWrkrData->pid) {
-		/* if waitpid() fails, we can not do much - try to ignore it... */
-		DBGPRINTF("mmexternal: waitpid() returned state %d[%s], future malfunction may happen\n", ret,
-			   rs_strerror_r(errno, errStr, sizeof(errStr)));
-	} else {
-		/* check if we should print out some diagnostic information */
-		DBGPRINTF("mmexternal: waitpid status return for program '%s': %2.2x\n",
-			  pWrkrData->pData->szBinary, status);
-		if(WIFEXITED(status)) {
-			errmsg.LogError(0, NO_ERRCODE, "program '%s' exited normally, state %d",
-					pWrkrData->pData->szBinary, WEXITSTATUS(status));
-		} else if(WIFSIGNALED(status)) {
-			errmsg.LogError(0, NO_ERRCODE, "program '%s' terminated by signal %d.",
-					pWrkrData->pData->szBinary, WTERMSIG(status));
-		}
+
+	/* waitpid will fail with errno == ECHILD if the child process has already
+	   been reaped by the rsyslogd main loop (see rsyslogd.c) */
+	if(ret == pWrkrData->pid) {
+		glblReportChildProcessExit(pWrkrData->pData->szBinary, pWrkrData->pid, status);
 	}
 
 	if(pWrkrData->fdOutput != -1) {
@@ -452,16 +438,18 @@ callExtProg(wrkrInstanceData_t *__restrict__ const pWrkrData, smsg_t *__restrict
 	int lenWrite;
 	int writeOffset;
 	int i_iov;
-	char errStr[1024];
 	struct iovec iov[2];
+	int bFreeInputstr = 1; /* we must only free if it does not point to msg-obj mem! */
 	const uchar *inputstr = NULL; /* string to be processed by external program */
 	DEFiRet;
 	
 	if(pWrkrData->pData->inputProp == INPUT_MSG) {
 		inputstr = getMSG(pMsg);
 		lenWrite = getMSGLen(pMsg);
+		bFreeInputstr = 0;
 	} else if(pWrkrData->pData->inputProp == INPUT_RAWMSG) {
 		getRawMsg(pMsg, (uchar**)&inputstr, &lenWrite);
+		bFreeInputstr = 0;
 	} else  {
 		inputstr = msgGetJSONMESG(pMsg);
 		lenWrite = strlen((const char*)inputstr);
@@ -483,15 +471,15 @@ callExtProg(wrkrInstanceData_t *__restrict__ const pWrkrData, smsg_t *__restrict
 		if(lenWritten == -1) {
 			switch(errno) {
 			case EPIPE:
-				DBGPRINTF("mmexternal: program '%s' terminated, trying to restart\n",
-					  pWrkrData->pData->szBinary);
+				LogMsg(0, RS_RET_ERR_WRITE_PIPE, LOG_WARNING,
+						"mmexternal: program '%s' (pid %d) terminated; will be restarted",
+						pWrkrData->pData->szBinary, pWrkrData->pid);
 				CHKiRet(cleanup(pWrkrData));
 				CHKiRet(tryRestart(pWrkrData));
 				writeOffset = 0;
 				break;
 			default:
-				DBGPRINTF("mmexternal: error %d writing to pipe: %s\n", errno,
-					   rs_strerror_r(errno, errStr, sizeof(errStr)));
+				LogError(errno, RS_RET_ERR_WRITE_PIPE, "mmexternal: error sending message to program");
 				ABORT_FINALIZE(RS_RET_ERR_WRITE_PIPE);
 				break;
 			}
@@ -506,8 +494,9 @@ finalize_it:
 	/* we need to free json input strings, only. All others point to memory
 	 * inside the msg object, which is destroyed when the msg is destroyed.
 	 */
-	if(pWrkrData->pData->inputProp == INPUT_JSON)
+	if(bFreeInputstr) {
 		free((void*)inputstr);
+	}
 	RETiRet;
 }
 
@@ -543,17 +532,10 @@ setInstParamDefaults(instanceData *pData)
 	pData->bForceSingleInst = 0;
 }
 
+
 BEGINnewActInst
 	struct cnfparamvals *pvals;
-	sbool bInQuotes;
 	int i;
-	int iPrm;
-	unsigned char *c;
-	es_size_t iCnt;
-	es_size_t iStr;
-	es_str_t *estrBinary;
-	es_str_t *estrParams;
-	es_str_t *estrTmp;
 	const char *cstr = NULL;
 CODESTARTnewActInst
 	if((pvals = nvlstGetParams(lst, &actpblk, NULL)) == NULL) {
@@ -568,85 +550,8 @@ CODESTARTnewActInst
 		if(!pvals[i].bUsed)
 			continue;
 		if(!strcmp(actpblk.descr[i].name, "binary")) {
-			estrBinary = pvals[i].val.d.estr;
-			estrParams = NULL;
-
-			/* Search for space */
-			c = es_getBufAddr(pvals[i].val.d.estr);
-			iCnt = 0;
-			while(iCnt < es_strlen(pvals[i].val.d.estr) ) {
-				if (c[iCnt] == ' ') {
-					/* Split binary name from parameters */
-					estrBinary = es_newStrFromSubStr ( pvals[i].val.d.estr, 0, iCnt );
-					estrParams = es_newStrFromSubStr ( pvals[i].val.d.estr, iCnt+1, es_strlen(pvals[i].val.d.estr));
-					break;
-				}
-				iCnt++;
-			}	
-			/* Assign binary and params */
-			pData->szBinary = (uchar*)es_str2cstr(estrBinary, NULL);
-			DBGPRINTF("mmexternal: szBinary = '%s'\n", pData->szBinary);
-			/* Check for Params! */
-			if (estrParams != NULL) {
-				if(Debug) {
-					char *params = es_str2cstr(estrParams, NULL);
-					DBGPRINTF("mmexternal: szParams = '%s'\n", params);
-					free(params);
-				}
-				
-				/* Count parameters if set */
-				c = es_getBufAddr(estrParams); /* Reset to beginning */
-				pData->iParams = 2; /* Set default to 2, first parameter for binary and second parameter at least from config*/
-				iCnt = 0;
-				while(iCnt < es_strlen(estrParams) ) {
-					if (c[iCnt] == ' ' && c[iCnt-1] != '\\')
-						 pData->iParams++;
-					iCnt++;
-				}
-				DBGPRINTF("mmexternal: iParams = '%d'\n", pData->iParams);
-
-				/* Create argv Array */
-				CHKmalloc(pData->aParams = malloc( (pData->iParams+1) * sizeof(char*))); /* One more for first param */ 
-
-				/* Second Loop, create parameter array*/
-				c = es_getBufAddr(estrParams); /* Reset to beginning */
-				iCnt = iStr = iPrm = 0;
-				estrTmp = NULL;
-				bInQuotes = FALSE;
-				/* Set first parameter to binary */
-				pData->aParams[iPrm] = strdup((char*)pData->szBinary);
-				DBGPRINTF("mmexternal: Param (%d): '%s'\n", iPrm, pData->aParams[iPrm]);
-				iPrm++;
-				while(iCnt < es_strlen(estrParams) ) {
-					if ( c[iCnt] == ' ' && !bInQuotes ) {
-						/* Copy into Param Array! */
-						estrTmp = es_newStrFromSubStr( estrParams, iStr, iCnt-iStr);
-					}
-					else if ( iCnt+1 >= es_strlen(estrParams) ) {
-						/* Copy rest of string into Param Array! */
-						estrTmp = es_newStrFromSubStr( estrParams, iStr, iCnt-iStr+1);
-					}
-					else if (c[iCnt] == '"') {
-						/* switch inQuotes Mode */
-						bInQuotes = !bInQuotes;
-					}
-
-					if ( estrTmp != NULL ) {
-						pData->aParams[iPrm] = es_str2cstr(estrTmp, NULL);
-						iStr = iCnt+1; /* Set new start */
-						DBGPRINTF("mmexternal: Param (%d): '%s'\n", iPrm, pData->aParams[iPrm]);
-						es_deleteStr( estrTmp );
-						estrTmp = NULL;
-						iPrm++;
-					}
-
-					/*Next char*/
-					iCnt++;
-				}
-				/* NULL last parameter! */
-				pData->aParams[iPrm] = NULL;
-
-			}
+			CHKiRet(split_binary_parameters(&pData->szBinary, &pData->aParams, &pData->iParams,
+				pvals[i].val.d.estr));
 		} else if(!strcmp(actpblk.descr[i].name, "output")) {
 			pData->outputFileName = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
 		} else if(!strcmp(actpblk.descr[i].name, "forcesingleinstance")) {
@@ -660,7 +565,7 @@ CODESTARTnewActInst
 			else if(!strcmp(cstr, "fulljson"))
 				pData->inputProp = INPUT_JSON;
 			else {
-				errmsg.LogError(0, RS_RET_INVLD_INTERFACE_INPUT,
+				LogError(0, RS_RET_INVLD_INTERFACE_INPUT,
 					"mmexternal: invalid interface.input parameter '%s'",
 					cstr);
 				ABORT_FINALIZE(RS_RET_INVLD_INTERFACE_INPUT);
@@ -678,25 +583,13 @@ CODE_STD_FINALIZERnewActInst
 	cnfparamvalsDestruct(pvals, &actpblk);
 ENDnewActInst
 
-BEGINparseSelectorAct
-CODESTARTparseSelectorAct
-CODE_STD_STRING_REQUESTparseSelectorAct(1)
-	if(!strncmp((char*) p, ":mmexternal:", sizeof(":mmexternal:") - 1)) {
-		errmsg.LogError(0, RS_RET_LEGA_ACT_NOT_SUPPORTED,
-			"mmexternal supports only v6+ config format, use: "
-			"action(type=\"mmexternal\" binary=...)");
-	}
-	ABORT_FINALIZE(RS_RET_CONFLINE_UNPROCESSED);
-CODE_STD_FINALIZERparseSelectorAct
-ENDparseSelectorAct
+NO_LEGACY_CONF_parseSelectorAct
 
 
 BEGINmodExit
 CODESTARTmodExit
 	free(cs.szBinary);
 	cs.szBinary = NULL;
-	CHKiRet(objRelease(errmsg, CORE_COMPONENT));
-finalize_it:
 ENDmodExit
 
 
@@ -704,7 +597,7 @@ BEGINqueryEtryPt
 CODESTARTqueryEtryPt
 CODEqueryEtryPt_STD_OMOD_QUERIES
 CODEqueryEtryPt_STD_OMOD8_QUERIES
-CODEqueryEtryPt_STD_CONF2_CNFNAME_QUERIES 
+CODEqueryEtryPt_STD_CONF2_CNFNAME_QUERIES
 CODEqueryEtryPt_STD_CONF2_OMOD_QUERIES
 ENDqueryEtryPt
 
@@ -713,6 +606,5 @@ CODESTARTmodInit
 INITLegCnfVars
 	*ipIFVersProvided = CURR_MOD_IF_VERSION; /* we only support the current interface specification */
 CODEmodInit_QueryRegCFSLineHdlr
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 CODEmodInit_QueryRegCFSLineHdlr
 ENDmodInit

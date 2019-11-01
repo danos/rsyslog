@@ -7,18 +7,18 @@
  * are very small, and so we use a single driver for both OS's with
  * a little help of conditional compilation.
  *
- * Copyright 2008-2015 Adiscon GmbH
+ * Copyright 2008-2018 Adiscon GmbH
  *
  * This file is part of rsyslog.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -56,12 +56,12 @@ static int	fklog = -1;	/* kernel log fd */
 
 
 #ifdef OS_LINUX
-/* submit a message to imklog Syslog() API. In this function, we check if 
+/* submit a message to imklog Syslog() API. In this function, we check if
  * a kernel timestamp is present and, if so, extract and strip it.
  * Note that this is heavily Linux specific and thus is not compiled or
  * used for BSD.
  * Special thanks to Lennart Poettering for suggesting on how to convert
- * the kernel timestamp to a realtime timestamp. This method depends on 
+ * the kernel timestamp to a realtime timestamp. This method depends on
  * the fact the the kernel timestamp is written using the monotonic clock.
  * Shall that change (very unlikely), this code must be changed as well. Note
  * that due to the way we generate the delta, we are unable to write the
@@ -144,13 +144,13 @@ submitSyslog(modConfData_t *pModConf, syslog_pri_t pri, uchar *buf)
 	tp = &tv;
 
 done:
-	Syslog(pri, buf, tp);
+	Syslog(pModConf, pri, buf, tp);
 }
 #else	/* now comes the BSD "code" (just a shim) */
 static void
 submitSyslog(modConfData_t *pModConf, syslog_pri_t pri, uchar *buf)
 {
-	Syslog(pri, buf, NULL);
+	Syslog(pModConf, pri, buf, NULL);
 }
 #endif	/* #ifdef LINUX */
 
@@ -240,7 +240,7 @@ readklog(modConfData_t *pModConf)
 	if((size_t) iMaxLine < sizeof(bufRcv) - 1) {
 		pRcv = bufRcv;
 	} else {
-		if((pRcv = (uchar*) MALLOC(iMaxLine + 1)) == NULL) {
+		if((pRcv = (uchar*) malloc(iMaxLine + 1)) == NULL) {
 			iMaxLine = sizeof(bufRcv) - 1; /* better this than noting */
 			pRcv = bufRcv;
 		}
@@ -285,9 +285,10 @@ readklog(modConfData_t *pModConf)
 /* to be called in the module's AfterRun entry point
  * rgerhards, 2008-04-09
  */
-rsRetVal klogAfterRun(modConfData_t *pModConf)
+rsRetVal ATTR_NONNULL()
+klogAfterRun(modConfData_t *const pModConf __attribute__((unused)))
 {
-        DEFiRet;
+	DEFiRet;
 	if(fklog != -1)
 		close(fklog);
 #	ifdef OS_LINUX
@@ -295,7 +296,7 @@ rsRetVal klogAfterRun(modConfData_t *pModConf)
 	if(pModConf->console_log_level != -1)
 		klogctl(7, NULL, 0);
 #	endif
-        RETiRet;
+	RETiRet;
 }
 
 
@@ -306,7 +307,7 @@ rsRetVal klogAfterRun(modConfData_t *pModConf)
  */
 rsRetVal klogLogKMsg(modConfData_t *pModConf)
 {
-        DEFiRet;
+	DEFiRet;
 	readklog(pModConf);
 	RETiRet;
 }

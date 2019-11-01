@@ -11,18 +11,18 @@
  *
  * Module begun 2009-06-10 by Rainer Gerhards
  *
- * Copyright 2009-2016 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2009-2018 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -54,7 +54,6 @@
 
 /* static data */
 DEFobjStaticHelpers
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(parser)
 
 /* tables for interfacing with the v6 config system (as far as we need to) */
@@ -115,7 +114,7 @@ scriptIterateAllActions(struct cnfstmt *root, rsRetVal (*pFunc)(void*, void*), v
 		case S_FOREACH:
 			if(stmt->d.s_foreach.body != NULL)
 				scriptIterateAllActions(stmt->d.s_foreach.body,
-                                        pFunc, pParam);
+							pFunc, pParam);
 			break;
 		case S_PRIFILT:
 			if(stmt->d.s_prifilt.t_then != NULL)
@@ -159,7 +158,7 @@ DEFFUNC_llExecFunc(doIterateAllActions)
 	RETiRet;
 }
 /* iterate over ALL actions present in the WHOLE system.
- * this is often needed, for example when HUP processing 
+ * this is often needed, for example when HUP processing
  * must be done or a shutdown is pending.
  */
 static rsRetVal
@@ -218,12 +217,14 @@ finalize_it:
 	RETiRet;
 }
 
-static rsRetVal
-execSet(struct cnfstmt *stmt, smsg_t *pMsg)
+static rsRetVal ATTR_NONNULL()
+execSet(const struct cnfstmt *const stmt,
+	smsg_t *const pMsg,
+	wti_t *const __restrict__ pWti)
 {
 	struct svar result;
 	DEFiRet;
-	cnfexprEval(stmt->d.s_set.expr, &result, pMsg);
+	cnfexprEval(stmt->d.s_set.expr, &result, pMsg, pWti);
 	msgSetJSONFromVar(pMsg, stmt->d.s_set.varname, &result, stmt->d.s_set.force_reset);
 	varDelete(&result);
 	RETiRet;
@@ -249,12 +250,12 @@ execCallIndirect(struct cnfstmt *const __restrict__ stmt,
 
 	assert(stmt->d.s_call_ind.expr != NULL);
 
-	cnfexprEval(stmt->d.s_call_ind.expr, &result, pMsg);
+	cnfexprEval(stmt->d.s_call_ind.expr, &result, pMsg, pWti);
 	uchar *const rsName = (uchar*) var2CString(&result, &bMustFree);
 	const rsRetVal localRet = rulesetGetRuleset(loadConf, &pRuleset, rsName);
 	if(localRet != RS_RET_OK) {
 		/* in that case, we accept that a NOP will "survive" */
-		errmsg.LogError(0, RS_RET_RULESET_NOT_FOUND, "error: CALL_INDIRECT: "
+		LogError(0, RS_RET_RULESET_NOT_FOUND, "error: CALL_INDIRECT: "
 			"ruleset '%s' cannot be found, treating as NOP\n", rsName);
 		FINALIZE;
 	}
@@ -301,11 +302,11 @@ finalize_it:
 }
 
 static rsRetVal
-execIf(struct cnfstmt *stmt, smsg_t *pMsg, wti_t *pWti)
+execIf(struct cnfstmt *const stmt, smsg_t *const pMsg, wti_t *const pWti)
 {
 	sbool bRet;
 	DEFiRet;
-	bRet = cnfexprEvalBool(stmt->d.s_if.expr, pMsg);
+	bRet = cnfexprEvalBool(stmt->d.s_if.expr, pMsg, pWti);
 	DBGPRINTF("if condition result is %d\n", bRet);
 	if(bRet) {
 		if(stmt->d.s_if.t_then != NULL)
@@ -349,19 +350,22 @@ callForeachObject(struct cnfstmt *stmt, json_object *arr, smsg_t *pMsg, wti_t *p
 	json_object *entry = NULL;
 	json_object *key = NULL;
 	const char **keys = NULL;
+	json_object *curr = NULL;
+	const char **curr_key;
+	struct json_object_iterator it;
+	struct json_object_iterator itEnd;
 	DEFiRet;
 
 	int len = json_object_object_length(arr);
 	CHKmalloc(keys = calloc(len, sizeof(char*)));
-	const char **curr_key = keys;
-	struct json_object_iterator it = json_object_iter_begin(arr);
-	struct json_object_iterator itEnd = json_object_iter_end(arr);
+	curr_key = keys;
+	it = json_object_iter_begin(arr);
+	itEnd = json_object_iter_end(arr);
 	while (!json_object_iter_equal(&it, &itEnd)) {
 		*curr_key = json_object_iter_peek_name(&it);
 		curr_key++;
 		json_object_iter_next(&it);
 	}
-	json_object *curr = NULL;
 	CHKmalloc(entry = json_object_new_object());
 	for (int i = 0; i < len; i++) {
 		if (json_object_object_get_ex(arr, keys[i], &curr)) {
@@ -375,19 +379,24 @@ callForeachObject(struct cnfstmt *stmt, json_object *arr, smsg_t *pMsg, wti_t *p
 finalize_it:
 	if (keys != NULL) free(keys);
 	if (entry != NULL) json_object_put(entry);
-	if (key != NULL) json_object_put(key);
+	/* "fix" Coverity scan issue CID 185393: key currently can NOT be NULL
+	 * However, instead of just removing the
+	 *   if (key != NULL) json_object_put(key);
+	 * we put an assertion in its place.
+	 */
+	assert(key == NULL);
 	
 	RETiRet;
 }
 
-static rsRetVal
-execForeach(struct cnfstmt *stmt, smsg_t *pMsg, wti_t *pWti)
+static rsRetVal ATTR_NONNULL()
+execForeach(struct cnfstmt *const stmt, smsg_t *const pMsg, wti_t *const pWti)
 {
 	json_object *arr = NULL;
 	DEFiRet;
 
 	/* arr can either be an array or an associative-array (obj) */
-	arr = cnfexprEvalCollection(stmt->d.s_foreach.iter->collection, pMsg);
+	arr = cnfexprEvalCollection(stmt->d.s_foreach.iter->collection, pMsg, pWti);
 	
 	if (arr == NULL) {
 		DBGPRINTF("foreach loop skipped, as object to iterate upon is empty\n");
@@ -539,8 +548,10 @@ finalize_it:
 	RETiRet;
 }
 
-static rsRetVal
-execReloadLookupTable(struct cnfstmt *stmt) {
+static rsRetVal ATTR_NONNULL()
+execReloadLookupTable(struct cnfstmt *stmt)
+{
+	assert(stmt != NULL);
 	lookup_ref_t *t;
 	DEFiRet;
 	t = stmt->d.s_reload_lookup_table.table;
@@ -548,7 +559,7 @@ execReloadLookupTable(struct cnfstmt *stmt) {
 		ABORT_FINALIZE(RS_RET_NONE);
 	}
 	
-	CHKiRet(lookupReload(t, stmt->d.s_reload_lookup_table.stub_value));
+	iRet = lookupReload(t, stmt->d.s_reload_lookup_table.stub_value);
 	/* Note that reload dispatched above is performed asynchronously,
 	   on a different thread. So rsRetVal it returns means it was triggered
 	   successfully, and not that it was reloaded successfully. */
@@ -563,8 +574,8 @@ finalize_it:
  * better suited here.
  * rgerhards, 2012-09-04
  */
-static rsRetVal
-scriptExec(struct cnfstmt *root, smsg_t *pMsg, wti_t *pWti)
+static rsRetVal ATTR_NONNULL(2, 3)
+scriptExec(struct cnfstmt *const root, smsg_t *const pMsg, wti_t *const pWti)
 {
 	struct cnfstmt *stmt;
 	DEFiRet;
@@ -572,7 +583,7 @@ scriptExec(struct cnfstmt *root, smsg_t *pMsg, wti_t *pWti)
 	for(stmt = root ; stmt != NULL ; stmt = stmt->next) {
 		if(*pWti->pbShutdownImmediate) {
 			DBGPRINTF("scriptExec: ShutdownImmediate set, "
-				  "force terminating\n");	
+				  "force terminating\n");
 			ABORT_FINALIZE(RS_RET_FORCE_TERM);
 		}
 		if(Debug) {
@@ -588,7 +599,7 @@ scriptExec(struct cnfstmt *root, smsg_t *pMsg, wti_t *pWti)
 			CHKiRet(execAct(stmt, pMsg, pWti));
 			break;
 		case S_SET:
-			CHKiRet(execSet(stmt, pMsg));
+			CHKiRet(execSet(stmt, pMsg, pWti));
 			break;
 		case S_UNSET:
 			CHKiRet(execUnset(stmt, pMsg));
@@ -611,7 +622,7 @@ scriptExec(struct cnfstmt *root, smsg_t *pMsg, wti_t *pWti)
 		case S_PROPFILT:
 			CHKiRet(execPROPFILT(stmt, pMsg, pWti));
 			break;
-        case S_RELOAD_LOOKUP_TABLE:
+		case S_RELOAD_LOOKUP_TABLE:
 			CHKiRet(execReloadLookupTable(stmt));
 			break;
 		default:
@@ -654,6 +665,8 @@ processBatch(batch_t *pBatch, wti_t *pWti)
 		 */
 		if(localRet == RS_RET_OK)
 			batchSetElemState(pBatch, i, BATCH_STATE_COMM);
+		else if(localRet == RS_RET_SUSPENDED)
+			--i;
 	}
 
 	/* commit phase */
@@ -678,9 +691,11 @@ GetParserList(rsconf_t *conf, smsg_t *pMsg)
 
 
 /* Add a script block to the current ruleset */
-static void
-addScript(ruleset_t *pThis, struct cnfstmt *script)
+static void ATTR_NONNULL(1)
+addScript(ruleset_t *const pThis, struct cnfstmt *const script)
 {
+	if(script == NULL) /* happens for include() */
+		return;
 	if(pThis->last == NULL)
 		pThis->root = pThis->last = script;
 	else {
@@ -822,10 +837,33 @@ CODESTARTobjDestruct(ruleset)
 		parser.DestructParserList(&pThis->pParserLst);
 	}
 	free(pThis->pszName);
-	cnfstmtDestructLst(pThis->root);
 ENDobjDestruct(ruleset)
 
 
+/* helper for Destructor, shut down queue workers */
+DEFFUNC_llExecFunc(doShutdownQueueWorkers)
+{
+	DEFiRet;
+	ruleset_t *const pThis = (ruleset_t*) pData;
+	DBGPRINTF("shutting down queue workers for ruleset %p, name %s, queue %p\n",
+		pThis, pThis->pszName, pThis->pQueue);
+	ISOBJ_TYPE_assert(pThis, ruleset);
+	if(pThis->pQueue != NULL) {
+		qqueueShutdownWorkers(pThis->pQueue);
+	}
+	RETiRet;
+}
+/* helper for Destructor, shut down actions (cnfstmt's in general) */
+DEFFUNC_llExecFunc(doDestructCnfStmt)
+{
+	DEFiRet;
+	ruleset_t *const pThis = (ruleset_t*) pData;
+	DBGPRINTF("shutting down actions and conf stmts for ruleset %p, name %s\n",
+		pThis, pThis->pszName);
+	ISOBJ_TYPE_assert(pThis, ruleset);
+	cnfstmtDestructLst(pThis->root);
+	RETiRet;
+}
 /* destruct ALL rule sets that reside in the system. This must
  * be callable before unloading this module as the module may
  * not be unloaded before unload of the actions is required. This is
@@ -837,8 +875,20 @@ destructAllActions(rsconf_t *conf)
 {
 	DEFiRet;
 
+	DBGPRINTF("rulesetDestructAllActions\n");
+	/* we first need to stop all queue workers, else we
+	 * may run into trouble with "call" statements calling
+	 * into then-destroyed rulesets.
+	 * see: https://github.com/rsyslog/rsyslog/issues/1122
+	 */
+	DBGPRINTF("destructAllActions: queue shutdown\n");
+	llExecFunc(&(conf->rulesets.llRulesets), doShutdownQueueWorkers, NULL);
+	DBGPRINTF("destructAllActions: action and conf stmt shutdown\n");
+	llExecFunc(&(conf->rulesets.llRulesets), doDestructCnfStmt, NULL);
+
 	CHKiRet(llDestroy(&(conf->rulesets.llRulesets)));
-	CHKiRet(llInit(&(conf->rulesets.llRulesets), rulesetDestructForLinkedList, rulesetKeyDestruct, strcasecmp));
+	CHKiRet(llInit(&(conf->rulesets.llRulesets), rulesetDestructForLinkedList,
+		rulesetKeyDestruct, strcasecmp));
 	conf->rulesets.pDflt = NULL;
 
 finalize_it:
@@ -846,7 +896,7 @@ finalize_it:
 }
 
 /* this is a special destructor for the linkedList class. LinkedList does NOT
- * provide a pointer to the pointer, but rather the raw pointer itself. So we 
+ * provide a pointer to the pointer, but rather the raw pointer itself. So we
  * must map this, otherwise the destructor will abort.
  */
 rsRetVal
@@ -883,6 +933,7 @@ debugPrintAll(rsconf_t *conf)
 	RETiRet;
 }
 
+struct cnfstmt * removeNOPs(struct cnfstmt *root);
 static void
 rulesetOptimize(ruleset_t *pRuleset)
 {
@@ -891,7 +942,7 @@ rulesetOptimize(ruleset_t *pRuleset)
 			  pRuleset->pszName);
 		rulesetDebugPrint((ruleset_t*) pRuleset);
 	}
-	cnfstmtOptimize(pRuleset->root);
+	pRuleset->root = cnfstmtOptimize(pRuleset->root);
 	if(Debug) {
 		dbgprintf("ruleset '%s' after optimization:\n",
 			  pRuleset->pszName);
@@ -932,13 +983,13 @@ doRulesetCreateQueue(rsconf_t *conf, int *pNewVal)
 	DEFiRet;
 
 	if(conf->rulesets.pCurr == NULL) {
-		errmsg.LogError(0, RS_RET_NO_CURR_RULESET, "error: currently no specific ruleset specified, thus a "
+		LogError(0, RS_RET_NO_CURR_RULESET, "error: currently no specific ruleset specified, thus a "
 				"queue can not be added to it");
 		ABORT_FINALIZE(RS_RET_NO_CURR_RULESET);
 	}
 
 	if(conf->rulesets.pCurr->pQueue != NULL) {
-		errmsg.LogError(0, RS_RET_RULES_QUEUE_EXISTS, "error: ruleset already has a main queue, can not "
+		LogError(0, RS_RET_RULES_QUEUE_EXISTS, "error: ruleset already has a main queue, can not "
 				"add another one");
 		ABORT_FINALIZE(RS_RET_RULES_QUEUE_EXISTS);
 	}
@@ -965,7 +1016,7 @@ rulesetCreateQueue(void __attribute__((unused)) *pVal, int *pNewVal)
  * the must be added via explicit config directives.
  * Note: this is the only spot in the code that requires the parser object. In order
  * to solve some class init bootstrap sequence problems, we get the object handle here
- * instead of during module initialization. Note that objUse() is capable of being 
+ * instead of during module initialization. Note that objUse() is capable of being
  * called multiple times.
  * rgerhards, 2009-11-04
  */
@@ -978,11 +1029,11 @@ doRulesetAddParser(ruleset_t *pRuleset, uchar *pName)
 	CHKiRet(objUse(parser, CORE_COMPONENT));
 	iRet = parser.FindParser(&pParser, pName);
 	if(iRet == RS_RET_PARSER_NOT_FOUND) {
-		errmsg.LogError(0, RS_RET_PARSER_NOT_FOUND, "error: parser '%s' unknown at this time "
+		LogError(0, RS_RET_PARSER_NOT_FOUND, "error: parser '%s' unknown at this time "
 			  	"(maybe defined too late in rsyslog.conf?)", pName);
 		ABORT_FINALIZE(RS_RET_NO_CURR_RULESET);
 	} else if(iRet != RS_RET_OK) {
-		errmsg.LogError(0, iRet, "error trying to find parser '%s'\n", pName);
+		LogError(0, iRet, "error trying to find parser '%s'\n", pName);
 		FINALIZE;
 	}
 
@@ -991,7 +1042,7 @@ doRulesetAddParser(ruleset_t *pRuleset, uchar *pName)
 	DBGPRINTF("added parser '%s' to ruleset '%s'\n", pName, pRuleset->pszName);
 
 finalize_it:
-	d_free(pName); /* no longer needed */
+	free(pName); /* no longer needed */
 
 	RETiRet;
 }
@@ -1029,7 +1080,7 @@ rulesetProcessCnf(struct cnfobj *o)
 	
 	localRet = rulesetGetRuleset(loadConf, &pRuleset, rsName);
 	if(localRet == RS_RET_OK) {
-		errmsg.LogError(0, RS_RET_RULESET_EXISTS,
+		LogError(0, RS_RET_RULESET_EXISTS,
 			"error: ruleset '%s' specified more than once",
 			rsName);
 		cnfstmtDestructLst(o->script);
@@ -1113,7 +1164,6 @@ ENDobjQueryInterface(ruleset)
  * rgerhards, 2009-04-06
  */
 BEGINObjClassExit(ruleset, OBJ_IS_CORE_MODULE) /* class, version */
-	objRelease(errmsg, CORE_COMPONENT);
 	objRelease(parser, CORE_COMPONENT);
 ENDObjClassExit(ruleset)
 
@@ -1124,7 +1174,6 @@ ENDObjClassExit(ruleset)
  */
 BEGINObjClassInit(ruleset, 1, OBJ_IS_CORE_MODULE) /* class, version */
 	/* request objects we use */
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 
 	/* set our own handlers */
 	OBJSetMethodHandler(objMethod_DEBUGPRINT, rulesetDebugPrint);
@@ -1132,8 +1181,6 @@ BEGINObjClassInit(ruleset, 1, OBJ_IS_CORE_MODULE) /* class, version */
 
 	/* config file handlers */
 	CHKiRet(regCfSysLineHdlr((uchar *)"rulesetparser", 0, eCmdHdlrGetWord, rulesetAddParser, NULL, NULL));
-	CHKiRet(regCfSysLineHdlr((uchar *)"rulesetcreatemainqueue", 0, eCmdHdlrBinary, rulesetCreateQueue, NULL, NULL));
+	CHKiRet(regCfSysLineHdlr((uchar *)"rulesetcreatemainqueue", 0, eCmdHdlrBinary, rulesetCreateQueue,
+		NULL, NULL));
 ENDObjClassInit(ruleset)
-
-/* vi:set ai:
- */

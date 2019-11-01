@@ -1,46 +1,41 @@
 #!/bin/bash
 # addd 2016-10-06 by RGerhards, released under ASL 2.0
-. $srcdir/diag.sh init
-. $srcdir/diag.sh generate-conf
-. $srcdir/diag.sh add-conf '
+. ${srcdir:=.}/diag.sh init
+. $srcdir/diag.sh check-inotify
+generate_conf
+add_conf '
 module(load="../plugins/imfile/.libs/imfile")
 
-input(type="imfile"
-      File="./rsyslog.input"
-      Tag="file:"
-      reopenOnTruncate="on"
-     )
+input(type="imfile" File="./'$RSYSLOG_DYNNAME'.input" Tag="file:" reopenOnTruncate="on")
 
 template(name="outfmt" type="string" string="%msg:F,58:2%\n")
-
-if $msg contains "msgnum:" then
- action(
-   type="omfile"
-   file="rsyslog.out.log"
-   template="outfmt"
- )
+if $msg contains "msgnum:" then {
+	action( type="omfile" file=`echo $RSYSLOG_OUT_LOG` template="outfmt")
+} else {
+	action( type="omfile" file="'$RSYSLOG_DYNNAME'.rsyslog")
+}
 '
-. $srcdir/diag.sh startup
 
 # write the beginning of the file
 echo 'msgnum:0
-msgnum:1' > rsyslog.input
+msgnum:1' > $RSYSLOG_DYNNAME.input
 
-# sleep a little to give rsyslog a chance to begin processing
-sleep 1
+startup
+
+wait_queueempty # wait for message to be processed
 
 # truncate and write some more lines (see https://github.com/rsyslog/rsyslog/issues/1090)
-echo 'msgnum:2' > rsyslog.input
-# sleep some more
-sleep 1
+echo 'msgnum:2' > $RSYSLOG_DYNNAME.input
+wait_queueempty # wait for message to be processed
+
 echo 'msgnum:3
-msgnum:4' >> rsyslog.input
+msgnum:4' >> $RSYSLOG_DYNNAME.input
 
-# give it time to finish
-sleep 1
+shutdown_when_empty # shut down rsyslogd when done processing messages
+wait_shutdown
 
-. $srcdir/diag.sh shutdown-when-empty # shut down rsyslogd when done processing messages
-. $srcdir/diag.sh wait-shutdown
+printf 'Messages from rsyslog itself:\n'
+cat -n $RSYSLOG_DYNNAME.rsyslog
 
-. $srcdir/diag.sh seq-check 0 4
-. $srcdir/diag.sh exit
+seq_check 0 4
+exit_test

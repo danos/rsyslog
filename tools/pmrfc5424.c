@@ -13,11 +13,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -42,8 +42,6 @@
 #include "datetime.h"
 #include "unicode-helper.h"
 
-#ifdef _AIX
-#endif
 MODULE_TYPE_PARSER
 MODULE_TYPE_NOKEEP
 PARSER_NAME("rsyslog.rfc5424")
@@ -51,7 +49,6 @@ PARSER_NAME("rsyslog.rfc5424")
 /* internal structures
  */
 DEF_PMOD_STATIC_DATA
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(glbl)
 DEFobjCurrIf(parser)
 DEFobjCurrIf(datetime)
@@ -72,7 +69,7 @@ ENDisCompatibleWithFeature
 /* Helper to parseRFCSyslogMsg. This function parses a field up to
  * (and including) the SP character after it. The field contents is
  * returned in a caller-provided buffer. The parsepointer is advanced
- * to after the terminating SP. The caller must ensure that the 
+ * to after the terminating SP. The caller must ensure that the
  * provided buffer is large enough to hold the to be extracted value.
  * Returns 0 if everything is fine or 1 if either the field is not
  * SP-terminated or any other error occurs. -- rger, 2005-11-24
@@ -115,7 +112,7 @@ static int parseRFCField(uchar **pp2parse, uchar *pResult, int *pLenStr)
  * data field of a message. It does NOT parse inside structured data,
  * just gets the field as whole. Parsing the single entities is left
  * to other functions. The parsepointer is advanced
- * to after the terminating SP. The caller must ensure that the 
+ * to after the terminating SP. The caller must ensure that the
  * provided buffer is large enough to hold the to be extracted value.
  * Returns 0 if everything is fine or 1 if either the field is not
  * SP-terminated or any other error occurs. -- rger, 2005-11-24
@@ -171,8 +168,8 @@ static int parseRFCStructuredData(uchar **pp2parse, uchar *pResult, int *pLenStr
 			} else if(*p2parse == ']' && *(p2parse+1) == ' ') {
 				/* found end, just need to copy the ] and eat the SP */
 				*pResult++ = *p2parse;
-				p2parse += 2;
-				lenStr -= 2;
+				p2parse += 1;
+				lenStr -= 1;
 				bCont = 0;
 			} else {
 				*pResult++ = *p2parse++;
@@ -237,8 +234,8 @@ CODESTARTparse
 	 * message, so we can not run into any troubles. I think this is
 	 * wiser than to use individual buffers.
 	 */
-	CHKmalloc(pBuf = MALLOC(lenMsg + 1));
-		
+	CHKmalloc(pBuf = malloc(lenMsg + 1));
+
 	/* IMPORTANT NOTE:
 	 * Validation is not actually done below nor are any errors handled. I have
 	 * NOT included this for the current proof of concept. However, it is strongly
@@ -303,7 +300,6 @@ ENDparse
 BEGINmodExit
 CODESTARTmodExit
 	/* release what we no longer need */
-	objRelease(errmsg, CORE_COMPONENT);
 	objRelease(glbl, CORE_COMPONENT);
 	objRelease(parser, CORE_COMPONENT);
 	objRelease(datetime, CORE_COMPONENT);
@@ -322,7 +318,6 @@ CODESTARTmodInit
 	*ipIFVersProvided = CURR_MOD_IF_VERSION; /* we only support the current interface specification */
 CODEmodInit_QueryRegCFSLineHdlr
 	CHKiRet(objUse(glbl, CORE_COMPONENT));
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 	CHKiRet(objUse(parser, CORE_COMPONENT));
 	CHKiRet(objUse(datetime, CORE_COMPONENT));
 

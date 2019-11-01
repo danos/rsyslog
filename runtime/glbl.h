@@ -8,7 +8,7 @@
  * Please note that there currently is no glbl.c file as we do not yet
  * have any implementations.
  *
- * Copyright 2008-2016 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2008-2019 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -31,17 +31,21 @@
 #define GLBL_H_INCLUDED
 
 #include <sys/types.h>
-#ifdef HAVE_LIBLOGGING_STDLOG
+#ifdef ENABLE_LIBLOGGING_STDLOG
 #include <liblogging/stdlog.h>
 #endif
 #include "rainerscript.h"
 #include "prop.h"
 
 #define glblGetIOBufSize() 4096 /* size of the IO buffer, e.g. for strm class */
+#define glblOversizeMsgInputMode_Truncate 0
+#define glblOversizeMsgInputMode_Split 1
+#define glblOversizeMsgInputMode_Accept 2
 
 extern pid_t glbl_ourpid;
 extern int bProcessInternalMessages;
-#ifdef HAVE_LIBLOGGING_STDLOG
+extern int bPermitSlashInProgramname;
+#ifdef ENABLE_LIBLOGGING_STDLOG
 extern stdlog_channel_t stdlog_hdl;
 #endif
 
@@ -115,6 +119,29 @@ extern int glblSenderStatsTimeout;
 extern int glblSenderKeepTrack;
 extern int glblUnloadModules;
 extern short janitorInterval;
+extern int glblIntMsgRateLimitItv;
+extern int glblIntMsgRateLimitBurst;
+extern char** glblDbgFiles;
+extern size_t glblDbgFilesNum;
+extern int glblDbgWhitelist;
+extern int glblPermitCtlC;
+extern int glblInputTimeoutShutdown;
+extern int glblIntMsgsSeverityFilter;
+extern int bTerminateInputs;
+#ifndef HAVE_ATOMIC_BUILTINS
+extern DEF_ATOMIC_HELPER_MUT(mutTerminateInputs);
+#endif
+
+/* Developer options enable some strange things for developer-only testing.
+ * These should never be enabled in a user build, except if explicitly told
+ * by a developer. The options are acutally flags, so they should be powers
+ * of two. Flag assignment may change between versions, **backward
+ * compatibility is NOT necessary**.
+ * rgerhards, 2018-04-28
+ */
+#define DEV_OPTION_KEEP_RUNNING_ON_HARD_CONF_ERROR 1
+#define DEV_OPTION_8_1905_HANG_TEST 2 // TODO: remove - temporary for bughunt
+extern uint64_t glblDevOptions;
 
 #define glblGetOurPid() glbl_ourpid
 #define glblSetOurPid(pid) { glbl_ourpid = (pid); }
@@ -124,9 +151,16 @@ void glblProcessCnf(struct cnfobj *o);
 void glblProcessTimezone(struct cnfobj *o);
 void glblProcessMainQCnf(struct cnfobj *o);
 void glblDestructMainqCnfObj(void);
-void glblDoneLoadCnf(void);
+rsRetVal glblDoneLoadCnf(void);
 const uchar * glblGetWorkDirRaw(void);
 tzinfo_t* glblFindTimezoneInfo(char *id);
 int GetGnuTLSLoglevel(void);
+int glblGetMaxLine(void);
+int bs_arrcmp_glblDbgFiles(const void *s1, const void *s2);
+uchar* glblGetOversizeMsgErrorFile(void);
+const uchar* glblGetOperatingStateFile(void);
+int glblGetOversizeMsgInputMode(void);
+int glblReportOversizeMessage(void);
+void glblReportChildProcessExit(const uchar *name, pid_t pid, int status);
 
 #endif /* #ifndef GLBL_H_INCLUDED */

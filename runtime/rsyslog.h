@@ -3,7 +3,7 @@
  *
  * Begun 2005-09-15 RGerhards
  *
- * Copyright (C) 2005-2016 by Rainer Gerhards and Adiscon GmbH
+ * Copyright (C) 2005-2018 by Rainer Gerhards and Adiscon GmbH
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -25,30 +25,109 @@
  */
 #ifndef INCLUDED_RSYSLOG_H
 #define INCLUDED_RSYSLOG_H
-#ifndef _AIX
-#pragma GCC diagnostic ignored "-Wdeclaration-after-statement"
-#pragma GCC diagnostic ignored "-Wredundant-decls" // TODO: remove!
-#pragma GCC diagnostic ignored "-Wstrict-prototypes" // TODO: remove!
-#pragma GCC diagnostic ignored "-Wswitch-default" // TODO: remove!
-#endif 
-#include <pthread.h>
-#include "typedefs.h"
+#ifdef __GNUC__
+	#pragma GCC diagnostic ignored "-Wdeclaration-after-statement"
+	#pragma GCC diagnostic ignored "-Wredundant-decls" // TODO: remove!
+	#pragma GCC diagnostic ignored "-Wstrict-prototypes" // TODO: remove!
+	#pragma GCC diagnostic ignored "-Wswitch-default" // TODO: remove!
+	#if __GNUC__ >= 8
+		/* GCC, starting at least with version 8, is now really overdoing with it's
+		 * warning messages. We turn those off that either cause an enormous amount
+		 * of false positives or flag perfectly legal code as problematic.
+		 */
+		/* That one causes warnings when we use variable buffers for error
+		 * messages which may be truncated in the very unlikely case of all
+		 * vars using max value. If going over the max size, the engine will
+		 * most likely truncate due to max message size anyhow. Also, sizing
+		 * the buffers for max-max message size is a wast of (stack) memory.
+		 */
+		#pragma GCC diagnostic ignored "-Wformat-truncation"
+		/* The next one flags variable initializations within out exception handling
+		 * (iRet system) as problematic, even though variables are not used in those
+		 * cases. This would be a good diagnostic if gcc would actually check that
+		 * a variable is used uninitialized. Unfortunately it does not do that. But
+		 * the static analyzers we use as part of CI do, so we are covered in any
+		 * case.
+		 * Unfortunately ignoring this diagnostic leads to two more info lines
+		 * being emitted where nobody knows what the mean and why they appear :-(
+		 */
+		#pragma GCC diagnostic ignored "-Wjump-misses-init"
+	#endif /* if __GNUC__ >= 8 */
+
+	/* define a couple of attributes to improve cross-platform builds */
+	#if __GNUC__ > 6
+		#define CASE_FALLTHROUGH __attribute__((fallthrough));
+	#else
+		#define CASE_FALLTHROUGH
+	#endif
+
+	#define ATTR_NORETURN __attribute__ ((noreturn))
+	#define ATTR_UNUSED __attribute__((unused))
+	#define ATTR_NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
+
+#else /* ifdef __GNUC__ */
+
+	#define CASE_FALLTHROUGH
+	#define ATTR_NORETURN
+	#define ATTR_UNUSED
+	#define ATTR_NONNULL(...)
+
+#endif /* ifdef __GNUC__ */
 
 #if defined(_AIX)
 #include <sys/select.h>
 /* AIXPORT : start*/
 #define SRC_FD          13
 #define SRCMSG          (sizeof(srcpacket))
-extern int src_exists;
 #endif
 /* src end */
 
+#include <pthread.h>
+#include "typedefs.h"
+
+#if defined(__GNUC__)
+	#define PRAGMA_INGORE_Wswitch_enum	_Pragma("GCC diagnostic ignored \"-Wswitch-enum\"")
+	#define PRAGMA_IGNORE_Wcast_align	_Pragma("GCC diagnostic ignored \"-Wcast-align\"")
+	#define PRAGMA_IGNORE_Wempty_body	_Pragma("GCC diagnostic ignored \"-Wempty-body\"")
+	#define PRAGMA_IGNORE_Wsign_compare	_Pragma("GCC diagnostic ignored \"-Wsign-compare\"")
+	#define PRAGMA_IGNORE_Wpragmas		_Pragma("GCC diagnostic ignored \"-Wpragmas\"")
+	#define PRAGMA_IGNORE_Wmissing_noreturn _Pragma("GCC diagnostic ignored \"-Wmissing-noreturn\"")
+	#define PRAGMA_IGNORE_Wexpansion_to_defined \
+						_Pragma("GCC diagnostic ignored \"-Wexpansion-to-defined\"")
+	#define PRAGMA_IGNORE_Wunknown_warning_option \
+						_Pragma("GCC diagnostic ignored \"-Wunknown-warning-option\"")
+	#define PRAGMA_IGNORE_Wunknown_attribute \
+						_Pragma("GCC diagnostic ignored \"-Wunknown-attribute\"")
+	#define PRAGMA_IGNORE_Wformat_nonliteral \
+						_Pragma("GCC diagnostic ignored \"-Wformat-nonliteral\"")
+	#define PRAGMA_IGNORE_Wdeprecated_declarations \
+						_Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+	#define PRAGMA_DIAGNOSTIC_PUSH		_Pragma("GCC diagnostic push")
+	#define PRAGMA_DIAGNOSTIC_POP		_Pragma("GCC diagnostic pop")
+#else
+	#define PRAGMA_INGORE_Wswitch_enum
+	#define PRAGMA_IGNORE_Wcast_align
+	#define PRAGMA_IGNORE_Wsign_compare
+	#define PRAGMA_IGNORE_Wformat_nonliteral
+	#define PRAGMA_IGNORE_Wpragmas
+	#define PRAGMA_IGNORE_Wmissing_noreturn
+	#define PRAGMA_IGNORE_Wempty_body
+	#define PRAGMA_IGNORE_Wdeprecated_declarations
+	#define PRAGMA_IGNORE_Wexpansion_to_defined
+	#define PRAGMA_IGNORE_Wunknown_attribute
+	#define PRAGMA_IGNORE_Wunknown_warning_option
+	#define PRAGMA_DIAGNOSTIC_PUSH
+	#define PRAGMA_DIAGNOSTIC_POP
+#endif
 
 /* ############################################################# *
  * #                 Some constant values                      # *
  * ############################################################# */
 #define CONST_LEN_TIMESTAMP_3164 15 		/* number of chars (excluding \0!) in a RFC3164 timestamp */
 #define CONST_LEN_TIMESTAMP_3339 32 		/* number of chars (excluding \0!) in a RFC3339 timestamp */
+
+#define CONST_LEN_CEE_COOKIE 5
+#define CONST_CEE_COOKIE "@cee:"
 
 /* ############################################################# *
  * #                    Config Settings                        # *
@@ -67,26 +146,26 @@ extern int src_exists;
 #define CONF_PROP_BUFSIZE		16	/* should be close to sizeof(ptr) or lighly above it */
 #define CONF_IPARAMS_BUFSIZE		16	/* initial size of iparams array in wti (is automatically extended) */
 #define	CONF_MIN_SIZE_FOR_COMPRESS	60 	/* config param: minimum message size to try compression. The smaller
-						 * the message, the less likely is any compression gain. We check for
-						 * gain before we submit the message. But to do so we still need to
-						 * do the (costly) compress() call. The following setting sets a size
-						 * for which no call to compress() is done at all. This may result in
-						 * a few more bytes being transmited but better overall performance.
-						 * Note: I have not yet checked the minimum UDP packet size. It might be
-						 * that we do not save anything by compressing very small messages, because
-						 * UDP might need to pad ;)
-						 * rgerhards, 2006-11-30
-						 */
+	 * the message, the less likely is any compression gain. We check for
+	 * gain before we submit the message. But to do so we still need to
+	 * do the (costly) compress() call. The following setting sets a size
+	 * for which no call to compress() is done at all. This may result in
+	 * a few more bytes being transmited but better overall performance.
+	 * Note: I have not yet checked the minimum UDP packet size. It might be
+	 * that we do not save anything by compressing very small messages, because
+	 * UDP might need to pad ;)
+	 * rgerhards, 2006-11-30
+	 */
 
 #define CONF_OMOD_NUMSTRINGS_MAXSIZE	5	/* cache for pointers to output module buffer pointers. All
-						 * rsyslog-provided plugins do NOT need more than five buffers. If
-						 * more are needed (future developments, third-parties), rsyslog
-						 * must be recompiled with a larger parameter. Hardcoding this
-						 * saves us some overhead, both in runtime in code complexity. As
-						 * it is doubtful if ever more than 3 parameters are needed, the
-						 * approach taken here is considered appropriate.
-						 * rgerhards, 2010-06-24
-						 */
+	 * rsyslog-provided plugins do NOT need more than five buffers. If
+	 * more are needed (future developments, third-parties), rsyslog
+	 * must be recompiled with a larger parameter. Hardcoding this
+	 * saves us some overhead, both in runtime in code complexity. As
+	 * it is doubtful if ever more than 3 parameters are needed, the
+	 * approach taken here is considered appropriate.
+	 * rgerhards, 2010-06-24
+	 */
 #define CONF_NUM_MULTISUB		1024	/* default number of messages per multisub structure */
 
 /* ############################################################# *
@@ -96,10 +175,12 @@ extern int src_exists;
 /* make sure we uses consistent macros, no matter what the
  * platform gives us.
  */
+#undef LOG_NFACILITIES /* may be system defined, override */
 #define LOG_NFACILITIES 24+1 /* plus one for our special "invld" facility! */
 #define LOG_MAXPRI 191	/* highest supported valid PRI value --> RFC3164, RFC5424 */
 #undef LOG_MAKEPRI
-#define LOG_PRI_INVLD	(LOG_INVLD|LOG_DEBUG)	/* PRI is invalid --> special "invld.=debug" PRI code (rsyslog-specific) */
+#define LOG_PRI_INVLD	(LOG_INVLD|LOG_DEBUG)
+/* PRI is invalid --> special "invld.=debug" PRI code (rsyslog-specific) */
 
 #define	LOG_EMERG	0	/* system is unusable */
 #define	LOG_ALERT	1	/* action must be taken immediately */
@@ -150,8 +231,8 @@ extern int src_exists;
 static inline syslog_pri_t __attribute__((unused))
 pri2fac(const syslog_pri_t pri)
 {
-       unsigned fac = pri >> 3;
-       return (fac > 23) ? LOG_FAC_INVLD : fac;
+	unsigned fac = pri >> 3;
+	return (fac > 23) ? LOG_FAC_INVLD : fac;
 }
 #define pri2sev(pri) ((pri) & 0x07)
 
@@ -182,7 +263,9 @@ enum rsRetVal_				/** return value. All methods return this if not specified oth
 	/* begin regular error codes */
 	RS_RET_NOT_IMPLEMENTED = -7,	/**< implementation is missing (probably internal error or lazyness ;)) */
 	RS_RET_OUT_OF_MEMORY = -6,	/**< memory allocation failed */
-	RS_RET_PROVIDED_BUFFER_TOO_SMALL = -50,/**< the caller provided a buffer, but the called function sees the size of this buffer is too small - operation not carried out */
+	RS_RET_PROVIDED_BUFFER_TOO_SMALL = -50, /*< the caller provided a buffer, but the called function sees
+						  the size of this buffer is too small - operation not carried out */
+	RS_RET_FILE_TRUNCATED = -51,	/**< (input) file was truncated, not an error but a status */
 	RS_RET_TRUE = -3,		/**< to indicate a true state (can be used as TRUE, legacy) */
 	RS_RET_FALSE = -2,		/**< to indicate a false state (can be used as FALSE, legacy) */
 	RS_RET_NO_IRET = -8,	/**< This is a trick for the debuging system - it means no iRet is provided  */
@@ -196,15 +279,19 @@ enum rsRetVal_				/** return value. All methods return this if not specified oth
 	RS_RET_NO_MORE_DATA = -3006,	/**< insufficient data, e.g. end of string during parsing */
 	RS_RET_INVALID_IP = -3007,	/**< invalid ip found where valid was expected */
 	RS_RET_OBJ_CREATION_FAILED = - 3008, /**< the creation of an object failed (no details available) */
-	RS_RET_INOTIFY_INIT_FAILED = - 3009, /**< the initialization of an inotify instance failed (no details available) */
+	RS_RET_INOTIFY_INIT_FAILED = - 3009,
+	/**< the initialization of an inotify instance failed (no details available) */
+	RS_RET_FEN_INIT_FAILED = - 3010, /**< the initialization of a fen instance failed (no details available) */
 	RS_RET_PARAM_ERROR = -1000,	/**< invalid parameter in call to function */
 	RS_RET_MISSING_INTERFACE = -1001,/**< interface version mismatch, required missing */
 	RS_RET_INVALID_CORE_INTERFACE = -1002,/**< interface provided by host invalid, can not be used */
 	RS_RET_ENTRY_POINT_NOT_FOUND = -1003,/**< a requested entry point was not found */
 	RS_RET_MODULE_ENTRY_POINT_NOT_FOUND = -1004,/**< a entry point requested from a module was not present in it */
-	RS_RET_OBJ_NOT_AVAILABLE = -1005,/**< something could not be completed because the required object is not available*/
+	RS_RET_OBJ_NOT_AVAILABLE = -1005,
+	/**< something could not be completed because the required object is not available*/
 	RS_RET_LOAD_ERROR = -1006,/**< we had an error loading the object/interface and can not continue */
-	RS_RET_MODULE_STILL_REFERENCED = -1007,/**< module could not be unloaded because it still is referenced by someone */
+	RS_RET_MODULE_STILL_REFERENCED = -1007,
+	/**< module could not be unloaded because it still is referenced by someone */
 	RS_RET_OBJ_UNKNOWN = -1008,/**< object is unknown where required */
 	RS_RET_OBJ_NOT_REGISTERED = -1009,/**< tried to unregister an object that is not registered */
 	/* return states for config file processing */
@@ -343,13 +430,16 @@ enum rsRetVal_				/** return value. All methods return this if not specified oth
 	RS_RET_ERR_OPEN_KLOG = -2145, /**< error opening or reading the kernel log socket */
 	RS_RET_ERR_AQ_CONLOG = -2146, /**< error aquiring console log (on solaris) */
 	RS_RET_ERR_DOOR = -2147, /**< some problems with handling the Solaris door functionality */
-	RS_RET_NO_SRCNAME_TPL = -2150, /**< sourcename template was not specified where one was needed (omudpspoof spoof addr) */
+	RS_RET_NO_SRCNAME_TPL = -2150, /**< sourcename template was not specified where one was needed
+(omudpspoof spoof addr) */
 	RS_RET_HOST_NOT_SPECIFIED = -2151, /**< (target) host was not specified where it was needed */
 	RS_RET_ERR_LIBNET_INIT = -2152, /**< error initializing libnet, e.g. because not running as root */
 	RS_RET_FORCE_TERM = -2153,	/**< thread was forced to terminate by bShallShutdown, a state, not an error */
-	RS_RET_RULES_QUEUE_EXISTS = -2154,/**< we were instructed to create a new ruleset queue, but one already exists */
+	RS_RET_RULES_QUEUE_EXISTS = -2154,/**< we were instructed to create a new
+					   ruleset queue, but one already exists */
 	RS_RET_NO_CURR_RULESET = -2155,/**< no current ruleset exists (but one is required) */
-	RS_RET_NO_MSG_PASSING = -2156,/**< output module interface parameter passing mode "MSG" is not available but required */
+	RS_RET_NO_MSG_PASSING = -2156,
+/*< output module interface parameter passing mode "MSG" is not available but required */
 	RS_RET_RULESET_NOT_FOUND = -2157,/**< a required ruleset could not be found */
 	RS_RET_NO_RULESET= -2158,/**< no ruleset name as specified where one was needed */
 	RS_RET_PARSER_NOT_FOUND = -2159,/**< parser with the specified name was not found */
@@ -363,7 +453,8 @@ enum rsRetVal_				/** return value. All methods return this if not specified oth
 	RS_RET_CONF_NOT_GLBL = -2167,	/**< $Begin not in global scope */
 	RS_RET_CONF_IN_GLBL = -2168,	/**< $End when in global scope */
 	RS_RET_CONF_INVLD_END = -2169,	/**< $End for wrong conf object (probably nesting error) */
-	RS_RET_CONF_INVLD_SCOPE = -2170,/**< config statement not valid in current scope (e.g. global stmt in action block) */
+	RS_RET_CONF_INVLD_SCOPE = -2170,
+/*< config statement not valid in current scope (e.g. global stmt in action block) */
 	RS_RET_CONF_END_NO_ACT = -2171,	/**< end of action block, but no actual action specified */
 	RS_RET_NO_LSTN_DEFINED = -2172, /**< no listener defined (e.g. inside an input module) */
 	RS_RET_EPOLL_CR_FAILED = -2173, /**< epoll_create() failed */
@@ -382,7 +473,7 @@ enum rsRetVal_				/** return value. All methods return this if not specified oth
 	RS_RET_OK_WARN = -2186, /**<  config part: everything was OK, but a warning message was emitted */
 
 	RS_RET_INVLD_CONF_OBJ= -2200,	/**< invalid config object (e.g. $Begin conf statement) */
-	RS_RET_ERR_LIBEE_INIT = -2201,	/**< cannot obtain libee ctx */
+	/* UNUSED, WAS; RS_RET_ERR_LIBEE_INIT = -2201,	< cannot obtain libee ctx */
 	RS_RET_ERR_LIBLOGNORM_INIT = -2202,/**< cannot obtain liblognorm ctx */
 	RS_RET_ERR_LIBLOGNORM_SAMPDB_LOAD = -2203,/**< liblognorm sampledb load failed */
 	RS_RET_CMD_GONE_AWAY = -2204,/**< config directive existed, but no longer supported */
@@ -474,9 +565,23 @@ enum rsRetVal_				/** return value. All methods return this if not specified oth
 	RS_RET_FILE_ALREADY_IN_TABLE = -2431,/**< in imfile: table already contains to be added file */
 	RS_RET_ERR_DROP_PRIV = -2432,/**< error droping privileges */
 	RS_RET_FILE_OPEN_ERROR = -2433, /**< error other than "not found" occured during open() */
-	RS_RET_FILE_CHOWN_ERROR = -2434, /**< error during chown() */
 	RS_RET_RENAME_TMP_QI_ERROR = -2435, /**< renaming temporary .qi file failed */
 	RS_RET_ERR_SETENV = -2436, /**< error setting an environment variable */
+	RS_RET_DIR_CHOWN_ERROR = -2437, /**< error during chown() */
+	RS_RET_JSON_UNUSABLE = -2438, /**< JSON object is NULL or otherwise unusable */
+	RS_RET_OPERATION_STATUS = -2439, /**< operational status (info) message, no error */
+	RS_RET_UDP_MSGSIZE_TOO_LARGE = -2440, /**< a message is too large to be sent via UDP */
+	RS_RET_NON_JSON_PROP = -2441, /**< a non-json property id is provided where a json one is requried */
+	RS_RET_NO_TZ_SET = -2442, /**< system env var TZ is not set (status msg) */
+	RS_RET_FS_ERR = -2443, /**< file-system error */
+	RS_RET_POLL_ERR = -2444, /**< error in poll() system call */
+	RS_RET_OVERSIZE_MSG = -2445, /**< message is too long (above configured max) */
+	RS_RET_TLS_KEY_ERR = -2446, /**< TLS KEY has problems */
+	RS_RET_RABBITMQ_CONN_ERR = -2447, /**< RabbitMQ Connection error */
+	RS_RET_RABBITMQ_LOGIN_ERR = -2448, /**< RabbitMQ Login error */
+	RS_RET_RABBITMQ_CHANNEL_ERR = -2449, /**< RabbitMQ Connection error */
+	RS_RET_NO_WRKDIR_SET = -2450, /**< working directory not set, but desired by functionality */
+	RS_RET_ERR_QUEUE_FN_DUP = -2451, /**< duplicate queue file name */
 
 	/* RainerScript error messages (range 1000.. 1999) */
 	RS_RET_SYSVAR_NOT_FOUND = 1001, /**< system variable could not be found (maybe misspelled) */
@@ -484,8 +589,10 @@ enum rsRetVal_				/** return value. All methods return this if not specified oth
 
 	/* some generic error/status codes */
 	RS_RET_OK = 0,			/**< operation successful */
-	RS_RET_OK_DELETE_LISTENTRY = 1,	/**< operation successful, but callee requested the deletion of an entry (special state) */
-	RS_RET_TERMINATE_NOW = 2,	/**< operation successful, function is requested to terminate (mostly used with threads) */
+	RS_RET_OK_DELETE_LISTENTRY = 1,
+/*< operation successful, but callee requested the deletion of an entry (special state) */
+	RS_RET_TERMINATE_NOW = 2,	/**< operation successful, function is requested to terminate
+					(mostly used with threads) */
 	RS_RET_NO_RUN = 3,		/**< operation successful, but function does not like to be executed */
 	RS_RET_IDLE = 4,		/**< operation successful, but callee is idle (e.g. because queue is empty) */
 	RS_RET_TERMINATE_WHEN_IDLE = 5	/**< operation successful, function is requested to terminate when idle */
@@ -501,7 +608,13 @@ enum rsRetVal_				/** return value. All methods return this if not specified oth
 #	define CHKiRet(code) if((iRet = code) != RS_RET_OK) goto finalize_it
 #endif
 
-# define CHKiConcCtrl(code) if (code != 0) { iRet = RS_RET_CONC_CTRL_ERR; errno = code; goto finalize_it; }
+# define CHKiConcCtrl(code)  { int tmp_CC; \
+	if ((tmp_CC = code) != 0) { \
+		iRet = RS_RET_CONC_CTRL_ERR; \
+		errno = tmp_CC; \
+		goto finalize_it; \
+	} \
+}
 
 /* macro below is to be used if we need our own handling, eg for cleanup */
 #define CHKiRet_Hdlr(code) if((iRet = code) != RS_RET_OK)
@@ -509,8 +622,8 @@ enum rsRetVal_				/** return value. All methods return this if not specified oth
 #define CHKmalloc(operation) if((operation) == NULL) ABORT_FINALIZE(RS_RET_OUT_OF_MEMORY)
 /* macro below is used in conjunction with CHKiRet_Hdlr, else use ABORT_FINALIZE */
 #define FINALIZE goto finalize_it;
-#define DEFiRet BEGINfunc rsRetVal iRet = RS_RET_OK
-#define RETiRet do{ ENDfuncIRet return iRet; }while(0)
+#define DEFiRet rsRetVal iRet = RS_RET_OK
+#define RETiRet return iRet
 
 #define ABORT_FINALIZE(errCode)			\
 	do {					\
@@ -607,7 +720,7 @@ struct actWrkrIParams {
 #  define  __attribute__(x)  /*NOTHING*/
 #endif
 
-#ifndef O_CLOEXEC
+#if !defined(O_CLOEXEC) && !defined(_AIX)
 /* of course, this limits the functionality... */
 #  define O_CLOEXEC 0
 #endif
@@ -615,9 +728,6 @@ struct actWrkrIParams {
 /* some constants */
 #define MUTEX_ALREADY_LOCKED	0
 #define LOCK_MUTEX		1
-
-/* The following prototype is convenient, even though it may not be the 100% correct place.. -- rgerhards 2008-01-07 */
-void dbgprintf(const char *, ...) __attribute__((format(printf, 1, 2)));
 
 
 #include "debug.h"
@@ -636,6 +746,7 @@ extern uchar *glblModPath; /* module load path */
 extern void (*glblErrLogger)(const int, const int, const uchar*);
 
 /* some runtime prototypes */
+void processImInternal(void);
 rsRetVal rsrtInit(const char **ppErrObj, obj_if_t *pObjIF);
 rsRetVal rsrtExit(void);
 int rsrtIsInit(void);
@@ -649,7 +760,11 @@ void dfltErrLogger(const int, const int, const uchar *errMsg);
  * a dummy variable. This requires review of where in code empty structs
  * are already defined. -- rgerhards, 2010-07-26
  */
+#ifdef OS_SOLARIS
+#define EMPTY_STRUCT  int remove_me_when_first_real_member_is_added;
+#else
 #define EMPTY_STRUCT
+#endif
 
 /* TODO: remove this -- this is only for transition of the config system */
 extern rsconf_t *ourConf; /* defined by syslogd.c, a hack for functions that do not

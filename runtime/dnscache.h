@@ -1,17 +1,17 @@
 /* Definitions for dnscache module.
  *
- * Copyright 2011-2013 Adiscon GmbH.
+ * Copyright 2011-2019 Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,6 +24,10 @@
 
 rsRetVal dnscacheInit(void);
 rsRetVal dnscacheDeinit(void);
-rsRetVal dnscacheLookup(struct sockaddr_storage *addr, prop_t **fqdn, prop_t **fqdnLowerCase, prop_t **localName, prop_t **ip);
+rsRetVal ATTR_NONNULL(1, 5) dnscacheLookup(struct sockaddr_storage *const addr,
+	prop_t **const fqdn, prop_t **const fqdnLowerCase,
+	prop_t **const localName, prop_t **const ip);
 
+extern unsigned dnscacheDefaultTTL;
+extern int dnscacheEnableTTL;
 #endif /* #ifndef INCLUDED_DNSCACHE_H */

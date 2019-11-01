@@ -3,21 +3,21 @@
  * in cases where journal serves as the whole system log database.
  * Note that we may get into a loop if journald re-injects messages
  * into the syslog stream and we read that via imuxsock. Thus there
- * is an option in imuxsock to ignore messages from ourselves 
+ * is an option in imuxsock to ignore messages from ourselves
  * (actually from our pid). So there are some module-interdependencies.
  *
- * Copyright 2013-2016 Adiscon GmbH.
+ * Copyright 2013-2017 Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -45,20 +45,20 @@
 #include <systemd/sd-journal.h>
 #include "unicode-helper.h"
 #include <sys/uio.h>
+#include "parserif.h"
 
 MODULE_TYPE_OUTPUT
 MODULE_TYPE_NOKEEP
 MODULE_CNFNAME("omjournal")
 
 
-DEFobjCurrIf(errmsg);
 DEF_OMOD_STATIC_DATA
 
 /* config variables */
 
 
 typedef struct _instanceData {
-    uchar *tplName;
+	uchar *tplName;
 } instanceData;
 
 typedef struct wrkrInstanceData {
@@ -121,7 +121,7 @@ ENDisCompatibleWithFeature
 
 BEGINfreeInstance
 CODESTARTfreeInstance
-    free(pData->tplName);
+	free(pData->tplName);
 ENDfreeInstance
 
 
@@ -141,6 +141,12 @@ BEGINnewActInst
 CODESTARTnewActInst
 	DBGPRINTF("newActInst (mmjournal)\n");
 	pvals = nvlstGetParams(lst, &actpblk, NULL);
+	if(pvals == NULL) {
+		parser_errmsg("error processing module "
+				"config parameters [module(...)]");
+		ABORT_FINALIZE(RS_RET_MISSING_CNFPARAMS);
+	}
+
 
 	CHKiRet(createInstance(&pData));
 	setInstParamDefaults(pData);
@@ -150,7 +156,7 @@ CODESTARTnewActInst
 		if(!pvals[i].bUsed)
 			continue;
 
-        if(!strcmp(actpblk.descr[i].name, "template")) {
+	if(!strcmp(actpblk.descr[i].name, "template")) {
 			pData->tplName = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
 		} else {
 			dbgprintf("ommongodb: program error, non-handled "
@@ -214,7 +220,7 @@ build_iovec(size_t *retargc, struct json_object *json)
 		vec_len = key_len + val_len + 1;
 
 		char *buf = malloc(vec_len + 1);
-		if(NULL == buf) 
+		if(NULL == buf)
 			goto fail;
 
 		memcpy(buf, key, key_len);
@@ -249,10 +255,10 @@ send_non_template_message(smsg_t *const __restrict__ pMsg)
 {
 	uchar *tag;
 	int lenTag;
-	int sev;  
+	int sev;
 
 	MsgGetSeverity(pMsg, &sev);
-	getTAG(pMsg, &tag, &lenTag);
+	getTAG(pMsg, &tag, &lenTag, LOCK_MUTEX);
 	/* we can use more properties here, but let's see if there
 	* is some real user interest. We can always add later...
 	*/
@@ -292,24 +298,12 @@ CODESTARTdoAction
 ENDdoAction
 
 
-BEGINparseSelectorAct
-CODESTARTparseSelectorAct
-CODE_STD_STRING_REQUESTparseSelectorAct(1)
-	if(!strncmp((char*) p, ":omjournal:", sizeof(":omjournal:") - 1)) {
-		errmsg.LogError(0, RS_RET_LEGA_ACT_NOT_SUPPORTED,
-			"omjournal supports only v6+ config format, use: "
-			"action(type=\"omjournal\" ...)");
-	}
-	ABORT_FINALIZE(RS_RET_CONFLINE_UNPROCESSED);
-CODE_STD_FINALIZERparseSelectorAct
-ENDparseSelectorAct
-
-
 BEGINmodExit
 CODESTARTmodExit
-	objRelease(errmsg, CORE_COMPONENT);
 ENDmodExit
 
+
+NO_LEGACY_CONF_parseSelectorAct
 
 BEGINqueryEtryPt
 CODESTARTqueryEtryPt
@@ -323,10 +317,7 @@ ENDqueryEtryPt
 
 BEGINmodInit()
 CODESTARTmodInit
-	*ipIFVersProvided = CURR_MOD_IF_VERSION; /* we only support the current interface specification */
+	*ipIFVersProvided = CURR_MOD_IF_VERSION;
 CODEmodInit_QueryRegCFSLineHdlr
 	DBGPRINTF("omjournal: module compiled with rsyslog version %s.\n", VERSION);
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 ENDmodInit
-
-

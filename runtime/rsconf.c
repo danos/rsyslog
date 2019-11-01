@@ -2,18 +2,18 @@
  *
  * Module begun 2011-04-19 by Rainer Gerhards
  *
- * Copyright 2011-2016 Adiscon GmbH.
+ * Copyright 2011-2019 Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -74,7 +74,6 @@ DEFobjStaticHelpers
 DEFobjCurrIf(ruleset)
 DEFobjCurrIf(module)
 DEFobjCurrIf(conf)
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(glbl)
 DEFobjCurrIf(parser)
 DEFobjCurrIf(datetime)
@@ -84,19 +83,37 @@ rsconf_t *runConf = NULL;/* the currently running config */
 rsconf_t *loadConf = NULL;/* the config currently being loaded (no concurrent config load supported!) */
 
 /* hardcoded standard templates (used for defaults) */
-static uchar template_DebugFormat[] = "\"Debug line with all properties:\nFROMHOST: '%FROMHOST%', fromhost-ip: '%fromhost-ip%', HOSTNAME: '%HOSTNAME%', PRI: %PRI%,\nsyslogtag '%syslogtag%', programname: '%programname%', APP-NAME: '%APP-NAME%', PROCID: '%PROCID%', MSGID: '%MSGID%',\nTIMESTAMP: '%TIMESTAMP%', STRUCTURED-DATA: '%STRUCTURED-DATA%',\nmsg: '%msg%'\nescaped msg: '%msg:::drop-cc%'\ninputname: %inputname% rawmsg: '%rawmsg%'\n$!:%$!%\n$.:%$.%\n$/:%$/%\n\n\"";
-static uchar template_SyslogProtocol23Format[] = "\"<%PRI%>1 %TIMESTAMP:::date-rfc3339% %HOSTNAME% %APP-NAME% %PROCID% %MSGID% %STRUCTURED-DATA% %msg%\n\"";
+static uchar template_DebugFormat[] = "\"Debug line with all properties:\nFROMHOST: '%FROMHOST%', fromhost-ip: "
+"'%fromhost-ip%', HOSTNAME: '%HOSTNAME%', PRI: %PRI%,\nsyslogtag '%syslogtag%', programname: '%programname%', "
+"APP-NAME: '%APP-NAME%', PROCID: '%PROCID%', MSGID: '%MSGID%',\nTIMESTAMP: '%TIMESTAMP%', "
+"STRUCTURED-DATA: '%STRUCTURED-DATA%',\nmsg: '%msg%'\nescaped msg: '%msg:::drop-cc%'\ninputname: %inputname% "
+"rawmsg: '%rawmsg%'\n$!:%$!%\n$.:%$.%\n$/:%$/%\n\n\"";
+static uchar template_SyslogProtocol23Format[] = "\"<%PRI%>1 %TIMESTAMP:::date-rfc3339% %HOSTNAME% %APP-NAME% "
+"%PROCID% %MSGID% %STRUCTURED-DATA% %msg%\n\"";
 static uchar template_TraditionalFileFormat[] = "=RSYSLOG_TraditionalFileFormat";
 static uchar template_FileFormat[] = "=RSYSLOG_FileFormat";
 static uchar template_ForwardFormat[] = "=RSYSLOG_ForwardFormat";
 static uchar template_TraditionalForwardFormat[] = "=RSYSLOG_TraditionalForwardFormat";
-static uchar template_WallFmt[] = "\"\r\n\7Message from syslogd@%HOSTNAME% at %timegenerated% ...\r\n %syslogtag%%msg%\n\r\"";
+static uchar template_WallFmt[] = "\"\r\n\7Message from syslogd@%HOSTNAME% at %timegenerated% ...\r\n "
+"%syslogtag%%msg%\n\r\"";
 static uchar template_StdUsrMsgFmt[] = "\" %syslogtag%%msg%\n\r\"";
-static uchar template_StdDBFmt[] = "\"insert into SystemEvents (Message, Facility, FromHost, Priority, DeviceReportedTime, ReceivedAt, InfoUnitID, SysLogTag) values ('%msg%', %syslogfacility%, '%HOSTNAME%', %syslogpriority%, '%timereported:::date-mysql%', '%timegenerated:::date-mysql%', %iut%, '%syslogtag%')\",SQL";
-static uchar template_StdPgSQLFmt[] = "\"insert into SystemEvents (Message, Facility, FromHost, Priority, DeviceReportedTime, ReceivedAt, InfoUnitID, SysLogTag) values ('%msg%', %syslogfacility%, '%HOSTNAME%', %syslogpriority%, '%timereported:::date-pgsql%', '%timegenerated:::date-pgsql%', %iut%, '%syslogtag%')\",STDSQL";
+static uchar template_StdDBFmt[] = "\"insert into SystemEvents (Message, Facility, FromHost, Priority, "
+"DeviceReportedTime, ReceivedAt, InfoUnitID, SysLogTag) values ('%msg%', %syslogfacility%, "
+"'%HOSTNAME%', %syslogpriority%, '%timereported:::date-mysql%', '%timegenerated:::date-mysql%', %iut%, "
+"'%syslogtag%')\",SQL";
+static uchar template_StdPgSQLFmt[] = "\"insert into SystemEvents (Message, Facility, FromHost, Priority, "
+"DeviceReportedTime, ReceivedAt, InfoUnitID, SysLogTag) values ('%msg%', %syslogfacility%, "
+"'%HOSTNAME%', %syslogpriority%, '%timereported:::date-pgsql%', '%timegenerated:::date-pgsql%', %iut%, "
+"'%syslogtag%')\",STDSQL";
 static uchar template_spoofadr[] = "\"%fromhost-ip%\"";
 static uchar template_SysklogdFileFormat[] = "\"%TIMESTAMP% %HOSTNAME% %syslogtag%%msg:::sp-if-no-1st-sp%%msg%\n\"";
-static uchar template_StdJSONFmt[] = "\"{\\\"message\\\":\\\"%msg:::json%\\\",\\\"fromhost\\\":\\\"%HOSTNAME:::json%\\\",\\\"facility\\\":\\\"%syslogfacility-text%\\\",\\\"priority\\\":\\\"%syslogpriority-text%\\\",\\\"timereported\\\":\\\"%timereported:::date-rfc3339%\\\",\\\"timegenerated\\\":\\\"%timegenerated:::date-rfc3339%\\\"}\"";
+static uchar template_StdJSONFmt[] = "\"{\\\"message\\\":\\\"%msg:::json%\\\",\\\"fromhost\\\":\\\""
+"%HOSTNAME:::json%\\\",\\\"facility\\\":\\\"%syslogfacility-text%\\\",\\\"priority\\\":\\\""
+"%syslogpriority-text%\\\",\\\"timereported\\\":\\\"%timereported:::date-rfc3339%\\\",\\\"timegenerated\\\":\\\""
+"%timegenerated:::date-rfc3339%\\\"}\"";
+static uchar template_StdClickHouseFmt[] = "\"INSERT INTO rsyslog.SystemEvents (severity, facility, "
+"timestamp, hostname, tag, message) VALUES (%syslogseverity%, %syslogfacility%, "
+"'%timereported:::date-unixtimestamp%', '%hostname%', '%syslogtag%', '%msg%')\",STDSQL";
 /* end templates */
 
 /* tables for interfacing with the v6 config system (as far as we need to) */
@@ -136,6 +153,7 @@ static void cnfSetDefaults(rsconf_t *pThis)
 	pThis->globals.bDebugPrintCfSysLineHandlerList = 0;
 	pThis->globals.bLogStatusMsgs = DFLT_bLogStatusMsgs;
 	pThis->globals.bErrMsgToStderr = 1;
+	pThis->globals.maxErrMsgToStderr = -1;
 	pThis->globals.umask = -1;
 	pThis->globals.gidDropPrivKeepSupplemental = 0;
 	pThis->templates.root = NULL;
@@ -210,7 +228,6 @@ freeCnf(rsconf_t *pThis)
 	}
 }
 
-
 /* destructor for the rsconf object */
 PROTOTYPEobjDestruct(rsconf);
 BEGINobjDestruct(rsconf) /* be sure to specify the object type also in END and CODESTART macros! */
@@ -268,7 +285,7 @@ BEGINobjDebugPrint(rsconf) /* be sure to specify the object type also in END and
 	/* TODO: add
 	iActionRetryCount = 0;
 	iActionRetryInterval = 30000;
-       static int iMainMsgQtoWrkMinMsgs = 100;
+	static int iMainMsgQtoWrkMinMsgs = 100;
 	static int iMainMsgQbSaveOnShutdown = 1;
 	iMainMsgQueMaxDiskSpace = 0;
 	setQPROP(qqueueSetiMinMsgsPerWrkr, "$MainMsgQueueWorkerThreadMinimumMessages", 100);
@@ -305,7 +322,7 @@ parserProcessCnf(struct cnfobj *o)
 	paramIdx = cnfparamGetIdx(&parserpblk, "name");
 	parserName = (uchar*)es_str2cstr(pvals[paramIdx].val.d.estr, NULL);
 	if(parser.FindParser(&myparser, parserName) != RS_RET_PARSER_NOT_FOUND) {
-		errmsg.LogError(0, RS_RET_PARSER_NAME_EXISTS,
+		LogError(0, RS_RET_PARSER_NAME_EXISTS,
 			"parser module name '%s' already exists", cnfModName);
 		ABORT_FINALIZE(RS_RET_PARSER_NAME_EXISTS);
 	}
@@ -313,11 +330,11 @@ parserProcessCnf(struct cnfobj *o)
 	paramIdx = cnfparamGetIdx(&parserpblk, "type");
 	cnfModName = (uchar*)es_str2cstr(pvals[paramIdx].val.d.estr, NULL);
 	if((pMod = module.FindWithCnfName(loadConf, cnfModName, eMOD_PARSER)) == NULL) {
-		errmsg.LogError(0, RS_RET_MOD_UNKNOWN, "parser module name '%s' is unknown", cnfModName);
+		LogError(0, RS_RET_MOD_UNKNOWN, "parser module name '%s' is unknown", cnfModName);
 		ABORT_FINALIZE(RS_RET_MOD_UNKNOWN);
 	}
 	if(pMod->mod.pm.newParserInst == NULL) {
-		errmsg.LogError(0, RS_RET_MOD_NO_PARSER_STMT,
+		LogError(0, RS_RET_MOD_NO_PARSER_STMT,
 				"parser module '%s' does not support parser() statement", cnfModName);
 		ABORT_FINALIZE(RS_RET_MOD_NO_INPUT_STMT);
 	}
@@ -352,15 +369,15 @@ inputProcessCnf(struct cnfobj *o)
 	typeIdx = cnfparamGetIdx(&inppblk, "type");
 	cnfModName = (uchar*)es_str2cstr(pvals[typeIdx].val.d.estr, NULL);
 	if((pMod = module.FindWithCnfName(loadConf, cnfModName, eMOD_IN)) == NULL) {
-		errmsg.LogError(0, RS_RET_MOD_UNKNOWN, "input module name '%s' is unknown", cnfModName);
+		LogError(0, RS_RET_MOD_UNKNOWN, "input module name '%s' is unknown", cnfModName);
 		ABORT_FINALIZE(RS_RET_MOD_UNKNOWN);
 	}
 	if(pMod->mod.im.newInpInst == NULL) {
-		errmsg.LogError(0, RS_RET_MOD_NO_INPUT_STMT,
+		LogError(0, RS_RET_MOD_NO_INPUT_STMT,
 				"input module '%s' does not support input() statement", cnfModName);
 		ABORT_FINALIZE(RS_RET_MOD_NO_INPUT_STMT);
 	}
-	CHKiRet(pMod->mod.im.newInpInst(o->nvlst));
+	iRet = pMod->mod.im.newInpInst(o->nvlst);
 finalize_it:
 	free(cnfModName);
 	cnfparamvalsDestruct(pvals, &inppblk);
@@ -379,7 +396,7 @@ parser_warnmsg(const char *fmt, ...)
 	va_start(ap, fmt);
 	if(vsnprintf(errBuf, sizeof(errBuf), fmt, ap) == sizeof(errBuf))
 		errBuf[sizeof(errBuf)-1] = '\0';
-	errmsg.LogMsg(0, RS_RET_CONF_PARSE_WARNING, LOG_WARNING,
+	LogMsg(0, RS_RET_CONF_PARSE_WARNING, LOG_WARNING,
 			"warning during parsing file %s, on or before line %d: %s",
 			cnfcurrfn, yylineno, errBuf);
 	va_end(ap);
@@ -395,10 +412,10 @@ parser_errmsg(const char *fmt, ...)
 	if(vsnprintf(errBuf, sizeof(errBuf), fmt, ap) == sizeof(errBuf))
 		errBuf[sizeof(errBuf)-1] = '\0';
 	if(cnfcurrfn == NULL) {
-		errmsg.LogError(0, RS_RET_CONF_PARSE_ERROR,
+		LogError(0, RS_RET_CONF_PARSE_ERROR,
 				"error during config processing: %s", errBuf);
 	} else {
-		errmsg.LogError(0, RS_RET_CONF_PARSE_ERROR,
+		LogError(0, RS_RET_CONF_PARSE_ERROR,
 				"error during parsing file %s, on or before line %d: %s",
 				cnfcurrfn, yylineno, errBuf);
 	}
@@ -412,10 +429,12 @@ yyerror(const char *s)
 	parser_errmsg("%s on token '%s'", s, yytext);
 	return 0;
 }
-void cnfDoObj(struct cnfobj *o)
+void ATTR_NONNULL()
+cnfDoObj(struct cnfobj *const o)
 {
 	int bDestructObj = 1;
 	int bChkUnuse = 1;
+	assert(o != NULL);
 
 	dbgprintf("cnf:global:obj: ");
 	cnfobjPrint(o);
@@ -487,9 +506,9 @@ void cnfDoCfsysline(char *ln)
 void cnfDoBSDTag(char *ln)
 {
 	DBGPRINTF("cnf:global:BSD tag: %s\n", ln);
-	errmsg.LogError(0, RS_RET_BSD_BLOCKS_UNSUPPORTED,
+	LogError(0, RS_RET_BSD_BLOCKS_UNSUPPORTED,
 			"BSD-style blocks are no longer supported in rsyslog, "
-			"see http://www.rsyslog.com/g/BSD for details and a "
+			"see https://www.rsyslog.com/g/BSD for details and a "
 			"solution (Block '%s')", ln);
 	free(ln);
 }
@@ -497,9 +516,9 @@ void cnfDoBSDTag(char *ln)
 void cnfDoBSDHost(char *ln)
 {
 	DBGPRINTF("cnf:global:BSD host: %s\n", ln);
-	errmsg.LogError(0, RS_RET_BSD_BLOCKS_UNSUPPORTED,
+	LogError(0, RS_RET_BSD_BLOCKS_UNSUPPORTED,
 			"BSD-style blocks are no longer supported in rsyslog, "
-			"see http://www.rsyslog.com/g/BSD for details and a "
+			"see https://www.rsyslog.com/g/BSD for details and a "
 			"solution (Block '%s')", ln);
 	free(ln);
 }
@@ -521,7 +540,7 @@ rsRetVal doDropPrivGid(void)
 		res = setgroups(0, NULL); /* remove all supplemental group IDs */
 		if(res) {
 			rs_strerror_r(errno, (char*)szBuf, sizeof(szBuf));
-			errmsg.LogError(0, RS_RET_ERR_DROP_PRIV,
+			LogError(0, RS_RET_ERR_DROP_PRIV,
 					"could not remove supplemental group IDs: %s", szBuf);
 			ABORT_FINALIZE(RS_RET_ERR_DROP_PRIV);
 		}
@@ -530,7 +549,7 @@ rsRetVal doDropPrivGid(void)
 	res = setgid(ourConf->globals.gidDropPriv);
 	if(res) {
 		rs_strerror_r(errno, (char*)szBuf, sizeof(szBuf));
-		errmsg.LogError(0, RS_RET_ERR_DROP_PRIV,
+		LogError(0, RS_RET_ERR_DROP_PRIV,
 				"could not set requested group id: %s", szBuf);
 		ABORT_FINALIZE(RS_RET_ERR_DROP_PRIV);
 	}
@@ -565,7 +584,7 @@ static void doDropPrivUid(int iUid)
 		DBGPRINTF("initgroups(%s, %d): %d\n", pw->pw_name, gid, res);
 	} else {
 		rs_strerror_r(errno, (char*)szBuf, sizeof(szBuf));
-		errmsg.LogError(0, NO_ERRCODE,
+		LogError(0, NO_ERRCODE,
 				"could not get username for userid %d: %s",
 				iUid, szBuf);
 	}
@@ -594,13 +613,13 @@ dropPrivileges(rsconf_t *cnf)
 
 	if(cnf->globals.gidDropPriv != 0) {
 		CHKiRet(doDropPrivGid());
-		DBGPRINTF("group privileges have been dropped to gid %u\n", (unsigned) 
+		DBGPRINTF("group privileges have been dropped to gid %u\n", (unsigned)
 			  ourConf->globals.gidDropPriv);
 	}
 
 	if(cnf->globals.uidDropPriv != 0) {
 		doDropPrivUid(ourConf->globals.uidDropPriv);
-		DBGPRINTF("user privileges have been dropped to uid %u\n", (unsigned) 
+		DBGPRINTF("user privileges have been dropped to uid %u\n", (unsigned)
 			  ourConf->globals.uidDropPriv);
 	}
 
@@ -612,11 +631,11 @@ finalize_it:
 /* tell the rsysog core (including ourselfs) that the config load is done and
  * we need to prepare to move over to activate mode.
  */
-static inline void
+static inline rsRetVal
 tellCoreConfigLoadDone(void)
 {
 	DBGPRINTF("telling rsyslog core that config load for %p is done\n", loadConf);
-	glblDoneLoadCnf();
+	return glblDoneLoadCnf();
 }
 
 
@@ -626,7 +645,6 @@ tellModulesConfigLoadDone(void)
 {
 	cfgmodules_etry_t *node;
 
-	BEGINfunc
 	DBGPRINTF("telling modules that config load for %p is done\n", loadConf);
 	node = module.GetNxtCnfType(loadConf, NULL, eMOD_ANY);
 	while(node != NULL) {
@@ -638,7 +656,6 @@ tellModulesConfigLoadDone(void)
 		node = module.GetNxtCnfType(runConf, node, eMOD_ANY);
 	}
 
-	ENDfunc
 	return RS_RET_OK; /* intentional: we do not care about module errors */
 }
 
@@ -650,7 +667,6 @@ tellModulesCheckConfig(void)
 	cfgmodules_etry_t *node;
 	rsRetVal localRet;
 
-	BEGINfunc
 	DBGPRINTF("telling modules to check config %p\n", loadConf);
 	node = module.GetNxtCnfType(loadConf, NULL, eMOD_ANY);
 	while(node != NULL) {
@@ -667,7 +683,6 @@ tellModulesCheckConfig(void)
 		node = module.GetNxtCnfType(runConf, node, eMOD_ANY);
 	}
 
-	ENDfunc
 	return RS_RET_OK; /* intentional: we do not care about module errors */
 }
 
@@ -679,7 +694,6 @@ tellModulesActivateConfigPrePrivDrop(void)
 	cfgmodules_etry_t *node;
 	rsRetVal localRet;
 
-	BEGINfunc
 	DBGPRINTF("telling modules to activate config (before dropping privs) %p\n", runConf);
 	node = module.GetNxtCnfType(runConf, NULL, eMOD_ANY);
 	while(node != NULL) {
@@ -690,7 +704,7 @@ tellModulesActivateConfigPrePrivDrop(void)
 				  runConf, node->pMod->pszName);
 			localRet = node->pMod->activateCnfPrePrivDrop(node->modCnf);
 			if(localRet != RS_RET_OK) {
-				errmsg.LogError(0, localRet, "activation of module %s failed",
+				LogError(0, localRet, "activation of module %s failed",
 						node->pMod->pszName);
 			node->canActivate = 0; /* in a sense, could not activate... */
 			}
@@ -698,7 +712,6 @@ tellModulesActivateConfigPrePrivDrop(void)
 		node = module.GetNxtCnfType(runConf, node, eMOD_ANY);
 	}
 
-	ENDfunc
 	return RS_RET_OK; /* intentional: we do not care about module errors */
 }
 
@@ -710,7 +723,6 @@ tellModulesActivateConfig(void)
 	cfgmodules_etry_t *node;
 	rsRetVal localRet;
 
-	BEGINfunc
 	DBGPRINTF("telling modules to activate config %p\n", runConf);
 	node = module.GetNxtCnfType(runConf, NULL, eMOD_ANY);
 	while(node != NULL) {
@@ -719,7 +731,7 @@ tellModulesActivateConfig(void)
 				  runConf, node->pMod->pszName);
 			localRet = node->pMod->activateCnf(node->modCnf);
 			if(localRet != RS_RET_OK) {
-				errmsg.LogError(0, localRet, "activation of module %s failed",
+				LogError(0, localRet, "activation of module %s failed",
 						node->pMod->pszName);
 			node->canActivate = 0; /* in a sense, could not activate... */
 			}
@@ -727,7 +739,6 @@ tellModulesActivateConfig(void)
 		node = module.GetNxtCnfType(runConf, node, eMOD_ANY);
 	}
 
-	ENDfunc
 	return RS_RET_OK; /* intentional: we do not care about module errors */
 }
 
@@ -741,12 +752,11 @@ runInputModules(void)
 	cfgmodules_etry_t *node;
 	int bNeedsCancel;
 
-	BEGINfunc
 	node = module.GetNxtCnfType(runConf, NULL, eMOD_IN);
 	while(node != NULL) {
 		if(node->canRun) {
-			bNeedsCancel = (node->pMod->isCompatibleWithFeature(sFEATURENonCancelInputTermination) == RS_RET_OK) ?
-				       0 : 1;
+			bNeedsCancel = (node->pMod->isCompatibleWithFeature(sFEATURENonCancelInputTermination)
+			== RS_RET_OK) ? 0 : 1;
 			DBGPRINTF("running module %s with config %p, term mode: %s\n", node->pMod->pszName, node,
 				  bNeedsCancel ? "cancel" : "cooperative/SIGTTIN");
 			thrdCreate(node->pMod->mod.im.runInput, node->pMod->mod.im.afterRun, bNeedsCancel,
@@ -755,7 +765,6 @@ runInputModules(void)
 		node = module.GetNxtCnfType(runConf, node, eMOD_IN);
 	}
 
-	ENDfunc
 	return RS_RET_OK; /* intentional: we do not care about module errors */
 }
 
@@ -782,7 +791,6 @@ startInputModules(void)
 		node = module.GetNxtCnfType(runConf, node, eMOD_IN);
 	}
 
-	ENDfunc
 	return RS_RET_OK; /* intentional: we do not care about module errors */
 }
 
@@ -808,7 +816,11 @@ activateMainQueue(void)
 		FINALIZE;
 	}
 
-	bHaveMainQueue = (ourConf->globals.mainQ.MainMsgQueType == QUEUETYPE_DIRECT) ? 0 : 1;
+	if(ourConf->globals.mainQ.MainMsgQueType == QUEUETYPE_DIRECT) {
+		PREFER_STORE_0_TO_INT(&bHaveMainQueue);
+	} else {
+		PREFER_STORE_1_TO_INT(&bHaveMainQueue);
+	}
 	DBGPRINTF("Main processing queue is initialized and running\n");
 finalize_it:
 	glblDestructMainqCnfObj();
@@ -869,6 +881,7 @@ activate(rsconf_t *cnf)
 	CHKiRet(activateMainQueue());
 	/* finally let the inputs run... */
 	runInputModules();
+	qqueueDoneLoadCnf(); /* we no longer need config-load-only data structures */
 
 	dbgprintf("configuration %p activated\n", cnf);
 
@@ -955,7 +968,8 @@ static rsRetVal setMainMsgQueType(void __attribute__((unused)) *pVal, uchar *psz
 		loadConf->globals.mainQ.MainMsgQueType = QUEUETYPE_DIRECT;
 		DBGPRINTF("main message queue type set to DIRECT (no queueing at all)\n");
 	} else {
-		errmsg.LogError(0, RS_RET_INVALID_PARAMS, "unknown mainmessagequeuetype parameter: %s", (char *) pszType);
+		LogError(0, RS_RET_INVALID_PARAMS, "unknown mainmessagequeuetype parameter: %s",
+			(char *) pszType);
 		iRet = RS_RET_INVALID_PARAMS;
 	}
 	free(pszType); /* no longer needed */
@@ -983,8 +997,8 @@ static rsRetVal setMaxFiles(void __attribute__((unused)) *pVal, int iFiles)
 	if(setrlimit(RLIMIT_NOFILE, &maxFiles) < 0) {
 		/* NOTE: under valgrind, we seem to be unable to extend the size! */
 		rs_strerror_r(errno, errStr, sizeof(errStr));
-		errmsg.LogError(0, RS_RET_ERR_RLIM_NOFILE, "could not set process file limit to %d: %s [kernel max %ld]",
-				iFiles, errStr, (long) maxFiles.rlim_max);
+		LogError(0, RS_RET_ERR_RLIM_NOFILE, "could not set process file limit to %d: %s "
+			"[kernel max %ld]", iFiles, errStr, (long) maxFiles.rlim_max);
 		ABORT_FINALIZE(RS_RET_ERR_RLIM_NOFILE);
 	}
 #ifdef USE_UNLIMITED_SELECT
@@ -1090,7 +1104,7 @@ finalize_it:
 
 
 /* intialize the legacy config system */
-static rsRetVal 
+static rsRetVal
 initLegacyConf(void)
 {
 	DEFiRet;
@@ -1237,19 +1251,21 @@ initLegacyConf(void)
 	tplAddLine(ourConf, " StdDBFmt", &pTmp);
 	pTmp = template_SysklogdFileFormat;
 	tplAddLine(ourConf, "RSYSLOG_SysklogdFileFormat", &pTmp);
-        pTmp = template_StdPgSQLFmt;
-        tplAddLine(ourConf, " StdPgSQLFmt", &pTmp);
-        pTmp = template_StdJSONFmt;
-        tplAddLine(ourConf, " StdJSONFmt", &pTmp);
-        pTmp = template_spoofadr;
-        tplLastStaticInit(ourConf, tplAddLine(ourConf, "RSYSLOG_omudpspoofDfltSourceTpl", &pTmp));
+	pTmp = template_StdPgSQLFmt;
+	tplAddLine(ourConf, " StdPgSQLFmt", &pTmp);
+	pTmp = template_StdJSONFmt;
+	tplAddLine(ourConf, " StdJSONFmt", &pTmp);
+	pTmp = template_StdClickHouseFmt;
+	tplAddLine(ourConf, " StdClickHouseFmt", &pTmp);
+	pTmp = template_spoofadr;
+	tplLastStaticInit(ourConf, tplAddLine(ourConf, "RSYSLOG_omudpspoofDfltSourceTpl", &pTmp));
 
 finalize_it:
 	RETiRet;
 }
 
 
-/* validate the current configuration, generate error messages, do 
+/* validate the current configuration, generate error messages, do
  * optimizations, etc, etc,...
  */
 static rsRetVal
@@ -1259,20 +1275,20 @@ validateConf(void)
 
 	/* some checks */
 	if(ourConf->globals.mainQ.iMainMsgQueueNumWorkers < 1) {
-		errmsg.LogError(0, NO_ERRCODE, "$MainMsgQueueNumWorkers must be at least 1! Set to 1.\n");
+		LogError(0, NO_ERRCODE, "$MainMsgQueueNumWorkers must be at least 1! Set to 1.\n");
 		ourConf->globals.mainQ.iMainMsgQueueNumWorkers = 1;
 	}
 
 	if(ourConf->globals.mainQ.MainMsgQueType == QUEUETYPE_DISK) {
 		errno = 0;	/* for logerror! */
 		if(glbl.GetWorkDir() == NULL) {
-			errmsg.LogError(0, NO_ERRCODE, "No $WorkDirectory specified - can not run main message queue in 'disk' mode. "
-				 "Using 'FixedArray' instead.\n");
+			LogError(0, NO_ERRCODE, "No $WorkDirectory specified - can not run main "
+					"message queue in 'disk' mode. Using 'FixedArray' instead.\n");
 			ourConf->globals.mainQ.MainMsgQueType = QUEUETYPE_FIXED_ARRAY;
 		}
 		if(ourConf->globals.mainQ.pszMainMsgQFName == NULL) {
-			errmsg.LogError(0, NO_ERRCODE, "No $MainMsgQueueFileName specified - can not run main message queue in "
-				 "'disk' mode. Using 'FixedArray' instead.\n");
+			LogError(0, NO_ERRCODE, "No $MainMsgQueueFileName specified - can not run main "
+				"message queue in 'disk' mode. Using 'FixedArray' instead.\n");
 			ourConf->globals.mainQ.MainMsgQueType = QUEUETYPE_FIXED_ARRAY;
 		}
 	}
@@ -1307,30 +1323,29 @@ ourConf = loadConf; // TODO: remove, once ourConf is gone!
 		conf.GetNbrActActions(loadConf, &iNbrActions);
 	}
 
+	/* we run the optimizer even if we have an error, as it may spit out
+	 * additional error messages and we want to see these even if we abort.
+	 */
+	rulesetOptimizeAll(loadConf);
+
 	if(r == 1) {
-		errmsg.LogError(0, RS_RET_CONF_PARSE_ERROR,
-				"CONFIG ERROR: could not interpret master "
-				"config file '%s'.", confFile);
+		LogError(0, RS_RET_CONF_PARSE_ERROR, "could not interpret master "
+			"config file '%s'.", confFile);
 		ABORT_FINALIZE(RS_RET_CONF_PARSE_ERROR);
 	} else if(r == 2) { /* file not found? */
-		char err[1024];
-		rs_strerror_r(errno, err, sizeof(err));
-		errmsg.LogError(0, RS_RET_CONF_FILE_NOT_FOUND,
-			        "could not open config file '%s': %s",
-			        confFile, err);
+		LogError(errno, RS_RET_CONF_FILE_NOT_FOUND, "could not open config file '%s'",
+		        confFile);
 		ABORT_FINALIZE(RS_RET_CONF_FILE_NOT_FOUND);
-	} else if(iNbrActions == 0 &&
-		!(iConfigVerify & CONF_VERIFY_PARTIAL_CONF)) {
-		errmsg.LogError(0, RS_RET_NO_ACTIONS, "CONFIG ERROR: there are no "
-				"active actions configured. Inputs will "
-			 	"run, but no output whatsoever is created.");
+	} else if(    (iNbrActions == 0)
+		  && !(iConfigVerify & CONF_VERIFY_PARTIAL_CONF)) {
+		LogError(0, RS_RET_NO_ACTIONS, "there are no active actions configured. "
+			"Inputs would run, but no output whatsoever were created.");
 		ABORT_FINALIZE(RS_RET_NO_ACTIONS);
 	}
 	tellLexEndParsing();
 	DBGPRINTF("Number of actions in this configuration: %d\n", iActionNbr);
-	rulesetOptimizeAll(loadConf);
 
-	tellCoreConfigLoadDone();
+	CHKiRet(tellCoreConfigLoadDone());
 	tellModulesConfigLoadDone();
 
 	tellModulesCheckConfig();
@@ -1387,7 +1402,6 @@ BEGINObjClassInit(rsconf, 1, OBJ_IS_CORE_MODULE) /* class, version */
 	CHKiRet(objUse(ruleset, CORE_COMPONENT));
 	CHKiRet(objUse(module, CORE_COMPONENT));
 	CHKiRet(objUse(conf, CORE_COMPONENT));
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 	CHKiRet(objUse(glbl, CORE_COMPONENT));
 	CHKiRet(objUse(datetime, CORE_COMPONENT));
 	CHKiRet(objUse(parser, CORE_COMPONENT));
@@ -1404,7 +1418,6 @@ BEGINObjClassExit(rsconf, OBJ_IS_CORE_MODULE) /* class, version */
 	objRelease(ruleset, CORE_COMPONENT);
 	objRelease(module, CORE_COMPONENT);
 	objRelease(conf, CORE_COMPONENT);
-	objRelease(errmsg, CORE_COMPONENT);
 	objRelease(glbl, CORE_COMPONENT);
 	objRelease(datetime, CORE_COMPONENT);
 	objRelease(parser, CORE_COMPONENT);

@@ -9,11 +9,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -49,7 +49,6 @@ MODULE_TYPE_NOKEEP
 MODULE_CNFNAME("mmcount")
 
 
-DEFobjCurrIf(errmsg);
 DEF_OMOD_STATIC_DATA
 
 /* config variables */
@@ -221,14 +220,14 @@ CODESTARTtryResume
 ENDtryResume
 
 static int *
-getCounter(struct hashtable *ht, char *str) {
+getCounter(struct hashtable *ht, const char *str) {
 	unsigned int key;
 	int *pCounter;
 	unsigned int *pKey;
 
 	/* we dont store str as key, instead we store hash of the str
 	   as key to reduce memory usage */
-	key = hash_from_string(str);
+	key = hash_from_string((char*)str);
 	pCounter = hashtable_search(ht, &key);
 	if(pCounter) {
 		return pCounter;
@@ -258,17 +257,16 @@ getCounter(struct hashtable *ht, char *str) {
 	return pCounter;
 }
 
-BEGINdoAction
-	smsg_t *pMsg;
+BEGINdoAction_NoStrings
+	smsg_t **ppMsg = (smsg_t **) pMsgData;
+	smsg_t *pMsg = ppMsg[0];
 	char *appname;
 	struct json_object *json = NULL;
-	es_str_t *estr = NULL;
 	struct json_object *keyjson = NULL;
-	char *pszValue;
+	const char *pszValue;
 	int *pCounter;
 	instanceData *const pData = pWrkrData->pData;
 CODESTARTdoAction
-	pMsg = (smsg_t*) ppString[0];
 	appname = getAPPNAME(pMsg, LOCK_MUTEX);
 
 	pthread_mutex_lock(&pData->mut);
@@ -298,6 +296,9 @@ CODESTARTdoAction
 
 	/* key found, so get the value */
 	pszValue = (char*)json_object_get_string(keyjson);
+	if(pszValue == NULL) { /* json null object returns NULL! */
+		pszValue = "";
+	}
 
 	if(pData->pszValue) {
 		/* value also given for count */
@@ -317,9 +318,6 @@ CODESTARTdoAction
 	}
 finalize_it:
 	pthread_mutex_unlock(&pData->mut);
-	if(estr) {
-		es_deleteStr(estr);
-	}
 
 	if(json) {
 		msgAddJSON(pMsg, (uchar *)JSON_COUNT_NAME, json, 0, 0);
@@ -327,22 +325,11 @@ finalize_it:
 ENDdoAction
 
 
-BEGINparseSelectorAct
-CODESTARTparseSelectorAct
-CODE_STD_STRING_REQUESTparseSelectorAct(1)
-	if(strncmp((char*) p, ":mmcount:", sizeof(":mmcount:") - 1)) {
-		errmsg.LogError(0, RS_RET_LEGA_ACT_NOT_SUPPORTED,
-			"mmcount supports only v6+ config format, use: "
-			"action(type=\"mmcount\" ...)");
-	}
-	ABORT_FINALIZE(RS_RET_CONFLINE_UNPROCESSED);
-CODE_STD_FINALIZERparseSelectorAct
-ENDparseSelectorAct
+NO_LEGACY_CONF_parseSelectorAct
 
 
 BEGINmodExit
 CODESTARTmodExit
-	objRelease(errmsg, CORE_COMPONENT);
 ENDmodExit
 
 
@@ -361,5 +348,4 @@ CODESTARTmodInit
 	*ipIFVersProvided = CURR_MOD_IF_VERSION; /* we only support the current interface specification */
 CODEmodInit_QueryRegCFSLineHdlr
 	DBGPRINTF("mmcount: module compiled with rsyslog version %s.\n", VERSION);
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 ENDmodInit

@@ -4,19 +4,32 @@
 # has a 2 second timeout, so we wait 4 seconds to be on the save side.
 #
 # added 2010-03-09 by Rgerhards
-# This file is part of the rsyslog project, released  under GPLv3
-echo ===============================================================================
-echo TEST: \[asynwr_timeout.sh\]: test async file writing timeout writes
-. $srcdir/diag.sh init
-# uncomment for debugging support:
-#export RSYSLOG_DEBUG="debug nostdout noprintmutexaction"
-#export RSYSLOG_DEBUGLOG="log"
-. $srcdir/diag.sh startup asynwr_timeout.conf
+# This file is part of the rsyslog project, released  under ASL 2.0
+. ${srcdir:=.}/diag.sh init
 # send 35555 messages, make sure file size is not a multiple of
 # 10K, the buffer size!
-. $srcdir/diag.sh tcpflood -m 35555
-sleep 4 # wait for output writer to write and empty buffer
-. $srcdir/diag.sh shutdown-when-empty # shut down rsyslogd when done processing messages
-. $srcdir/diag.sh wait-shutdown       # and wait for it to terminate
-. $srcdir/diag.sh seq-check 0 35554
-. $srcdir/diag.sh exit
+export NUMMESSAGES=35555
+generate_conf
+add_conf '
+$ModLoad ../plugins/imtcp/.libs/imtcp
+$MainMsgQueueTimeoutShutdown 10000
+$InputTCPServerRun '$TCPFLOOD_PORT'
+
+$template outfmt,"%msg:F,58:2%\n"
+template(name="dynfile" type="string" string=`echo $RSYSLOG_OUT_LOG`) # trick to use relative path names!
+$OMFileFlushOnTXEnd off
+$OMFileFlushInterval 2
+$OMFileIOBufferSize 10k
+$OMFileAsyncWriting on
+:msg, contains, "msgnum:" ?dynfile;outfmt
+'
+startup
+tcpflood -m $NUMMESSAGES
+printf 'waiting for timeout to occur\n'
+sleep 6 # GOOD SLEEP - we wait for the timeout!
+printf 'timeout should now have occurred - check file state\n'
+seq_check # mow everthing MUST be persisted
+shutdown_when_empty
+wait_shutdown
+seq_check # just a double-check that nothing is added twice
+exit_test

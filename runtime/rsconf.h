@@ -43,9 +43,9 @@ struct queuecnf_s {
 	int64 iMainMsgQueMaxFileSize;
 	int iMainMsgQPersistUpdCnt;	/* persist queue info every n updates */
 	int bMainMsgQSyncQeueFiles;	/* sync queue files on every write? */
-	int iMainMsgQtoQShutdown;	/* queue shutdown (ms) */ 
-	int iMainMsgQtoActShutdown;	/* action shutdown (in phase 2) */ 
-	int iMainMsgQtoEnq;		/* timeout for queue enque */ 
+	int iMainMsgQtoQShutdown;	/* queue shutdown (ms) */
+	int iMainMsgQtoActShutdown;	/* action shutdown (in phase 2) */
+	int iMainMsgQtoEnq;		/* timeout for queue enque */
 	int iMainMsgQtoWrkShutdown;	/* timeout for worker thread shutdown */
 	int iMainMsgQWrkMinMsgs;	/* minimum messages per worker needed to start a new one */
 	int iMainMsgQDeqSlowdown;	/* dequeue slowdown (simple rate limiting) */
@@ -57,7 +57,7 @@ struct queuecnf_s {
 };
 
 /* globals are data items that are really global, and can be set only
- * once (at least in theory, because the legacy system permits them to 
+ * once (at least in theory, because the legacy system permits them to
  * be re-set as often as the user likes).
  */
 struct globals_s {
@@ -67,6 +67,7 @@ struct globals_s {
 	int bLogStatusMsgs;	/* log rsyslog start/stop/HUP messages? */
 	int bErrMsgToStderr;	/* print error messages to stderr
 				  (in addition to everything else)? */
+	int maxErrMsgToStderr;	/* how many messages to forward at most to stderr? */
 	int bAbortOnUncleanConfig; /* abort run (rather than starting with partial
 				      config) if there was any issue in conf */
 	int uidDropPriv;	/* user-id to which priveleges should be dropped to */
@@ -93,6 +94,7 @@ struct globals_s {
  * At a later stage, we may think about dropping them. -- rgerhards, 2011-04-19
  */
 struct defaults_s {
+	int remove_me_when_first_real_member_is_added;
 };
 
 

@@ -5,9 +5,16 @@
 # not properly terminated.
 # Copyright 2014 by Rainer Gerhards, licensed under ASL 2.0
 echo \[imudp_thread_hang\]: a situation where imudp caused a hang
-. $srcdir/diag.sh init
-. $srcdir/diag.sh startup imudp_thread_hang.conf
+. ${srcdir:=.}/diag.sh init
+generate_conf
+add_conf '
+$WorkDirectory '$RSYSLOG_DYNNAME'.spool
+
+module(load="../plugins/imudp/.libs/imudp" threads="3")
+input(type="imudp" Address="127.0.0.1" Port="20514")
+'
+startup
 ./msleep 1000
-. $srcdir/diag.sh shutdown-immediate
-. $srcdir/diag.sh wait-shutdown
-. $srcdir/diag.sh exit
+shutdown_immediate
+wait_shutdown
+exit_test

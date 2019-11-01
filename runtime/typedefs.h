@@ -26,18 +26,15 @@
 #ifndef INCLUDED_TYPEDEFS_H
 #define INCLUDED_TYPEDEFS_H
 
-#ifndef _AIX
- #include <stdint.h>
-#endif
-#ifdef _AIX
-#include "config.h"
-#endif
+#include <stdint.h>
 #if defined(__FreeBSD__) || !defined(HAVE_LSEEK64)
 #include <sys/types.h>
 #endif
 
 /* some universal fixed size integer defines ... */
+#ifndef _AIX
 typedef long long int64;
+#endif
 typedef long long unsigned uint64;
 typedef int64 number_t; /* type to use for numbers - TODO: maybe an autoconf option? */
 typedef char intTiny; 	/* 0..127! */
@@ -60,10 +57,12 @@ typedef struct nspoll_s nspoll_t;
 typedef enum nsdsel_waitOp_e nsdsel_waitOp_t;
 typedef struct nsd_ptcp_s nsd_ptcp_t;
 typedef struct nsd_gtls_s nsd_gtls_t;
+typedef struct nsd_ossl_s nsd_ossl_t;
 typedef struct nsd_gsspi_s nsd_gsspi_t;
 typedef struct nsd_nss_s nsd_nss_t;
 typedef struct nsdsel_ptcp_s nsdsel_ptcp_t;
 typedef struct nsdsel_gtls_s nsdsel_gtls_t;
+typedef struct nsdsel_ossl_s nsdsel_ossl_t;
 typedef struct nsdpoll_ptcp_s nsdpoll_ptcp_t;
 typedef struct wti_s wti_t;
 typedef struct msgPropDescr_s msgPropDescr_t;
@@ -73,9 +72,12 @@ typedef struct prop_s prop_t;
 typedef struct interface_s interface_t;
 typedef struct objInfo_s objInfo_t;
 typedef enum rsRetVal_ rsRetVal; /**< friendly type for global return value */
-typedef rsRetVal (*errLogFunc_t)(uchar*); /* this is a trick to store a function ptr to a function returning a function ptr... */
-typedef struct permittedPeers_s permittedPeers_t; /* this should go away in the long term -- rgerhards, 2008-05-19 */
-typedef struct permittedPeerWildcard_s permittedPeerWildcard_t; /* this should go away in the long term -- rgerhards, 2008-05-19 */
+typedef rsRetVal (*errLogFunc_t)(uchar*);
+/* this is a trick to store a function ptr to a function returning a function ptr... */
+typedef struct permittedPeers_s permittedPeers_t;
+/* this should go away in the long term -- rgerhards, 2008-05-19 */
+typedef struct permittedPeerWildcard_s permittedPeerWildcard_t;
+/* this should go away in the long term -- rgerhards, 2008-05-19 */
 typedef struct tcpsrv_s tcpsrv_t;
 typedef struct tcps_sess_s tcps_sess_t;
 typedef struct strmsrv_s strmsrv_t;
@@ -152,7 +154,8 @@ typedef int socklen_t;
 
 typedef struct epoll_event epoll_event_t;
 
-typedef char sbool;		/* (small bool) I intentionally use char, to keep it slim so that many fit into the CPU cache! */
+typedef signed char sbool;	/* (small bool) I intentionally use char, to keep it slim so that
+				many fit into the CPU cache! */
 
 /* settings for flow control
  * TODO: is there a better place for them? -- rgerhards, 2008-03-14
@@ -232,6 +235,8 @@ typedef uintTiny	propid_t;
 #define PROP_SYS_HHOUR_UTC		167
 #define PROP_SYS_QHOUR_UTC		168
 #define PROP_SYS_MINUTE_UTC		169
+#define PROP_SYS_WDAY      170
+#define PROP_SYS_WDAY_UTC     171
 #define PROP_CEE			200
 #define PROP_CEE_ALL_JSON		201
 #define PROP_LOCAL_VAR			202

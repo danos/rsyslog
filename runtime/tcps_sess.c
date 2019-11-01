@@ -16,11 +16,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -54,7 +54,6 @@
 /* static data */
 DEFobjStaticHelpers
 DEFobjCurrIf(glbl)
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(netstrm)
 DEFobjCurrIf(prop)
 DEFobjCurrIf(datetime)
@@ -70,7 +69,7 @@ BEGINobjConstruct(tcps_sess) /* be sure to specify the object type also in END m
 		pThis->inputState = eAtStrtFram; /* indicate frame header expected */
 		pThis->eFraming = TCP_FRAMING_OCTET_STUFFING; /* just make sure... */
 		/* now allocate the message reception buffer */
-		CHKmalloc(pThis->pMsg = (uchar*) MALLOC(glbl.GetMaxLine() + 1));
+		CHKmalloc(pThis->pMsg = (uchar*) malloc(glbl.GetMaxLine() + 1));
 finalize_it:
 ENDobjConstruct(tcps_sess)
 
@@ -94,7 +93,6 @@ finalize_it:
 /* destructor for the tcps_sess object */
 BEGINobjDestruct(tcps_sess) /* be sure to specify the object type also in END and CODESTART macros! */
 CODESTARTobjDestruct(tcps_sess)
-//printf("sess %p destruct, pStrm %p\n", pThis, pThis->pStrm);
 	if(pThis->pStrm != NULL)
 		netstrm.Destruct(&pThis->pStrm);
 
@@ -224,7 +222,7 @@ SetOnMsgReceive(tcps_sess_t *pThis, rsRetVal (*OnMsgReceive)(tcps_sess_t*, uchar
  * It does some common processing, including resetting the various
  * state variables to a "processed" state.
  * Note that this function is also called if we had a buffer overflow
- * due to a too-long message. So far, there is no indication this 
+ * due to a too-long message. So far, there is no indication this
  * happened and it may be worth thinking about different handling
  * of this case (what obviously would require a change to this
  * function or some related code).
@@ -306,7 +304,7 @@ PrepareClose(tcps_sess_t *pThis)
 		/* In this case, we have an invalid frame count and thus
 		 * generate an error message and discard the frame.
 		 */
-		errmsg.LogError(0, NO_ERRCODE, "Incomplete frame at end of stream in session %p - "
+		LogError(0, NO_ERRCODE, "Incomplete frame at end of stream in session %p - "
 			    "ignoring extra data (a message may be lost).", pThis->pStrm);
 		/* nothing more to do */
 	} else { /* here, we have traditional framing. Missing LF at the end
@@ -332,7 +330,6 @@ Close(tcps_sess_t *pThis)
 {
 	DEFiRet;
 
-//printf("sess %p close\n", pThis);
 	ISOBJ_TYPE_assert(pThis, tcps_sess);
 	netstrm.Destruct(&pThis->pStrm);
 	if(pThis->fromHost != NULL) {
@@ -351,9 +348,9 @@ Close(tcps_sess_t *pThis)
  * the end result to the queue. Introducing this function fixes a long-term bug ;)
  * rgerhards, 2008-03-14
  */
-static rsRetVal
+static rsRetVal ATTR_NONNULL(1)
 processDataRcvd(tcps_sess_t *pThis,
-	char c,
+	const char c,
 	struct syslogTime *stTime,
 	const time_t ttGenTime,
 	multi_submit_t *pMultiSub,
@@ -362,6 +359,10 @@ processDataRcvd(tcps_sess_t *pThis,
 	DEFiRet;
 	ISOBJ_TYPE_assert(pThis, tcps_sess);
 	int iMaxLine = glbl.GetMaxLine();
+	uchar *propPeerName = NULL;
+	int lenPeerName = 0;
+	uchar *propPeerIP = NULL;
+	int lenPeerIP = 0;
 
 	if(pThis->inputState == eAtStrtFram) {
 		if(pThis->bSuppOctetFram && c >= '0' && c <= '9') {
@@ -383,45 +384,69 @@ processDataRcvd(tcps_sess_t *pThis,
 
 	if(pThis->inputState == eInOctetCnt) {
 		if(c >= '0' && c <= '9') { /* isdigit() the faster way */
-			pThis->iOctetsRemain = pThis->iOctetsRemain * 10 + c - '0';
+			if(pThis->iOctetsRemain <= 200000000) {
+				pThis->iOctetsRemain = pThis->iOctetsRemain * 10 + c - '0';
+			}
+			*(pThis->pMsg + pThis->iMsg++) = c;
 		} else { /* done with the octet count, so this must be the SP terminator */
 			DBGPRINTF("TCP Message with octet-counter, size %d.\n", pThis->iOctetsRemain);
+			prop.GetString(pThis->fromHost, &propPeerName, &lenPeerName);
+			prop.GetString(pThis->fromHost, &propPeerIP, &lenPeerIP);
 			if(c != ' ') {
-				errmsg.LogError(0, NO_ERRCODE, "Framing Error in received TCP message: "
-					    "delimiter is not SP but has ASCII value %d.", c);
+				LogError(0, NO_ERRCODE, "imtcp %s: Framing Error in received TCP message from "
+					"peer: (hostname) %s, (ip) %s: delimiter is not SP but has "
+					"ASCII value %d.", pThis->pSrv->pszInputName, propPeerName, propPeerIP, c);
 			}
 			if(pThis->iOctetsRemain < 1) {
 				/* TODO: handle the case where the octet count is 0! */
-				DBGPRINTF("Framing Error: invalid octet count\n");
-				errmsg.LogError(0, NO_ERRCODE, "Framing Error in received TCP message: "
-					    "invalid octet count %d.", pThis->iOctetsRemain);
+				LogError(0, NO_ERRCODE, "imtcp %s: Framing Error in received TCP message from "
+					"peer: (hostname) %s, (ip) %s: invalid octet count %d.",
+					pThis->pSrv->pszInputName, propPeerName, propPeerIP, pThis->iOctetsRemain);
+				pThis->eFraming = TCP_FRAMING_OCTET_STUFFING;
 			} else if(pThis->iOctetsRemain > iMaxLine) {
 				/* while we can not do anything against it, we can at least log an indication
 				 * that something went wrong) -- rgerhards, 2008-03-14
 				 */
-				DBGPRINTF("truncating message with %d octets - max msg size is %d\n",
-					  pThis->iOctetsRemain, iMaxLine);
-				errmsg.LogError(0, NO_ERRCODE, "received oversize message: size is %d bytes, "
-					        "max msg size is %d, truncating...", pThis->iOctetsRemain, iMaxLine);
+				LogError(0, NO_ERRCODE, "imtcp %s: received oversize message from peer: "
+					"(hostname) %s, (ip) %s: size is %d bytes, max msg size "
+					"is %d, truncating...", pThis->pSrv->pszInputName, propPeerName,
+					propPeerIP, pThis->iOctetsRemain, iMaxLine);
+			}
+			if(pThis->iOctetsRemain > pThis->pSrv->maxFrameSize) {
+				LogError(0, NO_ERRCODE, "imtcp %s: Framing Error in received TCP message from "
+					"peer: (hostname) %s, (ip) %s: frame too large: %d, change "
+					"to octet stuffing", pThis->pSrv->pszInputName, propPeerName, propPeerIP,
+						pThis->iOctetsRemain);
+				pThis->eFraming = TCP_FRAMING_OCTET_STUFFING;
+			} else {
+				pThis->iMsg = 0;
 			}
 			pThis->inputState = eInMsg;
+		}
+	} else if(pThis->inputState == eInMsgTruncating) {
+		if((   ((c == '\n') && !pThis->pSrv->bDisableLFDelim)
+		   || ((pThis->pSrv->addtlFrameDelim != TCPSRV_NO_ADDTL_DELIMITER)
+		        && (c == pThis->pSrv->addtlFrameDelim))
+		   ) && pThis->eFraming == TCP_FRAMING_OCTET_STUFFING) {
+			pThis->inputState = eAtStrtFram;
 		}
 	} else {
 		assert(pThis->inputState == eInMsg);
 		if(pThis->iMsg >= iMaxLine) {
 			/* emergency, we now need to flush, no matter if we are at end of message or not... */
-			DBGPRINTF("error: message received is larger than max msg size, we split it\n");
+			DBGPRINTF("error: message received is larger than max msg size, we %s it\n",
+				pThis->pSrv->discardTruncatedMsg == 1 ? "truncate" : "split");
 			defaultDoSubmitMessage(pThis, stTime, ttGenTime, pMultiSub);
 			++(*pnMsgs);
-			/* we might think if it is better to ignore the rest of the
-			 * message than to treat it as a new one. Maybe this is a good
-			 * candidate for a configuration parameter...
-			 * rgerhards, 2006-12-04
-			 */
+			if(pThis->pSrv->discardTruncatedMsg == 1) {
+				pThis->inputState = eInMsgTruncating;
+				FINALIZE;
+			}
 		}
 
 		if((   ((c == '\n') && !pThis->pSrv->bDisableLFDelim)
-		   || ((pThis->pSrv->addtlFrameDelim != TCPSRV_NO_ADDTL_DELIMITER) && (c == pThis->pSrv->addtlFrameDelim))
+		   || ((pThis->pSrv->addtlFrameDelim != TCPSRV_NO_ADDTL_DELIMITER)
+		        && (c == pThis->pSrv->addtlFrameDelim))
 		   ) && pThis->eFraming == TCP_FRAMING_OCTET_STUFFING) { /* record delimiter? */
 			defaultDoSubmitMessage(pThis, stTime, ttGenTime, pMultiSub);
 			++(*pnMsgs);
@@ -547,7 +572,6 @@ ENDobjQueryInterface(tcps_sess)
 BEGINObjClassExit(tcps_sess, OBJ_IS_LOADABLE_MODULE) /* CHANGE class also in END MACRO! */
 CODESTARTObjClassExit(tcps_sess)
 	/* release objects we no longer need */
-	objRelease(errmsg, CORE_COMPONENT);
 	objRelease(netstrm, LM_NETSTRMS_FILENAME);
 	objRelease(datetime, CORE_COMPONENT);
 	objRelease(prop, CORE_COMPONENT);
@@ -560,7 +584,6 @@ ENDObjClassExit(tcps_sess)
  */
 BEGINObjClassInit(tcps_sess, 1, OBJ_IS_CORE_MODULE) /* class, version - CHANGE class also in END MACRO! */
 	/* request objects we use */
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 	CHKiRet(objUse(netstrm, LM_NETSTRMS_FILENAME));
 	CHKiRet(objUse(datetime, CORE_COMPONENT));
 	CHKiRet(objUse(prop, CORE_COMPONENT));

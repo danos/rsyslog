@@ -54,7 +54,6 @@ MODULE_CNFNAME("mmnormalize")
 static rsRetVal resetConfigVariables(uchar __attribute__((unused)) *pp, void __attribute__((unused)) *pVal);
 
 /* static data */
-DEFobjCurrIf(errmsg);
 
 /* internal structures
  */
@@ -72,6 +71,7 @@ static struct cnfparamblk modpblk = {
 
 typedef struct _instanceData {
 	sbool bUseRawMsg;	/**< use %rawmsg% instead of %msg% */
+	uchar   *rule;		/* rule to use */
 	uchar 	*rulebase;	/**< name of rulebase to use */
 	ln_ctx ctxln;		/**< context to be used for liblognorm */
 	char *pszPath;		/**< path of normalized data */
@@ -84,6 +84,7 @@ typedef struct wrkrInstanceData {
 
 typedef struct configSettings_s {
 	uchar *rulebase;		/**< name of normalization rulebase to use */
+	uchar *rule;
 	int bUseRawMsg;	/**< use %rawmsg% instead of %msg% */
 } configSettings_t;
 static configSettings_t cs;
@@ -91,7 +92,8 @@ static configSettings_t cs;
 /* tables for interfacing with the v6 config system */
 /* action (instance) parameters */
 static struct cnfparamdescr actpdescr[] = {
-	{ "rulebase", eCmdHdlrGetWord, 1 },
+	{ "rulebase", eCmdHdlrGetWord, 0 },
+	{ "rule", eCmdHdlrArray, 0 },
 	{ "path", eCmdHdlrGetWord, 0 },
 	{ "userawmsg", eCmdHdlrBinary, 0 },
 	{ "variable", eCmdHdlrGetWord, 0 }
@@ -115,7 +117,7 @@ static void
 errCallBack(void __attribute__((unused)) *cookie, const char *msg,
 	    size_t __attribute__((unused)) lenMsg)
 {
-	errmsg.LogError(0, RS_RET_ERR_LIBLOGNORM, "liblognorm error: %s", msg);
+	LogError(0, RS_RET_ERR_LIBLOGNORM, "liblognorm error: %s", msg);
 }
 
 /* to be called to build the liblognorm part of the instance ONCE ALL PARAMETERS ARE CORRECT
@@ -126,17 +128,28 @@ buildInstance(instanceData *pData)
 {
 	DEFiRet;
 	if((pData->ctxln = ln_initCtx()) == NULL) {
-		errmsg.LogError(0, RS_RET_ERR_LIBLOGNORM_INIT, "error: could not initialize "
+		LogError(0, RS_RET_ERR_LIBLOGNORM_INIT, "error: could not initialize "
 				"liblognorm ctx, cannot activate action");
 		ABORT_FINALIZE(RS_RET_ERR_LIBLOGNORM_INIT);
 	}
 	ln_setCtxOpts(pData->ctxln, loadModConf->allow_regex);
 	ln_setErrMsgCB(pData->ctxln, errCallBack, NULL);
-	if(ln_loadSamples(pData->ctxln, (char*) pData->rulebase) != 0) {
-		errmsg.LogError(0, RS_RET_NO_RULEBASE, "error: normalization rulebase '%s' "
-				"could not be loaded cannot activate action", pData->rulebase);
-		ln_exitCtx(pData->ctxln);
-		ABORT_FINALIZE(RS_RET_ERR_LIBLOGNORM_SAMPDB_LOAD);
+	if(pData->rule !=NULL && pData->rulebase == NULL) {
+		if(ln_loadSamplesFromString(pData->ctxln, (char*) pData->rule) !=0) {
+			LogError(0, RS_RET_NO_RULEBASE, "error: normalization rule '%s' "
+					"could not be loaded cannot activate action", pData->rule);
+			ln_exitCtx(pData->ctxln);
+			ABORT_FINALIZE(RS_RET_ERR_LIBLOGNORM_SAMPDB_LOAD);
+		}
+		free(pData->rule);
+		pData->rule = NULL;
+	} else if(pData->rule ==NULL && pData->rulebase != NULL) {
+		if(ln_loadSamples(pData->ctxln, (char*) pData->rulebase) != 0) {
+			LogError(0, RS_RET_NO_RULEBASE, "error: normalization rulebase '%s' "
+					"could not be loaded cannot activate action", pData->rulebase);
+			ln_exitCtx(pData->ctxln);
+			ABORT_FINALIZE(RS_RET_ERR_LIBLOGNORM_SAMPDB_LOAD);
+		}
 	}
 finalize_it:
 	RETiRet;
@@ -144,7 +157,7 @@ finalize_it:
 
 
 BEGINinitConfVars		/* (re)set config variables to default values */
-CODESTARTinitConfVars 
+CODESTARTinitConfVars
 	resetConfigVariables(NULL, NULL);
 ENDinitConfVars
 
@@ -171,7 +184,9 @@ CODESTARTendCnfLoad
 	loadModConf = NULL; /* done loading */
 	/* free legacy config vars */
 	free(cs.rulebase);
+	free(cs.rule);
 	cs.rulebase = NULL;
+	cs.rule = NULL;
 ENDendCnfLoad
 
 BEGINcheckCnf
@@ -196,6 +211,7 @@ ENDisCompatibleWithFeature
 BEGINfreeInstance
 CODESTARTfreeInstance
 	free(pData->rulebase);
+	free(pData->rule);
 	ln_exitCtx(pData->ctxln);
 	free(pData->pszPath);
 	msgPropDescrDestruct(pData->varDescr);
@@ -213,6 +229,7 @@ CODESTARTdbgPrintInstInfo
 	dbgprintf("mmnormalize\n");
 	dbgprintf("\tvariable='%s'\n", pData->varDescr->name);
 	dbgprintf("\trulebase='%s'\n", pData->rulebase);
+	dbgprintf("\trule='%s'\n", pData->rule);
 	dbgprintf("\tpath='%s'\n", pData->pszPath);
 	dbgprintf("\tbUseRawMsg='%d'\n", pData->bUseRawMsg);
 ENDdbgPrintInstInfo
@@ -260,6 +277,7 @@ static void
 setInstParamDefaults(instanceData *pData)
 {
 	pData->rulebase = NULL;
+	pData->rule = NULL;
 	pData->bUseRawMsg = 0;
 	pData->pszPath = strdup("$!");
 	pData->varDescr = NULL;
@@ -271,7 +289,7 @@ BEGINsetModCnf
 CODESTARTsetModCnf
 	pvals = nvlstGetParams(lst, &modpblk, NULL);
 	if(pvals == NULL) {
-		errmsg.LogError(0, RS_RET_MISSING_CNFPARAMS, "mmnormalize: error processing module "
+		LogError(0, RS_RET_MISSING_CNFPARAMS, "mmnormalize: error processing module "
 						"config parameters missing [module(...)]");
 		ABORT_FINALIZE(RS_RET_MISSING_CNFPARAMS);
 	}
@@ -304,13 +322,16 @@ BEGINnewActInst
 	int bDestructPValsOnExit;
 	char *cstr;
 	char *varName = NULL;
+	char *buffer;
+	char *tStr;
+	int size = 0;
 CODESTARTnewActInst
 	DBGPRINTF("newActInst (mmnormalize)\n");
 
 	bDestructPValsOnExit = 0;
 	pvals = nvlstGetParams(lst, &actpblk, NULL);
 	if(pvals == NULL) {
-		errmsg.LogError(0, RS_RET_MISSING_CNFPARAMS, "mmnormalize: error reading "
+		LogError(0, RS_RET_MISSING_CNFPARAMS, "mmnormalize: error reading "
 				"config parameters");
 		ABORT_FINALIZE(RS_RET_MISSING_CNFPARAMS);
 	}
@@ -329,6 +350,25 @@ CODESTARTnewActInst
 			continue;
 		if(!strcmp(actpblk.descr[i].name, "rulebase")) {
 			pData->rulebase = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
+		} else if(!strcmp(actpblk.descr[i].name, "rule")) {
+			for(int j=0; j < pvals[i].val.d.ar->nmemb; ++j) {
+				tStr = (char*)es_str2cstr(pvals[i].val.d.ar->arr[j], NULL);
+				size += strlen(tStr);
+				free(tStr);
+			}
+			buffer = malloc(size + pvals[i].val.d.ar->nmemb + 1);
+			tStr = (char*)es_str2cstr(pvals[i].val.d.ar->arr[0], NULL);
+			strcpy(buffer, tStr);
+			free(tStr);
+			strcat(buffer, "\n");
+			for(int j=1; j < pvals[i].val.d.ar->nmemb; ++j) {
+				tStr = (char*)es_str2cstr(pvals[i].val.d.ar->arr[j], NULL);
+				strcat(buffer, tStr);
+				free(tStr);
+				strcat(buffer, "\n");
+			}
+			strcat(buffer, "\0");
+			pData->rule = (uchar*)buffer;
 		} else if(!strcmp(actpblk.descr[i].name, "userawmsg")) {
 			pData->bUseRawMsg = (int) pvals[i].val.d.n;
 		} else if(!strcmp(actpblk.descr[i].name, "variable")) {
@@ -336,12 +376,12 @@ CODESTARTnewActInst
 		} else if(!strcmp(actpblk.descr[i].name, "path")) {
 			cstr = es_str2cstr(pvals[i].val.d.estr, NULL);
 			if (strlen(cstr) < 2) {
-				errmsg.LogError(0, RS_RET_VALUE_NOT_SUPPORTED,
+				LogError(0, RS_RET_VALUE_NOT_SUPPORTED,
 						"mmnormalize: valid path name should be at least "
 						"2 symbols long, got %s",	cstr);
 				free(cstr);
 			} else if (cstr[0] != '$') {
-				errmsg.LogError(0, RS_RET_VALUE_NOT_SUPPORTED,
+				LogError(0, RS_RET_VALUE_NOT_SUPPORTED,
 						"mmnormalize: valid path name should start with $,"
 						"got %s", cstr);
 				free(cstr);
@@ -358,15 +398,28 @@ CODESTARTnewActInst
 
 	if (varName) {
 		if(pData->bUseRawMsg) {
-			errmsg.LogError(0, RS_RET_CONFIG_ERROR,
+			LogError(0, RS_RET_CONFIG_ERROR,
 			                "mmnormalize: 'variable' param can't be used with 'useRawMsg'. "
 			                "Ignoring 'variable', will use raw message.");
 		} else {
-			CHKmalloc(pData->varDescr = MALLOC(sizeof(msgPropDescr_t)));
+			CHKmalloc(pData->varDescr = malloc(sizeof(msgPropDescr_t)));
 			CHKiRet(msgPropDescrFill(pData->varDescr, (uchar*) varName, strlen(varName)));
 		}
 		free(varName);
 		varName = NULL;
+	}
+	if(!pData->rulebase) {
+		if(!pData->rule) {
+			LogError(0, RS_RET_CONFIG_ERROR, "mmnormalize: rulebase needed. "
+					"Use option rulebase or rule.");
+		}
+	}
+	if(pData->rulebase) {
+		if(pData->rule) {
+			LogError(0, RS_RET_CONFIG_ERROR,
+					"mmnormalize: only one rulebase possible, rulebase "
+					"can't be used with rule");
+		}
 	}
 
 	CODE_STD_STRING_REQUESTnewActInst(1)
@@ -386,8 +439,8 @@ CODE_STD_STRING_REQUESTparseSelectorAct(1)
 		ABORT_FINALIZE(RS_RET_CONFLINE_UNPROCESSED);
 	}
 
-	if(cs.rulebase == NULL) {
-		errmsg.LogError(0, RS_RET_NO_RULEBASE, "error: no normalization rulebase was specified, use "
+	if(cs.rulebase == NULL && cs.rule == NULL) {
+		LogError(0, RS_RET_NO_RULEBASE, "error: no normalization rulebase was specified, use "
 				"$MMNormalizeSampleDB directive first!");
 		ABORT_FINALIZE(RS_RET_NO_RULEBASE);
 	}
@@ -397,11 +450,13 @@ CODE_STD_STRING_REQUESTparseSelectorAct(1)
 	CHKiRet(createInstance(&pData));
 
 	pData->rulebase = cs.rulebase;
+	pData->rule = cs.rule;
 	pData->bUseRawMsg = cs.bUseRawMsg;
 	pData->pszPath = strdup("$!"); /* old interface does not support this feature */
 	/* all config vars auto-reset! */
 	cs.bUseRawMsg = 0;
 	cs.rulebase = NULL; /* we used it up! */
+	cs.rule = NULL;
 
 	/* check if a non-standard template is to be applied */
 	if(*(p-1) == ';')
@@ -417,7 +472,6 @@ ENDparseSelectorAct
 
 BEGINmodExit
 CODESTARTmodExit
-	objRelease(errmsg, CORE_COMPONENT);
 ENDmodExit
 
 
@@ -438,6 +492,7 @@ static rsRetVal resetConfigVariables(uchar __attribute__((unused)) *pp, void __a
 {
 	DEFiRet;
 	cs.rulebase = NULL;
+	cs.rule = NULL;
 	cs.bUseRawMsg = 0;
 	RETiRet;
 }
@@ -482,12 +537,12 @@ CODEmodInit_QueryRegCFSLineHdlr
 		ABORT_FINALIZE(RS_RET_NO_MSG_PASSING);
 	}
 
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
-	
 	CHKiRet(omsdRegCFSLineHdlr((uchar *)"mmnormalizerulebase", 0, eCmdHdlrGetWord,
 				    setRuleBase, NULL, STD_LOADABLE_MODULE_ID));
+	CHKiRet(omsdRegCFSLineHdlr((uchar *)"mmnormalizerule", 0, eCmdHdlrGetWord, NULL,
+				NULL, STD_LOADABLE_MODULE_ID));
 	CHKiRet(omsdRegCFSLineHdlr((uchar *)"mmnormalizeuserawmsg", 0, eCmdHdlrBinary,
-				    NULL, &cs.bUseRawMsg, STD_LOADABLE_MODULE_ID));
+				NULL, &cs.bUseRawMsg, STD_LOADABLE_MODULE_ID));
 	CHKiRet(omsdRegCFSLineHdlr((uchar *)"resetconfigvariables", 1, eCmdHdlrCustomHandler,
 				    resetConfigVariables, NULL, STD_LOADABLE_MODULE_ID));
 ENDmodInit

@@ -12,7 +12,7 @@
  *
  * File begun on 2007-07-22 by RGerhards
  *
- * Copyright 2007-2012 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2007-2018 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -59,7 +59,8 @@ typedef enum eModType_ {
 	eMOD_LIB = 2,	/* library module */
 	eMOD_PARSER = 3,/* parser module */
 	eMOD_STRGEN = 4,/* strgen module */
-	eMOD_ANY = 5	/* meta-name for "any type of module" -- to be used in function calls */
+	eMOD_FUNCTION = 5, /*rscript function module*/
+	eMOD_ANY = 6	/* meta-name for "any type of module" -- to be used in function calls */
 } eModType_t;
 
 
@@ -158,6 +159,9 @@ struct modInfo_s {
 		struct { /* data for strgen modules */
 			rsRetVal (*strgen)(const smsg_t*const, actWrkrIParams_t *const iparam);
 		} sm;
+		struct { /* data for rscript modules */
+			rsRetVal (*getFunctArray)(int *const, struct scriptFunct**);
+		} fm;
 	} mod;
 	void *pModHdlr; /* handler to the dynamic library holding the module */
 #	ifdef DEBUG
@@ -173,7 +177,8 @@ BEGINinterface(module) /* name must also be changed in ENDinterface macro! */
 	cfgmodules_etry_t *(*GetNxtCnfType)(rsconf_t *cnf, cfgmodules_etry_t *pThis, eModType_t rqtdType);
 	uchar *(*GetName)(modInfo_t *pThis);
 	uchar *(*GetStateName)(modInfo_t *pThis);
-	rsRetVal (*Use)(const char *srcFile, modInfo_t *pThis);	/**< must be called before a module is used (ref counting) */
+	rsRetVal (*Use)(const char *srcFile, modInfo_t *pThis);
+	/**< must be called before a module is used (ref counting) */
 	rsRetVal (*Release)(const char *srcFile, modInfo_t **ppThis);	/**< release a module (ref counting) */
 	void (*PrintList)(void);
 	rsRetVal (*UnloadAndDestructAll)(eModLinkType_t modLinkTypesToUnload);
@@ -183,8 +188,8 @@ BEGINinterface(module) /* name must also be changed in ENDinterface macro! */
 	modInfo_t *(*FindWithCnfName)(rsconf_t *cnf, uchar *name, eModType_t rqtdType); /* added v3, 2011-07-19 */
 ENDinterface(module)
 #define moduleCURR_IF_VERSION 5 /* increment whenever you change the interface structure! */
-/* Changes: 
- * v2 
+/* Changes:
+ * v2
  * - added param bCondLoad to Load call - 2011-04-27
  * - removed GetNxtType, added GetNxtCnfType - 2011-04-27
  * v3 (see above)
@@ -201,7 +206,8 @@ PROTOTYPEObj(module);
  */
 rsRetVal modulesProcessCnf(struct cnfobj *o);
 uchar *modGetName(modInfo_t *pThis);
-rsRetVal addModToCnfList(cfgmodules_etry_t **pNew, cfgmodules_etry_t *pLast);
+rsRetVal ATTR_NONNULL(1) addModToCnfList(cfgmodules_etry_t **pNew, cfgmodules_etry_t *pLast);
 rsRetVal readyModForCnf(modInfo_t *pThis, cfgmodules_etry_t **ppNew, cfgmodules_etry_t **ppLast);
+void modDoHUP(void);
 
 #endif /* #ifndef MODULES_H_INCLUDED */

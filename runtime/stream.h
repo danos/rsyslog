@@ -28,20 +28,20 @@
  * is initialized within zlib to properly add the gzip wrappers to the
  * output.  (gzip is effectively a small metadata wrapper around raw
  * zstream output.)
- * 
+ *
  * I had written an old bit of code to do this - the documentation on
  * deflatInit2() was pretty tricky to nail down on this specific feature:
- * 
+ *
  * int deflateInit2 (z_streamp strm, int level, int method, int windowBits,
  * int memLevel, int strategy);
- * 
+ *
  * I believe "31" would be the value for the "windowBits" field that you'd
  * want to try:
- * 
+ *
  * deflateInit2(zstrmptr, 6, Z_DEFLATED, 31, 9, Z_DEFAULT_STRATEGY);
  * --------------------------------------------------------------------------
- * 
- * Copyright 2008-2016 Rainer Gerhards and Adiscon GmbH.
+ *
+ * Copyright 2008-2018 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -91,6 +91,10 @@ typedef enum {				/* when extending, do NOT change existing modes! */
 	STREAMMODE_WRITE_APPEND = 4
 } strmMode_t;
 
+/* settings for stream rotation (applies not to all processing modes!) */
+#define	STRM_ROTATION_DO_CHECK		0
+#define	STRM_ROTATION_DO_NOT_CHECK	1
+
 #define STREAM_ASYNC_NUMBUFS 2 /* must be a power of 2 -- TODO: make configurable */
 /* The strm_t data structure */
 typedef struct strm_s {
@@ -107,12 +111,14 @@ typedef struct strm_s {
 	int iFileNumDigits;/* min number of digits to use in file number (only in circular mode) */
 	sbool bDeleteOnClose; /* set to 1 to auto-delete on close -- be careful with that setting! */
 	int64 iCurrOffs;/* current offset */
-	int64 *pUsrWCntr; /* NULL or a user-provided counter that receives the nbr of bytes written since the last CntrSet() */
+	int64 *pUsrWCntr; /* NULL or a user-provided counter that receives the nbr of bytes written since
+	the last CntrSet() */
 	sbool bPrevWasNL; /* used for readLine() when reading multi-line messages */
 	/* dynamic properties, valid only during file open, not to be persistet */
 	sbool bDisabled; /* should file no longer be written to? (currently set only if omfile file size limit fails) */
 	sbool bSync;	/* sync this file after every write? */
 	sbool bReopenOnTruncate;
+	int rotationCheck; /* rotation check mode */
 	size_t sIOBufSize;/* size of IO buffer */
 	uchar *pszDir; /* Directory */
 	int lenDir;
@@ -123,6 +129,7 @@ typedef struct strm_s {
 	ino_t inode;	/* current inode for files being monitored (undefined else) */
 	uchar *pszCurrFName; /* name of current file (if open) */
 	uchar *pIOBuf;	/* the iobuffer currently in use to gather data */
+	char *pIOBuf_truncation; /* iobuffer used during trucation detection block re-reads */
 	size_t iBufPtrMax;	/* current max Ptr in Buffer (if partial read!) */
 	size_t iBufPtr;	/* pointer into current buffer */
 	int iUngetC;	/* char set via UngetChar() call or -1 if none set */
@@ -159,6 +166,10 @@ typedef struct strm_s {
 	sbool	bIsTTY;		/* is this a tty file? */
 	cstr_t *prevLineSegment; /* for ReadLine, previous, unprocessed part of file */
 	cstr_t *prevMsgSegment; /* for ReadMultiLine, previous, yet unprocessed part of msg */
+	int64 strtOffs;		/* start offset in file for current line/msg */
+	int fileNotFoundError;	/* boolean; if set, report file not found errors, else silently ignore */
+	int noRepeatedErrorOutput; /* if a file is missing the Error is only given once */
+	int ignoringMsg;
 } strm_t;
 
 
@@ -174,6 +185,7 @@ BEGINinterface(strm) /* name must also be changed in ENDinterface macro! */
 	rsRetVal (*Write)(strm_t *const pThis, const uchar *const pBuf, size_t lenBuf);
 	rsRetVal (*WriteChar)(strm_t *pThis, uchar c);
 	rsRetVal (*WriteLong)(strm_t *pThis, long i);
+	rsRetVal (*SetFileNotFoundError)(strm_t *pThis, int pFileNotFoundError);
 	rsRetVal (*SetFName)(strm_t *pThis, uchar *pszPrefix, size_t iLenPrefix);
 	rsRetVal (*SetDir)(strm_t *pThis, uchar *pszDir, size_t iLenDir);
 	rsRetVal (*Flush)(strm_t *pThis);
@@ -198,7 +210,8 @@ BEGINinterface(strm) /* name must also be changed in ENDinterface macro! */
 	INTERFACEpropSetMeth(strm, iFlushInterval, int);
 	INTERFACEpropSetMeth(strm, pszSizeLimitCmd, uchar*);
 	/* v6 added */
-	rsRetVal (*ReadLine)(strm_t *pThis, cstr_t **ppCStr, uint8_t mode, sbool bEscapeLF, uint32_t trimLineOverBytes);
+	rsRetVal (*ReadLine)(strm_t *pThis, cstr_t **ppCStr, uint8_t mode, sbool bEscapeLF,
+		uint32_t trimLineOverBytes, int64 *const strtOffs);
 	/* v7 added  2012-09-14 */
 	INTERFACEpropSetMeth(strm, bVeryReliableZip, int);
 	/* v8 added  2013-03-21 */
@@ -207,19 +220,25 @@ BEGINinterface(strm) /* name must also be changed in ENDinterface macro! */
 	INTERFACEpropSetMeth(strm, cryprov, cryprov_if_t*);
 	INTERFACEpropSetMeth(strm, cryprovData, void*);
 ENDinterface(strm)
-#define strmCURR_IF_VERSION 12 /* increment whenever you change the interface structure! */
+#define strmCURR_IF_VERSION 13 /* increment whenever you change the interface structure! */
 /* V10, 2013-09-10: added new parameter bEscapeLF, changed mode to uint8_t (rgerhards) */
 /* V11, 2015-12-03: added new parameter bReopenOnTruncate */
 /* V12, 2015-12-11: added new parameter trimLineOverBytes, changed mode to uint32_t */
+/* V13, 2017-09-06: added new parameter strtoffs to ReadLine() */
 
 #define strmGetCurrFileNum(pStrm) ((pStrm)->iCurrFNum)
 
 /* prototypes */
 PROTOTYPEObjClassInit(strm);
 rsRetVal strmMultiFileSeek(strm_t *pThis, unsigned int fileNum, off64_t offs, off64_t *bytesDel);
-rsRetVal strmReadMultiLine(strm_t *pThis, cstr_t **ppCStr, regex_t *preg, sbool bEscapeLF);
+rsRetVal strmReadMultiLine(strm_t *pThis, cstr_t **ppCStr, regex_t *start_preg, regex_t *end_preg,
+	sbool bEscapeLF, sbool discardTruncatedMsg, sbool msgDiscardingError, int64 *const strtOffs);
 int strmReadMultiLine_isTimedOut(const strm_t *const __restrict__ pThis);
 void strmDebugOutBuf(const strm_t *const pThis);
 void strmSetReadTimeout(strm_t *const __restrict__ pThis, const int val);
+const uchar * ATTR_NONNULL() strmGetPrevLineSegment(strm_t *const pThis);
+const uchar * ATTR_NONNULL() strmGetPrevMsgSegment(strm_t *const pThis);
+int ATTR_NONNULL() strmGetPrevWasNL(const strm_t *const pThis);
+void ATTR_NONNULL() strmSet_checkRotation(strm_t *const pThis, const int val);
 
 #endif /* #ifndef STREAM_H_INCLUDED */

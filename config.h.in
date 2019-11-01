@@ -15,6 +15,9 @@
 /* Indicator that LIBGCRYPT is present */
 #undef ENABLE_LIBGCRYPT
 
+/* Indicator that openssl is present */
+#undef ENABLE_OPENSSL
+
 /* Indicator that RELP is present */
 #undef ENABLE_RELP
 
@@ -24,11 +27,11 @@
 /* Define to 1 if you have the `alarm' function. */
 #undef HAVE_ALARM
 
-/* Define to 1 if you have the <arpa/inet.h> header file. */
-#undef HAVE_ARPA_INET_H
-
 /* Define to 1 if you have the <arpa/nameser.h> header file. */
 #undef HAVE_ARPA_NAMESER_H
+
+/* Define to 1 if you have the `asprintf' function. */
+#undef HAVE_ASPRINTF
 
 /* Define if compiler provides atomic builtins */
 #undef HAVE_ATOMIC_BUILTINS
@@ -100,6 +103,9 @@
 /* Define to 1 if you have the `getline' function. */
 #undef HAVE_GETLINE
 
+/* Define to 1 if you have the <getopt.h> header file. */
+#undef HAVE_GETOPT_H
+
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
 
@@ -113,6 +119,9 @@
 /* Define to 1 if you have the `gnutls_certificate_type_set_priority'
    function. */
 #undef HAVE_GNUTLS_CERTIFICATE_TYPE_SET_PRIORITY
+
+/* Define to 1 if you have the <grok.h> header file. */
+#undef HAVE_GROK_H
 
 /* Define to 1 if you have the <hadoop/hdfs.h> header file. */
 #undef HAVE_HADOOP_HDFS_H
@@ -141,6 +150,12 @@
 /* Define to 1 if you have the <librdkafka/rdkafka.h> header file. */
 #undef HAVE_LIBRDKAFKA_RDKAFKA_H
 
+/* libsystemd present */
+#undef HAVE_LIBSYSTEMD
+
+/* Define if ln_loadSamplesFromString exists. */
+#undef HAVE_LOADSAMPLESFROMSTRING
+
 /* Define to 1 if you have the <locale.h> header file. */
 #undef HAVE_LOCALE_H
 
@@ -168,6 +183,9 @@
 /* Define to 1 if you have the `mkdir' function. */
 #undef HAVE_MKDIR
 
+/* Define to 1 if you have the `mongoc_client_set_ssl_opts' function. */
+#undef HAVE_MONGOC_CLIENT_SET_SSL_OPTS
+
 /* mysql_library_init available */
 #undef HAVE_MYSQL_LIBRARY_INIT
 
@@ -186,8 +204,17 @@
 /* Define to 1 if you have the <paths.h> header file. */
 #undef HAVE_PATHS_H
 
+/* Define to 1 if you have the `port_create' function. */
+#undef HAVE_PORT_CREATE
+
+/* Enable FEN support for imfile */
+#undef HAVE_PORT_SOURCE_FILE
+
 /* Define to 1 if you have the `prctl' function. */
 #undef HAVE_PRCTL
+
+/* Define to 1 if you have the <protocol.h> header file. */
+#undef HAVE_PROTOCOL_H
 
 /* Define to 1 if you have the <pthread.h> header file. */
 #undef HAVE_PTHREAD_H
@@ -207,6 +234,15 @@
 /* Define to 1 if you have the `regcomp' function. */
 #undef HAVE_REGCOMP
 
+/* Define if relpEngineSetTLSLibByName exists. */
+#undef HAVE_RELPENGINESETTLSLIBBYNAME
+
+/* Define if relpSrvSetLstnAddr exists. */
+#undef HAVE_RELPSRVSETLSTNADDR
+
+/* Define if relpSrvSetOversizeMode exists. */
+#undef HAVE_RELPSRVSETOVERSIZEMODE
+
 /* Define to 1 if you have the <resolv.h> header file. */
 #undef HAVE_RESOLV_H
 
@@ -224,6 +260,9 @@
 
 /* Define to 1 if you have the <semaphore.h> header file. */
 #undef HAVE_SEMAPHORE_H
+
+/* Define if setns exists. */
+#undef HAVE_SETNS
 
 /* Define to 1 if you have the `setsid' function. */
 #undef HAVE_SETSID
@@ -380,15 +419,20 @@
 /* Define with a value if your <sys/param.h> does not define MAXHOSTNAMELEN */
 #undef MAXHOSTNAMELEN
 
-/* Defined if memcheck support settings are to be enabled (e.g. prevents
-   dlclose()). */
-#undef MEMCHECK
-
 /* Defined if debug mode is disabled. */
 #undef NDEBUG
 
+/* new systemd present */
+#undef NEW_JOURNAL
+
+/* Define if ln_loadSamplesFromString does not exist. */
+#undef NO_LOADSAMPLESFROMSTRING
+
 /* Indicator for a AIX OS */
 #undef OS_AIX
+
+/* Indicator for APPLE OS */
+#undef OS_APPLE
 
 /* Indicator for a BSD OS */
 #undef OS_BSD
@@ -420,6 +464,12 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* "Configuration file path (default : /etc/rsyslog.conf)" */
+#undef PATH_CONFFILE
+
+/* "Pid file path (default : /var/run/rsyslogd.pid)" */
+#undef PATH_PIDFILE
+
 /* platform id for display purposes */
 #undef PLATFORM_ID
 
@@ -431,9 +481,6 @@
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE
-
-/* Defined if runtime instrumentation mode is enabled. */
-#undef RTINST
 
 /* Define to the type of arg 1 for `select'. */
 #undef SELECT_TYPE_ARG1
@@ -462,11 +509,11 @@
 /* Define if you want to use GSSAPI */
 #undef USE_GSSAPI
 
+/* Using XXHASH for hash64. */
+#undef USE_HASH_XXHASH
+
 /* Define if you want to enable libuuid support */
 #undef USE_LIBUUID
-
-/* Multithreading support enabled. */
-#undef USE_PTHREADS
 
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE
@@ -500,6 +547,12 @@
 
 /* Version number of package */
 #undef VERSION
+
+/* month part of real rsyslog version */
+#undef VERSION_MONTH
+
+/* year part of real rsyslog version */
+#undef VERSION_YEAR
 
 /* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
    `char[]'. */

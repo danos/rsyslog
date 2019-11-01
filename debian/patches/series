@@ -1,10 +1,2 @@
 Don-t-create-a-database.patch
-Don-t-explicitly-link-tcpflood-against-lgcrypt.patch
-
-# Patches backported from upstream
-imudp-add-udp-sendbuf-parameter.patch
-omfwd-add-support-for-namespaces.patch
-refactor-create-udp-socket.patch
-0001-imczmq-remove-unallocated-and-unused-pointer.patch
-omfwd-add-support-for-bind-to-address.patch
-imczmq-free-received-zframe.patch
+Don-t-fail-test-suite-on-flaky-tests.patch

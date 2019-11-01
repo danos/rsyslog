@@ -1,10 +1,17 @@
 #!/bin/bash
 # This file is part of the rsyslog project, released  under ASL 2.0
-. $srcdir/diag.sh init
-. $srcdir/diag.sh generate-conf
-. $srcdir/diag.sh add-conf '
+
+uname
+if [ $(uname) = "FreeBSD" ] ; then
+   echo "This test currently does not work on FreeBSD."
+   exit 77
+fi
+
+. ${srcdir:=.}/diag.sh init
+generate_conf
+add_conf '
 module(load="../plugins/imtcp/.libs/imtcp")
-input(type="imtcp" port="13514")
+input(type="imtcp" port="0" listenPortFileName="'$RSYSLOG_DYNNAME'.tcpflood_port")
 
 template(name="outfmt" type="string"
 	 string="%msg:F,58:2%\n")
@@ -12,14 +19,14 @@ template(name="outfmt" type="string"
 				 zipLevel="6" ioBufferSize="256k"
 				 flushOnTXEnd="on"
 				 asyncWriting="on"
-			         file="rsyslog.out.log")
+			         file=`echo $RSYSLOG_OUT_LOG`)
 '
-. $srcdir/diag.sh startup
-. $srcdir/diag.sh tcpflood -m2500 -P129
-. $srcdir/diag.sh wait-queueempty
-. $srcdir/diag.sh gzip-seq-check 0 2499
-. $srcdir/diag.sh tcpflood -i2500 -m2500 -P129
-. $srcdir/diag.sh shutdown-when-empty
-. $srcdir/diag.sh wait-shutdown
-. $srcdir/diag.sh gzip-seq-check 0 4999
-. $srcdir/diag.sh exit
+startup
+tcpflood -m2500 -P129
+wait_queueempty
+gzip_seq_check 0 2499
+tcpflood -i2500 -m2500 -P129
+shutdown_when_empty
+wait_shutdown
+gzip_seq_check 0 4999
+exit_test

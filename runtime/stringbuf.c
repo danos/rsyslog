@@ -11,18 +11,18 @@
  * e.g. search. Further refactoring and simplificytin may make
  * sense.
  *
- * Copyright (C) 2005-2016 Adiscon GmbH
+ * Copyright (C) 2005-2019 Adiscon GmbH
  *
  * This file is part of the rsyslog runtime library.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -42,6 +42,10 @@
 #include "stringbuf.h"
 #include "srUtils.h"
 #include "regexp.h"
+#include "errmsg.h"
+#include "unicode-helper.h"
+
+#define DEV_DEBUG 0	/* set to 1 to enable very verbose developer debugging messages */
 
 
 /* ################################################################# *
@@ -58,13 +62,16 @@ DEFobjCurrIf(regexp)
 
 
 rsRetVal
-cstrConstruct(cstr_t **ppThis)
+cstrConstruct(cstr_t **const ppThis)
 {
 	DEFiRet;
 	cstr_t *pThis;
 
 	CHKmalloc(pThis = (cstr_t*) malloc(sizeof(cstr_t)));
 	rsSETOBJTYPE(pThis, OIDrsCStr);
+	#ifndef NDEBUG
+	pThis->isFinalized = 0;
+	#endif
 	pThis->pBuf = NULL;
 	pThis->iBufSize = 0;
 	pThis->iStrLen = 0;
@@ -79,7 +86,7 @@ finalize_it:
  * rgerhards 2005-09-15
  */
 rsRetVal
-rsCStrConstructFromszStr(cstr_t **ppThis, const uchar *sz)
+rsCStrConstructFromszStr(cstr_t **const ppThis, const uchar *const sz)
 {
 	DEFiRet;
 	cstr_t *pThis;
@@ -88,7 +95,7 @@ rsCStrConstructFromszStr(cstr_t **ppThis, const uchar *sz)
 
 	pThis->iStrLen = strlen((char *) sz);
 	pThis->iBufSize = strlen((char *) sz) + 1;
-	if((pThis->pBuf = (uchar*) MALLOC(pThis->iBufSize)) == NULL) {
+	if((pThis->pBuf = (uchar*) malloc(pThis->iBufSize)) == NULL) {
 		RSFREEOBJ(pThis);
 		ABORT_FINALIZE(RS_RET_OUT_OF_MEMORY);
 	}
@@ -105,9 +112,10 @@ finalize_it:
 
 /* a helper function for rsCStr*Strf()
  */
-static rsRetVal rsCStrConstructFromszStrv(cstr_t **ppThis, const char *fmt, va_list ap) __attribute__((format(printf,2, 0)));
+static rsRetVal rsCStrConstructFromszStrv(cstr_t **ppThis, const char *fmt,
+va_list ap) __attribute__((format(printf,2, 0)));
 static rsRetVal
-rsCStrConstructFromszStrv(cstr_t **ppThis, const char *fmt, va_list ap)
+rsCStrConstructFromszStrv(cstr_t **const ppThis, const char *const fmt, va_list ap)
 {
 	DEFiRet;
 	cstr_t *pThis;
@@ -126,7 +134,7 @@ rsCStrConstructFromszStrv(cstr_t **ppThis, const char *fmt, va_list ap)
 	pThis->iStrLen = len;
 	pThis->iBufSize = len + 1;
 	len++; /* account for the \0 written by vsnprintf */
-	if((pThis->pBuf = (uchar*) MALLOC(pThis->iBufSize)) == NULL) {
+	if((pThis->pBuf = (uchar*) malloc(pThis->iBufSize)) == NULL) {
 		RSFREEOBJ(pThis);
 		ABORT_FINALIZE(RS_RET_OUT_OF_MEMORY);
 	}
@@ -158,7 +166,7 @@ rsCStrConstructFromszStrf(cstr_t **ppThis, const char *fmt, ...)
  * rgerhards 2010-12-03
  */
 rsRetVal
-cstrConstructFromESStr(cstr_t **ppThis, es_str_t *str)
+cstrConstructFromESStr(cstr_t **const ppThis, es_str_t *const str)
 {
 	DEFiRet;
 	cstr_t *pThis;
@@ -167,7 +175,7 @@ cstrConstructFromESStr(cstr_t **ppThis, es_str_t *str)
 
 	pThis->iStrLen = es_strlen(str);
 	pThis->iBufSize = pThis->iStrLen + 1;
-	if((pThis->pBuf = (uchar*) MALLOC(pThis->iBufSize)) == NULL) {
+	if((pThis->pBuf = (uchar*) malloc(pThis->iBufSize)) == NULL) {
 		RSFREEOBJ(pThis);
 		ABORT_FINALIZE(RS_RET_OUT_OF_MEMORY);
 	}
@@ -184,7 +192,8 @@ finalize_it:
 /* construct from CStr object.
  * rgerhards 2005-10-18
  */
-rsRetVal rsCStrConstructFromCStr(cstr_t **ppThis, cstr_t *pFrom)
+rsRetVal ATTR_NONNULL()
+rsCStrConstructFromCStr(cstr_t **const ppThis, const cstr_t *const pFrom)
 {
 	DEFiRet;
 	cstr_t *pThis;
@@ -192,16 +201,15 @@ rsRetVal rsCStrConstructFromCStr(cstr_t **ppThis, cstr_t *pFrom)
 	rsCHECKVALIDOBJECT(pFrom, OIDrsCStr);
 
 	CHKiRet(rsCStrConstruct(&pThis));
-
-	pThis->iStrLen = pFrom->iStrLen;
-	pThis->iBufSize = pFrom->iStrLen + 1;
-	if((pThis->pBuf = (uchar*) MALLOC(pThis->iBufSize)) == NULL) {
-		RSFREEOBJ(pThis);
-		ABORT_FINALIZE(RS_RET_OUT_OF_MEMORY);
+	if(pFrom->iStrLen > 0) {
+		pThis->iStrLen = pFrom->iStrLen;
+		pThis->iBufSize = pFrom->iStrLen + 1;
+		if((pThis->pBuf = (uchar*) malloc(pThis->iBufSize)) == NULL) {
+			RSFREEOBJ(pThis);
+			ABORT_FINALIZE(RS_RET_OUT_OF_MEMORY);
+		}
+		memcpy(pThis->pBuf, pFrom->pBuf, pThis->iStrLen);
 	}
-
-	/* copy properties */
-	memcpy(pThis->pBuf, pFrom->pBuf, pThis->iStrLen);
 
 	*ppThis = pThis;
 finalize_it:
@@ -209,12 +217,10 @@ finalize_it:
 }
 
 
-void rsCStrDestruct(cstr_t **ppThis)
+void rsCStrDestruct(cstr_t **const ppThis)
 {
-	cstr_t *pThis = *ppThis;
-
-	free(pThis->pBuf);
-	RSFREEOBJ(pThis);
+	free((*ppThis)->pBuf);
+	RSFREEOBJ(*ppThis);
 	*ppThis = NULL;
 }
 
@@ -248,7 +254,9 @@ rsCStrExtendBuf(cstr_t *const __restrict__ pThis, const size_t iMinNeeded)
 	}
 	iNewSize += pThis->iBufSize; /* add current size */
 
-	/* DEV debugging only: dbgprintf("extending string buffer, old %d, new %d\n", pThis->iBufSize, iNewSize); */
+	#if DEV_DEBUG == 1
+	dbgprintf("extending string buffer, old %d, new %d\n", pThis->iBufSize, iNewSize);
+	#endif
 	CHKmalloc(pNewBuf = (uchar*) realloc(pThis->pBuf, iNewSize));
 	pThis->iBufSize = iNewSize;
 	pThis->pBuf = pNewBuf;
@@ -265,7 +273,7 @@ rsRetVal cstrAppendChar(cstr_t *const __restrict__ pThis, const uchar c)
 {
 	rsRetVal iRet = RS_RET_OK;
 
-	if(pThis->iStrLen+1 >= pThis->iBufSize) {  
+	if(pThis->iStrLen+1 >= pThis->iBufSize) {
 		CHKiRet(rsCStrExtendBuf(pThis, 1)); /* need more memory! */
 	}
 
@@ -279,7 +287,7 @@ finalize_it:
 /* append a string of known length. In this case, we make sure we do at most
  * one additional memory allocation.
  */
-rsRetVal rsCStrAppendStrWithLen(cstr_t *pThis, const uchar* psz, size_t iStrLen)
+rsRetVal rsCStrAppendStrWithLen(cstr_t *const pThis, const uchar*const  psz, const size_t iStrLen)
 {
 	DEFiRet;
 
@@ -287,7 +295,7 @@ rsRetVal rsCStrAppendStrWithLen(cstr_t *pThis, const uchar* psz, size_t iStrLen)
 	assert(psz != NULL);
 
 	/* does the string fit? */
-	if(pThis->iStrLen + iStrLen >= pThis->iBufSize) {  
+	if(pThis->iStrLen + iStrLen >= pThis->iBufSize) {
 		CHKiRet(rsCStrExtendBuf(pThis, iStrLen)); /* need more memory! */
 	}
 
@@ -305,7 +313,7 @@ finalize_it:
  * need to change existing code.
  * rgerhards, 2007-07-03
  */
-rsRetVal rsCStrAppendStr(cstr_t *pThis, const uchar* psz)
+rsRetVal rsCStrAppendStr(cstr_t *const pThis, const uchar*const  psz)
 {
 	return rsCStrAppendStrWithLen(pThis, psz, strlen((char*) psz));
 }
@@ -378,7 +386,7 @@ rsRetVal rsCStrSetSzStr(cstr_t *const __restrict__ pThis,
 		if(newlen > pThis->iBufSize) {
 			uchar *const newbuf = (uchar*) realloc(pThis->pBuf, newlen + 1);
 			if(newbuf == NULL) {
-				RSFREEOBJ(pThis);
+				/* we keep the old value, best we can do */
 				return RS_RET_OUT_OF_MEMORY;
 			}
 			pThis->pBuf = newbuf;
@@ -399,12 +407,8 @@ uchar*
 cstrGetSzStrNoNULL(cstr_t *const __restrict__ pThis)
 {
 	rsCHECKVALIDOBJECT(pThis, OIDrsCStr);
-
-	if(pThis->pBuf == NULL)
-		return (uchar*) "";
-
-	pThis->pBuf[pThis->iStrLen] = '\0'; /* space for this is reserved */
-	return(pThis->pBuf);
+	assert(pThis->isFinalized);
+	return (pThis->pBuf == NULL) ? (uchar*) "" : pThis->pBuf;
 }
 
 
@@ -432,13 +436,14 @@ rsRetVal cstrConvSzStrAndDestruct(cstr_t **ppThis, uchar **ppSz, int bRetNULL)
 
 	assert(ppThis != NULL);
 	pThis = *ppThis;
+	assert(pThis->isFinalized);
 	rsCHECKVALIDOBJECT(pThis, OIDrsCStr);
 	assert(ppSz != NULL);
 	assert(bRetNULL == 0 || bRetNULL == 1);
 
 	if(pThis->pBuf == NULL) {
 		if(bRetNULL == 0) {
-			CHKmalloc(pRetBuf = MALLOC(1));
+			CHKmalloc(pRetBuf = malloc(1));
 			*pRetBuf = '\0';
 		} else {
 			pRetBuf = NULL;
@@ -593,7 +598,14 @@ rsRetVal rsCStrSzStrMatchRegex(cstr_t *pCS1, uchar *psz, int iType, void *rc)
 	if(objUse(regexp, LM_REGEXP_FILENAME) == RS_RET_OK) {
 		if (*cache == NULL) {
 			*cache = calloc(sizeof(regex_t), 1);
-			regexp.regcomp(*cache, (char*) rsCStrGetSzStrNoNULL(pCS1), (iType == 1 ? REG_EXTENDED : 0) | REG_NOSUB);
+			int errcode;
+			if((errcode = regexp.regcomp(*cache, (char*) rsCStrGetSzStrNoNULL(pCS1),
+				(iType == 1 ? REG_EXTENDED : 0) | REG_NOSUB))) {
+				char errbuff[512];
+				regexp.regerror(errcode, *cache, errbuff, sizeof(errbuff));
+				LogError(0, NO_ERRCODE, "Error in regular expression: %s\n", errbuff);
+				ABORT_FINALIZE(RS_RET_NOT_FOUND);
+			}
 		}
 		ret = regexp.regexec(*cache, (char*) psz, 0, NULL, 0);
 		if(ret != 0)
@@ -695,7 +707,7 @@ int rsCStrSzStrCmp(cstr_t *pCS1, uchar *psz, size_t iLenSz)
 		else
 			return strncmp((char*)pCS1->pBuf, (char*)psz, iLenSz);
 	else
-		return pCS1->iStrLen - iLenSz;
+		return (ssize_t) pCS1->iStrLen - (ssize_t) iLenSz;
 }
 
 
@@ -704,10 +716,12 @@ int rsCStrSzStrCmp(cstr_t *pCS1, uchar *psz, size_t iLenSz)
  * returned. Both parameters MUST be given (NULL is not allowed).
  * rgerhards 2005-09-19
  */
-int rsCStrLocateInSzStr(cstr_t *pThis, uchar *sz)
+int ATTR_NONNULL(1, 2)
+rsCStrLocateInSzStr(cstr_t *const pThis, uchar *const sz)
 {
-	int i;
-	int iMax;
+	size_t i;
+	size_t iMax;
+	size_t len_sz = ustrlen(sz);
 	int bFound;
 	rsCHECKVALIDOBJECT(pThis, OIDrsCStr);
 	assert(sz != NULL);
@@ -716,10 +730,10 @@ int rsCStrLocateInSzStr(cstr_t *pThis, uchar *sz)
 		return 0;
 	
 	/* compute the largest index where a match could occur - after all,
-	 * the to-be-located string must be able to be present in the 
+	 * the to-be-located string must be able to be present in the
 	 * searched string (it needs its size ;)).
 	 */
-	iMax = strlen((char*)sz) - pThis->iStrLen;
+	iMax = (pThis->iStrLen >= len_sz) ? 0 : len_sz - pThis->iStrLen;
 
 	bFound = 0;
 	i = 0;
@@ -735,7 +749,7 @@ int rsCStrLocateInSzStr(cstr_t *pThis, uchar *sz)
 			++i; /* on to the next try */
 	}
 
-	return(bFound ? i : -1);
+	return(bFound ? (int) i : -1);
 }
 
 

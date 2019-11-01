@@ -12,18 +12,18 @@
  * NOTE: read comments in module-template.h to understand how this pipe
  *       works!
  *
- * Copyright 2007-2016 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2007-2018 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,7 +31,6 @@
  * limitations under the License.
  */
 #include "config.h"
-#include "rsyslog.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -44,6 +43,7 @@
 #include <unistd.h>
 #include <sys/file.h>
 
+#include "rsyslog.h"
 #include "syslogd.h"
 #include "syslogd-types.h"
 #include "srUtils.h"
@@ -62,7 +62,6 @@ MODULE_CNFNAME("ompipe")
 /* internal structures
  */
 DEF_OMOD_STATIC_DATA
-DEFobjCurrIf(errmsg)
 
 
 typedef struct _instanceData {
@@ -124,7 +123,7 @@ getDfltTpl(void)
 
 
 BEGINinitConfVars		/* (re)set config variables to default values */
-CODESTARTinitConfVars 
+CODESTARTinitConfVars
 ENDinitConfVars
 
 
@@ -157,7 +156,7 @@ preparePipe(instanceData *pData)
 	if(pData->fd < 0 ) {
 		pData->fd = -1;
 		if(!pData->bHadError) {
-			errmsg.LogError(errno, RS_RET_NO_FILE_ACCESS, "Could not open output pipe '%s':",
+			LogError(errno, RS_RET_NO_FILE_ACCESS, "Could not open output pipe '%s':",
 				        pData->pipe);
 			pData->bHadError = 1;
 		}
@@ -176,7 +175,7 @@ static rsRetVal writePipe(uchar **ppString, instanceData *pData)
 	int iLenWritten;
 	DEFiRet;
 
-	ASSERT(pData != NULL);
+	assert(pData != NULL);
 
 	if(pData->fd == -1) {
 		rsRetVal iRetLocal;
@@ -196,7 +195,7 @@ static rsRetVal writePipe(uchar **ppString, instanceData *pData)
 		close(pData->fd);
 		pData->fd = -1; /* tell that fd is no longer open! */
 		iRet = RS_RET_SUSPENDED;
-		errmsg.LogError(e, NO_ERRCODE, "write error on pipe %s", pData->pipe);
+		LogError(e, NO_ERRCODE, "write error on pipe %s", pData->pipe);
 	}
 
 finalize_it:
@@ -217,7 +216,7 @@ BEGINsetModCnf
 CODESTARTsetModCnf
 	pvals = nvlstGetParams(lst, &modpblk, NULL);
 	if(pvals == NULL) {
-		errmsg.LogError(0, RS_RET_MISSING_CNFPARAMS, "error processing module "
+		LogError(0, RS_RET_MISSING_CNFPARAMS, "error processing module "
 				"config parameters [module(...)]");
 		ABORT_FINALIZE(RS_RET_MISSING_CNFPARAMS);
 	}
@@ -233,7 +232,7 @@ CODESTARTsetModCnf
 		if(!strcmp(modpblk.descr[i].name, "template")) {
 			loadModConf->tplName = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
 			if(pszFileDfltTplName != NULL) {
-				errmsg.LogError(0, RS_RET_DUP_PARAM, "ompipe: warning: default template "
+				LogError(0, RS_RET_DUP_PARAM, "ompipe: warning: default template "
 						"was already set via legacy directive - may lead to inconsistent "
 						"results.");
 			}
@@ -368,7 +367,7 @@ CODESTARTnewActInst
 		}
 	}
 
-	CHKiRet(OMSRsetEntry(*ppOMSR, 0, (uchar*)strdup((pData->tplName == NULL) ? 
+	CHKiRet(OMSRsetEntry(*ppOMSR, 0, (uchar*)strdup((pData->tplName == NULL) ?
 						"RSYSLOG_FileFormat" : (char*)pData->tplName),
 						OMSR_NO_RQD_TPL_OPTS));
 CODE_STD_FINALIZERnewActInst
@@ -382,14 +381,12 @@ CODESTARTparseSelectorAct
 	 */
 	if(*p == '|') {
 		if((iRet = createInstance(&pData)) != RS_RET_OK) {
-			ENDfunc
 			return iRet; /* this can not use RET_iRet! */
 		}
 	} else {
 		/* this is not clean, but we need it for the time being
-		 * TODO: remove when cleaning up modularization 
+		 * TODO: remove when cleaning up modularization
 		 */
-		ENDfunc
 		return RS_RET_CONFLINE_UNPROCESSED;
 	}
 
@@ -398,7 +395,7 @@ CODESTARTparseSelectorAct
 	++p;
 	CHKiRet(cflineParseFileName(p, (uchar*) pData->pipe, *ppOMSR, 0, OMSR_NO_RQD_TPL_OPTS,
 				       getDfltTpl()));
-		
+
 CODE_STD_FINALIZERparseSelectorAct
 ENDparseSelectorAct
 
@@ -423,7 +420,7 @@ CODEqueryEtryPt_STD_OMOD_QUERIES
 CODEqueryEtryPt_STD_OMOD8_QUERIES
 CODEqueryEtryPt_doHUP
 CODEqueryEtryPt_STD_CONF2_QUERIES
-CODEqueryEtryPt_STD_CONF2_CNFNAME_QUERIES 
+CODEqueryEtryPt_STD_CONF2_CNFNAME_QUERIES
 CODEqueryEtryPt_STD_CONF2_setModCnf_QUERIES
 CODEqueryEtryPt_STD_CONF2_OMOD_QUERIES
 ENDqueryEtryPt
@@ -434,7 +431,6 @@ CODESTARTmodInit
 INITLegCnfVars
 	*ipIFVersProvided = CURR_MOD_IF_VERSION; /* we only support the current interface specification */
 CODEmodInit_QueryRegCFSLineHdlr
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 ENDmodInit
 /* vi:set ai:
  */

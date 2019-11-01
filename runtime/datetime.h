@@ -7,11 +7,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,15 +26,22 @@
 
 /* the datetime object */
 typedef struct datetime_s {
-    	char dummy;
+	char dummy;
 } datetime_t;
 
+typedef enum {
+	DATE_INVALID = -1,
+	DATE_RFC3164 =  0,
+	DATE_RFC3339 =  1,
+	DATE_UNIX    =  2,
+} dateTimeFormat_t;
 
 /* interfaces */
 BEGINinterface(datetime) /* name must also be changed in ENDinterface macro! */
 	void (*getCurrTime)(struct syslogTime *t, time_t *ttSeconds, const int inUTC);
 	rsRetVal (*ParseTIMESTAMP3339)(struct syslogTime *pTime, uchar** ppszTS, int*);
-	rsRetVal (*ParseTIMESTAMP3164)(struct syslogTime *pTime, uchar** pszTS, int*, const int bParseTZ, const int bDetectYearAfterTime);
+	rsRetVal (*ParseTIMESTAMP3164)(struct syslogTime *pTime, uchar** pszTS, int*, const int bParseTZ,
+		const int bDetectYearAfterTime);
 	int (*formatTimestampToMySQL)(struct syslogTime *ts, char* pDst);
 	int (*formatTimestampToPgSQL)(struct syslogTime *ts, char *pDst);
 	int (*formatTimestamp3339)(struct syslogTime *ts, char* pBuf);
@@ -47,8 +54,10 @@ BEGINinterface(datetime) /* name must also be changed in ENDinterface macro! */
 	/* v7, 2012-03-29 */
 	int (*formatTimestampUnix)(struct syslogTime *ts, char*pBuf);
 	time_t (*syslogTime2time_t)(const struct syslogTime *ts);
+	/* v11, 2017-10-05 */
+	int (*formatUnixTimeFromTime_t)(time_t time, const char *format, char *pBuf, uint pBufMax);
 ENDinterface(datetime)
-#define datetimeCURR_IF_VERSION 10 /* increment whenever you change the interface structure! */
+#define datetimeCURR_IF_VERSION 11 /* increment whenever you change the interface structure! */
 /* interface changes:
  * 1 - initial version
  * 2 - not compatible to 1 - bugfix required ParseTIMESTAMP3164 to accept char ** as
@@ -62,6 +71,7 @@ ENDinterface(datetime)
  * 9 - ParseTIMESTAMP3164 has addtl parameter to permit year parsing
  * 10 - functions having addtl paramater inUTC to emit time in UTC:
  *      timeval2syslogTime, getCurrtime
+ * 11 - Add formatUnixTimeFromTime_t
  */
 
 #define PARSE3164_TZSTRING 1
@@ -84,5 +94,6 @@ int getOrdinal(struct syslogTime *ts);
 int getWeek(struct syslogTime *ts);
 void timeConvertToUTC(const struct syslogTime *const __restrict__ local, struct syslogTime *const __restrict__ utc);
 time_t getTime(time_t *ttSeconds);
+dateTimeFormat_t getDateTimeFormatFromStr(const char * const __restrict__ s);
 
 #endif /* #ifndef INCLUDED_DATETIME_H */

@@ -4,7 +4,7 @@
  * much later. I began the file on 2008-02-19 as part of the modularization
  * effort. Over time, a clean abstration will become even more important
  * because the config file handler will by dynamically be loaded and be
- * kept in memory only as long as the config file is actually being 
+ * kept in memory only as long as the config file is actually being
  * processed. Thereafter, it shall be unloaded. -- rgerhards
  * Please note that the original syslogd.c source was under BSD license
  * at the time of the rsyslog fork from sysklogd.
@@ -16,11 +16,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -76,7 +76,6 @@
 /* static data */
 DEFobjStaticHelpers
 DEFobjCurrIf(module)
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(net)
 DEFobjCurrIf(ruleset)
 
@@ -103,12 +102,12 @@ doModLoad(uchar **pp, __attribute__((unused)) void* pVal)
 	uchar szName[512];
 	uchar *pModName;
 
-	ASSERT(pp != NULL);
-	ASSERT(*pp != NULL);
+	assert(pp != NULL);
+	assert(*pp != NULL);
 
 	skipWhiteSpace(pp); /* skip over any whitespace */
 	if(getSubString(pp, (char*) szName, sizeof(szName), ' ')  != 0) {
-		errmsg.LogError(0, RS_RET_NOT_FOUND, "could not extract module name");
+		LogError(0, RS_RET_NOT_FOUND, "could not extract module name");
 		ABORT_FINALIZE(RS_RET_NOT_FOUND);
 	}
 	skipWhiteSpace(pp); /* skip over any whitespace */
@@ -151,7 +150,7 @@ ltrim(char *src)
  * and then the proper sub-function is called to handle
  * the actual directive.
  * rgerhards 2004-11-17
- * rgerhards 2005-06-21: previously only for templates, now 
+ * rgerhards 2005-06-21: previously only for templates, now
  *    generalized.
  */
 static rsRetVal
@@ -162,14 +161,14 @@ doNameLine(uchar **pp, void* pVal)
 	enum eDirective eDir;
 	char szName[128];
 
-	ASSERT(pp != NULL);
+	assert(pp != NULL);
 	p = *pp;
-	ASSERT(p != NULL);
+	assert(p != NULL);
 
 	eDir = (enum eDirective) pVal;	/* this time, it actually is NOT a pointer! */
 
 	if(getSubString(&p, szName, sizeof(szName), ',')  != 0) {
-		errmsg.LogError(0, RS_RET_NOT_FOUND, "Invalid config line: could not extract name - line ignored");
+		LogError(0, RS_RET_NOT_FOUND, "Invalid config line: could not extract name - line ignored");
 		ABORT_FINALIZE(RS_RET_NOT_FOUND);
 	}
 	ltrim(szName);
@@ -183,13 +182,13 @@ doNameLine(uchar **pp, void* pVal)
 	 */
 	
 	switch(eDir) {
-		case DIR_TEMPLATE: 
+		case DIR_TEMPLATE:
 			tplAddLine(loadConf, szName, &p);
 			break;
-		case DIR_OUTCHANNEL: 
+		case DIR_OUTCHANNEL:
 			ochAddLine(szName, &p);
 			break;
-		case DIR_ALLOWEDSENDER: 
+		case DIR_ALLOWEDSENDER:
 			net.addAllowedSenderLine(szName, &p);
 			break;
 		default:/* we do this to avoid compiler warning - not all
@@ -220,10 +219,11 @@ cfsysline(uchar *p)
 	DEFiRet;
 	uchar szCmd[64];
 
-	ASSERT(p != NULL);
+	assert(p != NULL);
 	errno = 0;
 	if(getSubString(&p, (char*) szCmd, sizeof(szCmd), ' ')  != 0) {
-		errmsg.LogError(0, RS_RET_NOT_FOUND, "Invalid $-configline - could not extract command - line ignored\n");
+		LogError(0, RS_RET_NOT_FOUND, "Invalid $-configline "
+			"- could not extract command - line ignored\n");
 		ABORT_FINALIZE(RS_RET_NOT_FOUND);
 	}
 
@@ -241,7 +241,7 @@ cfsysline(uchar *p)
 	skipWhiteSpace(&p);
 
 	if(*p && *p != '#') { /* we have a non-whitespace, so let's complain */
-		errmsg.LogError(0, NO_ERRCODE, 
+		LogError(0, NO_ERRCODE,
 		         "error: extra characters in config line ignored: '%s'", p);
 	}
 
@@ -264,9 +264,9 @@ rsRetVal cflineParseTemplateName(uchar** pp, omodStringRequest_t *pOMSR, int iEn
 	cstr_t *pStrB = NULL;
 	DEFiRet;
 
-	ASSERT(pp != NULL);
-	ASSERT(*pp != NULL);
-	ASSERT(pOMSR != NULL);
+	assert(pp != NULL);
+	assert(*pp != NULL);
+	assert(pOMSR != NULL);
 
 	p =*pp;
 	/* a template must follow - search it and complain, if not found */
@@ -274,7 +274,7 @@ rsRetVal cflineParseTemplateName(uchar** pp, omodStringRequest_t *pOMSR, int iEn
 	if(*p == ';')
 		++p; /* eat it */
 	else if(*p != '\0' && *p != '#') {
-		errmsg.LogError(0, RS_RET_ERR, "invalid character in selector line - ';template' expected");
+		LogError(0, RS_RET_ERR, "invalid character in selector line - ';template' expected");
 		ABORT_FINALIZE(RS_RET_ERR);
 	}
 
@@ -329,7 +329,7 @@ cflineParseFileName(uchar* p, uchar *pFileName, omodStringRequest_t *pOMSR, int 
 	int i;
 	DEFiRet;
 
-	ASSERT(pOMSR != NULL);
+	assert(pOMSR != NULL);
 
 	pName = pFileName;
 	i = 1; /* we start at 1 so that we reseve space for the '\0'! */
@@ -360,7 +360,7 @@ rsRetVal DecodePRIFilter(uchar *pline, uchar pmask[])
 	uchar xbuf[200];
 	DEFiRet;
 
-	ASSERT(pline != NULL);
+	assert(pline != NULL);
 
 	dbgprintf("Decoding traditional PRI filter '%s'\n", pline);
 
@@ -405,7 +405,7 @@ rsRetVal DecodePRIFilter(uchar *pline, uchar pmask[])
 
 		if (pri < 0) {
 			snprintf((char*) xbuf, sizeof(xbuf), "unknown priority name \"%s\"", buf);
-			errmsg.LogError(0, RS_RET_ERR, "%s", xbuf);
+			LogError(0, RS_RET_ERR, "%s", xbuf);
 			return RS_RET_ERR;
 		}
 
@@ -448,7 +448,7 @@ rsRetVal DecodePRIFilter(uchar *pline, uchar pmask[])
 				if (i < 0) {
 
 					snprintf((char*) xbuf, sizeof(xbuf), "unknown facility name \"%s\"", buf);
-					errmsg.LogError(0, RS_RET_ERR, "%s", xbuf);
+					LogError(0, RS_RET_ERR, "%s", xbuf);
 					return RS_RET_ERR;
 				}
 
@@ -502,8 +502,8 @@ rsRetVal cflineDoAction(rsconf_t *conf, uchar **p, action_t **ppAction)
 	void *pModData;
 	DEFiRet;
 
-	ASSERT(p != NULL);
-	ASSERT(ppAction != NULL);
+	assert(p != NULL);
+	assert(ppAction != NULL);
 
 	/* loop through all modules and see if one picks up the line */
 	node = module.GetNxtCnfType(conf, NULL, eMOD_OUT);
@@ -611,7 +611,6 @@ CODESTARTObjClassExit(conf)
 
 	/* release objects we no longer need */
 	objRelease(module, CORE_COMPONENT);
-	objRelease(errmsg, CORE_COMPONENT);
 	objRelease(net, LM_NET_FILENAME);
 	objRelease(ruleset, CORE_COMPONENT);
 ENDObjClassExit(conf)
@@ -624,14 +623,14 @@ ENDObjClassExit(conf)
 BEGINAbstractObjClassInit(conf, 1, OBJ_IS_CORE_MODULE) /* class, version - CHANGE class also in END MACRO! */
 	/* request objects we use */
 	CHKiRet(objUse(module, CORE_COMPONENT));
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 	CHKiRet(objUse(net, LM_NET_FILENAME)); /* TODO: make this dependcy go away! */
 	CHKiRet(objUse(ruleset, CORE_COMPONENT));
 
- 	/* These commands will NOT be supported -- the new v6.3 config system provides
+	/* These commands will NOT be supported -- the new v6.3 config system provides
 	 * far better methods. We will remove the related code soon. -- rgerhards, 2012-01-09
 	 */
-	CHKiRet(regCfSysLineHdlr((uchar *)"resetconfigvariables", 1, eCmdHdlrCustomHandler, resetConfigVariables, NULL, NULL));
+	CHKiRet(regCfSysLineHdlr((uchar *)"resetconfigvariables", 1, eCmdHdlrCustomHandler, resetConfigVariables,
+NULL, NULL));
 ENDObjClassInit(conf)
 
 /* vi:set ai:

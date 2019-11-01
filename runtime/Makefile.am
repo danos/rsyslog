@@ -47,6 +47,8 @@ librsyslog_la_SOURCES = \
 	srUtils.h \
 	errmsg.c \
 	errmsg.h \
+	operatingstate.c \
+	operatingstate.h \
 	debug.c \
 	debug.h \
 	obj.c \
@@ -78,8 +80,6 @@ librsyslog_la_SOURCES = \
 	lookup.h \
 	cfsysline.c \
 	cfsysline.h \
-	sd-daemon.c \
-	sd-daemon.h \
 	\
 	../action.h \
 	../action.c \
@@ -102,6 +102,9 @@ librsyslog_la_SOURCES = \
 # the files with ../ we need to work on - so that they either become part of the
 # runtime or will no longer be needed. -- rgerhards, 2008-06-13
 #
+#if OS_LINUX
+#librsyslog_la_SOURCES += \
+#endif
 
 if WITH_MODDIRS
 librsyslog_la_CPPFLAGS = -DSD_EXPORT_SYMBOLS -D_PATH_MODDIR=\"$(pkglibdir)/:$(moddirs)\"
@@ -109,8 +112,15 @@ else
 librsyslog_la_CPPFLAGS = -DSD_EXPORT_SYMBOLS -D_PATH_MODDIR=\"$(pkglibdir)/\" -I\$(top_srcdir) -I\$(top_srcdir)/grammar
 endif
 #librsyslog_la_LDFLAGS = -module -avoid-version
-librsyslog_la_CPPFLAGS += $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBUUID_CFLAGS) $(JSON_C_CFLAGS) ${LIBESTR_CFLAGS} ${LIBLOGGING_STDLOG_CFLAGS} -I\$(top_srcdir)/tools
-librsyslog_la_LIBADD =  $(DL_LIBS) $(RT_LIBS) $(LIBUUID_LIBS) $(JSON_C_LIBS) ${LIBESTR_LIBS} ${LIBLOGGING_STDLOG_LIBS}
+librsyslog_la_CPPFLAGS += $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBUUID_CFLAGS) $(LIBFASTJSON_CFLAGS) ${LIBESTR_CFLAGS}
+librsyslog_la_LIBADD =  $(DL_LIBS) $(RT_LIBS) $(LIBUUID_LIBS) $(LIBFASTJSON_LIBS) ${LIBESTR_LIBS}
+
+if ENABLE_LIBLOGGING_STDLOG
+librsyslog_la_CPPFLAGS += ${LIBLOGGING_STDLOG_CFLAGS}
+librsyslog_la_LIBADD += $(LIBLOGGING_STDLOG_LIBS)
+endif
+
+librsyslog_la_CPPFLAGS += -I\$(top_srcdir)/tools
 
 #
 # regular expression support
@@ -118,9 +128,15 @@ librsyslog_la_LIBADD =  $(DL_LIBS) $(RT_LIBS) $(LIBUUID_LIBS) $(JSON_C_LIBS) ${L
 if ENABLE_REGEXP
 pkglib_LTLIBRARIES += lmregexp.la
 lmregexp_la_SOURCES = regexp.c regexp.h
-lmregexp_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_CFLAGS)
-lmregexp_la_LDFLAGS = -module -avoid-version $(LIBLOGGING_STDLOG_LIBS)
-lmregexp_la_LIBADD =
+lmregexp_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS)
+lmregexp_la_LDFLAGS = -module -avoid-version
+lmregexp_la_LIBADD = 
+
+if ENABLE_LIBLOGGING_STDLOG
+lmregexp_la_CPPFLAGS += $(LIBLOGGING_STDLOG_CFLAGS)
+lmregexp_la_LDFLAGS += $(LIBLOGGING_STDLOG_LIBS)
+endif
+
 endif
 
 #
@@ -128,9 +144,15 @@ endif
 # 
 pkglib_LTLIBRARIES += lmzlibw.la
 lmzlibw_la_SOURCES = zlibw.c zlibw.h
-lmzlibw_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_CFLAGS)
-lmzlibw_la_LDFLAGS = -module -avoid-version $(LIBLOGGING_STDLOG_LIBS)
-lmzlibw_la_LIBADD =
+lmzlibw_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS)
+lmzlibw_la_LDFLAGS = -module -avoid-version $(ZLIB_LIBS)
+lmzlibw_la_LIBADD = 
+
+if ENABLE_LIBLOGGING_STDLOG
+lmzlibw_la_CPPFLAGS += $(LIBLOGGING_STDLOG_CFLAGS)
+lmzlibw_la_LDFLAGS += $(LIBLOGGING_STDLOG_LIBS)
+endif
+
 
 if ENABLE_INET
 pkglib_LTLIBRARIES += lmnet.la lmnetstrms.la
@@ -138,25 +160,28 @@ pkglib_LTLIBRARIES += lmnet.la lmnetstrms.la
 # network support
 # 
 lmnet_la_SOURCES = net.c net.h
-lmnet_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_CFLAGS)
-lmnet_la_LDFLAGS = -module -avoid-version ../compat/compat_la-getifaddrs.lo $(LIBLOGGING_STDLOG_LIBS)
-lmnet_la_LIBADD =
+lmnet_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS)
+lmnet_la_LDFLAGS = -module -avoid-version ../compat/compat_la-getifaddrs.lo
+lmnet_la_LIBADD = 
+
+if ENABLE_LIBLOGGING_STDLOG
+lmnet_la_CPPFLAGS += $(LIBLOGGING_STDLOG_CFLAGS)
+lmnet_la_LDFLAGS += $(LIBLOGGING_STDLOG_LIBS)
+endif
 
 # network stream master class and stream factory
 lmnetstrms_la_SOURCES = netstrms.c netstrms.h \
 			netstrm.c netstrm.h \
 			nssel.c nssel.h \
 			nspoll.c nspoll.h
-lmnetstrms_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_CFLAGS)
-lmnetstrms_la_LDFLAGS = -module -avoid-version $(LIBLOGGING_STDLOG_LIBS)
-lmnetstrms_la_LIBADD =
+lmnetstrms_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS)
+lmnetstrms_la_LDFLAGS = -module -avoid-version
+lmnetstrms_la_LIBADD = 
 
-# generic stream server framework
-pkglib_LTLIBRARIES += lmstrmsrv.la
-lmstrmsrv_la_SOURCES = strmsrv.c strmsrv.h strms_sess.c strms_sess.h
-lmstrmsrv_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_CFLAGS)
-lmstrmsrv_la_LDFLAGS = -module -avoid-version $(LIBLOGGING_STDLOG_LIBS)
-lmstrmsrv_la_LIBADD =
+if ENABLE_LIBLOGGING_STDLOG
+lmnetstrms_la_CPPFLAGS += $(LIBLOGGING_STDLOG_CFLAGS)
+lmnetstrms_la_LDFLAGS += $(LIBLOGGING_STDLOG_LIBS)
+endif
 
 # netstream drivers
 
@@ -165,10 +190,27 @@ pkglib_LTLIBRARIES += lmnsd_ptcp.la
 lmnsd_ptcp_la_SOURCES = nsd_ptcp.c nsd_ptcp.h \
 		  	nsdsel_ptcp.c nsdsel_ptcp.h \
 			nsdpoll_ptcp.c nsdpoll_ptcp.h
-lmnsd_ptcp_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_CFLAGS)
-lmnsd_ptcp_la_LDFLAGS = -module -avoid-version $(LIBLOGGING_STDLOG_LIBS)
-lmnsd_ptcp_la_LIBADD =
+lmnsd_ptcp_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS)
+lmnsd_ptcp_la_LDFLAGS = -module -avoid-version
+lmnsd_ptcp_la_LIBADD = 
+
+if ENABLE_LIBLOGGING_STDLOG
+lmnsd_ptcp_la_CPPFLAGS += $(LIBLOGGING_STDLOG_CFLAGS)
+lmnsd_ptcp_la_LDFLAGS += $(LIBLOGGING_STDLOG_LIBS)
+endif
+
 endif # if ENABLE_INET
+
+#
+# openssl netstream driver
+# 
+if ENABLE_OPENSSL
+pkglib_LTLIBRARIES += lmnsd_ossl.la
+lmnsd_ossl_la_SOURCES = nsd_ossl.c nsd_ossl.h nsdsel_ossl.c  nsdsel_ossl.h
+lmnsd_ossl_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(OPENSSL_CFLAGS)
+lmnsd_ossl_la_LDFLAGS = -module -avoid-version
+lmnsd_ossl_la_LIBADD = $(OPENSSL_LIBS)
+endif
 
 #
 # GnuTLS netstream driver
@@ -187,29 +229,15 @@ endif
 if ENABLE_LIBGCRYPT
    noinst_LTLIBRARIES += libgcry.la
    libgcry_la_SOURCES = libgcry.c libgcry_common.c libgcry.h
-   libgcry_la_CPPFLAGS = $(RSRT_CFLAGS) $(LIBGCRYPT_CFLAGS)
+   libgcry_la_CPPFLAGS =  $(RSRT_CFLAGS) $(LIBGCRYPT_CFLAGS)
    pkglib_LTLIBRARIES += lmcry_gcry.la
-   lmcry_gcry_la_DEPENDENCIES = librsyslog.la
+   lmcry_gcry_la_DEPENDENCIES = libgcry.la
    lmcry_gcry_la_SOURCES = lmcry_gcry.c lmcry_gcry.h
    lmcry_gcry_la_CPPFLAGS = $(RSRT_CFLAGS) $(LIBGCRYPT_CFLAGS)
-   lmcry_gcry_la_LDFLAGS = -module -avoid-version \
-	-Wl,--whole-archive,$(top_builddir)/runtime/.libs/librsyslog.a,--no-whole-archive
+   lmcry_gcry_la_LDFLAGS = -module -avoid-version
    lmcry_gcry_la_LIBADD = libgcry.la $(LIBGCRYPT_LIBS)
 endif
 
-
-#
-# support library for guardtime
-#
-if ENABLE_GUARDTIME
-   noinst_LTLIBRARIES +=  librsgt.la
-   librsgt_la_SOURCES = librsgt.c librsgt_read.c librsgt.h librsgt_common.h
-   pkglib_LTLIBRARIES += lmsig_gt.la
-   lmsig_gt_la_SOURCES = lmsig_gt.c lmsig_gt.h
-   lmsig_gt_la_CPPFLAGS = $(RSRT_CFLAGS) $(GUARDTIME_CFLAGS)
-   lmsig_gt_la_LDFLAGS = -module -avoid-version
-   lmsig_gt_la_LIBADD = librsgt.la $(GUARDTIME_LIBS)
-endif
 
 #
 # gssapi support
@@ -232,9 +260,14 @@ lmtcpsrv_la_SOURCES = \
 	tcps_sess.h \
 	tcpsrv.c \
 	tcpsrv.h
-lmtcpsrv_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_CFLAGS)
-lmtcpsrv_la_LDFLAGS = -module -avoid-version $(LIBLOGGING_STDLOG_LIBS)
+lmtcpsrv_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS)
+lmtcpsrv_la_LDFLAGS = -module -avoid-version
 lmtcpsrv_la_LIBADD = 
+
+if ENABLE_LIBLOGGING_STDLOG
+lmtcpsrv_la_CPPFLAGS += $(LIBLOGGING_STDLOG_CFLAGS)
+lmtcpsrv_la_LDFLAGS += $(LIBLOGGING_STDLOG_LIBS)
+endif
 
 #
 # TCP (stream) client support
@@ -242,26 +275,26 @@ lmtcpsrv_la_LIBADD =
 lmtcpclt_la_SOURCES = \
 	tcpclt.c \
 	tcpclt.h
-lmtcpclt_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_CFLAGS)
-lmtcpclt_la_LDFLAGS = -module -avoid-version $(LIBLOGGING_STDLOG_LIBS)
+lmtcpclt_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS)
+lmtcpclt_la_LDFLAGS = -module -avoid-version
 lmtcpclt_la_LIBADD = 
 
-
-
-#
-# support library for guardtime KSI
-#
-if ENABLE_GT_KSI
-   noinst_LTLIBRARIES +=  librsksi.la
-   librsksi_la_SOURCES = librsksi.c librsksi_read.c librsksi.h librsgt_common.h
-   librsksi_la_CPPFLAGS =  $(RSRT_CFLAGS) $(GT_KSI_CFLAGS)
-   pkglib_LTLIBRARIES += lmsig_ksi.la
-   lmsig_ksi_la_SOURCES = lmsig_ksi.c lmsig_ksi.h
-   lmsig_ksi_la_CPPFLAGS = $(RSRT_CFLAGS) $(GT_KSI_CFLAGS)
-   lmsig_ksi_la_LDFLAGS = -module -avoid-version
-   lmsig_ksi_la_LIBADD = librsksi.la $(GT_KSI_LIBS)
+if ENABLE_LIBLOGGING_STDLOG
+lmtcpclt_la_CPPFLAGS += $(LIBLOGGING_STDLOG_CFLAGS)
+lmtcpclt_la_LDFLAGS += $(LIBLOGGING_STDLOG_LIBS)
 endif
 
+
+#
+# support library for Guardtime KSI-LS12
+#
+if ENABLE_KSI_LS12
+   pkglib_LTLIBRARIES += lmsig_ksi_ls12.la
+   lmsig_ksi_ls12_la_SOURCES = lmsig_ksi-ls12.c lmsig_ksi-ls12.h lib_ksils12.c \
+			lib_ksils12.h lib_ksi_queue.c lib_ksi_queue.h
+   lmsig_ksi_ls12_la_CPPFLAGS = $(RSRT_CFLAGS) $(GT_KSI_LS12_CFLAGS)
+   lmsig_ksi_ls12_la_LDFLAGS = -module -avoid-version $(GT_KSI_LS12_LIBS)
+endif
 
 update-systemd:
 	curl http://cgit.freedesktop.org/systemd/systemd/plain/src/libsystemd-daemon/sd-daemon.c > sd-daemon.c

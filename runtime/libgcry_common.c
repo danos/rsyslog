@@ -10,11 +10,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -42,38 +42,32 @@
  * @param[out] keylen - length of buffer
  * @returns 0 if OK, something else otherwise (we do not use
  *            iRet as this is also called from non-rsyslog w/o runtime)
+ *	      on error, errno is set and can be queried
  * The key length is limited to 64KiB to prevent DoS.
  * Note well: key is a blob, not a C string (NUL may be present!)
  */
 int
-gcryGetKeyFromFile(char *fn, char **key, unsigned *keylen)
+gcryGetKeyFromFile(const char *const fn, char **const key, unsigned *const keylen)
 {
 	struct stat sb;
-	int fd;
-	int r;
+	int r = -1;
 
-	if(stat(fn, &sb) == -1) {
-		r = 1; goto done;
-	}
-	if((sb.st_mode & S_IFMT) != S_IFREG) {
-		r = 2; goto done;
-	}
+	const int fd = open(fn, O_RDONLY);
+	if(fd < 0) goto done;
+	if(fstat(fd, &sb) == -1) goto done;
 	if(sb.st_size > 64*1024) {
-		r = 3; goto done;
+		errno = EMSGSIZE;
+		goto done;
 	}
-	if((*key = malloc(sb.st_size)) == NULL) {
-		r = -1; goto done;
-	}
-	if((fd = open(fn, O_RDONLY)) < 0) {
-		r = 4; goto done;
-	}
-	if(read(fd, *key, sb.st_size) != sb.st_size) {
-		r = 5; goto done;
-	}
+	if((*key = malloc(sb.st_size)) == NULL) goto done;
+	if(read(fd, *key, sb.st_size) != sb.st_size) goto done;
 	*keylen = sb.st_size;
-	close(fd);
 	r = 0;
-done:	return r;
+done:
+	if(fd >= 0) {
+		close(fd);
+	}
+	return r;
 }
 
 
@@ -118,7 +112,7 @@ openPipe(char *cmd, int *fd)
 		r = 1; goto done;
 	}
 
-	if(cpid == 0) {    
+	if(cpid == 0) {
 		/* we are the child */
 		execKeyScript(cmd, pipefd);
 		exit(1);
@@ -184,7 +178,7 @@ readProgKey(int fd, char *buf, unsigned keylen)
 done:	return r;
 }
 
-int 
+int
 gcryGetKeyFromProg(char *cmd, char **key, unsigned *keylen)
 {
 	int r;

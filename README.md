@@ -1,5 +1,10 @@
 Rsyslog - what is it?
 =====================
+
+[![Help Contribute to Open Source](https://www.codetriage.com/rsyslog/rsyslog/badges/users.svg)](https://www.codetriage.com/rsyslog/rsyslog)
+[![Language Grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/rsyslog/rsyslog.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/rsyslog/rsyslog/context:cpp)
+[![Total Alerts](https://img.shields.io/lgtm/alerts/g/rsyslog/rsyslog.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/rsyslog/rsyslog/alerts/)
+
 Rsyslog is a **r**ocket-fast **sys**tem for **log** processing.
 
 It offers high-performance, great security features and a modular design.
@@ -29,20 +34,21 @@ development and as such only offer old versions. To solve that problem, we have
 created packages for current versions ourselves.
 
 They are available for:
- * RPM-based systems: http://www.rsyslog.com/rhelcentos-rpms/
- * Ubuntu: http://www.rsyslog.com/ubuntu-repository/
- * Debian: http://www.rsyslog.com/debian-repository/
+ * RPM-based systems: https://www.rsyslog.com/rhelcentos-rpms/
+ * Ubuntu: https://www.rsyslog.com/ubuntu-repository/
+ * Debian: https://www.rsyslog.com/debian-repository/
 
 Building from Source
 --------------------
-Follow the instructions at: http://www.rsyslog.com/doc/build_from_repo.html
+Follow the instructions at: https://www.rsyslog.com/doc/v8-stable/installation/build_from_repo.html
 
 ### Build Environment
 
 In general, you need
 
+* pkg-config
 * libestr
-* liblogging (stdlog component)
+* liblogging (stdlog component, for testbench)
 
 It is best to build these from source.
 
@@ -74,18 +80,36 @@ Libraries in question are at least: libestr, liblognorm, libfastjson.
 
 Needed packages to build with omhiredis support:
 ```
-apt-get update && apt-get install -y build-essential pkg-config libestr-dev libfastjson-dev zlib1g-dev uuid-dev libgcrypt20-dev liblogging-stdlog-dev libhiredis-dev
+apt-get update && apt-get install -y build-essential pkg-config libestr-dev libfastjson-dev zlib1g-dev uuid-dev libgcrypt20-dev liblogging-stdlog-dev libhiredis-dev uuid-dev libgcrypt11-dev liblogging-stdlog-dev flex bison
 ```
 
 Aditional packages for other modules:
 ```
-libdbi-dev libmysqlclient-dev postgresql-client libpq-dev libnet-dev librdkafka-dev libgrok-dev libgrok1 libgrok-dev libpcre3-dev libtokyocabinet-dev libglib2.0-dev libmongo-client-dev  
+libdbi-dev libmysqlclient-dev postgresql-client libpq-dev libnet-dev librdkafka-dev libgrok-dev libgrok1 libgrok-dev libpcre3-dev libtokyocabinet-dev libglib2.0-dev libmongo-client-dev
 ```
 
 For KSI, from the Adiscon PPA:
 ```
 sudo apt-get install libksi0 libksi-devel
 ```
+
+#### Debian
+
+```
+sudo apt install build-essential pkg-config libestr-dev libfastjson-dev zlib1g-dev uuid-dev libgcrypt20-dev libcurl4-gnutls-dev zlib1g-dev liblogging-stdlog-dev liblogging-stdlog-dev flex bison
+```
+
+*Note:* For certain libraries version requirements might be higher,
+in that case adding debian backports repositories might help.
+For example installing with apt libfastjson-dev -t stretch-backports.
+
+
+Aditional packages for other modules:
+```
+libdbi-dev libmysqlclient-dev postgresql-client libpq-dev libnet-dev librdkafka-dev libgrok-dev libgrok1 libgrok-dev libpcre3-dev libtokyocabinet-dev libglib2.0-dev libmongo-client-dev
+```
+
+
 
 #### openSUSE 13
 
@@ -135,14 +159,14 @@ Documentation
 The main rsyslog documentation is available in HTML format. To read
 it, point your web browser to ./doc/manual.html. Alternatively,
 you can view the documentation for *the most recent rsyslog version*
-online at: http://www.rsyslog.com/doc
+online at: https://www.rsyslog.com/doc/
 
 Project Philosophy
 ==================
 We are an open source project in all aspects and very open to outside feedback
 and contribution. We base our work on standards and try to solve all real-world
 needs (of course, we occasionally fail tackling actually all needs ;)). While
-the project is primarily sponsored by Adiscon, technical development is 
+the project is primarily sponsored by Adiscon, technical development is
 independent from company goals and most decisions are solely based on mailing
 list discussion results. There is an active community around rsyslog.
 

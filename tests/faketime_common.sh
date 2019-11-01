@@ -10,20 +10,20 @@ rsyslog_testbench_preload_libfaketime() {
         missing_requirements="'find' is missing in PATH; Make sure you have findutils/coreutils installed! Skipping test ..."
     fi
 
-    if ! hash sort 2>/dev/null ; then
+    if ! hash $RS_SORTCMD 2>/dev/null ; then
         missing_requirements="'sort' is missing in PATH; Make sure you have coreutils installed! Skipping test ..."
     fi
 
-    if ! hash head 2>/dev/null ; then
+    if ! hash $RS_HEADCMD 2>/dev/null ; then
         missing_requirements="'head' is missing in PATH; Make sure you have coreutils installed! Skipping test ..."
     fi
 
     if [ -n "${missing_requirements}" ]; then
-        echo ${missing_requirements}
+        printf '%s\n' "${missing_requirements}"
         exit 77
     fi
 
-    RSYSLOG_LIBFAKETIME=$(find /usr -name 'libfaketime.so*' -type f | sort --reverse | head --lines 1)
+    RSYSLOG_LIBFAKETIME=$(find /usr -name 'libfaketime.so*' -type f | $RS_SORTCMD --reverse | $RS_HEADCMD --lines 1)
     if [ -z "${RSYSLOG_LIBFAKETIME}" ]; then
         echo "Could not determine libfaketime library, skipping test!"
         exit 77
@@ -52,7 +52,7 @@ rsyslog_testbench_preload_libfaketime() {
 rsyslog_testbench_require_y2k38_support() {
     if [ -n "${RSYSLOG_TESTBENCH_Y2K38_INCOMPATIBLE}" ]; then
         echo "Skipping further tests because system doesn't support year 2038 ..."
-        . $srcdir/diag.sh exit
+        exit_test
         exit 0
     fi
 }

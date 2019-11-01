@@ -42,7 +42,6 @@ MODULE_TYPE_NOKEEP
 MODULE_CNFNAME("omczmq")
 
 DEF_OMOD_STATIC_DATA
-DEFobjCurrIf(errmsg)
 
 static pthread_mutex_t mutDoAct = PTHREAD_MUTEX_INITIALIZER;
 
@@ -120,10 +119,11 @@ static struct cnfparamblk actpblk = {
 
 static rsRetVal initCZMQ(instanceData* pData) {
 	DEFiRet;
-    putenv("ZSYS_SIGHANDLER=false");
+	int rc;
+	putenv((char*)"ZSYS_SIGHANDLER=false");
 	pData->sock = zsock_new(pData->sockType);
 	if(!pData->sock) {
-		errmsg.LogError(0, RS_RET_NO_ERRCODE,
+		LogError(0, RS_RET_NO_ERRCODE,
 				"omczmq: new socket failed for endpoints: %s",
 				pData->sockEndpoints);
 		ABORT_FINALIZE(RS_RET_SUSPENDED);
@@ -139,11 +139,11 @@ static rsRetVal initCZMQ(instanceData* pData) {
 	}
 #endif
 
-	if(runModConf->authType) {	
+	if(runModConf->authType) {
 		if (!strcmp(runModConf->authType, "CURVESERVER")) {
 			zcert_t *serverCert = zcert_load(runModConf->serverCertPath);
 			if(!serverCert) {
-				errmsg.LogError(0, NO_ERRCODE, "could not load cert %s",
+				LogError(0, NO_ERRCODE, "could not load cert %s",
 					runModConf->serverCertPath);
 				ABORT_FINALIZE(RS_RET_ERR);
 			}
@@ -151,25 +151,25 @@ static rsRetVal initCZMQ(instanceData* pData) {
 			zsock_set_curve_server(pData->sock, 1);
 			zcert_apply(serverCert, pData->sock);
 			zcert_destroy(&serverCert);
-		} 
+		}
 		else if(!strcmp(runModConf->authType, "CURVECLIENT")) {
 			zcert_t *serverCert = zcert_load(runModConf->serverCertPath);
 			if(!serverCert) {
-				errmsg.LogError(0, NO_ERRCODE, "could not load cert %s",
+				LogError(0, NO_ERRCODE, "could not load cert %s",
 					runModConf->serverCertPath);
 				ABORT_FINALIZE(RS_RET_ERR);
 			}
 			const char *server_key = zcert_public_txt(serverCert);
 			zcert_destroy(&serverCert);
 			zsock_set_curve_serverkey(pData->sock, server_key);
-			
+
 			zcert_t *clientCert = zcert_load(runModConf->clientCertPath);
 			if(!clientCert) {
-				errmsg.LogError(0, NO_ERRCODE, "could not load cert %s",
+				LogError(0, NO_ERRCODE, "could not load cert %s",
 					runModConf->clientCertPath);
 				ABORT_FINALIZE(RS_RET_ERR);
 			}
-			
+
 			zcert_apply(clientCert, pData->sock);
 			zcert_destroy(&clientCert);
 		}
@@ -194,9 +194,9 @@ static rsRetVal initCZMQ(instanceData* pData) {
 			break;
 	}
 
-	int rc = zsock_attach(pData->sock, pData->sockEndpoints, pData->serverish);
+	rc = zsock_attach(pData->sock, pData->sockEndpoints, pData->serverish);
 	if(rc == -1) {
-		errmsg.LogError(0, NO_ERRCODE, "zsock_attach to %s failed",
+		LogError(0, NO_ERRCODE, "zsock_attach to %s failed",
 				pData->sockEndpoints);
 		ABORT_FINALIZE(RS_RET_SUSPENDED);
 	}
@@ -205,14 +205,14 @@ finalize_it:
 	RETiRet;
 }
 
-rsRetVal outputCZMQ(uchar** ppString, instanceData* pData) {
+static rsRetVal outputCZMQ(uchar** ppString, instanceData* pData) {
 	DEFiRet;
 
 	if(NULL == pData->sock) {
 		CHKiRet(initCZMQ(pData));
 	}
 
-	/* if we are using a PUB (or RADIO) socket and we have a topic list then we 
+	/* if we are using a PUB (or RADIO) socket and we have a topic list then we
 	 * need some special care and attention */
 #if defined(ZMQ_RADIO)
 	DBGPRINTF("omczmq: ZMQ_RADIO is defined...\n");
@@ -229,14 +229,14 @@ rsRetVal outputCZMQ(uchar** ppString, instanceData* pData) {
 			 * by applying the supplied template to the message properties */
 			if(pData->dynaTopic)
 				topic = (const char*)ppString[templateIndex];
-		
-			if (pData->sockType == ZMQ_PUB) {	
+
+			if (pData->sockType == ZMQ_PUB) {
 				/* if topicFrame is true, send the topic as a separate zmq frame */
 				if(pData->topicFrame) {
 					rc = zstr_sendx(pData->sock, topic, (char*)ppString[0], NULL);
 				}
 
-				/* if topicFrame is false, concatenate the topic with the 
+				/* if topicFrame is false, concatenate the topic with the
 				 * message in the same frame */
 				else {
 					rc = zstr_sendf(pData->sock, "%s%s", topic, (char*)ppString[0]);
@@ -271,7 +271,7 @@ rsRetVal outputCZMQ(uchar** ppString, instanceData* pData) {
 				}
 			}
 #endif
-			
+
 			/* get the next topic from the list, and increment
 			 * our topic index */
 			topic = zlist_next(pData->topics);
@@ -402,7 +402,7 @@ BEGINsetModCnf
 CODESTARTsetModCnf
 	pvals = nvlstGetParams(lst, &modpblk, NULL);
 	if (pvals == NULL) {
-		errmsg.LogError(0, RS_RET_MISSING_CNFPARAMS, "error processing module");
+		LogError(0, RS_RET_MISSING_CNFPARAMS, "error processing module");
 		ABORT_FINALIZE(RS_RET_MISSING_CNFPARAMS);
 	}
 
@@ -427,12 +427,12 @@ CODESTARTsetModCnf
 			DBGPRINTF("omczmq: clientCertPath set to %s\n", runModConf->clientCertPath);
 		}
 		else {
-			errmsg.LogError(0, RS_RET_INVALID_PARAMS, 
+			LogError(0, RS_RET_INVALID_PARAMS,
 						"omczmq: config error, unknown "
-						"param %s in setModCnf\n", 
+						"param %s in setModCnf\n",
 						modpblk.descr[i].name);
-		} 
-	}	
+		}
+	}
 
 	DBGPRINTF("omczmq: authenticator set to %d\n", runModConf->authenticator);
 	DBGPRINTF("omczmq: authType set to %s\n", runModConf->authType);
@@ -480,7 +480,7 @@ CODESTARTnewActInst
 		if(!strcmp(actpblk.descr[i].name, "endpoints")) {
 			pData->sockEndpoints = es_str2cstr(pvals[i].val.d.estr, NULL);
 			DBGPRINTF("omczmq: sockEndPoints set to '%s'\n", pData->sockEndpoints);
-		} 
+		}
 		else if(!strcmp(actpblk.descr[i].name, "template")) {
 			pData->tplName = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
 			DBGPRINTF("omczmq: template set to '%s'\n", pData->tplName);
@@ -547,11 +547,11 @@ CODESTARTnewActInst
 				free(stringType);
 			}
 			else{
-				errmsg.LogError(0, RS_RET_OUT_OF_MEMORY,
+				LogError(0, RS_RET_OUT_OF_MEMORY,
 						"omczmq: out of memory");
 				ABORT_FINALIZE(RS_RET_OUT_OF_MEMORY);
 			}
-		} 
+		}
 		else if(!strcmp(actpblk.descr[i].name, "topicframe")) {
 			pData->topicFrame = pvals[i].val.d.n;
 			DBGPRINTF("omczmq: topicFrame set to %s\n", pData->topicFrame ? "true" : "false");
@@ -563,11 +563,11 @@ CODESTARTnewActInst
 			char *topics_org = topics;
 			char topic[256];
 			if(topics == NULL){
-				errmsg.LogError(0, RS_RET_OUT_OF_MEMORY,
+				LogError(0, RS_RET_OUT_OF_MEMORY,
 					"out of memory");
 				ABORT_FINALIZE(RS_RET_OUT_OF_MEMORY);
 			}
-			
+
 			while(*topics) {
 				char *delimiter = strchr(topics, ',');
 				if (!delimiter) {
@@ -586,7 +586,7 @@ CODESTARTnewActInst
 
 		}
 		else {
-			errmsg.LogError(0, NO_ERRCODE,
+			LogError(0, NO_ERRCODE,
 					"omczmq: config error - '%s' is not a valid option",
 					actpblk.descr[i].name);
 			ABORT_FINALIZE(RS_RET_CONFIG_ERROR);
@@ -602,7 +602,7 @@ CODESTARTnewActInst
 	if (pData->tplName == NULL) {
 		CHKiRet(OMSRsetEntry(*ppOMSR, 0, (uchar*)strdup("RSYSLOG_ForwardFormat"),
 					OMSR_NO_RQD_TPL_OPTS));
-	} 
+	}
 	else {
 		CHKiRet(OMSRsetEntry(*ppOMSR, 0, (uchar*)pData->tplName, OMSR_NO_RQD_TPL_OPTS));
 	}
@@ -621,24 +621,11 @@ CODESTARTnewActInst
 	cnfparamvalsDestruct(pvals, &actpblk);
 ENDnewActInst
 
-BEGINparseSelectorAct
-CODESTARTparseSelectorAct
-	CODE_STD_STRING_REQUESTparseSelectorAct(1)
-
-	if(!strncmp((char*) p, ":omczmq:", sizeof(":omczmq:") - 1)) { 
-		errmsg.LogError(0, RS_RET_LEGA_ACT_NOT_SUPPORTED,
-			"omczmq supports only v6 config format, use: "
-			"action(type=\"omczmq\" serverport=...)");
-	}
-
-	ABORT_FINALIZE(RS_RET_CONFLINE_UNPROCESSED);
-	CODE_STD_FINALIZERparseSelectorAct
-ENDparseSelectorAct
-
 BEGINinitConfVars
 CODESTARTinitConfVars
 ENDinitConfVars
 
+NO_LEGACY_CONF_parseSelectorAct
 
 BEGINmodExit
 CODESTARTmodExit
@@ -648,7 +635,7 @@ BEGINqueryEtryPt
 CODESTARTqueryEtryPt
 	CODEqueryEtryPt_STD_OMOD_QUERIES
 	CODEqueryEtryPt_STD_CONF2_OMOD_QUERIES
-    CODEqueryEtryPt_STD_CONF2_QUERIES
+	CODEqueryEtryPt_STD_CONF2_QUERIES
 	CODEqueryEtryPt_STD_CONF2_setModCnf_QUERIES
 	CODEqueryEtryPt_STD_OMOD8_QUERIES
 ENDqueryEtryPt
@@ -658,7 +645,6 @@ BEGINmodInit()
 CODESTARTmodInit
 	*ipIFVersProvided = CURR_MOD_IF_VERSION;
 CODEmodInit_QueryRegCFSLineHdlr
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 	INITChkCoreFeature(bCoreSupportsBatching, CORE_FEATURE_BATCHING);
 	DBGPRINTF("omczmq: module compiled with rsyslog version %s.\n", VERSION);
 

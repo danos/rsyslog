@@ -9,11 +9,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -37,7 +37,6 @@
 
 /* definitions for objects we access */
 DEFobjStaticHelpers
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(glbl)
 DEFobjCurrIf(datetime)
 DEFobjCurrIf(parser)
@@ -126,16 +125,22 @@ tellLostCnt(ratelimit_t *ratelimit)
 }
 
 /* Linux-like ratelimiting, modelled after the linux kernel
- * returns 1 if message is within rate limit and shall be 
+ * returns 1 if message is within rate limit and shall be
  * processed, 0 otherwise.
- * This implementation is NOT THREAD-SAFE and must not 
+ * This implementation is NOT THREAD-SAFE and must not
  * be called concurrently.
  */
-static int
-withinRatelimit(ratelimit_t *ratelimit, time_t tt)
+static int ATTR_NONNULL()
+withinRatelimit(ratelimit_t *__restrict__ const ratelimit,
+	time_t tt,
+	const char*const appname)
 {
 	int ret;
 	uchar msgbuf[1024];
+
+	if(ratelimit->bThreadSafe) {
+		pthread_mutex_lock(&ratelimit->mut);
+	}
 
 	if(ratelimit->interval == 0) {
 		ret = 1;
@@ -156,8 +161,8 @@ withinRatelimit(ratelimit_t *ratelimit, time_t tt)
 	if(ratelimit->begin == 0)
 		ratelimit->begin = tt;
 
-	/* resume if we go out of time window */
-	if(tt > ratelimit->begin + ratelimit->interval) {
+	/* resume if we go out of time window or if time has gone backwards */
+	if((tt > ratelimit->begin + ratelimit->interval) || (tt < ratelimit->begin) ) {
 		ratelimit->begin = 0;
 		ratelimit->done = 0;
 		tellLostCnt(ratelimit);
@@ -171,14 +176,17 @@ withinRatelimit(ratelimit_t *ratelimit, time_t tt)
 		ratelimit->missed++;
 		if(ratelimit->missed == 1) {
 			snprintf((char*)msgbuf, sizeof(msgbuf),
-			         "%s: begin to drop messages due to rate-limiting",
-				 ratelimit->name);
+				"%s from <%s>: begin to drop messages due to rate-limiting",
+				ratelimit->name, appname);
 			logmsgInternal(RS_RET_RATE_LIMITED, LOG_SYSLOG|LOG_INFO, msgbuf, 0);
 		}
 		ret = 0;
 	}
 
 finalize_it:
+	if(ratelimit->bThreadSafe) {
+		pthread_mutex_unlock(&ratelimit->mut);
+	}
 	return ret;
 }
 
@@ -198,7 +206,7 @@ finalize_it:
  * message before the original message.
  */
 rsRetVal
-ratelimitMsg(ratelimit_t *ratelimit, smsg_t *pMsg, smsg_t **ppRepMsg)
+ratelimitMsg(ratelimit_t *__restrict__ const ratelimit, smsg_t *pMsg, smsg_t **ppRepMsg)
 {
 	DEFiRet;
 	rsRetVal localRet;
@@ -215,7 +223,10 @@ ratelimitMsg(ratelimit_t *ratelimit, smsg_t *pMsg, smsg_t **ppRepMsg)
 	/* Only the messages having severity level at or below the
 	 * treshold (the value is >=) are subject to ratelimiting. */
 	if(ratelimit->interval && (pMsg->iSeverity >= ratelimit->severity)) {
-		if(withinRatelimit(ratelimit, pMsg->ttGenTime) == 0) {
+		char namebuf[512]; /* 256 for FGDN adn 256 for APPNAME should be enough */
+		snprintf(namebuf, sizeof namebuf, "%s:%s", getHOSTNAME(pMsg),
+			getAPPNAME(pMsg, 0));
+		if(withinRatelimit(ratelimit, pMsg->ttGenTime, namebuf) == 0) {
 			msgDestruct(&pMsg);
 			ABORT_FINALIZE(RS_RET_DISCARDMSG);
 		}
@@ -226,7 +237,7 @@ ratelimitMsg(ratelimit_t *ratelimit, smsg_t *pMsg, smsg_t **ppRepMsg)
 finalize_it:
 	if(Debug) {
 		if(iRet == RS_RET_DISCARDMSG)
-			dbgprintf("message discarded by ratelimiting\n");
+			DBGPRINTF("message discarded by ratelimiting\n");
 	}
 	RETiRet;
 }
@@ -251,24 +262,32 @@ ratelimitAddMsg(ratelimit_t *ratelimit, multi_submit_t *pMultiSub, smsg_t *pMsg)
 	smsg_t *repMsg;
 	DEFiRet;
 
+	localRet = ratelimitMsg(ratelimit, pMsg, &repMsg);
 	if(pMultiSub == NULL) {
-		localRet = ratelimitMsg(ratelimit, pMsg, &repMsg);
 		if(repMsg != NULL)
 			CHKiRet(submitMsg2(repMsg));
-		if(localRet == RS_RET_OK)
-			CHKiRet(submitMsg2(pMsg));
+		CHKiRet(localRet);
+		CHKiRet(submitMsg2(pMsg));
 	} else {
-		localRet = ratelimitMsg(ratelimit, pMsg, &repMsg);
 		if(repMsg != NULL) {
 			pMultiSub->ppMsgs[pMultiSub->nElem++] = repMsg;
 			if(pMultiSub->nElem == pMultiSub->maxElem)
 				CHKiRet(multiSubmitMsg2(pMultiSub));
 		}
-		if(localRet == RS_RET_OK) {
-			pMultiSub->ppMsgs[pMultiSub->nElem++] = pMsg;
-			if(pMultiSub->nElem == pMultiSub->maxElem)
+		CHKiRet(localRet);
+		if(pMsg->iLenRawMsg > glblGetMaxLine()) {
+			/* oversize message needs special processing. We keep
+			 * at least the previous batch as batch...
+			 */
+			if(pMultiSub->nElem > 0) {
 				CHKiRet(multiSubmitMsg2(pMultiSub));
+			}
+			CHKiRet(submitMsg2(pMsg));
+			FINALIZE;
 		}
+		pMultiSub->ppMsgs[pMultiSub->nElem++] = pMsg;
+		if(pMultiSub->nElem == pMultiSub->maxElem)
+			CHKiRet(multiSubmitMsg2(pMultiSub));
 	}
 
 finalize_it:
@@ -312,7 +331,7 @@ finalize_it:
 
 /* enable linux-like ratelimiting */
 void
-ratelimitSetLinuxLike(ratelimit_t *ratelimit, unsigned short interval, unsigned short burst)
+ratelimitSetLinuxLike(ratelimit_t *ratelimit, unsigned short interval, unsigned burst)
 {
 	ratelimit->interval = interval;
 	ratelimit->burst = burst;
@@ -374,7 +393,6 @@ ratelimitModExit(void)
 {
 	objRelease(datetime, CORE_COMPONENT);
 	objRelease(glbl, CORE_COMPONENT);
-	objRelease(errmsg, CORE_COMPONENT);
 	objRelease(parser, CORE_COMPONENT);
 }
 
@@ -385,7 +403,6 @@ ratelimitModInit(void)
 	CHKiRet(objGetObjInterface(&obj));
 	CHKiRet(objUse(glbl, CORE_COMPONENT));
 	CHKiRet(objUse(datetime, CORE_COMPONENT));
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 	CHKiRet(objUse(parser, CORE_COMPONENT));
 finalize_it:
 	RETiRet;

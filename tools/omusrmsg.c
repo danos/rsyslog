@@ -8,18 +8,18 @@
  * File begun on 2007-07-20 by RGerhards (extracted from syslogd.c, which at the
  * time of the fork from sysklogd was under BSD license)
  *
- * Copyright 2007-2016 Adiscon GmbH.
+ * Copyright 2007-2018 Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,7 +27,6 @@
  * limitations under the License.
  */
 #include "config.h"
-#include "rsyslog.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -57,6 +56,7 @@
 #if HAVE_PATHS_H
 #include <paths.h>
 #endif
+#include "rsyslog.h"
 #include "srUtils.h"
 #include "stringbuf.h"
 #include "syslogd-types.h"
@@ -71,6 +71,16 @@
 #	define _PATH_DEV	"/dev/"
 #endif
 
+#ifdef UT_NAMESIZE
+# define UNAMESZ	UT_NAMESIZE	/* length of a login name */
+#else
+# define UNAMESZ	32	/* length of a login name, 32 seems current (2018) good bet */
+#endif
+#define MAXUNAMES	20	/* maximum number of user names */
+
+#ifdef OS_SOLARIS
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 MODULE_TYPE_OUTPUT
 MODULE_TYPE_NOKEEP
@@ -79,7 +89,6 @@ MODULE_CNFNAME("omusrmsg")
 /* internal structures
  */
 DEF_OMOD_STATIC_DATA
-DEFobjCurrIf(errmsg)
 
 typedef struct _instanceData {
 	int bIsWall; /* 1- is wall, 0 - individual users */
@@ -110,7 +119,7 @@ static struct cnfparamblk actpblk =
 	};
 
 BEGINinitConfVars		/* (re)set config variables to default values */
-CODESTARTinitConfVars 
+CODESTARTinitConfVars
 ENDinitConfVars
 
 
@@ -168,7 +177,7 @@ void setutent(void)
 {
 	assert(BSD_uf == NULL);
 	if ((BSD_uf = fopen(_PATH_UTMP, "r")) == NULL) {
-		errmsg.LogError(errno, NO_ERRCODE, "error opening utmp %s", _PATH_UTMP);
+		LogError(errno, NO_ERRCODE, "error opening utmp %s", _PATH_UTMP);
 		return;
 	}
 }
@@ -206,7 +215,7 @@ void endutent(void)
  */
 static rsRetVal wallmsg(uchar* pMsg, instanceData *pData)
 {
-  
+
 	uchar szErr[512];
 	char p[sizeof(_PATH_DEV) + UNAMESZ];
 	register int i;
@@ -233,7 +242,7 @@ static rsRetVal wallmsg(uchar* pMsg, instanceData *pData)
 		if(ut.ut_type != USER_PROCESS)
 			continue;
 #endif
-		if(!(strncmp (ut.UTNAME,"LOGIN", 6))) /* paranoia */
+		if(!(memcmp (ut.UTNAME,"LOGIN", 6))) /* paranoia */
 			continue;
 
 		/* should we send the message to this user? */
@@ -316,14 +325,14 @@ populateUsers(instanceData *pData, es_str_t *usrs)
 		pData->uname[i][iDst] = '\0';
 		DBGPRINTF("omusrmsg: send to user '%s'\n", pData->uname[i]);
 		if(iUsr < len && c[iUsr] != ',') {
-			errmsg.LogError(0, RS_RET_ERR, "user name '%s...' too long - "
+			LogError(0, RS_RET_ERR, "user name '%s...' too long - "
 				"ignored", pData->uname[i]);
 			--i;
 			++iUsr;
 			while(iUsr < len && c[iUsr] != ',')
 				++iUsr; /* skip to next name */
 		} else if(iDst == 0) {
-			errmsg.LogError(0, RS_RET_ERR, "no user name given - "
+			LogError(0, RS_RET_ERR, "no user name given - "
 				"ignored");
 			--i;
 			++iUsr;
@@ -337,7 +346,7 @@ populateUsers(instanceData *pData, es_str_t *usrs)
 		}
 	}
 	if(i == MAXUNAMES && iUsr != len) {
-		errmsg.LogError(0, RS_RET_ERR, "omusrmsg supports only up to %d "
+		LogError(0, RS_RET_ERR, "omusrmsg supports only up to %d "
 			"user names in a single action - all others have been ignored",
 			MAXUNAMES);
 	}
@@ -407,7 +416,7 @@ CODE_STD_STRING_REQUESTparseSelectorAct(1)
 	   || (*p >= '0' && *p <= '9') || *p == '_' || *p == '.' || *p == '*')) {
 			ABORT_FINALIZE(RS_RET_CONFLINE_UNPROCESSED);
 		} else {
-			errmsg.LogMsg(0, RS_RET_OUTDATED_STMT, LOG_WARNING,
+			LogMsg(0, RS_RET_OUTDATED_STMT, LOG_WARNING,
 				"action '%s' treated as ':omusrmsg:%s' - please "
 				"use ':omusrmsg:%s' syntax instead, '%s' will "
 				"not be supported in the future",
@@ -460,7 +469,6 @@ CODESTARTmodInit
 INITLegCnfVars
 	*ipIFVersProvided = CURR_MOD_IF_VERSION; /* we only support the current interface specification */
 CODEmodInit_QueryRegCFSLineHdlr
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 ENDmodInit
 
 /* vim:set ai:

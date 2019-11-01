@@ -42,21 +42,20 @@ BEGINinterface(netstrm) /* name must also be changed in ENDinterface macro! */
 	rsRetVal (*ConstructFinalize)(netstrm_t *pThis);
 	rsRetVal (*Destruct)(netstrm_t **ppThis);
 	rsRetVal (*AbortDestruct)(netstrm_t **ppThis);
-	rsRetVal (*LstnInit)(netstrms_t *pNS, void *pUsr, rsRetVal(*)(void*,netstrm_t*),
-		             uchar *pLstnPort, uchar *pLstnIP, int iSessMax);
 	rsRetVal (*AcceptConnReq)(netstrm_t *pThis, netstrm_t **ppNew);
-	rsRetVal (*Rcv)(netstrm_t *pThis, uchar *pRcvBuf, ssize_t *pLenBuf);
+	rsRetVal (*Rcv)(netstrm_t *pThis, uchar *pRcvBuf, ssize_t *pLenBuf, int *oserr);
 	rsRetVal (*Send)(netstrm_t *pThis, uchar *pBuf, ssize_t *pLenBuf);
 	rsRetVal (*Connect)(netstrm_t *pThis, int family, unsigned char *port, unsigned char *host, char *device);
 	rsRetVal (*GetRemoteHName)(netstrm_t *pThis, uchar **pszName);
 	rsRetVal (*GetRemoteIP)(netstrm_t *pThis, prop_t **ip);
 	rsRetVal (*SetDrvrMode)(netstrm_t *pThis, int iMode);
 	rsRetVal (*SetDrvrAuthMode)(netstrm_t *pThis, uchar*);
+	rsRetVal (*SetDrvrPermitExpiredCerts)(netstrm_t *pThis, uchar*);
 	rsRetVal (*SetDrvrPermPeers)(netstrm_t *pThis, permittedPeers_t*);
 	rsRetVal (*CheckConnection)(netstrm_t *pThis);	/* This is a trick mostly for plain tcp syslog */
 	/* the GetSock() below is a hack to make imgssapi work. In the long term,
 	 * we should migrate imgssapi to a stream driver, which will relieve us of
-	 * this problem. Please note that nobody else should use GetSock(). Using it 
+	 * this problem. Please note that nobody else should use GetSock(). Using it
 	 * will also tie the caller to nsd_ptcp, because other drivers may not support
 	 * it at all. Once the imgssapi problem is solved, GetSock should be removed from
 	 * this interface. -- rgerhards, 2008-05-05
@@ -75,14 +74,20 @@ BEGINinterface(netstrm) /* name must also be changed in ENDinterface macro! */
 	rsRetVal (*SetKeepAliveProbes)(netstrm_t *pThis, int keepAliveProbes);
 	rsRetVal (*SetKeepAliveTime)(netstrm_t *pThis, int keepAliveTime);
 	rsRetVal (*SetKeepAliveIntvl)(netstrm_t *pThis, int keepAliveIntvl);
+	rsRetVal (*SetGnutlsPriorityString)(netstrm_t *pThis, uchar *priorityString);
+	/* v11 -- Parameter pszLstnFileName added to LstnInit*/
+	rsRetVal (*LstnInit)(netstrms_t *pNS, void *pUsr, rsRetVal(*)(void*,netstrm_t*),
+		             uchar *pLstnPort, uchar *pLstnIP, int iSessMax, uchar *pszLstnPortFileName);
 ENDinterface(netstrm)
-#define netstrmCURR_IF_VERSION 8 /* increment whenever you change the interface structure! */
+#define netstrmCURR_IF_VERSION 11 /* increment whenever you change the interface structure! */
 /* interface version 3 added GetRemAddr()
  * interface version 4 added EnableKeepAlive() -- rgerhards, 2009-06-02
  * interface version 5 changed return of CheckConnection from void to rsRetVal -- alorbach, 2012-09-06
  * interface version 6 changed signature of GetRemoteIP() -- rgerhards, 2013-01-21
  * interface version 7 added KeepAlive parameter set functions
  * interface version 8 changed signature of Connect() -- dsa, 2016-11-14
+ * interface version 9 added SetGnutlsPriorityString -- PascalWithopf, 2017-08-08
+ * interface version 10 added oserr parameter to Rcv() -- rgerhards, 2017-09-04
  * */
 
 /* prototypes */

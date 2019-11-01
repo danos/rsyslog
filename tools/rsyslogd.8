@@ -1,7 +1,7 @@
 .\" Copyright 2004-2014 Rainer Gerhards and Adiscon for the rsyslog modifications
 .\" May be distributed under the GNU General Public License
 .\"
-.TH RSYSLOGD 8 "02 Dec 2014" "Version 8.6.0" "Linux System Administration"
+.TH RSYSLOGD 8 "28 May 2014" "Version 8.1905.0" "Linux System Administration"
 .SH NAME
 rsyslogd \- reliable and extended syslogd 
 .SH SYNOPSIS
@@ -18,6 +18,9 @@ rsyslogd \- reliable and extended syslogd
 .RB [ " \-N "
 .I level
 ]
+.RB [ " \-o "
+.I fullconf
+]
 .RB [ " \-C " ]
 .RB [ " \-v " ]
 .LP
@@ -28,15 +31,15 @@ Support of both internet and
 unix domain sockets enables this utility to support both local
 and remote logging.
 
-.B Note that this version of rsyslog ships with extensive documentation in html format.
+.B Note that this version of rsyslog ships with extensive documentation in HTML format.
 This is provided in the ./doc subdirectory and probably
 in a separate package if you installed rsyslog via a packaging system.
 To use rsyslog's advanced features, you
 .B need
-to look at the html documentation, because the man pages only covers
+to look at the HTML documentation, because the man pages only covers
 basic aspects of operation.
 .B For details and configuration examples, see the rsyslog.conf (5)
-.B man page and the online documentation at http://www.rsyslog.com/doc
+.B man page and the online documentation at https://www.rsyslog.com/doc/
 
 .BR Rsyslogd (8)
 is derived from the sysklogd package which in turn is derived from the
@@ -94,7 +97,8 @@ which is the default.
 .BI "\-i " "pid file"
 Specify an alternative pid file instead of the default one.
 This option must be used if multiple instances of rsyslogd should
-run on a single machine.
+run on a single machine. To disable writing a pid file, use
+the reserved name "NONE" (all upper case!), so "-iNONE".
 .TP
 .B "\-n"
 Avoid auto-backgrounding.  This is needed especially if the
@@ -103,7 +107,7 @@ is started and controlled by
 .BR init (8).
 .TP
 .B "\-N " "level"
-Do a coNfig check. Do NOT run in regular mode, just check configuration
+Do a config check. Do NOT run in regular mode, just check configuration
 file correctness.
 This option is meant to verify a config file. To do so, run rsyslogd
 interactively in foreground, specifying -f <config-file> and -N level.
@@ -111,6 +115,15 @@ The level argument modifies behaviour. Currently, 0 is the same as
 not specifying the -N option at all (so this makes limited sense) and
 1 actually activates the code. Later, higher levels will mean more
 verbosity (this is a forward-compatibility option).
+.TP
+.B "\-o " "fullconf"
+Generates a consolidated config file
+.I fullconf
+that contains all of rsyslog's configuration in a single file. Include
+files are exploded into that file in exactly the way rsyslog sees them.
+This option is useful for troubleshooting, especially if problems with
+the order of action processing is suspected. It may also be used to
+check for "unexepectedly" included config content.
 .TP
 .BI "\-C"
 This prevents rsyslogd from changing to the root directory. This
@@ -279,7 +292,7 @@ Please review the file BUGS for up-to-date information on known
 bugs and annoyances.
 .SH Further Information
 Please visit
-.BR http://www.rsyslog.com/doc
+.BR https://www.rsyslog.com/doc/
 for additional information, tutorials and a support forum.
 .SH SEE ALSO
 .BR rsyslog.conf (5),

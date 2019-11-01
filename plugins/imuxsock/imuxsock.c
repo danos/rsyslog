@@ -6,7 +6,7 @@
  *
  * File begun on 2007-12-20 by RGerhards (extracted from syslogd.c)
  *
- * Copyright 2007-2016 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2007-2019 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
@@ -25,8 +25,10 @@
  *
  * A copy of the GPL can be found in the file "COPYING" in this distribution.
  */
+#ifdef __sun
+#define _XPG4_2
+#endif
 #include "config.h"
-#include "rsyslog.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -35,9 +37,17 @@
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <poll.h>
 #include <sys/stat.h>
 #include <sys/un.h>
 #include <sys/socket.h>
+#ifdef HAVE_LIBSYSTEMD
+#	include <systemd/sd-daemon.h>
+#endif
+#if defined(__FreeBSD__)
+	#include <sys/param.h>
+#endif
+#include "rsyslog.h"
 #include "dirty.h"
 #include "cfsysline.h"
 #include "unicode-helper.h"
@@ -52,15 +62,11 @@
 #include "debug.h"
 #include "ruleset.h"
 #include "unlimited_select.h"
-#include "sd-daemon.h"
 #include "statsobj.h"
 #include "datetime.h"
 #include "hashtable.h"
 #include "ratelimit.h"
 
-#if !defined(_AIX)
-#pragma GCC diagnostic ignored "-Wswitch-enum"
-#endif
 
 MODULE_TYPE_INPUT
 MODULE_TYPE_NOKEEP
@@ -87,7 +93,7 @@ static rsRetVal resetConfigVariables(uchar __attribute__((unused)) *pp, void __a
 
 #if defined(_AIX)
 #define ucred  ucred_t
-#endif 
+#endif
 /* emulate struct ucred for platforms that do not have it */
 #ifndef HAVE_SCM_CREDENTIALS
 struct ucred { int pid; uid_t uid; gid_t gid; };
@@ -96,11 +102,10 @@ struct ucred { int pid; uid_t uid; gid_t gid; };
 /* handle some defines missing on more than one platform */
 #ifndef SUN_LEN
 #define SUN_LEN(su) \
-   (sizeof(*(su)) - sizeof((su)->sun_path) + strlen((su)->sun_path))
+	(sizeof(*(su)) - sizeof((su)->sun_path) + strlen((su)->sun_path))
 #endif
 /* Module static data */
 DEF_IMOD_STATIC_DATA
-DEFobjCurrIf(errmsg)
 DEFobjCurrIf(glbl)
 DEFobjCurrIf(prop)
 DEFobjCurrIf(net)
@@ -118,7 +123,7 @@ STATSCOUNTER_DEF(ctrNumRatelimiters, mutCtrNumRatelimiters)
 
 /* a very simple "hash function" for process IDs - we simply use the
  * pid itself: it is quite expected that all pids may log some time, but
- * from a collision point of view it is likely that long-running daemons 
+ * from a collision point of view it is likely that long-running daemons
  * start early and so will stay right in the top spots of the
  * collision list.
  */
@@ -162,15 +167,20 @@ typedef struct lstn_s {
 static lstn_t *listeners;
 
 static prop_t *pLocalHostIP = NULL;	/* there is only one global IP for all internally-generated messages */
-static prop_t *pInputName = NULL;	/* our inputName currently is always "imudp", and this will hold it */
+static prop_t *pInputName = NULL;	/* our inputName currently is always "imuxsock", and this will hold it */
 static int startIndexUxLocalSockets; /* process fd from that index on (used to
- 				   * suppress local logging. rgerhards 2005-08-01
-				   * read-only after startup
-				   */
-static int nfd = 1; /* number of active unix sockets  (socket 0 is always reserved for the system 
-                        socket, even if it is not enabled. */
+				* suppress local logging. rgerhards 2005-08-01
+				* read-only after startup
+				*/
+static int nfd = 1; /* number of active unix sockets  (socket 0 is always reserved for the system
+			socket, even if it is not enabled. */
 static int sd_fds = 0;			/* number of systemd activated sockets */
 
+#if (defined(__FreeBSD__) && (__FreeBSD_version >= 1200061))
+	#define DFLT_bUseSpecialParser 0
+#else
+	#define DFLT_bUseSpecialParser 1
+#endif
 #define DFLT_bCreatePath 0
 #define DFLT_ratelimitInterval 0
 #define DFLT_ratelimitBurst 200
@@ -181,7 +191,7 @@ static struct configSettings_s {
 	uchar *pLogSockName;
 	uchar *pLogHostName;		/* host name to use with this socket */
 	int bUseFlowCtl;		/* use flow control or not (if yes, only LIGHT is used!) */
-	int bUseFlowCtlSysSock;	
+	int bUseFlowCtlSysSock;
 	int bIgnoreTimestamp;		/* ignore timestamps present in the incoming message? */
 	int bIgnoreTimestampSysSock;
 	int bUseSysTimeStamp;		/* use timestamp from system (rather than from message) */
@@ -309,7 +319,7 @@ createInstance(instanceConf_t **pinst)
 {
 	instanceConf_t *inst;
 	DEFiRet;
-	CHKmalloc(inst = MALLOC(sizeof(instanceConf_t)));
+	CHKmalloc(inst = malloc(sizeof(instanceConf_t)));
 	inst->sockName = NULL;
 	inst->pLogHostName = NULL;
 	inst->pszBindRuleset = NULL;
@@ -318,7 +328,7 @@ createInstance(instanceConf_t **pinst)
 	inst->ratelimitBurst = DFLT_ratelimitBurst;
 	inst->ratelimitSeverity = DFLT_ratelimitSeverity;
 	inst->bUseFlowCtl = 0;
-	inst->bUseSpecialParser = 1;
+	inst->bUseSpecialParser = DFLT_bUseSpecialParser;
 	inst->bParseHost = UNSET;
 	inst->bIgnoreTimestamp = 1;
 	inst->bCreatePath = DFLT_bCreatePath;
@@ -355,7 +365,7 @@ static rsRetVal addInstance(void __attribute__((unused)) *pVal, uchar *pNewVal)
 	DEFiRet;
 
 	if(pNewVal == NULL || pNewVal[0] == '\0') {
-		errmsg.LogError(0, RS_RET_SOCKNAME_MISSING , "imuxsock: socket name must be specified, "
+		LogError(0, RS_RET_SOCKNAME_MISSING , "imuxsock: socket name must be specified, "
 			        "but is not - listener not created\n");
 		if(pNewVal != NULL)
 			free(pNewVal);
@@ -386,7 +396,7 @@ finalize_it:
 }
 
 
-/* add an additional listen socket. 
+/* add an additional listen socket.
  * added capability to specify hostname for socket -- rgerhards, 2008-08-01
  */
 static rsRetVal
@@ -428,7 +438,8 @@ addListner(instanceConf_t *inst)
 	listeners[nfd].flags = inst->bIgnoreTimestamp ? IGNDATE : NOFLAG;
 	listeners[nfd].bCreatePath = inst->bCreatePath;
 	listeners[nfd].sockName = ustrdup(inst->sockName);
-	listeners[nfd].bUseCreds = (inst->bDiscardOwnMsgs || inst->bWritePid || inst->ratelimitInterval || inst->bAnnotate || inst->bUseSysTimeStamp) ? 1 : 0;
+	listeners[nfd].bUseCreds = (inst->bDiscardOwnMsgs || inst->bWritePid || inst->ratelimitInterval
+	|| inst->bAnnotate || inst->bUseSysTimeStamp) ? 1 : 0;
 	listeners[nfd].bAnnotate = inst->bAnnotate;
 	listeners[nfd].bParseTrusted = inst->bParseTrusted;
 	listeners[nfd].bDiscardOwnMsgs = inst->bDiscardOwnMsgs;
@@ -464,7 +475,7 @@ static rsRetVal discardLogSockets(void)
 	}
 
 	/* Clean up all other sockets */
-        for (i = 1; i < nfd; i++) {
+	for (i = 1; i < nfd; i++) {
 		if(listeners[i].sockName != NULL) {
 			free(listeners[i].sockName);
 			listeners[i].sockName = NULL;
@@ -482,9 +493,20 @@ static rsRetVal discardLogSockets(void)
 }
 
 
-/* used to create a log socket if NOT passed in via systemd. 
+/* used to create a log socket if NOT passed in via systemd.
  */
+/* note: the linux SUN_LEN macro uses a sizeof based on a NULL pointer. This
+ * triggers UBSan warning. As such, we turn that warning off for the fuction.
+ * As it is OS-provided, there is no way to solve it ourselves. The problem
+ * may also exist on other platforms, we have just noticed it on Linux.
+ */
+#if defined(__clang__)
+#pragma GCC diagnostic ignored "-Wunknown-attributes"
+#endif
 static rsRetVal
+#if defined(__clang__)
+__attribute__((no_sanitize("undefined")))
+#endif
 createLogSocket(lstn_t *pLstn)
 {
 	struct sockaddr_un sunx;
@@ -498,17 +520,25 @@ createLogSocket(lstn_t *pLstn)
 		makeFileParentDirs((uchar*)pLstn->sockName, ustrlen(pLstn->sockName), 0755, -1, -1, 0);
 	}
 	strncpy(sunx.sun_path, (char*)pLstn->sockName, sizeof(sunx.sun_path));
+	sunx.sun_path[sizeof(sunx.sun_path)-1] = '\0';
 	pLstn->fd = socket(AF_UNIX, SOCK_DGRAM, 0);
-	if(pLstn->fd < 0 || bind(pLstn->fd, (struct sockaddr *) &sunx, SUN_LEN(&sunx)) < 0 ||
-	    chmod((char*)pLstn->sockName, 0666) < 0) {
-		errmsg.LogError(errno, NO_ERRCODE, "cannot create '%s'", pLstn->sockName);
-		DBGPRINTF("cannot create %s (%d).\n", pLstn->sockName, errno);
-		if(pLstn->fd != -1)
-			close(pLstn->fd);
-		pLstn->fd = -1;
+	if(pLstn->fd < 0 ) {
+		ABORT_FINALIZE(RS_RET_ERR_CRE_AFUX);
+	}
+	if(bind(pLstn->fd, (struct sockaddr *) &sunx, SUN_LEN(&sunx)) < 0) {
+		ABORT_FINALIZE(RS_RET_ERR_CRE_AFUX);
+	}
+	if(chmod((char*)pLstn->sockName, 0666) < 0) {
 		ABORT_FINALIZE(RS_RET_ERR_CRE_AFUX);
 	}
 finalize_it:
+	if(iRet != RS_RET_OK) {
+		LogError(errno, iRet, "cannot create '%s'", pLstn->sockName);
+		if(pLstn->fd != -1) {
+			close(pLstn->fd);
+			pLstn->fd = -1;
+		}
+	}
 	RETiRet;
 }
 
@@ -526,10 +556,11 @@ openLogSocket(lstn_t *pLstn)
 
 	pLstn->fd = -1;
 
+#ifdef HAVE_LIBSYSTEMD
 	if (sd_fds > 0) {
-               /* Check if the current socket is a systemd activated one.
-	        * If so, just use it.
-		*/
+		/* Check if the current socket is a systemd activated one.
+		 * If so, just use it.
+		 */
 		int fd;
 
 		for (fd = SD_LISTEN_FDS_START; fd < SD_LISTEN_FDS_START + sd_fds; fd++) {
@@ -537,7 +568,8 @@ openLogSocket(lstn_t *pLstn)
 				/* ok, it matches -- just use as is */
 				pLstn->fd = fd;
 
-				DBGPRINTF("imuxsock: Acquired UNIX socket '%s' (fd %d) from systemd.\n",
+				LogMsg(0, NO_ERRCODE, LOG_INFO,
+					"imuxsock: Acquired UNIX socket '%s' (fd %d) from systemd.\n",
 					pLstn->sockName, pLstn->fd);
 				break;
 			}
@@ -548,21 +580,23 @@ openLogSocket(lstn_t *pLstn)
 			 */
 		}
 	}
+#endif
 
 	if (pLstn->fd == -1) {
 		CHKiRet(createLogSocket(pLstn));
+		assert(pLstn->fd != -1); /* else createLogSocket() should have failed! */
 	}
 
 #	ifdef HAVE_SCM_CREDENTIALS
 	if(pLstn->bUseCreds) {
 		one = 1;
 		if(setsockopt(pLstn->fd, SOL_SOCKET, SO_PASSCRED, &one, (socklen_t) sizeof(one)) != 0) {
-			errmsg.LogError(errno, NO_ERRCODE, "set SO_PASSCRED failed on '%s'", pLstn->sockName);
+			LogError(errno, NO_ERRCODE, "set SO_PASSCRED failed on '%s'", pLstn->sockName);
 			pLstn->bUseCreds = 0;
 		}
 // TODO: move to its own #if
 		if(setsockopt(pLstn->fd, SOL_SOCKET, SO_TIMESTAMP, &one, sizeof(one)) != 0) {
-			errmsg.LogError(errno, NO_ERRCODE, "set SO_TIMESTAMP failed on '%s'", pLstn->sockName);
+			LogError(errno, NO_ERRCODE, "set SO_TIMESTAMP failed on '%s'", pLstn->sockName);
 		}
 	}
 #	else /* HAVE_SCM_CREDENTIALS */
@@ -593,7 +627,7 @@ findRatelimiter(lstn_t *pLstn, struct ucred *cred, ratelimit_t **prl)
 	ratelimit_t *rl = NULL;
 	int r;
 	pid_t *keybuf;
-	char pidbuf[256];
+	char pinfobuf[512];
 	DEFiRet;
 
 	if(cred == NULL)
@@ -615,10 +649,25 @@ findRatelimiter(lstn_t *pLstn, struct ucred *cred, ratelimit_t **prl)
 		DBGPRINTF("imuxsock: no ratelimiter for pid %lu, creating one\n",
 			  (unsigned long) cred->pid);
 		STATSCOUNTER_INC(ctrNumRatelimiters, mutCtrNumRatelimiters);
-		snprintf(pidbuf, sizeof(pidbuf), "pid %lu",
-			(unsigned long) cred->pid);
-		pidbuf[sizeof(pidbuf)-1] = '\0'; /* to be on safe side */
-		CHKiRet(ratelimitNew(&rl, "imuxsock", pidbuf));
+		/* read process name from system  */
+		char procName[256]; /* enough for any sane process name  */
+		snprintf(procName, sizeof(procName), "/proc/%lu/cmdline", (unsigned long) cred->pid);
+		FILE *f = fopen(procName, "r");
+		if (f) {
+			size_t len;
+			len = fread(procName, sizeof(char), 256, f);
+			if (len > 0) {
+				snprintf(pinfobuf, sizeof(pinfobuf), "pid: %lu, name: %s",
+					(unsigned long) cred->pid, procName);
+			}
+			fclose(f);
+		}
+		else {
+			snprintf(pinfobuf, sizeof(pinfobuf), "pid: %lu",
+				(unsigned long) cred->pid);
+		}
+		pinfobuf[sizeof(pinfobuf)-1] = '\0'; /* to be on safe side */
+		CHKiRet(ratelimitNew(&rl, "imuxsock", pinfobuf));
 		ratelimitSetLinuxLike(rl, pLstn->ratelimitInterval, pLstn->ratelimitBurst);
 		ratelimitSetSeverity(rl, pLstn->ratelimitSev);
 		CHKmalloc(keybuf = malloc(sizeof(pid_t)));
@@ -801,7 +850,7 @@ SubmitMsg(uchar *pRcv, int lenRcv, lstn_t *pLstn, struct ucred *cred, struct tim
 		pri = pri * 10 + *parse - '0';
 		++parse;
 		++offs;
-	} 
+	}
 
 	findRatelimiter(pLstn, cred, &ratelimiter); /* ignore error, better so than others... */
 
@@ -877,7 +926,7 @@ SubmitMsg(uchar *pRcv, int lenRcv, lstn_t *pLstn, struct ucred *cred, struct tim
 			memcpy(pmsgbuf+lenRcv, " @[", 3);
 			toffs = lenRcv + 3; /* next free location */
 			lenProp = snprintf((char*)propBuf, sizeof(propBuf), "_PID=%lu _UID=%lu _GID=%lu",
-				 		(long unsigned) cred->pid, (long unsigned) cred->uid, 
+				 		(long unsigned) cred->pid, (long unsigned) cred->uid,
 						(long unsigned) cred->gid);
 			memcpy(pmsgbuf+toffs, propBuf, lenProp);
 			toffs = toffs + lenProp;
@@ -894,7 +943,7 @@ SubmitMsg(uchar *pRcv, int lenRcv, lstn_t *pLstn, struct ucred *cred, struct tim
 			}
 			if(getTrustedProp(cred, "cmdline", propBuf, sizeof(propBuf), &lenProp) == RS_RET_OK) {
 				memcpy(pmsgbuf+toffs, " _CMDLINE=", 10);
-				toffs = toffs + 10 + 
+				toffs = toffs + 10 +
 					copyescaped(pmsgbuf+toffs+10, propBuf, lenProp);
 			}
 
@@ -938,20 +987,23 @@ SubmitMsg(uchar *pRcv, int lenRcv, lstn_t *pLstn, struct ucred *cred, struct tim
 				 * datestamp or not .. and advance the parse pointer accordingly.
 				 */
 				if (datetime.ParseTIMESTAMP3339(&dummyTS, &parse, &lenMsg) != RS_RET_OK) {
-					datetime.ParseTIMESTAMP3164(&dummyTS, &parse, &lenMsg, NO_PARSE3164_TZSTRING, NO_PERMIT_YEAR_AFTER_TIME);
+					datetime.ParseTIMESTAMP3164(&dummyTS, &parse, &lenMsg,
+					NO_PARSE3164_TZSTRING, NO_PERMIT_YEAR_AFTER_TIME);
 				}
 			} else {
 				if(datetime.ParseTIMESTAMP3339(&(pMsg->tTIMESTAMP), &parse, &lenMsg) != RS_RET_OK &&
-				   datetime.ParseTIMESTAMP3164(&(pMsg->tTIMESTAMP), &parse, &lenMsg, NO_PARSE3164_TZSTRING, NO_PERMIT_YEAR_AFTER_TIME) != RS_RET_OK) {
+				datetime.ParseTIMESTAMP3164(&(pMsg->tTIMESTAMP), &parse, &lenMsg,
+				NO_PARSE3164_TZSTRING, NO_PERMIT_YEAR_AFTER_TIME) != RS_RET_OK) {
 					DBGPRINTF("we have a problem, invalid timestamp in msg!\n");
 				}
 			}
 		} else { /* if we pulled the time from the system, we need to update the message text */
 			uchar *tmpParse = parse; /* just to check correctness of TS */
 			if(datetime.ParseTIMESTAMP3339(&dummyTS, &tmpParse, &lenMsg) == RS_RET_OK ||
-			   datetime.ParseTIMESTAMP3164(&dummyTS, &tmpParse, &lenMsg, NO_PARSE3164_TZSTRING, NO_PERMIT_YEAR_AFTER_TIME) == RS_RET_OK) {
-				/* We modify the message only if it contained a valid timestamp,
-				 * otherwise we do not touch it at all. */
+		 	datetime.ParseTIMESTAMP3164(&dummyTS, &tmpParse, &lenMsg, NO_PARSE3164_TZSTRING,
+			NO_PERMIT_YEAR_AFTER_TIME) == RS_RET_OK) {
+			/* We modify the message only if it contained a valid timestamp,
+			otherwise we do not touch it at all. */
 				datetime.formatTimestamp3164(&st, (char*)parse, 0);
 				parse[15] = ' '; /* re-write \0 from fromatTimestamp3164 by SP */
 				/* update "counters" to reflect processed timestamp */
@@ -996,11 +1048,6 @@ finalize_it:
  * of the socket which is to be processed. This eases access to the
  * growing number of properties. -- rgerhards, 2008-08-01
  */
-#if !defined(_AIX)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-align" /* TODO: how can we fix these warnings? */
-#endif
-/* Problem with the warnings: they seem to stem back from the way the API is structured */
 static rsRetVal readSocket(lstn_t *pLstn)
 {
 	DEFiRet;
@@ -1008,12 +1055,18 @@ static rsRetVal readSocket(lstn_t *pLstn)
 	int iMaxLine;
 	struct msghdr msgh;
 	struct iovec msgiov;
-	struct ucred *cred;
-	struct timeval *ts;
+	struct ucred cred;
+	struct timeval ts;
+	int cred_set = 0;
+	int ts_set = 0;
 	uchar bufRcv[4096+1];
 	uchar *pRcv = NULL; /* receive buffer */
 #	ifdef HAVE_SCM_CREDENTIALS
-	char aux[128];
+	/* aux is a union rather than a direct char array to force alignment with cmsghdr */
+	union {
+		char buf[128];
+		struct cmsghdr cm;
+	} aux;
 #	endif
 
 	assert(pLstn->fd >= 0);
@@ -1029,7 +1082,7 @@ static rsRetVal readSocket(lstn_t *pLstn)
 	if((size_t) iMaxLine < sizeof(bufRcv) - 1) {
 		pRcv = bufRcv;
 	} else {
-		CHKmalloc(pRcv = (uchar*) MALLOC(iMaxLine + 1));
+		CHKmalloc(pRcv = (uchar*) malloc(iMaxLine + 1));
 	}
 
 	memset(&msgh, 0, sizeof(msgh));
@@ -1037,7 +1090,7 @@ static rsRetVal readSocket(lstn_t *pLstn)
 #	ifdef HAVE_SCM_CREDENTIALS
 	if(pLstn->bUseCreds) {
 		memset(&aux, 0, sizeof(aux));
-		msgh.msg_control = aux;
+		msgh.msg_control = &aux;
 		msgh.msg_controllen = sizeof(aux);
 	}
 #	endif
@@ -1050,11 +1103,9 @@ static rsRetVal readSocket(lstn_t *pLstn)
 #define MSG_DONTWAIT    MSG_NONBLOCK
 #endif
 	iRcvd = recvmsg(pLstn->fd, &msgh, MSG_DONTWAIT);
- 
-	DBGPRINTF("Message from UNIX socket: #%d\n", pLstn->fd);
+
+	DBGPRINTF("Message from UNIX socket: #%d, size %d\n", pLstn->fd, (int) iRcvd);
 	if(iRcvd > 0) {
-		cred = NULL;
-		ts = NULL;
 #		if defined(HAVE_SCM_CREDENTIALS) || defined(HAVE_SO_TIMESTAMP)
 		if(pLstn->bUseCreds) {
 			struct cmsghdr *cm;
@@ -1062,24 +1113,26 @@ static rsRetVal readSocket(lstn_t *pLstn)
 #				ifdef HAVE_SCM_CREDENTIALS
 				if(   pLstn->bUseCreds
 				   && cm->cmsg_level == SOL_SOCKET && cm->cmsg_type == SCM_CREDENTIALS) {
-					cred = (struct ucred*) CMSG_DATA(cm);
+					memcpy(&cred, CMSG_DATA(cm), sizeof(cred));
+					cred_set = 1;
 				}
 #				endif /* HAVE_SCM_CREDENTIALS */
 #				if HAVE_SO_TIMESTAMP
-				if(   pLstn->bUseSysTimeStamp 
+				if(   pLstn->bUseSysTimeStamp
 				   && cm->cmsg_level == SOL_SOCKET && cm->cmsg_type == SO_TIMESTAMP) {
-					ts = (struct timeval *)CMSG_DATA(cm);
+					memcpy(&ts, CMSG_DATA(cm), sizeof(ts));
+					ts_set = 1;
 				}
 #				endif /* HAVE_SO_TIMESTAMP */
 			}
 		}
 #		endif /* defined(HAVE_SCM_CREDENTIALS) || defined(HAVE_SO_TIMESTAMP) */
-		CHKiRet(SubmitMsg(pRcv, iRcvd, pLstn, cred, ts));
+		CHKiRet(SubmitMsg(pRcv, iRcvd, pLstn, (cred_set ? &cred : NULL), (ts_set ? &ts : NULL)));
 	} else if(iRcvd < 0 && errno != EINTR && errno != EAGAIN) {
 		char errStr[1024];
 		rs_strerror_r(errno, errStr, sizeof(errStr));
 		DBGPRINTF("UNIX socket error: %d = %s.\n", errno, errStr);
-		errmsg.LogError(errno, NO_ERRCODE, "imuxsock: recvfrom UNIX");
+		LogError(errno, NO_ERRCODE, "imuxsock: recvfrom UNIX");
 	}
 
 finalize_it:
@@ -1088,36 +1141,36 @@ finalize_it:
 
 	RETiRet;
 }
-#if  !defined(_AIX)
-#pragma GCC diagnostic pop
-#endif
 
 
 /* activate current listeners */
 static rsRetVal
 activateListeners(void)
 {
-	register int i;
 	int actSocks;
+	int i;
 	DEFiRet;
 
 	/* Initialize the system socket only if it's in use */
 	if(startIndexUxLocalSockets == 0) {
 		/* first apply some config settings */
 		listeners[0].sockName = UCHAR_CONSTANT(_PATH_LOG);
-		if(runModConf->pLogSockName != NULL)
+		if(runModConf->pLogSockName != NULL) {
 			listeners[0].sockName = runModConf->pLogSockName;
+		}
+#ifdef HAVE_LIBSYSTEMD
 		else if(sd_booted()) {
 			struct stat st;
 			if(stat(SYSTEMD_PATH_LOG, &st) != -1 && S_ISSOCK(st.st_mode)) {
 				listeners[0].sockName = (uchar*) SYSTEMD_PATH_LOG;
 			}
 		}
+#endif
 		if(runModConf->ratelimitIntervalSysSock > 0) {
 			if((listeners[0].ht = create_hashtable(100, hash_from_key_fn, key_equals_fn, NULL)) == NULL) {
 				/* in this case, we simply turn of rate-limiting */
-				errmsg.LogError(0, NO_ERRCODE, "imuxsock: turning off rate limiting because we could not "
-					  "create hash table\n");
+				LogError(0, NO_ERRCODE, "imuxsock: turning off rate limiting because "
+					"we could not create hash table\n");
 				runModConf->ratelimitIntervalSysSock = 0;
 			}
 		} else {
@@ -1131,7 +1184,9 @@ activateListeners(void)
 		listeners[0].ratelimitInterval = runModConf->ratelimitIntervalSysSock;
 		listeners[0].ratelimitBurst = runModConf->ratelimitBurstSysSock;
 		listeners[0].ratelimitSev = runModConf->ratelimitSeveritySysSock;
-		listeners[0].bUseCreds = (runModConf->bWritePidSysSock || runModConf->ratelimitIntervalSysSock || runModConf->bAnnotateSysSock || runModConf->bDiscardOwnMsgs || runModConf->bUseSysTimeStamp) ? 1 : 0;
+		listeners[0].bUseCreds = (runModConf->bWritePidSysSock || runModConf->ratelimitIntervalSysSock
+		|| runModConf->bAnnotateSysSock || runModConf->bDiscardOwnMsgs
+		|| runModConf->bUseSysTimeStamp) ? 1 : 0;
 		listeners[0].bWritePid = runModConf->bWritePidSysSock;
 		listeners[0].bAnnotate = runModConf->bAnnotateSysSock;
 		listeners[0].bParseTrusted = runModConf->bParseTrusted;
@@ -1149,11 +1204,13 @@ activateListeners(void)
 		ratelimitSetSeverity(listeners[0].dflt_ratelimiter,listeners[0].ratelimitSev);
 	}
 
+#ifdef HAVE_LIBSYSTEMD
 	sd_fds = sd_listen_fds(0);
 	if(sd_fds < 0) {
-		errmsg.LogError(-sd_fds, NO_ERRCODE, "imuxsock: Failed to acquire systemd socket");
+		LogError(-sd_fds, NO_ERRCODE, "imuxsock: Failed to acquire systemd socket");
 		ABORT_FINALIZE(RS_RET_ERR_CRE_AFUX);
 	}
+#endif
 
 	/* initialize and return if will run or not */
 	actSocks = 0;
@@ -1166,7 +1223,8 @@ activateListeners(void)
 	}
 
 	if(actSocks == 0) {
-		errmsg.LogError(0, NO_ERRCODE, "imuxsock does not run because we could not aquire any socket\n");
+		LogError(0, RS_RET_ERR, "imuxsock does not run because we could not "
+			"aquire any socket\n");
 		ABORT_FINALIZE(RS_RET_ERR);
 	}
 
@@ -1190,7 +1248,7 @@ CODESTARTbeginCnfLoad
 	pModConf->bAnnotateSysSock = 0;
 	pModConf->bParseTrusted = 0;
 	pModConf->bParseHost = UNSET;
-	pModConf->bUseSpecialParser = 1;
+	pModConf->bUseSpecialParser = DFLT_bUseSpecialParser;
 	/* if we do not process internal messages, we will see messages
 	 * from ourselves, and so we need to permit this.
 	 */
@@ -1211,7 +1269,7 @@ BEGINsetModCnf
 CODESTARTsetModCnf
 	pvals = nvlstGetParams(lst, &modpblk, NULL);
 	if(pvals == NULL) {
-		errmsg.LogError(0, RS_RET_MISSING_CNFPARAMS, "error processing module "
+		LogError(0, RS_RET_MISSING_CNFPARAMS, "error processing module "
 				"config parameters [module(...)]");
 		ABORT_FINALIZE(RS_RET_MISSING_CNFPARAMS);
 	}
@@ -1279,7 +1337,7 @@ CODESTARTnewInpInst
 
 	pvals = nvlstGetParams(lst, &inppblk, NULL);
 	if(pvals == NULL) {
-		errmsg.LogError(0, RS_RET_MISSING_CNFPARAMS,
+		LogError(0, RS_RET_MISSING_CNFPARAMS,
 			        "imuxsock: required parameter are missing\n");
 		ABORT_FINALIZE(RS_RET_MISSING_CNFPARAMS);
 	}
@@ -1369,7 +1427,7 @@ ENDendCnfLoad
 static void
 std_checkRuleset_genErrMsg(__attribute__((unused)) modConfData_t *modConf, instanceConf_t *inst)
 {
-	errmsg.LogError(0, NO_ERRCODE, "imuxsock: ruleset '%s' for socket %s not found - "
+	LogError(0, NO_ERRCODE, "imuxsock: ruleset '%s' for socket %s not found - "
 			"using default ruleset instead", inst->pszBindRuleset,
 			inst->sockName);
 }
@@ -1444,62 +1502,47 @@ ENDfreeCnf
 
 /* This function is called to gather input. */
 BEGINrunInput
-	int maxfds;
 	int nfds;
 	int i;
-	int fd;
-#ifdef USE_UNLIMITED_SELECT
-        fd_set  *pReadfds = malloc(glbl.GetFdSetSize());
-#else
-        fd_set  readfds;
-        fd_set *pReadfds = &readfds;
-#endif
-
 CODESTARTrunInput
-	CHKmalloc(pReadfds);
+	struct pollfd *const pollfds = calloc(nfd, sizeof(struct pollfd));
+	CHKmalloc(pollfds);
 	if(startIndexUxLocalSockets == 1 && nfd == 1) {
 		/* No sockets were configured, no reason to run. */
 		ABORT_FINALIZE(RS_RET_OK);
 	}
+	if(startIndexUxLocalSockets == 1) {
+		pollfds[0].fd = -1;
+	}
+	for (i = startIndexUxLocalSockets; i < nfd; i++) {
+		pollfds[i].fd = listeners[i].fd;
+		pollfds[i].events = POLLIN;
+	}
+
 	/* this is an endless loop - it is terminated when the thread is
-	 * signalled to do so. This, however, is handled by the framework,
-	 * right into the sleep below.
+	 * signalled to do so.
 	 */
 	while(1) {
-		/* Add the Unix Domain Sockets to the list of read
-		 * descriptors.
-		 * rgerhards 2005-08-01: we must now check if there are
-		 * any local sockets to listen to at all. If the -o option
-		 * is given without -a, we do not need to listen at all..
-		 */
-	        maxfds = 0;
-	        FD_ZERO (pReadfds);
-		/* Copy master connections */
-		for (i = startIndexUxLocalSockets; i < nfd; i++) {
-			if (listeners[i].fd!= -1) {
-				FD_SET(listeners[i].fd, pReadfds);
-				if(listeners[i].fd > maxfds)
-					maxfds=listeners[i].fd;
-			}
-		}
+		DBGPRINTF("--------imuxsock calling poll() on %d fds\n", nfd);
 
-		if(Debug) {
-			dbgprintf("--------imuxsock calling select, active file descriptors (max %d): ", maxfds);
-			for (nfds= 0; nfds <= maxfds; ++nfds)
-				if ( FD_ISSET(nfds, pReadfds) )
-					dbgprintf("%d ", nfds);
-			dbgprintf("\n");
-		}
-
-		/* wait for io to become ready */
-		nfds = select(maxfds+1, (fd_set *) pReadfds, NULL, NULL, NULL);
+		nfds = poll(pollfds, nfd, -1);
 		if(glbl.GetGlobalInputTermState() == 1)
 			break; /* terminate input! */
+
+		if(nfds < 0) {
+			if(errno == EINTR) {
+				DBGPRINTF("imuxsock: EINTR occured\n");
+			} else {
+				LogMsg(errno, RS_RET_POLL_ERR, LOG_WARNING, "imuxsock: poll "
+					"system call failed, may cause further troubles");
+			}
+			nfds = 0;
+		}
 
 		for (i = startIndexUxLocalSockets ; i < nfd && nfds > 0; i++) {
 			if(glbl.GetGlobalInputTermState() == 1)
 				ABORT_FINALIZE(RS_RET_FORCE_TERM); /* terminate input! */
-			if ((fd = listeners[i].fd) != -1 && FD_ISSET(fd, pReadfds)) {
+			if(pollfds[i].revents & POLLIN) {
 				readSocket(&(listeners[i]));
 				--nfds; /* indicate we have processed one */
 			}
@@ -1507,7 +1550,7 @@ CODESTARTrunInput
 	}
 
 finalize_it:
-	freeFdSet(pReadfds);
+	free(pollfds);
 ENDrunInput
 
 
@@ -1520,26 +1563,29 @@ BEGINafterRun
 	int i;
 CODESTARTafterRun
 	/* do cleanup here */
-        if(startIndexUxLocalSockets == 1 && nfd == 1) {
-                /* No sockets were configured, no cleanup needed. */
-                return RS_RET_OK;
-        }
+	if(startIndexUxLocalSockets == 1 && nfd == 1) {
+		/* No sockets were configured, no cleanup needed. */
+		return RS_RET_OK;
+	}
 
 	/* Close the UNIX sockets. */
-       for (i = 0; i < nfd; i++)
+	for (i = 0; i < nfd; i++)
 		if (listeners[i].fd != -1)
 			close(listeners[i].fd);
 
-       /* Clean-up files. */
-       for(i = startIndexUxLocalSockets; i < nfd; i++)
+	/* Clean-up files. */
+	for(i = startIndexUxLocalSockets; i < nfd; i++)
 		if (listeners[i].sockName && listeners[i].fd != -1) {
 			/* If systemd passed us a socket it is systemd's job to clean it up.
 			 * Do not unlink it -- we will get same socket (node) from systemd
 			 * e.g. on restart again.
 			 */
-			if (sd_fds > 0 &&
-			    listeners[i].fd >= SD_LISTEN_FDS_START &&
-			    listeners[i].fd <  SD_LISTEN_FDS_START + sd_fds)
+			if (sd_fds > 0
+#			ifdef HAVE_LIBSYSTEMD
+			    && listeners[i].fd >= SD_LISTEN_FDS_START &&
+			       listeners[i].fd <  SD_LISTEN_FDS_START + sd_fds
+#			endif
+			   )
 				continue;
 
 			if(listeners[i].bUnlink) {
@@ -1563,7 +1609,6 @@ CODESTARTmodExit
 
 	objRelease(parser, CORE_COMPONENT);
 	objRelease(glbl, CORE_COMPONENT);
-	objRelease(errmsg, CORE_COMPONENT);
 	objRelease(prop, CORE_COMPONENT);
 	objRelease(statsobj, CORE_COMPONENT);
 	objRelease(datetime, CORE_COMPONENT);
@@ -1622,7 +1667,6 @@ BEGINmodInit()
 CODESTARTmodInit
 	*ipIFVersProvided = CURR_MOD_IF_VERSION; /* we only support the current interface specification */
 CODEmodInit_QueryRegCFSLineHdlr
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 	CHKiRet(objUse(glbl, CORE_COMPONENT));
 	CHKiRet(objUse(net, CORE_COMPONENT));
 	CHKiRet(objUse(prop, CORE_COMPONENT));
@@ -1719,5 +1763,3 @@ CODEmodInit_QueryRegCFSLineHdlr
 	CHKiRet(statsobj.ConstructFinalize(modStats));
 
 ENDmodInit
-/* vim:set ai:
- */

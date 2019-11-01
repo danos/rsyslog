@@ -5,17 +5,17 @@
 # not abort when trying to use omjournal. Not high tech,
 # but better than nothing.
 # addd 2016-03-16 by RGerhards, released under ASL 2.0
-. $srcdir/diag.sh init
-. $srcdir/diag.sh generate-conf
-. $srcdir/diag.sh add-conf '
+. ${srcdir:=.}/diag.sh init
+generate_conf
+add_conf '
 module(load="../plugins/omjournal/.libs/omjournal")
 
 template(name="outfmt" type="string" string="%msg%")
 action(type="omjournal" template="outfmt")
 '
-. $srcdir/diag.sh startup
+startup
 ./msleep 500
-. $srcdir/diag.sh shutdown-when-empty
-. $srcdir/diag.sh wait-shutdown
+shutdown_when_empty
+wait_shutdown
 # if we reach this, we have at least not aborted
-. $srcdir/diag.sh exit
+exit_test

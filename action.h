@@ -4,18 +4,18 @@
  * File begun on 2007-08-06 by RGerhards (extracted from syslogd.c, which
  * was under BSD license at the time of rsyslog fork)
  *
- * Copyright 2007-2013 Adiscon GmbH.
+ * Copyright 2007-2018 Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -43,16 +43,17 @@ struct action_s {
 	time_t	tLastExec;	/* time this action was last executed */
 	int	iActionNbr;	/* this action's number (ID) */
 	sbool	bExecWhenPrevSusp;/* execute only when previous action is suspended? */
-	sbool	bWriteAllMarkMsgs;/* should all mark msgs be written (not matter how recent the action was executed)? */
+	sbool	bWriteAllMarkMsgs;
+	/* should all mark msgs be written (not matter how recent the action was executed)? */
 	sbool	bReportSuspension;/* should suspension (and reactivation) of the action reported */
 	sbool	bReportSuspensionCont;
-	sbool	bHadAutoCommit;	/* did an auto-commit happen during doAction()? */
 	sbool	bDisabled;
 	sbool	isTransactional;
 	sbool	bCopyMsg;
 	int	iSecsExecOnceInterval; /* if non-zero, minimum seconds to wait until action is executed again */
 	time_t	ttResumeRtry;	/* when is it time to retry the resume? */
 	int	iResumeInterval;/* resume interval for this action */
+	int	iResumeIntervalMax;/* maximum resume interval for this action --> -1: unbounded */
 	int	iResumeRetryCount;/* how often shall we retry a suspended action? (-1 --> eternal) */
 	int	iNbrNoExec;	/* number of matches that did not yet yield to an exec */
 	int	iExecEveryNthOccur;/* execute this action only every n-th occurence (with n=0,1 -> always) */
@@ -73,6 +74,12 @@ struct action_s {
 	pthread_mutex_t mutAction; /* primary action mutex */
 	uchar *pszName;		/* action name */
 	DEF_ATOMIC_HELPER_MUT(mutCAS)
+	/* error file */
+	const char *pszErrFile;
+	int fdErrFile;
+	pthread_mutex_t mutErrFile;
+	/* external stat file system */
+	const char *pszExternalStateFile;
 	/* for per-worker HUP processing */
 	pthread_mutex_t mutWrkrDataTable; /* protects table structures */
 	void **wrkrDataTable;
@@ -93,13 +100,13 @@ struct action_s {
 rsRetVal actionConstruct(action_t **ppThis);
 rsRetVal actionConstructFinalize(action_t *pThis, struct nvlst *lst);
 rsRetVal actionDestruct(action_t *pThis);
-//rsRetVal actionDbgPrint(action_t *pThis);
 rsRetVal actionSetGlobalResumeInterval(int iNewVal);
 rsRetVal actionDoAction(action_t *pAction);
 rsRetVal actionWriteToAction(action_t *pAction, smsg_t *pMsg, wti_t*);
 rsRetVal actionCallHUPHdlr(action_t *pAction);
 rsRetVal actionClassInit(void);
-rsRetVal addAction(action_t **ppAction, modInfo_t *pMod, void *pModData, omodStringRequest_t *pOMSR, struct cnfparamvals *actParams, struct nvlst *lst);
+rsRetVal addAction(action_t **ppAction, modInfo_t *pMod, void *pModData, omodStringRequest_t *pOMSR,
+	struct cnfparamvals *actParams, struct nvlst *lst);
 rsRetVal activateActions(void);
 rsRetVal actionNewInst(struct nvlst *lst, action_t **ppAction);
 rsRetVal actionProcessCnf(struct cnfobj *o);

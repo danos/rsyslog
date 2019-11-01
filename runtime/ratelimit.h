@@ -7,11 +7,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,7 +25,7 @@ struct ratelimit_s {
 	char *name;	/**< rate limiter name, e.g. for user messages */
 	/* support for Linux kernel-type ratelimiting */
 	unsigned short interval;
-	unsigned short burst;
+	unsigned burst;
 	intTiny severity; /**< ratelimit only equal or lower severity levels (eq or higher values) */
 	unsigned done;
 	unsigned missed;
@@ -42,7 +42,7 @@ struct ratelimit_s {
 /* prototypes */
 rsRetVal ratelimitNew(ratelimit_t **ppThis, const char *modname, const char *dynname);
 void ratelimitSetThreadSafe(ratelimit_t *ratelimit);
-void ratelimitSetLinuxLike(ratelimit_t *ratelimit, unsigned short interval, unsigned short burst);
+void ratelimitSetLinuxLike(ratelimit_t *ratelimit, unsigned short interval, unsigned burst);
 void ratelimitSetNoTimeCache(ratelimit_t *ratelimit);
 void ratelimitSetSeverity(ratelimit_t *ratelimit, intTiny severity);
 rsRetVal ratelimitMsg(ratelimit_t *ratelimit, smsg_t *pMsg, smsg_t **ppRep);

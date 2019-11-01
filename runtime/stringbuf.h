@@ -12,11 +12,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -29,13 +29,14 @@
 #include <assert.h>
 #include <libestr.h>
 
-/** 
+/**
  * The dynamic string buffer object.
  */
 typedef struct cstr_s
-{	
+{
 #ifndef	NDEBUG
 	rsObjID OID;		/**< object ID */
+	sbool isFinalized;
 #endif
 	uchar *pBuf;		/**< pointer to the string buffer, may be NULL if string is empty */
 	size_t iBufSize;	/**< current maximum size of the string buffer */
@@ -50,7 +51,7 @@ rsRetVal cstrConstruct(cstr_t **ppThis);
 #define rsCStrConstruct(x) cstrConstruct((x))
 rsRetVal cstrConstructFromESStr(cstr_t **ppThis, es_str_t *str);
 rsRetVal rsCStrConstructFromszStr(cstr_t **ppThis, const uchar *sz);
-rsRetVal rsCStrConstructFromCStr(cstr_t **ppThis, cstr_t *pFrom);
+rsRetVal rsCStrConstructFromCStr(cstr_t **ppThis, const cstr_t *pFrom);
 rsRetVal rsCStrConstructFromszStrf(cstr_t **ppThis, const char *fmt, ...) __attribute__((format(printf,2, 3)));
 
 /**
@@ -70,10 +71,18 @@ rsRetVal cstrAppendChar(cstr_t *pThis, const uchar c);
  * but before that data is used.
  * rgerhards, 2009-06-16
  */
+#ifdef NDEBUG
 #define cstrFinalize(pThis) { \
 	if((pThis)->iStrLen > 0) \
 		(pThis)->pBuf[(pThis)->iStrLen] = '\0'; /* space is always reserved for this */ \
 }
+#else
+#define cstrFinalize(pThis) { \
+	if((pThis)->iStrLen > 0) \
+		(pThis)->pBuf[(pThis)->iStrLen] = '\0'; /* space is always reserved for this */ \
+	(pThis)->isFinalized = 1; \
+}
+#endif
 
 
 /**

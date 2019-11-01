@@ -3,12 +3,23 @@
 # This file is part of the rsyslog project, released under ASL 2.0
 echo ===============================================================================
 echo \[rscript_wrap2.sh\]: a test for wrap\(2\) script-function
-. $srcdir/diag.sh init
-. $srcdir/diag.sh startup rscript_wrap2.conf
-. $srcdir/diag.sh tcpflood -m 1 -I $srcdir/testsuites/date_time_msg
+. ${srcdir:=.}/diag.sh init
+generate_conf
+add_conf '
+template(name="outfmt" type="string" string="%$.replaced_msg%\n")
+
+module(load="../plugins/imtcp/.libs/imtcp")
+input(type="imtcp" port="0" listenPortFileName="'$RSYSLOG_DYNNAME'.tcpflood_port")
+
+set $.replaced_msg = wrap("foo says" & $msg, "*" & "*");
+
+action(type="omfile" file=`echo $RSYSLOG_OUT_LOG` template="outfmt")
+'
+startup
+tcpflood -m 1 -I $srcdir/testsuites/date_time_msg
 echo doing shutdown
-. $srcdir/diag.sh shutdown-when-empty
+shutdown_when_empty
 echo wait on shutdown
-. $srcdir/diag.sh wait-shutdown 
-. $srcdir/diag.sh content-check "**foo says at Thu Oct 30 13:20:18 IST 2014 random number is 19597**"
-. $srcdir/diag.sh exit
+wait_shutdown 
+content_check "**foo says at Thu Oct 30 13:20:18 IST 2014 random number is 19597**"
+exit_test

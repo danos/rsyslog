@@ -3,7 +3,7 @@
  * be set.
  *
  * Params
- * -f<filename> MUST be given!
+ * -f<filename> file to process, if not given stdin is processed.
  * -s<starting number> -e<ending number>
  * default for s is 0. -e should be given (else it is also 0)
  * -d may be specified, in which case duplicate messages are permitted.
@@ -13,10 +13,12 @@
  *    message is permitted to be lost.
  * -T anticipate truncation (which means specified payload length may be
  *    more than actual payload (which may have been truncated)
+ * -i increment between messages (default: 1). Can be used for tests which
+ *    intentionally leave consistent gaps in the message numbering.
  *
  * Part of the testbench for rsyslog.
  *
- * Copyright 2009-2016 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2009-2018 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
@@ -39,7 +41,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
+#if defined(_AIX)
+	#include  <unistd.h>
+#else
+	#include <getopt.h>
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -56,19 +62,23 @@ int main(int argc, char *argv[])
 	int opt;
 	int lostok = 0; /* how many messages are OK to be lost? */
 	int nDups = 0;
+	int increment = 1;
 	int reachedEOF;
 	int edLen;	/* length of extra data */
 	static char edBuf[500*1024]; /* buffer for extra data (pretty large to be on the save side...) */
 	static char ioBuf[sizeof(edBuf)+1024];
 	char *file = NULL;
 
-	while((opt = getopt(argc, argv, "e:f:ds:vm:ET")) != EOF) {
+	while((opt = getopt(argc, argv, "i:e:f:ds:vm:ET")) != EOF) {
 		switch((char)opt) {
 		case 'f':
 			file = optarg;
 			break;
 		case 'd':
 			dupsPermitted = 1;
+			break;
+		case 'i':
+			increment = atoi(optarg);
 			break;
 		case 'e':
 			end = atoi(optarg);
@@ -94,11 +104,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if(file == NULL) {
-		printf("file must be given!\n");
-		exit(1);
-	}
-
 	if(start > end) {
 		printf("start must be less than or equal end!\n");
 		exit(1);
@@ -109,14 +114,18 @@ int main(int argc, char *argv[])
 	}
 
 	/* read file */
-	fp = fopen(file, "r");
+	if(file == NULL) {
+		fp = stdin;
+	} else {
+		fp = fopen(file, "r");
+	}
 	if(fp == NULL) {
 		printf("error opening file '%s'\n", file);
 		perror(file);
 		exit(1);
 	}
 
-	for(i = start ; i < end+1 ; ++i) {
+	for(i = start ; i < end+1 ; i += increment) {
 		if(bHaveExtraData) {
 			if(fgets(ioBuf, sizeof(ioBuf), fp) == NULL) {
 				scanfOK = 0;
@@ -126,9 +135,10 @@ int main(int argc, char *argv[])
 			if(edLen != (int) strlen(edBuf)) {
 				if (bAnticipateTruncation == 1) {
 					if (edLen < (int) strlen(edBuf)) {
-						printf("extra data length specified %d, but actually is %ld in record %d"
-							   " (truncation was anticipated, but payload should have been smaller than data-length, not larger)\n",
-							   edLen, (long) strlen(edBuf), i);
+						 printf("extra data length specified %d, but actually is %ld in"
+							" record %d (truncation was anticipated, but payload should"
+							" have been smaller than data-length, not larger)\n",
+							edLen, (long) strlen(edBuf), i);
 						exit(1);
 					}
 				} else {
@@ -184,19 +194,23 @@ int main(int argc, char *argv[])
 					if(fgets(ioBuf, sizeof(ioBuf), fp) == NULL) {
 						scanfOK = 0;
 					} else {
-						scanfOK = sscanf(ioBuf, "%d,%d,%s\n", &val, &edLen, edBuf) == 3 ? 1 : 0;
+						scanfOK = sscanf(ioBuf, "%d,%d,%s\n", &val,
+							&edLen, edBuf) == 3 ? 1 : 0;
 					}
 					if(edLen != (int) strlen(edBuf)) {
 						if (bAnticipateTruncation == 1) {
 							if (edLen < (int) strlen(edBuf)) {
-								printf("extra data length specified %d, but actually is %ld in record %d"
-									   " (truncation was anticipated, but payload should have been smaller than data-length, not larger)\n",
-									   edLen, (long) strlen(edBuf), i);
+								 printf("extra data length specified %d, but "
+									"actually is %ld in record %d (truncation was"
+									" anticipated, but payload should have been "
+									"smaller than data-length, not larger)\n",
+									edLen, (long) strlen(edBuf), i);
 								exit(1);
 							}
 						} else {
-							printf("extra data length specified %d, but actually is %ld in record %d\n",
-								   edLen, (long) strlen(edBuf), i);
+							 printf("extra data length specified %d, but actually "
+								"is %ld in record %d\n",
+								edLen, (long) strlen(edBuf), i);
 							exit(1);
 						}
 					}

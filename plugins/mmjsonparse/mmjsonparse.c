@@ -6,18 +6,18 @@
  *
  * File begun on 2012-02-20 by RGerhards
  *
- * Copyright 2012 Adiscon GmbH.
+ * Copyright 2012-2018 Adiscon GmbH.
  *
  * This file is part of rsyslog.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,7 +25,6 @@
  * limitations under the License.
  */
 #include "config.h"
-#include "rsyslog.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -36,12 +35,15 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <json.h>
+
+#include "rsyslog.h"
 #include "conf.h"
 #include "syslogd-types.h"
 #include "template.h"
 #include "module-template.h"
 #include "errmsg.h"
 #include "cfsysline.h"
+#include "parserif.h"
 #include "dirty.h"
 
 MODULE_TYPE_OUTPUT
@@ -51,7 +53,6 @@ MODULE_CNFNAME("mmjsonparse")
 static rsRetVal resetConfigVariables(uchar __attribute__((unused)) *pp, void __attribute__((unused)) *pVal);
 
 /* static data */
-DEFobjCurrIf(errmsg);
 
 /* internal structures
  */
@@ -118,8 +119,8 @@ ENDfreeCnf
 BEGINcreateInstance
 CODESTARTcreateInstance
 	CHKmalloc(pData->container = (uchar*)strdup("!"));
-	CHKmalloc(pData->cookie = strdup("@cee:"));
-	pData->lenCookie = strlen(pData->cookie);
+	CHKmalloc(pData->cookie = strdup(CONST_CEE_COOKIE));
+	pData->lenCookie = CONST_LEN_CEE_COOKIE;
 finalize_it:
 ENDcreateInstance
 
@@ -127,7 +128,7 @@ BEGINcreateWrkrInstance
 CODESTARTcreateWrkrInstance
 	pWrkrData->tokener = json_tokener_new();
 	if(pWrkrData->tokener == NULL) {
-		errmsg.LogError(0, RS_RET_ERR, "error: could not create json "
+		LogError(0, RS_RET_ERR, "error: could not create json "
 				"tokener, cannot activate instance");
 		ABORT_FINALIZE(RS_RET_ERR);
 	}
@@ -204,8 +205,8 @@ processJSON(wrkrInstanceData_t *pWrkrData, smsg_t *pMsg, char *buf, size_t lenBu
 		}
 		ABORT_FINALIZE(RS_RET_NO_CEE_MSG);
 	}
- 
- 	msgAddJSON(pMsg, pWrkrData->pData->container, json, 0, 0);
+
+	msgAddJSON(pMsg, pWrkrData->pData->container, json, 0, 0);
 finalize_it:
 	RETiRet;
 }
@@ -282,9 +283,29 @@ CODESTARTnewActInst
 			pData->cookie = es_str2cstr(pvals[i].val.d.estr, NULL);
 		} else if(!strcmp(actpblk.descr[i].name, "container")) {
 			free(pData->container);
+			size_t lenvar = es_strlen(pvals[i].val.d.estr);
 			pData->container = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
-        } else if(!strcmp(actpblk.descr[i].name, "userawmsg")) {
-            pData->bUseRawMsg = (int) pvals[i].val.d.n;
+			if(pData->container[0] == '$') {
+				/* pre 8.35, the container name needed to be specified without
+				 * the leading $. This was confusing, so we now require a full
+				 * variable name. Nevertheless, we still need to support the
+				 * version without $. -- rgerhards, 2018-05-16
+				 */
+				/* copy lenvar size because of \0 string terminator */
+				memmove(pData->container, pData->container+1,  lenvar);
+				--lenvar;
+			}
+			if(   (lenvar == 0)
+			   || (  !(   pData->container[0] == '!'
+			           || pData->container[0] == '.'
+			           || pData->container[0] == '/' ) )
+			   ) {
+			parser_errmsg("mmjsonparse: invalid container name '%s', name must "
+				"start with either '$!', '$.', or '$/'", pData->container);
+			ABORT_FINALIZE(RS_RET_INVALID_VAR);
+		}
+		} else if(!strcmp(actpblk.descr[i].name, "userawmsg")) {
+			pData->bUseRawMsg = (int) pvals[i].val.d.n;
 		} else {
 			dbgprintf("mmjsonparse: program error, non-handled param '%s'\n", actpblk.descr[i].name);
 		}
@@ -315,14 +336,13 @@ CODE_STD_STRING_REQUESTparseSelectorAct(1)
 	/* we call the function below because we need to call it via our interface definition. However,
 	 * the format specified (if any) is always ignored.
 	 */
-	CHKiRet(cflineParseTemplateName(&p, *ppOMSR, 0, OMSR_TPL_AS_MSG, (uchar*) "RSYSLOG_FileFormat"));
+	iRet = cflineParseTemplateName(&p, *ppOMSR, 0, OMSR_TPL_AS_MSG, (uchar*) "RSYSLOG_FileFormat");
 CODE_STD_FINALIZERparseSelectorAct
 ENDparseSelectorAct
 
 
 BEGINmodExit
 CODESTARTmodExit
-	objRelease(errmsg, CORE_COMPONENT);
 ENDmodExit
 
 
@@ -374,7 +394,6 @@ CODEmodInit_QueryRegCFSLineHdlr
 		ABORT_FINALIZE(RS_RET_NO_MSG_PASSING);
 	}
 
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 	
 	CHKiRet(omsdRegCFSLineHdlr((uchar *)"resetconfigvariables", 1, eCmdHdlrCustomHandler,
 				    resetConfigVariables, NULL, STD_LOADABLE_MODULE_ID));

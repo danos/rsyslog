@@ -12,6 +12,7 @@ libgrammar_la_SOURCES = \
 	parserif.h \
 	grammar.h
 libgrammar_la_CPPFLAGS =  $(RSRT_CFLAGS) $(LIBLOGGING_STDLOG_CFLAGS)
+libgrammar_la_LIBADD =
 
 #testdriver_SOURCES = testdriver.c libgrammar.la
 #testdriver_CPPFLAGS =  $(RSRT_CFLAGS)

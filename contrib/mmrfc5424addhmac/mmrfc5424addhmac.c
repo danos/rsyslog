@@ -9,7 +9,7 @@
  *    - this guard against misconfiguration
  *    - it permits us to be more liberal in regard to malformed
  *      structured data
- *    - it permits us to handle border-cases (like duplicate 
+ *    - it permits us to handle border-cases (like duplicate
  *      SD-IDs) with much less complexity
  * 2. performance
  *    With being "on the spot" of what we need we can reduce memory
@@ -32,11 +32,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -67,7 +67,6 @@ MODULE_TYPE_NOKEEP
 MODULE_CNFNAME("mmrfc5424addhmac")
 
 
-DEFobjCurrIf(errmsg);
 DEF_OMOD_STATIC_DATA
 
 /* config variables */
@@ -184,7 +183,7 @@ CODESTARTnewActInst
 			ciphername = es_str2cstr(pvals[i].val.d.estr, NULL);
 			pData->algo = EVP_get_digestbyname(ciphername);
 			if(pData->algo == NULL) {
-				errmsg.LogError(0, RS_RET_CRY_INVLD_ALGO,
+				LogError(0, RS_RET_CRY_INVLD_ALGO,
 					"hashFunction '%s' unknown to openssl - "
 					"cannot continue", ciphername);
 				free(ciphername);
@@ -325,7 +324,7 @@ hashMsg(instanceData *pData, smsg_t *pMsg)
 
 	MsgGetStructuredData(pMsg, &sdbuf, &sdlen);
 	getRawMsg(pMsg, &pRawMsg, &lenRawMsg);
- 	HMAC(pData->algo, pData->key, pData->keylen,
+	HMAC(pData->algo, pData->key, pData->keylen,
 	     pRawMsg, lenRawMsg, hash, &hashlen);
 	hexify(hash, hashlen, hashPrintable);
 	lenNewsd = snprintf((char*)newsd, sizeof(newsd), "[%s hash=\"%s\"]",
@@ -355,22 +354,11 @@ CODESTARTdoAction
 ENDdoAction
 
 
-BEGINparseSelectorAct
-CODESTARTparseSelectorAct
-CODE_STD_STRING_REQUESTparseSelectorAct(1)
-	if(strncmp((char*) p, ":mmrfc5424addhmac:", sizeof(":mmrfc5424addhmac:") - 1)) {
-		errmsg.LogError(0, RS_RET_LEGA_ACT_NOT_SUPPORTED,
-			"mmrfc5424addhmac supports only v6+ config format, use: "
-			"action(type=\"mmrfc5424addhmac\" ...)");
-	}
-	ABORT_FINALIZE(RS_RET_CONFLINE_UNPROCESSED);
-CODE_STD_FINALIZERparseSelectorAct
-ENDparseSelectorAct
+NO_LEGACY_CONF_parseSelectorAct
 
 
 BEGINmodExit
 CODESTARTmodExit
-	objRelease(errmsg, CORE_COMPONENT);
 	EVP_cleanup();
 ENDmodExit
 
@@ -391,5 +379,4 @@ CODESTARTmodInit
 CODEmodInit_QueryRegCFSLineHdlr
 	DBGPRINTF("mmrfc5424addhmac: module compiled with rsyslog version %s.\n", VERSION);
 	OpenSSL_add_all_digests();
-	CHKiRet(objUse(errmsg, CORE_COMPONENT));
 ENDmodInit

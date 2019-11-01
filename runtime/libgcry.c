@@ -1,6 +1,6 @@
 /* gcry.c - rsyslog's libgcrypt based crypto provider
  *
- * Copyright 2013-2016 Adiscon GmbH.
+ * Copyright 2013-2018 Adiscon GmbH.
  *
  * We need to store some additional information in support of encryption.
  * For this, we create a side-file, which is named like the actual log
@@ -13,7 +13,7 @@
  *            encryption block ends.
  * For the current implementation, there must always be an IV record
  * followed by an END record. Each records is LF-terminated. Record
- * types can simply be extended in the future by specifying new 
+ * types can simply be extended in the future by specifying new
  * types (like "IV") before the colon.
  * To identify a file as rsyslog encryption info file, it must start with
  * the line "FILETYPE:rsyslog-enrcyption-info"
@@ -182,8 +182,9 @@ eiCheckFiletype(gcryfile gf)
 	DEFiRet;
 
 	if(gf->fd == -1) {
-		bNeedClose = 1;
 		CHKiRet(eiOpenRead(gf));
+		assert(gf->fd != -1); /* cannot happen after successful return */
+		bNeedClose = 1;
 	}
 
 	if(Debug) memset(hdrBuf, 0, sizeof(hdrBuf)); /* for dbgprintf below! */
@@ -245,7 +246,8 @@ eiGetIV(gcryfile gf, uchar *iv, size_t leniv)
 	DEFiRet;
 
 	CHKiRet(eiGetRecord(gf, rectype, value));
-	if(strcmp(rectype, "IV")) {
+	const char *const cmp_IV = "IV"; // work-around for static analyzer
+	if(strcmp(rectype, cmp_IV)) {
 		DBGPRINTF("no IV record found when expected, record type "
 			"seen is '%s'\n", rectype);
 		ABORT_FINALIZE(RS_RET_ERR);
@@ -283,7 +285,8 @@ eiGetEND(gcryfile gf, off64_t *offs)
 	DEFiRet;
 
 	CHKiRet(eiGetRecord(gf, rectype, value));
-	if(strcmp(rectype, "END")) {
+	const char *const const_END = "END"; // clang static analyzer work-around
+	if(strcmp(rectype, const_END)) {
 		DBGPRINTF("no END record found when expected, record type "
 			  "seen is '%s'\n", rectype);
 		ABORT_FINALIZE(RS_RET_ERR);
@@ -432,8 +435,10 @@ gcryCtxNew(void)
 {
 	gcryctx ctx;
 	ctx = calloc(1, sizeof(struct gcryctx_s));
-	ctx->algo = GCRY_CIPHER_AES128;
-	ctx->mode = GCRY_CIPHER_MODE_CBC;
+	if(ctx != NULL) {
+		ctx->algo = GCRY_CIPHER_AES128;
+		ctx->mode = GCRY_CIPHER_MODE_CBC;
+	}
 	return ctx;
 }
 
@@ -458,6 +463,7 @@ void
 rsgcryCtxDel(gcryctx ctx)
 {
 	if(ctx != NULL) {
+		free(ctx->key);
 		free(ctx);
 	}
 }
@@ -475,17 +481,18 @@ addPadding(gcryfile pF, uchar *buf, size_t *plen)
 	(*plen)+= nPad;
 }
 
-static void
-removePadding(uchar *buf, size_t *plen)
+static void ATTR_NONNULL()
+removePadding(uchar *const buf, size_t *const plen)
 {
-	unsigned len = (unsigned) *plen;
-	unsigned iSrc, iDst;
-	uchar *frstNUL;
+	const size_t len = *plen;
+	size_t iSrc, iDst;
 
-	frstNUL = (uchar*)strchr((char*)buf, 0x00);
-	if(frstNUL == NULL)
-		goto done;
-	iDst = iSrc = frstNUL - buf;
+	iSrc = 0;
+	/* skip to first NUL */
+	while(iSrc < len && buf[iSrc] == '\0') {
+		++iSrc;
+	}
+	iDst = iSrc;
 
 	while(iSrc < len) {
 		if(buf[iSrc] != 0x00)
@@ -494,7 +501,6 @@ removePadding(uchar *buf, size_t *plen)
 	}
 
 	*plen = iDst;
-done:	return;
 }
 
 /* returns 0 on succes, positive if key length does not match and key
@@ -548,39 +554,31 @@ finalize_it:
 	RETiRet;
 }
 
-/* As of some Linux and security expert I spoke to, /dev/urandom
- * provides very strong random numbers, even if it runs out of
- * entropy. As far as he knew, this is save for all applications
- * (and he had good proof that I currently am not permitted to
- * reproduce). -- rgerhards, 2013-03-04
+/* We use random numbers to initiate the IV. Rsyslog runtime will ensure
+ * we get a sufficiently large number.
  */
-static void
+#if defined(__clang__)
+#pragma GCC diagnostic ignored "-Wunknown-attributes"
+#endif
+static rsRetVal
+#if defined(__clang__)
+__attribute__((no_sanitize("shift"))) /* IV shift causes known overflow */
+#endif
 seedIV(gcryfile gf, uchar **iv)
 {
-	int fd;
+	long rndnum = 0; /* keep compiler happy -- this value is always overriden */
+	DEFiRet;
 
-	#ifdef __clang_analyzer__
-	*iv = calloc(1, gf->blkLength); /* do NOT use this code! */
-	/* this execution branch is only present to prevent a
-	 * "garbagge value used" warning by the static analyzer.
-	 * In fact, that is exactly what we want to and need to
-	 * use. Using calloc here keeps that analyzer happy, but would
-	 * cause a security issue if used in practice.
-	 */
-	#else
-	*iv = malloc(gf->blkLength); /* do NOT zero-out! */
-	#endif
-	/* if we cannot obtain data from /dev/urandom, we use whatever
-	 * is present at the current memory location as random data. Of
-	 * course, this is very weak and we should consider a different
-	 * option, especially when not running under Linux (for Linux,
-	 * unavailability of /dev/urandom is just a theoretic thing, it
-	 * will always work...).  -- TODO -- rgerhards, 2013-03-06
-	 */
-	if((fd = open("/dev/urandom", O_RDONLY)) > 0) {
-		if(read(fd, *iv, gf->blkLength)) {}; /* keep compiler happy */
-		close(fd);
+	CHKmalloc(*iv = calloc(1, gf->blkLength));
+	for(size_t i = 0 ; i < gf->blkLength; ++i) {
+		const int shift = (i % 4) * 8;
+		if(shift == 0) { /* need new random data? */
+			rndnum = randomNumber();
+		}
+		(*iv)[i] = 0xff & ((rndnum & (0xff << shift)) >> shift);
 	}
+finalize_it:
+	RETiRet;
 }
 
 static rsRetVal
@@ -602,7 +600,7 @@ readIV(gcryfile gf, uchar **iv)
 		CHKiRet(eiCheckFiletype(gf));
 	}
 	*iv = malloc(gf->blkLength); /* do NOT zero-out! */
-	CHKiRet(eiGetIV(gf, *iv, (size_t) gf->blkLength));
+	iRet = eiGetIV(gf, *iv, (size_t) gf->blkLength);
 finalize_it:
 	RETiRet;
 }
@@ -629,7 +627,7 @@ readBlkEnd(gcryfile gf)
 	} else {
 		FINALIZE;
 	}
-		
+
 finalize_it:
 	RETiRet;
 }
@@ -664,7 +662,7 @@ rsgcryBlkBegin(gcryfile gf)
 		readIV(gf, &iv);
 		readBlkEnd(gf);
 	} else {
-		seedIV(gf, &iv);
+		CHKiRet(seedIV(gf, &iv));
 	}
 
 	gcryError = gcry_cipher_setiv(gf->chd, iv, gf->blkLength);
@@ -743,7 +741,8 @@ rsgcryDecrypt(gcryfile pF, uchar *buf, size_t *len)
 	}
 	removePadding(buf, len);
 	// TODO: remove dbgprintf once things are sufficently stable -- rgerhards, 2013-05-16
-	dbgprintf("libgcry: decrypted, bytesToBlkEnd %lld, buffer is now '%50.50s'\n", (long long) pF->bytesToBlkEnd, buf);
+	dbgprintf("libgcry: decrypted, bytesToBlkEnd %lld, buffer is now '%50.50s'\n",
+		(long long) pF->bytesToBlkEnd, buf);
 
 finalize_it:
 	RETiRet;

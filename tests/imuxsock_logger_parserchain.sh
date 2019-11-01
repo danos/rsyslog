@@ -1,22 +1,31 @@
 #!/bin/bash
 # Copyright (C) 2015-03-04 by rainer gerhards, released under ASL 2.0
-echo ======================================================================
-echo \[imuxsock_logger_parserchain.sh\]: test imuxsock
-. $srcdir/diag.sh init
-. $srcdir/diag.sh startup imuxsock_logger_parserchain.conf
-logger -d --rfc3164 -u testbench_socket test
+. ${srcdir:=.}/diag.sh init
+check_logger_has_option_d
+generate_conf
+add_conf '
+module(load="../plugins/imuxsock/.libs/imuxsock" sysSock.use="off")
+input(	type="imuxsock" socket="'$RSYSLOG_DYNNAME'-testbench_socket"
+	useSpecialParser="off"
+	parseHostname="on")
+
+template(name="outfmt" type="string" string="%msg:%\n")
+*.notice      action(type="omfile" file=`echo $RSYSLOG_OUT_LOG` template="outfmt")
+'
+startup
+logger -d --rfc3164 -u $RSYSLOG_DYNNAME-testbench_socket test
 if [ ! $? -eq 0 ]; then
-logger -d -u testbench_socket test
+logger -d -u $RSYSLOG_DYNNAME-testbench_socket test
 fi;
 # the sleep below is needed to prevent too-early termination of rsyslogd
 ./msleep 100
-. $srcdir/diag.sh shutdown-when-empty
-. $srcdir/diag.sh wait-shutdown
-cmp rsyslog.out.log $srcdir/resultdata/imuxsock_logger.log
+shutdown_when_empty
+wait_shutdown
+cmp $RSYSLOG_OUT_LOG $srcdir/resultdata/imuxsock_logger.log
 if [ ! $? -eq 0 ]; then
   echo "imuxsock_logger_parserchain.sh failed"
-  echo contents of rsyslog.out.log:
-  echo \"`cat rsyslog.out.log`\"
+  echo "contents of $RSYSLOG_OUT_LOG:"
+  echo \"$(cat $RSYSLOG_OUT_LOG)\"
   exit 1
 fi;
-. $srcdir/diag.sh exit
+exit_test

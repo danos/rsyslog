@@ -5,18 +5,18 @@
  * that loop somehow and I've done that by moving the typedefs
  * into this file here.
  *
- * Copyright 2008-2012 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2008-2019 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -63,8 +63,9 @@ typedef enum {	/* IDs of base methods supported by all objects - used for jump t
  * This MUST be in sync with the ifBEGIN macro
  */
 struct interface_s {
-	int ifVersion;	/* must be set to version requested */ 
-	int ifIsLoaded; /* is the interface loaded? (0-no, 1-yes, 2-load failed; if not 1, functions can NOT be called! */
+	int ifVersion;	/* must be set to version requested */
+	int ifIsLoaded;
+	/* is the interface loaded? (0-no, 1-yes, 2-load failed; if not 1, functions can NOT be called! */
 };
 
 
@@ -97,28 +98,49 @@ struct obj_s {	/* the dummy struct that each derived class can be casted to */
 		obj_t objData
 #	define ISOBJ_assert(pObj) \
 		do { \
-		ASSERT((pObj) != NULL); \
-		ASSERT((unsigned) ((obj_t*)(pObj))->iObjCooCKiE == (unsigned) 0xBADEFEE); \
+		assert((pObj) != NULL); \
+		assert((unsigned) ((obj_t*)(pObj))->iObjCooCKiE == (unsigned) 0xBADEFEE); \
 		} while(0);
 #	define ISOBJ_TYPE_assert(pObj, objType) \
 		do { \
-		ASSERT(pObj != NULL); \
+		assert(pObj != NULL); \
 		if(strcmp((char*)(((obj_t*)pObj)->pObjInfo->pszID), #objType)) { \
 			dbgprintf("%s:%d ISOBJ assert failure: invalid object type, expected '%s' " \
 				  "actual '%s', cookie: %X\n", __FILE__, __LINE__, #objType, \
 				  (((obj_t*)pObj)->pObjInfo->pszID), ((obj_t*)(pObj))->iObjCooCKiE); \
-			assert(0); /* trigger assertion, messge we already have */ \
+			fprintf(stderr, "%s:%d ISOBJ assert failure: invalid object type, expected '%s' " \
+				  "actual '%s', cookie: %X\n", __FILE__, __LINE__, #objType, \
+				  (((obj_t*)pObj)->pObjInfo->pszID), ((obj_t*)(pObj))->iObjCooCKiE); \
+			fflush(stderr); \
+			assert(!strcmp((char*)(((obj_t*)pObj)->pObjInfo->pszID), #objType)); \
 		} \
-		ASSERT((unsigned) ((obj_t*)(pObj))->iObjCooCKiE == (unsigned) 0xBADEFEE); \
+		assert((unsigned) ((obj_t*)(pObj))->iObjCooCKiE == (unsigned) 0xBADEFEE); \
 		} while(0)
+	/* now the same for pointers to "regular" objects (like wrkrInstanceData) */
+#	define PTR_ASSERT_DEF unsigned int _Assert_type;
+#	define PTR_ASSERT_SET_TYPE(_ptr, _type) _ptr->_Assert_type = _type
+#	define PTR_ASSERT_CHK(_ptr, _type) do { \
+		assert(_ptr != NULL); \
+		if(_ptr->_Assert_type != _type) {\
+			dbgprintf("%s:%d PTR_ASSERT_CHECK failure: invalid pointer type %x, " \
+				"expected %x\n", __FILE__, __LINE__, _ptr->_Assert_type, _type); \
+			fprintf(stderr, "%s:%d PTR_ASSERT_CHECK failure: invalid pointer type %x, " \
+				"expected %x\n", __FILE__, __LINE__, _ptr->_Assert_type, _type); \
+			assert(_ptr->_Assert_type == _type); \
+		} \
+	} while(0)
 #else /* non-debug mode, no checks but much faster */
 #	define BEGINobjInstance obj_t objData
 #	define ISOBJ_TYPE_assert(pObj, objType)
 #	define ISOBJ_assert(pObj)
+
+#	define PTR_ASSERT_DEF
+#	define PTR_ASSERT_SET_TYPE(_ptr, _type)
+#	define PTR_ASSERT_CHK(_ptr, _type)
 #endif
 
 /* a set method for *very simple* object accesses. Note that this does
- * NOT conform to the standard calling conventions and should be 
+ * NOT conform to the standard calling conventions and should be
  * used only if actually nothing can go wrong! -- rgerhards, 2008-04-17
  */
 #define DEFpropGetMeth(obj, prop, dataType)\
@@ -130,7 +152,6 @@ struct obj_s {	/* the dummy struct that each derived class can be casted to */
 #define DEFpropSetMethPTR(obj, prop, dataType)\
 	rsRetVal obj##Set##prop(obj##_t *pThis, dataType *pVal)\
 	{ \
-		/* DEV debug: dbgprintf("%sSet%s()\n", #obj, #prop); */\
 		pThis->prop = pVal; \
 		return RS_RET_OK; \
 	}
@@ -139,7 +160,6 @@ struct obj_s {	/* the dummy struct that each derived class can be casted to */
 #define DEFpropSetMethFP(obj, prop, dataType)\
 	rsRetVal obj##Set##prop(obj##_t *pThis, dataType)\
 	{ \
-		/* DEV debug: dbgprintf("%sSet%s()\n", #obj, #prop); */\
 		pThis->prop = pVal; \
 		return RS_RET_OK; \
 	}
@@ -149,7 +169,6 @@ struct obj_s {	/* the dummy struct that each derived class can be casted to */
 	rsRetVal obj##Set##prop(obj##_t *pThis, dataType pVal);\
 	rsRetVal obj##Set##prop(obj##_t *pThis, dataType pVal)\
 	{ \
-		/* DEV debug: dbgprintf("%sSet%s()\n", #obj, #prop); */\
 		pThis->prop = pVal; \
 		return RS_RET_OK; \
 	}
@@ -196,7 +215,7 @@ rsRetVal objName##ClassInit(struct modInfo_s *pModInfo) \
 	CHKiRet(obj.InfoConstruct(&pObjInfoOBJ, (uchar*) #objName, objVers, \
 	                         NULL,\
 				 NULL,\
-				 (rsRetVal (*)(interface_t*))objName##QueryInterface, pModInfo)); 
+				 (rsRetVal (*)(interface_t*))objName##QueryInterface, pModInfo));
 
 #define ENDObjClassInit(objName) \
 	iRet = obj.RegisterObj((uchar*)#objName, pObjInfoOBJ); \
@@ -205,7 +224,7 @@ finalize_it: \
 }
 
 
-/* now come the class exit. This is to be called immediately before the class is 
+/* now come the class exit. This is to be called immediately before the class is
  * unloaded (actual unload for plugins, program termination for core modules)
  * gerhards, 2008-03-10
  */
@@ -240,7 +259,7 @@ rsRetVal objName##ClassExit(void) \
 		DEFiRet; \
 		obj##_t *pThis; \
 	 \
-		ASSERT(ppThis != NULL); \
+		assert(ppThis != NULL); \
 	 \
 		if((pThis = (obj##_t *)calloc(1, sizeof(obj##_t))) == NULL) { \
 			ABORT_FINALIZE(RS_RET_OUT_OF_MEMORY); \
@@ -252,12 +271,12 @@ rsRetVal objName##ClassExit(void) \
 	finalize_it: \
 		OBJCONSTRUCT_CHECK_SUCCESS_AND_CLEANUP \
 		RETiRet; \
-	} 
+	}
 
 
 /* this defines the destructor. The important point is that the base object
  * destructor is called. The upper-level class shall destruct all of its
- * properties, but not the instance itself. This is freed here by the 
+ * properties, but not the instance itself. This is freed here by the
  * framework (we need an intact pointer because we need to free the
  * obj_t structures inside it). A pointer to the object pointer must be
  * parse, because it is re-set to NULL (this, for example, is important in
@@ -284,15 +303,15 @@ rsRetVal objName##ClassExit(void) \
 	rsRetVal OBJ##Destruct(OBJ##_t __attribute__((unused)) **ppThis) \
 	{ \
 		DEFiRet; \
-		OBJ##_t *pThis; 
+		OBJ##_t *pThis;
 
 #define CODESTARTobjDestruct(OBJ) \
-		ASSERT(ppThis != NULL); \
+		assert(ppThis != NULL); \
 		pThis = *ppThis; \
 		ISOBJ_TYPE_assert(pThis, OBJ);
 
 /* note: there was a long-time bug in the macro below that lead to *ppThis = NULL
- * only when the object was actually destructed. I discovered this issue during 
+ * only when the object was actually destructed. I discovered this issue during
  * introduction of the pRcvFrom property in smsg_t, but it potentially had other
  * effects, too. I am not sure if some experienced instability resulted from this
  * bug OR if its fix will cause harm to so-far "correctly" running code. The later
@@ -310,7 +329,7 @@ rsRetVal objName##ClassExit(void) \
 		} \
 		*ppThis = NULL; \
 		RETiRet; \
-	} 
+	}
 
 
 /* this defines the debug print entry point. DebugPrint is optional. If
@@ -327,15 +346,15 @@ rsRetVal objName##ClassExit(void) \
 		DEFiRet; \
 
 #define CODESTARTobjDebugPrint(obj) \
-		ASSERT(pThis != NULL); \
+		assert(pThis != NULL); \
 		ISOBJ_TYPE_assert(pThis, obj); \
 
 #define ENDobjDebugPrint(obj) \
 		RETiRet; \
-	} 
+	}
 
 /* ------------------------------ object loader system ------------------------------ *
- * The following code builds a dynamic object loader system. The 
+ * The following code builds a dynamic object loader system. The
  * root idea is that all objects are dynamically loadable,
  * which is necessary to get a clean plug-in interface where every plugin can access
  * rsyslog's rich object model via simple and quite portable methods.
@@ -362,11 +381,11 @@ rsRetVal objName##ClassExit(void) \
 		DEFiRet; \
 
 #define CODESTARTobjQueryInterface(obj) \
-		ASSERT(pIf != NULL);
+		assert(pIf != NULL);
 
 #define ENDobjQueryInterface(obj) \
 		RETiRet; \
-	} 
+	}
 
 #define PROTOTYPEObjQueryInterface(obj) rsRetVal obj##QueryInterface(obj##_if_t *pIf)
 
@@ -408,7 +427,7 @@ rsRetVal objName##ClassExit(void) \
  */
 #define DEFobjCurrIf(obj) \
 		static obj##_if_t obj = { .ifVersion = obj##CURR_IF_VERSION, .ifIsLoaded = 0 };
- 
+
 /* define the prototypes for a class - when we use interfaces, we just have few
  * functions that actually need to be non-static.
  */

@@ -13,11 +13,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
  *       -or-
  *       see COPYING.ASL20 in the source distribution
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -199,7 +199,7 @@ finalize_it:
 struct outchannel *ochAddLine(char* pName, uchar** ppRestOfConfLine)
 {
 	struct outchannel *pOch;
- 	uchar *p;
+	uchar *p;
 
 	assert(pName != NULL);
 	assert(ppRestOfConfLine != NULL);
@@ -208,7 +208,7 @@ struct outchannel *ochAddLine(char* pName, uchar** ppRestOfConfLine)
 		return NULL;
 	
 	pOch->iLenName = strlen(pName);
-	pOch->pszName = (char*) MALLOC(pOch->iLenName + 1);
+	pOch->pszName = (char*) malloc(pOch->iLenName + 1);
 	if(pOch->pszName == NULL) {
 		dbgprintf("ochAddLine could not alloc memory for outchannel name!");
 		pOch->iLenName = 0;
@@ -277,7 +277,7 @@ void ochDeleteAll(void)
 }
 
 
-/* Print the outchannel structure. This is more or less a 
+/* Print the outchannel structure. This is more or less a
  * debug or test aid, but anyhow I think it's worth it...
  */
 void ochPrintList(void)
@@ -287,9 +287,11 @@ void ochPrintList(void)
 	pOch = loadConf->och.ochRoot;
 	while(pOch != NULL) {
 		dbgprintf("Outchannel: Name='%s'\n", pOch->pszName == NULL? "NULL" : pOch->pszName);
-		dbgprintf("\tFile Template: '%s'\n", pOch->pszFileTemplate == NULL ? "NULL" : (char*) pOch->pszFileTemplate);
+		dbgprintf("\tFile Template: '%s'\n", pOch->pszFileTemplate == NULL ? "NULL" :
+			(char*) pOch->pszFileTemplate);
 		dbgprintf("\tMax Size.....: %lu\n", (long unsigned) pOch->uSizeLimit);
-		dbgprintf("\tOnSizeLimtCmd: '%s'\n", pOch->cmdOnSizeLimit == NULL ? "NULL" : (char*) pOch->cmdOnSizeLimit);
+		dbgprintf("\tOnSizeLimtCmd: '%s'\n", pOch->cmdOnSizeLimit == NULL ? "NULL" :
+			(char*) pOch->cmdOnSizeLimit);
 		pOch = pOch->pNext; /* done, go next */
 	}
 }
