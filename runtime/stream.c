@@ -448,6 +448,19 @@ strmWaitAsyncWriterDone(strm_t *pThis)
 	}
 }
 
+/* stop the writer thread (we MUST be runnnig asynchronously when this method
+ * is called!). Note that the mutex must be locked! -- rgerhards, 2009-07-06
+ */
+static void
+stopWriter(strm_t *const pThis)
+{
+	pThis->bStopWriter = 1;
+	pthread_cond_signal(&pThis->notEmpty);
+	d_pthread_mutex_unlock(&pThis->mut);
+	pthread_join(pThis->writerThreadID, NULL);
+}
+
+
 
 /* close a strm file
  * Note that the bDeleteOnClose flag is honored. If it is set, the file will be
@@ -474,6 +487,9 @@ static rsRetVal strmCloseFile(strm_t *pThis)
 		if(pThis->iZipLevel) {
 			doZipFinish(pThis);
 		}
+		if(pThis->bAsyncWrite) {
+			stopWriter(pThis);
+		}
 	}
 
 	/* if we have a signature provider, we must make sure that the crypto
@@ -492,6 +508,8 @@ static rsRetVal strmCloseFile(strm_t *pThis)
 	 * against this. -- rgerhards, 2010-03-19
 	 */
 	if(pThis->fd != -1) {
+		DBGOPRINT((obj_t*) pThis, "file %d(%s) closing\n",
+			pThis->fd, getFileDebugName(pThis));
 		currOffs = lseek64(pThis->fd, 0, SEEK_CUR);
 		close(pThis->fd);
 		pThis->fd = -1;
@@ -1272,26 +1290,13 @@ finalize_it:
 }
 
 
-/* stop the writer thread (we MUST be runnnig asynchronously when this method
- * is called!). Note that the mutex must be locked! -- rgerhards, 2009-07-06
- */
-static void
-stopWriter(strm_t *pThis)
-{
-	pThis->bStopWriter = 1;
-	pthread_cond_signal(&pThis->notEmpty);
-	d_pthread_mutex_unlock(&pThis->mut);
-	pthread_join(pThis->writerThreadID, NULL);
-}
-
-
 /* destructor for the strm object */
 BEGINobjDestruct(strm) /* be sure to specify the object type also in END and CODESTART macros! */
 	int i;
 CODESTARTobjDestruct(strm)
 	/* we need to stop the ZIP writer */
 	if(pThis->bAsyncWrite)
-		/* Note: mutex will be unlocked in stopWriter! */
+		/* Note: mutex will be unlocked in strmCloseFile/stopWriter! */
 		d_pthread_mutex_lock(&pThis->mut);
 
 	/* strmClose() will handle read-only files as well as need to open
@@ -1300,7 +1305,6 @@ CODESTARTobjDestruct(strm)
 	strmCloseFile(pThis);
 
 	if(pThis->bAsyncWrite) {
-		stopWriter(pThis);
 		pthread_mutex_destroy(&pThis->mut);
 		pthread_cond_destroy(&pThis->notFull);
 		pthread_cond_destroy(&pThis->notEmpty);
@@ -1659,6 +1663,8 @@ asyncWriterThread(void *pPtr)
 	/* Not reached */
 
 finalize_it:
+	DBGOPRINT((obj_t*) pThis, "file %d(%s) asyncWriterThread terminated\n",
+		pThis->fd, getFileDebugName(pThis));
 	return NULL; /* to keep pthreads happy */
 }
 
@@ -1890,6 +1896,8 @@ strmFlush(strm_t *pThis)
 
 	assert(pThis != NULL);
 
+	DBGOPRINT((obj_t*) pThis, "file %d strmFlush\n", pThis->fd);
+
 	if(pThis->bAsyncWrite)
 		d_pthread_mutex_lock(&pThis->mut);
 	CHKiRet(strmFlushInternal(pThis, 1));
@@ -1947,8 +1955,8 @@ rsRetVal
 strmMultiFileSeek(strm_t *pThis, unsigned int FNum, off64_t offs, off64_t *bytesDel)
 {
 	struct stat statBuf;
+	int skipped_files;
 	DEFiRet;
-
 	ISOBJ_TYPE_assert(pThis, strm);
 
 	if(FNum == 0 && offs == 0) { /* happens during queue init */
@@ -1956,33 +1964,37 @@ strmMultiFileSeek(strm_t *pThis, unsigned int FNum, off64_t offs, off64_t *bytes
 		FINALIZE;
 	}
 
-	if(pThis->iCurrFNum != FNum) {
-		/* Note: we assume that no more than one file is skipped - an
-		 * assumption that is being used also by the whole rest of the
-		 * code and most notably the queue subsystem.
-		 */
+	skipped_files = FNum - pThis->iCurrFNum;
+	*bytesDel = 0;
+
+	while(skipped_files > 0) {
 		CHKiRet(genFileName(&pThis->pszCurrFName, pThis->pszDir, pThis->lenDir,
 				    pThis->pszFName, pThis->lenFName, pThis->iCurrFNum,
 				    pThis->iFileNumDigits));
+		dbgprintf("rger: processing file %s\n", pThis->pszCurrFName);
 		if(stat((char*)pThis->pszCurrFName, &statBuf) != 0) {
 			LogError(errno, RS_RET_IO_ERROR, "unexpected error doing a stat() "
 				"on file %s - further malfunctions may happen",
 				pThis->pszCurrFName);
-			ABORT_FINALIZE(RS_RET_IO_ERROR);
+			/* we do NOT error-terminate here as this could worsen the
+			 * situation. As such, we just keep running and try to delete
+			 * as many files as possible.
+			 */
 		}
-		*bytesDel = statBuf.st_size;
+		*bytesDel += statBuf.st_size;
 		DBGPRINTF("strmMultiFileSeek: detected new filenum, was %u, new %u, "
 			  "deleting '%s' (%lld bytes)\n", pThis->iCurrFNum, FNum,
-			  pThis->pszCurrFName, (long long) *bytesDel);
+			  pThis->pszCurrFName, (long long) statBuf.st_size);
 		unlink((char*)pThis->pszCurrFName);
 		if(pThis->cryprov != NULL)
 			pThis->cryprov->DeleteStateFiles(pThis->pszCurrFName);
 		free(pThis->pszCurrFName);
 		pThis->pszCurrFName = NULL;
-		pThis->iCurrFNum = FNum;
-	} else {
-		*bytesDel = 0;
+		pThis->iCurrFNum++;
+		--skipped_files;
 	}
+	DBGOPRINT((obj_t*) pThis, "strmMultiFileSeek: deleted %lld bytes in this run\n",
+		(long long) *bytesDel);
 	pThis->strtOffs = pThis->iCurrOffs = offs;
 
 finalize_it:

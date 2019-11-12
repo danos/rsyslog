@@ -757,6 +757,16 @@ check_mainq_spool() {
 		error_exit 1
 	fi
 }
+# check that no spool file exists. Abort if they do.
+# This situation must exist after a successful termination of rsyslog
+# where the disk queue has properly been drained and shut down.
+check_spool_empty() {
+	if [ "$(ls $RSYSLOG_DYNNAME.spool/* 2> /dev/null)" != "" ]; then
+		printf 'error: spool files exists where they are not permitted to do so:\n'
+		ls -l $RSYSLOG_DYNNAME.spool/*
+		error_exit 1
+	fi
+}
 
 # general helper for imjournal tests: check that we got hold of the
 # injected test message. This is pretty lengthy as the journal has played
@@ -988,6 +998,9 @@ wait_seq_check() {
 	fi
 
 	while true ; do
+		if [ "$PRE_SEQ_CHECK_FUNC" != "" ]; then
+			$PRE_SEQ_CHECK_FUNC
+		fi
 		if [ "${filename##.*}" != "gz" ]; then
 			if [ -f "$filename" ]; then
 				count=$(wc -l < "$filename")
@@ -1260,6 +1273,7 @@ error_stats() {
 # add -v to chkseq if you need more verbose output
 # argument --check-only can be used to simply do a check without abort in fail case
 # env var SEQ_CHECK_FILE permits to override file name to check
+# env var SEQ_CHECK_OPTIONS provide the ability to add extra options for check program
 seq_check() {
 	if [ "$SEQ_CHECK_FILE" == "" ]; then
 		SEQ_CHECK_FILE="$RSYSLOG_OUT_LOG"
@@ -1292,7 +1306,7 @@ seq_check() {
 	if [ "${SEQ_CHECK_FILE##*.}" == "gz" ]; then
 		gunzip -c "${SEQ_CHECK_FILE}" | $RS_SORTCMD $RS_SORT_NUMERIC_OPT | ./chkseq -s$startnum -e$endnum $3 $4 $5 $6 $7
 	else
-		$RS_SORTCMD $RS_SORT_NUMERIC_OPT < "${SEQ_CHECK_FILE}" | ./chkseq -s$startnum -e$endnum $3 $4 $5 $6 $7
+		$RS_SORTCMD $RS_SORT_NUMERIC_OPT < "${SEQ_CHECK_FILE}" | ./chkseq -s$startnum -e$endnum $3 $4 $5 $6 $7 $SEQ_CHEKC_OPTIONS
 	fi
 	ret=$?
 	if [ "$check_only"  == "YES" ]; then
@@ -2043,6 +2057,7 @@ start_elasticsearch() {
 # $1 - number of records (ES does not return all records unless you tell it explicitely).
 # $2 - ES port
 es_getdata() {
+	curl --silent -XPUT --show-error -H 'Content-Type: application/json' "http://localhost:${2:-$ES_PORT}/rsyslog_testbench/_settings" -d '{ "index" : { "max_result_window" : '${1:-$NUMMESSAGES}' } }'
 	curl --silent localhost:${2:-$ES_PORT}/rsyslog_testbench/_search?size=${1:-$NUMMESSAGES} > $RSYSLOG_DYNNAME.work
 	python $srcdir/es_response_get_msgnum.py > ${RSYSLOG_OUT_LOG}
 }
@@ -2178,6 +2193,30 @@ omhttp_get_data() {
     curl -s ${omhttp_url} \
         | python -c "${python_parse}" | sort -n \
         > ${RSYSLOG_OUT_LOG}
+}
+
+
+# $1 - replacement string
+# $2 - start search string
+# $3 - file name
+# $4 - expected value
+first_column_sum_check() {
+	set -x
+	echo grep:
+	grep "$2" < "$3"
+	echo sed:
+	grep "$2" < "$3" | sed -e "$1"
+	echo akw:
+	grep "$2" < "$3" | sed -e "$1" | awk '{s+=$1} END {print s}'
+	set +x
+	sum=$(grep "$2" < "$3" | sed -e "$1" | awk '{s+=$1} END {print s}')
+	if [ "x${sum}" != "x$4" ]; then
+	    printf '\n============================================================\n'
+	    echo FAIL: sum of first column with edit-expr "'$1'" run over lines from file "'$3'" matched by "'$2'" equals "'$sum'" which is NOT equal to EXPECTED value of "'$4'"
+	    echo "file contents:"
+	    cat $3
+	    error_exit 1
+	fi
 }
 
 case $1 in
@@ -2372,22 +2411,6 @@ case $1 in
 				$TESTTOOL_DIR/msleep 10
 		done
 		echo "dyn-stats reset for bucket ${3} registered"
-		;;
-   'first-column-sum-check') 
-		echo grep:
-		grep "$3" < "$4"
-		echo sed:
-		grep "$3" < "$4" | sed -e "$2"
-		echo akw:
-		grep "$3" < "$4" | sed -e "$2" | awk '{s+=$1} END {print s}'
-		sum=$(grep "$3" < "$4" | sed -e "$2" | awk '{s+=$1} END {print s}')
-		if [ "x${sum}" != "x$5" ]; then
-		    printf '\n============================================================\n'
-		    echo FAIL: sum of first column with edit-expr "'$2'" run over lines from file "'$4'" matched by "'$3'" equals "'$sum'" which is NOT equal to EXPECTED value of "'$5'"
-		    echo "file contents:"
-		    cat $4
-		    error_exit 1
-		fi
 		;;
    'assert-first-column-sum-greater-than') 
 		sum=$(grep $3 <$4| sed -e $2 | awk '{s+=$1} END {print s}')

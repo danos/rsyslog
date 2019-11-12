@@ -92,6 +92,7 @@ TESTS +=  \
 	es-basic-errfile-popul.sh \
 	es-bulk-errfile-empty.sh \
 	es-bulk-errfile-popul.sh \
+	diskqueue-multithread-es.sh \
 	es-writeoperation.sh
 
 es-basic-server.log: es-basic-bulk.log
@@ -101,7 +102,9 @@ es-basic-errfile-empty.log: es-maxbytes-bulk.log
 es-basic-errfile-popul.log: es-basic-errfile-empty.log
 es-bulk-errfile-empty.log: es-basic-errfile-popul.log
 es-bulk-errfile-popul.log: es-bulk-errfile-empty.log
-es-writeoperation.log: es-bulk-errfile-popul.log
+diskqueue-multithread-es.log: es-bulk-errfile-popul.log
+es-writeoperation.log: diskqueue-multithread-es.log
+
 
 if ENABLE_IMPSTATS
 TESTS +=  \
@@ -290,6 +293,7 @@ TESTS +=  \
 	asynwr_deadlock_2.sh \
 	asynwr_deadlock2.sh \
 	asynwr_deadlock4.sh \
+	asynwr_dynfile_flushtxend-off.sh \
 	abort-uncleancfg-goodcfg.sh \
 	abort-uncleancfg-goodcfg-check.sh \
 	abort-uncleancfg-badcfg-check.sh \
@@ -741,7 +745,8 @@ TESTS +=  \
 	improg_prog_simple.sh \
 	improg_prog_confirm.sh \
 	improg_prog_confirm_killonclose.sh \
-	improg_prog_killonclose.sh
+	improg_prog_killonclose.sh \
+	improg_simple_multi.sh
 if HAVE_VALGRIND
 TESTS +=  \
 	improg_errmsg_no_params-vg.sh \
@@ -971,6 +976,7 @@ endif
 if ENABLE_MMPSTRUCDATA
 TESTS +=  \
 	mmpstrucdata.sh \
+	mmpstrucdata-escaping.sh \
 	mmpstrucdata-case.sh
 if HAVE_VALGRIND
 TESTS +=  \
@@ -1084,6 +1090,7 @@ endif
 if ENABLE_MMDBLOOKUP
 TESTS += \
     mmdb.sh \
+    mmdb-space.sh \
     mmdb-container.sh \
     mmdb-container-empty.sh
 if HAVE_VALGRIND
@@ -1817,8 +1824,10 @@ EXTRA_DIST= \
 	mmjsonparse_cim2.sh \
 	mmjsonparse_localvar.sh \
 	mmdb.sh \
+	mmdb-space.sh \
 	mmdb.rb \
 	test.mmdb \
+	with_space.mmdb \
 	mmdb-vg.sh \
 	mmdb-container.sh \
 	mmdb-container-empty.sh \
@@ -1865,6 +1874,7 @@ EXTRA_DIST= \
 	es-bulk-errfile-popul-erronly.sh \
 	es-bulk-errfile-popul-erronly-interleaved.sh \
 	es-bulk-errfile-popul-def-interleaved.sh \
+	diskqueue-multithread-es.sh \
 	es-basic-vg.sh \
 	es-basic-bulk-vg.sh \
 	es-basic-ha-vg.sh \
@@ -2025,6 +2035,7 @@ EXTRA_DIST= \
 	testsuites/action-tx-errfile.result \
 	pipeaction.sh \
 	improg-simul.sh \
+	improg-multiline-test.py \
 	improg_errmsg_no_params.sh \
 	improg_errmsg_no_params-vg.sh \
 	improg_prog_simple.sh \
@@ -2032,6 +2043,7 @@ EXTRA_DIST= \
 	improg_prog_confirm_killonclose.sh \
 	improg_prog_killonclose.sh \
 	improg_prog_simple-vg.sh \
+	improg_simple_multi.sh \
 	omhttp-auth.sh \
 	omhttp-basic.sh \
 	omhttp-batch-fail-with-400.sh \
@@ -2096,6 +2108,7 @@ EXTRA_DIST= \
 	asynwr_deadlock_2.sh \
 	asynwr_deadlock2.sh \
 	asynwr_deadlock4.sh \
+	asynwr_dynfile_flushtxend-off.sh \
 	abort-uncleancfg-goodcfg.sh \
 	abort-uncleancfg-goodcfg-check.sh \
 	abort-uncleancfg-badcfg-check.sh \
@@ -2257,6 +2270,7 @@ EXTRA_DIST= \
 	testsuites/zoo.dep_wrk2.cfg \
 	testsuites/zoo.dep_wrk3.cfg \
 	mmpstrucdata.sh \
+	mmpstrucdata-escaping.sh \
 	mmpstrucdata-case.sh \
 	mmpstrucdata-vg.sh \
 	mmpstrucdata-invalid-vg.sh \

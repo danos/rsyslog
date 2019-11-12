@@ -706,7 +706,11 @@ act_obj_add(fs_edge_t *const edge, const char *const name, const int is_file,
 	DBGPRINTF("need to add new active object '%s' in '%s' - checking if accessible\n", name, edge->path);
 	fd = open(name, O_RDONLY | O_CLOEXEC);
 	if(fd < 0) {
-		LogMsg(errno, RS_RET_ERR, LOG_WARNING, "imfile: error accessing file '%s'", name);
+		if (is_file) {
+			LogError(errno, RS_RET_ERR, "imfile: error accessing file '%s'", name);
+		} else { /* reporting only in debug for dirs as higher lvl paths are likely blocked by selinux */
+			DBGPRINTF("imfile: error accessing file '%s'", name);
+		}
 		FINALIZE;
 	}
 	DBGPRINTF("add new active object '%s' in '%s'\n", name, edge->path);
@@ -1136,8 +1140,10 @@ fs_node_add(fs_node_t *const node,
 		if(!ustrcmp(chld->name, name)) {
 			DBGPRINTF("fs_node_add(%p, '%s') found '%s'\n", chld->node, toFind, name);
 			/* add new instance */
+			instanceConf_t **instarr_new = realloc(chld->instarr, sizeof(instanceConf_t*) * chld->ninst+1);
+			CHKmalloc(instarr_new);
+			chld->instarr = instarr_new;
 			chld->ninst++;
-			CHKmalloc(chld->instarr = realloc(chld->instarr, sizeof(instanceConf_t*) * chld->ninst));
 			chld->instarr[chld->ninst-1] = inst;
 			/* recurse */
 			if(!isFile) {

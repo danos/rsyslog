@@ -564,7 +564,9 @@ osslRecordRecv(nsd_ossl_t *pThis)
 		if (iBytesLeft > 0 ){
 			DBGPRINTF("osslRecordRecv: %d Bytes pending after SSL_Read, expand buffer.\n", iBytesLeft);
 			/* realloc buffer size and preserve char content */
-			CHKmalloc(pThis->pszRcvBuf = realloc(pThis->pszRcvBuf, NSD_OSSL_MAX_RCVBUF+iBytesLeft));
+			char *const newbuf = realloc(pThis->pszRcvBuf, NSD_OSSL_MAX_RCVBUF+iBytesLeft);
+			CHKmalloc(newbuf);
+			pThis->pszRcvBuf = newbuf;
 
 			/* 2nd read will read missing bytes from the current SSL Packet */
 			lenRcvd = SSL_read(pThis->ssl, pThis->pszRcvBuf+NSD_OSSL_MAX_RCVBUF, iBytesLeft);
@@ -1790,7 +1792,7 @@ SetGnutlsPriorityString(__attribute__((unused)) nsd_t *pNsd, __attribute__((unus
 		RETiRet;
 	} else {
 		dbgprintf("gnutlsPriorityString: set to '%s'\n", gnutlsPriorityString);
-#if OPENSSL_VERSION_NUMBER >= 0x10020000L
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L
 		char *pCurrentPos;
 		char *pNextPos;
 		char *pszCmd;
@@ -1860,8 +1862,10 @@ SetGnutlsPriorityString(__attribute__((unused)) nsd_t *pNsd, __attribute__((unus
 		}
 #else
 		dbgprintf("gnutlsPriorityString: set to '%s'\n", gnutlsPriorityString);
-		LogError(0, RS_RET_SYS_ERR, "Warning: OpenSSL Version to old to set gnutlsPriorityString ('%s')"
-			"by SSL_CONF_cmd API", gnutlsPriorityString);
+		LogError(0, RS_RET_SYS_ERR, "Warning: OpenSSL Version too old to set gnutlsPriorityString ('%s')"
+			"by SSL_CONF_cmd API. For more see: "
+			"https://www.rsyslog.com/doc/master/configuration/modules/imtcp.html#gnutlsprioritystring",
+			gnutlsPriorityString);
 #endif
 	}
 
