@@ -25,10 +25,10 @@ https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=938417
  18 files changed, 30 insertions(+), 30 deletions(-)
 
 diff --git a/tests/diag.sh b/tests/diag.sh
-index b9cbb94..76ef3c5 100755
+index d7c84b7..fa2a2e1 100755
 --- a/tests/diag.sh
 +++ b/tests/diag.sh
-@@ -1434,7 +1434,7 @@ exit_test() {
+@@ -1448,7 +1448,7 @@ exit_test() {
  # to work pretty well. In any case, we should probably call this as
  # late as possible before the usage of the port.
  get_free_port() {
@@ -37,7 +37,7 @@ index b9cbb94..76ef3c5 100755
  }
  
  
-@@ -1444,7 +1444,7 @@ get_inode() {
+@@ -1458,7 +1458,7 @@ get_inode() {
  		printf 'FAIL: file "%s" does not exist in get_inode\n' "$1"
  		error_exit 100
  	fi
@@ -46,16 +46,16 @@ index b9cbb94..76ef3c5 100755
  }
  
  
-@@ -2044,7 +2044,7 @@ start_elasticsearch() {
- # $2 - ES port
+@@ -2059,7 +2059,7 @@ start_elasticsearch() {
  es_getdata() {
+ 	curl --silent -XPUT --show-error -H 'Content-Type: application/json' "http://localhost:${2:-$ES_PORT}/rsyslog_testbench/_settings" -d '{ "index" : { "max_result_window" : '${1:-$NUMMESSAGES}' } }'
  	curl --silent localhost:${2:-$ES_PORT}/rsyslog_testbench/_search?size=${1:-$NUMMESSAGES} > $RSYSLOG_DYNNAME.work
 -	python $srcdir/es_response_get_msgnum.py > ${RSYSLOG_OUT_LOG}
 +	python3 $srcdir/es_response_get_msgnum.py > ${RSYSLOG_OUT_LOG}
  }
  
  # a standard method to support shutdown & queue empty check for a wide range
-@@ -2112,7 +2112,7 @@ omhttp_start_server() {
+@@ -2127,7 +2127,7 @@ omhttp_start_server() {
  
      server_args="-p $omhttp_server_port ${*:2}"
  
@@ -64,7 +64,7 @@ index b9cbb94..76ef3c5 100755
      if [ ! $? -eq 0 ]; then
          echo "Failed to start omhttp test server."
          rm -rf $omhttp_work_dir
-@@ -2176,7 +2176,7 @@ omhttp_get_data() {
+@@ -2191,7 +2191,7 @@ omhttp_get_data() {
      
      omhttp_url="localhost:${omhttp_server_port}/${omhttp_path}"
      curl -s ${omhttp_url} \
@@ -322,7 +322,7 @@ index 552eb3e..568a521 100644
  
  #
 diff --git a/tests/testsuites/mmexternal-SegFault-mm-python.py b/tests/testsuites/mmexternal-SegFault-mm-python.py
-index 437ff1c..b5e4fc1 100755
+index f302674..834470e 100755
 --- a/tests/testsuites/mmexternal-SegFault-mm-python.py
 +++ b/tests/testsuites/mmexternal-SegFault-mm-python.py
 @@ -1,4 +1,4 @@
@@ -342,7 +342,7 @@ index 1d2a278..a0f820f 100755
  import sys
  import os
 diff --git a/tests/urlencode.py b/tests/urlencode.py
-index 59e7c8c..17b5940 100755
+index 157fcf4..14d8502 100755
 --- a/tests/urlencode.py
 +++ b/tests/urlencode.py
 @@ -1,4 +1,4 @@
