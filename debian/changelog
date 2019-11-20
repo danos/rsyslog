@@ -1,3 +1,12 @@
+rsyslog (8.1908.0-1vyatta6) unstable; urgency=medium
+
+  [ Charles (Chas) Williams ]
+  * Normalize the rsyslog with CLI capabilities (Bugfix: VRVDR-49137)
+
+  [ Vyatta Package Maintainers ]
+
+ -- Vyatta Package Maintainers <DL-vyatta-help@att.com>  Wed, 20 Nov 2019 16:40:48 +0000
+
 rsyslog (8.1908.0-1vyatta5) unstable; urgency=medium
 
   [ Nicholas Brown ]
