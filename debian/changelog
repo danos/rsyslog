@@ -1,3 +1,12 @@
+rsyslog (8.1908.0-1vyatta5) unstable; urgency=medium
+
+  [ Nicholas Brown ]
+  * Drop dependency on librelp as functionality is never used.
+
+  [ Vyatta Package Maintainers ]
+
+ -- Vyatta Package Maintainers <DL-vyatta-help@att.com>  Wed, 20 Nov 2019 15:46:39 +0000
+
 rsyslog (8.1908.0-1vyatta4) unstable; urgency=medium
 
   * DANOS Import master
