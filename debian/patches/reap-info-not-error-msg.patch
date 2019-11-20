@@ -1,0 +1,22 @@
+commit cfeea4bb2746172233965dead0eb521deec3c529
+Author: Rainer Gerhards <rgerhards@adiscon.com>
+Date:   Mon Oct 9 18:51:26 2017 +0200
+
+    core bugfix: informational messages was logged with error severity
+    
+    closes https://github.com/rsyslog/rsyslog/issues/1794
+---
+ tools/rsyslogd.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/tools/rsyslogd.c
++++ b/tools/rsyslogd.c
+@@ -1705,7 +1705,7 @@
+ 				child = waitpid(-1, NULL, WNOHANG);
+ 				DBGPRINTF("rsyslogd: mainloop waitpid (with-no-hang) returned %d\n", child);
+ 				if (child != -1 && child != 0) {
+-					errmsg.LogError(0, RS_RET_OK, "Child %d has terminated, reaped by main-loop.", child);
++					errmsg.LogMsg(0, RS_RET_OK, LOG_INFO, "Child %d has terminated, reaped by main-loop.", child);
+ 				}
+ 			} while(child > 0);
+ 			bChildDied = 0;

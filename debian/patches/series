@@ -8,6 +8,7 @@ refactor-create-udp-socket.patch
 0001-imczmq-remove-unallocated-and-unused-pointer.patch
 omfwd-add-support-for-bind-to-address.patch
 imczmq-free-received-zframe.patch
+reap-info-not-error-msg.patch
 
 # local fixes
 normalize-rate-limit-parameters.patch
