@@ -1,0 +1,243 @@
+--- a/runtime/ratelimit.c
++++ b/runtime/ratelimit.c
+@@ -312,7 +312,7 @@ finalize_it:
+ 
+ /* enable linux-like ratelimiting */
+ void
+-ratelimitSetLinuxLike(ratelimit_t *ratelimit, unsigned short interval, unsigned short burst)
++ratelimitSetLinuxLike(ratelimit_t *ratelimit, unsigned int interval, unsigned int burst)
+ {
+ 	ratelimit->interval = interval;
+ 	ratelimit->burst = burst;
+--- a/runtime/ratelimit.h
++++ b/runtime/ratelimit.h
+@@ -24,11 +24,11 @@
+ struct ratelimit_s {
+ 	char *name;	/**< rate limiter name, e.g. for user messages */
+ 	/* support for Linux kernel-type ratelimiting */
+-	unsigned short interval;
+-	unsigned short burst;
++	unsigned int interval;
++	unsigned int burst;
+ 	intTiny severity; /**< ratelimit only equal or lower severity levels (eq or higher values) */
+-	unsigned done;
+-	unsigned missed;
++	unsigned int done;
++	unsigned int missed;
+ 	time_t begin;
+ 	/* support for "last message repeated n times */
+ 	int bReduceRepeatMsgs; /**< shall we do "last message repeated n times" processing? */
+@@ -42,7 +42,7 @@ struct ratelimit_s {
+ /* prototypes */
+ rsRetVal ratelimitNew(ratelimit_t **ppThis, const char *modname, const char *dynname);
+ void ratelimitSetThreadSafe(ratelimit_t *ratelimit);
+-void ratelimitSetLinuxLike(ratelimit_t *ratelimit, unsigned short interval, unsigned short burst);
++void ratelimitSetLinuxLike(ratelimit_t *ratelimit, unsigned int interval, unsigned int burst);
+ void ratelimitSetNoTimeCache(ratelimit_t *ratelimit);
+ void ratelimitSetSeverity(ratelimit_t *ratelimit, intTiny severity);
+ rsRetVal ratelimitMsg(ratelimit_t *ratelimit, smsg_t *pMsg, smsg_t **ppRep);
+--- a/plugins/imjournal/imjournal.c
++++ b/plugins/imjournal/imjournal.c
+@@ -71,8 +71,8 @@ struct modConfData_s {
+ static struct configSettings_s {
+ 	char *stateFile;
+ 	int iPersistStateInterval;
+-	int ratelimitInterval;
+-	int ratelimitBurst;
++	unsigned int ratelimitInterval;
++	unsigned int ratelimitBurst;
+ 	int bIgnorePrevious;
+ 	int bIgnoreNonValidStatefile;
+ 	int iDfltSeverity;
+@@ -719,9 +719,9 @@ CODESTARTsetModCnf
+ 		} else if (!strcmp(modpblk.descr[i].name, "statefile")) {
+ 			cs.stateFile = (char *)es_str2cstr(pvals[i].val.d.estr, NULL);
+ 		} else if(!strcmp(modpblk.descr[i].name, "ratelimit.burst")) {
+-			cs.ratelimitBurst = (int) pvals[i].val.d.n;
++			cs.ratelimitBurst = (unsigned int) pvals[i].val.d.n;
+ 		} else if(!strcmp(modpblk.descr[i].name, "ratelimit.interval")) {
+-			cs.ratelimitInterval = (int) pvals[i].val.d.n;
++			cs.ratelimitInterval = (unsigned int) pvals[i].val.d.n;
+ 		} else if (!strcmp(modpblk.descr[i].name, "ignorepreviousmessages")) {
+ 			cs.bIgnorePrevious = (int) pvals[i].val.d.n;
+ 		} else if (!strcmp(modpblk.descr[i].name, "ignorenonvalidstatefile")) {
+--- a/plugins/imptcp/imptcp.c
++++ b/plugins/imptcp/imptcp.c
+@@ -136,8 +136,8 @@ struct instanceConf_s {
+ 	ruleset_t *pBindRuleset;	/* ruleset to bind listener to (use system default if unspecified) */
+ 	uchar *dfltTZ;
+ 	sbool bUnlink;
+-	int ratelimitInterval;
+-	int ratelimitBurst;
++	unsigned int ratelimitInterval;
++	unsigned int ratelimitBurst;
+ 	struct instanceConf_s *next;
+ };
+ 
+@@ -1899,9 +1899,9 @@ CODESTARTnewInpInst
+ 		} else if(!strcmp(inppblk.descr[i].name, "defaulttz")) {
+ 			inst->dfltTZ = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
+ 		} else if(!strcmp(inppblk.descr[i].name, "ratelimit.burst")) {
+-			inst->ratelimitBurst = (int) pvals[i].val.d.n;
++			inst->ratelimitBurst = (unsigned int) pvals[i].val.d.n;
+ 		} else if(!strcmp(inppblk.descr[i].name, "ratelimit.interval")) {
+-			inst->ratelimitInterval = (int) pvals[i].val.d.n;
++			inst->ratelimitInterval = (unsigned int) pvals[i].val.d.n;
+ 		} else {
+ 			dbgprintf("imptcp: program error, non-handled "
+ 			  "param '%s'\n", inppblk.descr[i].name);
+--- a/plugins/imudp/imudp.c
++++ b/plugins/imudp/imudp.c
+@@ -115,8 +115,8 @@ struct instanceConf_s {
+ 	uchar *inputname;
+ 	ruleset_t *pBindRuleset;	/* ruleset to bind listener to (use system default if unspecified) */
+ 	uchar *dfltTZ;
+-	int ratelimitInterval;
+-	int ratelimitBurst;
++	unsigned int ratelimitInterval;
++	unsigned int ratelimitBurst;
+ 	int rcvbuf;			/* 0 means: do not set, keep OS default */
+ 	/*  0 means:  IP_FREEBIND is disabled
+ 	1 means:  IP_FREEBIND enabled + warning disabled
+@@ -947,9 +947,9 @@ createListner(es_str_t *port, struct cnf
+ 		} else if(!strcmp(inppblk.descr[i].name, "ruleset")) {
+ 			inst->pszBindRuleset = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
+ 		} else if(!strcmp(inppblk.descr[i].name, "ratelimit.burst")) {
+-			inst->ratelimitBurst = (int) pvals[i].val.d.n;
++			inst->ratelimitBurst = (unsigned int) pvals[i].val.d.n;
+ 		} else if(!strcmp(inppblk.descr[i].name, "ratelimit.interval")) {
+-			inst->ratelimitInterval = (int) pvals[i].val.d.n;
++			inst->ratelimitInterval = (unsigned int) pvals[i].val.d.n;
+ 		} else if(!strcmp(inppblk.descr[i].name, "rcvbufsize")) {
+ 			const uint64_t val = pvals[i].val.d.n;
+ 			if(val > 1024 * 1024 * 1024) {
+--- a/plugins/imuxsock/imuxsock.c
++++ b/plugins/imuxsock/imuxsock.c
+@@ -142,8 +142,8 @@ typedef struct lstn_s {
+ 	int fd;			/* read-only after startup */
+ 	int flags;		/* should parser parse host name?  read-only after startup */
+ 	int flowCtl;		/* flow control settings for this socket */
+-	int ratelimitInterval;
+-	int ratelimitBurst;
++	unsigned int ratelimitInterval;
++	unsigned int ratelimitBurst;
+ 	ratelimit_t *dflt_ratelimiter;/*ratelimiter to apply if none else is to be used */
+ 	intTiny ratelimitSev;	/* severity level (and below) for which rate-limiting shall apply */
+ 	struct hashtable *ht;	/* our hashtable for rate-limiting */
+@@ -189,9 +189,9 @@ static struct configSettings_s {
+ 	int bWritePid;			/* use credentials from recvmsg() and fixup PID in TAG */
+ 	int bWritePidSysSock;		/* use credentials from recvmsg() and fixup PID in TAG */
+ 	int bCreatePath;		/* auto-create socket path? */
+-	int ratelimitInterval;		/* interval in seconds, 0 = off */
+-	int ratelimitIntervalSysSock;
+-	int ratelimitBurst;		/* max nbr of messages in interval */
++	unsigned int ratelimitInterval;		/* interval in seconds, 0 = off */
++	unsigned int ratelimitIntervalSysSock;
++	unsigned int ratelimitBurst;		/* max nbr of messages in interval */
+ 	int ratelimitBurstSysSock;
+ 	int ratelimitSeverity;
+ 	int ratelimitSeveritySysSock;
+@@ -209,8 +209,8 @@ struct instanceConf_s {
+ 	sbool bWritePid;		/* use credentials from recvmsg() and fixup PID in TAG */
+ 	sbool bUseSysTimeStamp;		/* use timestamp from system (instead of from message) */
+ 	int bCreatePath;		/* auto-create socket path? */
+-	int ratelimitInterval;		/* interval in seconds, 0 = off */
+-	int ratelimitBurst;		/* max nbr of messages in interval */
++	unsigned int ratelimitInterval;		/* interval in seconds, 0 = off */
++	unsigned int ratelimitBurst;		/* max nbr of messages in interval */
+ 	int ratelimitSeverity;
+ 	int bAnnotate;			/* annotate trusted properties */
+ 	int bParseTrusted;		/* parse trusted properties */
+@@ -227,8 +227,8 @@ struct modConfData_s {
+ 	rsconf_t *pConf;		/* our overall config object */
+ 	instanceConf_t *root, *tail;
+ 	uchar *pLogSockName;
+-	int ratelimitIntervalSysSock;
+-	int ratelimitBurstSysSock;
++	unsigned int ratelimitIntervalSysSock;
++	unsigned int ratelimitBurstSysSock;
+ 	int ratelimitSeveritySysSock;
+ 	int bAnnotateSysSock;
+ 	int bParseTrusted;
+@@ -1249,9 +1249,9 @@ CODESTARTsetModCnf
+ 		} else if(!strcmp(modpblk.descr[i].name, "syssock.usepidfromsystem")) {
+ 			loadModConf->bWritePidSysSock = (int) pvals[i].val.d.n;
+ 		} else if(!strcmp(modpblk.descr[i].name, "syssock.ratelimit.interval")) {
+-			loadModConf->ratelimitIntervalSysSock = (int) pvals[i].val.d.n;
++			loadModConf->ratelimitIntervalSysSock = (unsigned int) pvals[i].val.d.n;
+ 		} else if(!strcmp(modpblk.descr[i].name, "syssock.ratelimit.burst")) {
+-			loadModConf->ratelimitBurstSysSock = (int) pvals[i].val.d.n;
++			loadModConf->ratelimitBurstSysSock = (unsigned int) pvals[i].val.d.n;
+ 		} else if(!strcmp(modpblk.descr[i].name, "syssock.ratelimit.severity")) {
+ 			loadModConf->ratelimitSeveritySysSock = (int) pvals[i].val.d.n;
+ 		} else {
+@@ -1323,9 +1323,9 @@ CODESTARTnewInpInst
+ 		} else if(!strcmp(inppblk.descr[i].name, "ruleset")) {
+ 			inst->pszBindRuleset = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
+ 		} else if(!strcmp(inppblk.descr[i].name, "ratelimit.interval")) {
+-			inst->ratelimitInterval = (int) pvals[i].val.d.n;
++			inst->ratelimitInterval = (unsigned int) pvals[i].val.d.n;
+ 		} else if(!strcmp(inppblk.descr[i].name, "ratelimit.burst")) {
+-			inst->ratelimitBurst = (int) pvals[i].val.d.n;
++			inst->ratelimitBurst = (unsigned int) pvals[i].val.d.n;
+ 		} else if(!strcmp(inppblk.descr[i].name, "ratelimit.severity")) {
+ 			inst->ratelimitSeverity = (int) pvals[i].val.d.n;
+ 		} else {
+--- a/runtime/tcpsrv.h
++++ b/runtime/tcpsrv.h
+@@ -81,8 +81,8 @@ struct tcpsrv_s {
+ 
+ 	int addtlFrameDelim;	/**< additional frame delimiter for plain TCP syslog framing (e.g. to handle NetScreen) */
+ 	int bDisableLFDelim;	/**< if 1, standard LF frame delimiter is disabled (*very dangerous*) */
+-	int ratelimitInterval;
+-	int ratelimitBurst;
++	unsigned int ratelimitInterval;
++	unsigned int ratelimitBurst;
+ 	tcps_sess_t **pSessions;/**< array of all of our sessions */
+ 	void *pUsr;		/**< a user-settable pointer (provides extensibility for "derived classes")*/
+ 	/* callbacks */
+@@ -155,7 +155,7 @@ BEGINinterface(tcpsrv) /* name must also
+ 	/* added v11 -- rgerhards, 2011-05-09 */
+ 	rsRetVal (*SetKeepAlive)(tcpsrv_t*, int);
+ 	/* added v13 -- rgerhards, 2012-10-15 */
+-	rsRetVal (*SetLinuxLikeRatelimiters)(tcpsrv_t *pThis, int interval, int burst);
++	rsRetVal (*SetLinuxLikeRatelimiters)(tcpsrv_t *pThis, unsigned int interval, unsigned int burst);
+ 	/* added v14 -- rgerhards, 2013-07-28 */
+ 	rsRetVal (*SetDfltTZ)(tcpsrv_t *pThis, uchar *dfltTZ);
+ 	/* added v15 -- rgerhards, 2013-09-17 */
+--- a/runtime/tcpsrv.c
++++ b/runtime/tcpsrv.c
+@@ -1244,7 +1244,7 @@ finalize_it:
+ 
+ /* Set the linux-like ratelimiter settings */
+ static rsRetVal
+-SetLinuxLikeRatelimiters(tcpsrv_t *pThis, int ratelimitInterval, int ratelimitBurst)
++SetLinuxLikeRatelimiters(tcpsrv_t *pThis, unsigned int ratelimitInterval, unsigned int ratelimitBurst)
+ {
+ 	DEFiRet;
+ 	pThis->ratelimitInterval = ratelimitInterval;
+--- a/plugins/imtcp/imtcp.c
++++ b/plugins/imtcp/imtcp.c
+@@ -113,8 +113,8 @@ struct instanceConf_s {
+ 	uchar *pszInputName;		/* value for inputname property, NULL is OK and handled by core engine */
+ 	uchar *dfltTZ;
+ 	sbool bSPFramingFix;
+-	int ratelimitInterval;
+-	int ratelimitBurst;
++	unsigned int ratelimitInterval;
++	unsigned int ratelimitBurst;
+ 	int bSuppOctetFram;
+ 	struct instanceConf_s *next;
+ };
+@@ -428,9 +428,9 @@ CODESTARTnewInpInst
+ 		} else if(!strcmp(inppblk.descr[i].name, "supportoctetcountedframing")) {
+ 			inst->bSuppOctetFram = (int) pvals[i].val.d.n;
+ 		} else if(!strcmp(inppblk.descr[i].name, "ratelimit.burst")) {
+-			inst->ratelimitBurst = (int) pvals[i].val.d.n;
++			inst->ratelimitBurst = (unsigned int) pvals[i].val.d.n;
+ 		} else if(!strcmp(inppblk.descr[i].name, "ratelimit.interval")) {
+-			inst->ratelimitInterval = (int) pvals[i].val.d.n;
++			inst->ratelimitInterval = (unsigned int) pvals[i].val.d.n;
+ 		} else {
+ 			dbgprintf("imtcp: program error, non-handled "
+ 			  "param '%s'\n", inppblk.descr[i].name);
