@@ -16,7 +16,6 @@ Build-Depends: debhelper (>= 9),
                libkrb5-dev,
                libgnutls28-dev,
                libssl-dev,
-               librelp-dev (>= 1.4.0),
                libestr-dev (>= 0.1.9),
                liblognorm-dev (>= 2.0.3),
                libfastjson-dev (>= 0.99.8),
@@ -56,7 +55,6 @@ Suggests: rsyslog-mysql | rsyslog-pgsql,
           rsyslog-doc,
           rsyslog-openssl | rsyslog-gnutls,
           rsyslog-gssapi,
-          rsyslog-relp
 Description: reliable system and kernel logging daemon
  Rsyslog is a multi-threaded implementation of syslogd (a system utility
  providing support for message logging), with features that include:
@@ -154,17 +152,6 @@ Depends: ${shlibs:Depends},
 Description: TLS protocol support for rsyslog (OpenSSL)
  This netstream plugin allows rsyslog to send and receive encrypted syslog
  messages via the syslog-transport-tls IETF standard protocol.
-
-Package: rsyslog-relp
-Architecture: any
-Priority: optional
-Depends: ${shlibs:Depends},
-         ${misc:Depends},
-         rsyslog (= ${binary:Version})
-Description: RELP protocol support for rsyslog
- These plugins allow rsyslog to send and receive syslog messages via the
- RELP protocol. RELP ensures reliable transport over the network even on
- connection loss or if a peer becomes unavailable.
 
 Package: rsyslog-czmq
 Architecture: any
