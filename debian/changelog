@@ -1,3 +1,13 @@
+rsyslog (8.24.0-1vyatta4.1) unstable; urgency=medium
+
+  [ Charles (Chas) Williams ]
+  * Normalize the rsyslog with CLI capabilities (Bugfix: VRVDR-49137)
+
+  [ Mike Manning ]
+  * syslog message "Child has terminated, reaped by main-loop" at wrong priority
+
+ -- Vyatta Package Maintainers <DL-vyatta-help@att.com>  Thu, 21 Nov 2019 14:34:43 +0000
+
 rsyslog (8.24.0-1vyatta4) unstable; urgency=medium
 
   * DANOS Import
