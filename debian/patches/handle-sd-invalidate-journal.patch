@@ -1,0 +1,13 @@
+--- a/plugins/imjournal/imjournal.c
++++ b/plugins/imjournal/imjournal.c
+@@ -573,6 +573,10 @@ pollJournal(void)
+ 		else if (cs.stateFile) {
+ 			iRet = loadJournalState();
+ 		}
++		else if (cs.bIgnorePrevious) {
++			/* Seek to the very end of the journal and ignore all older messages. */
++			skipOldMessages();
++		}
+ 		LogMsg(0, RS_RET_OK, LOG_NOTICE, "imjournal: journal reloaded...");
+ 		reloaded = 1;
+ 	}
