@@ -1,3 +1,12 @@
+rsyslog (8.1908.0-1vyatta7) unstable; urgency=medium
+
+  [ Charles (Chas) Williams ]
+  * Handle journal invalidate (Bugfix: VRVDR-49115)
+
+  [ Vyatta Package Maintainers ]
+
+ -- Vyatta Package Maintainers <DL-vyatta-help@att.com>  Mon, 02 Dec 2019 13:12:35 +0000
+
 rsyslog (8.1908.0-1vyatta6) unstable; urgency=medium
 
   [ Charles (Chas) Williams ]
