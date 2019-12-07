@@ -1,3 +1,12 @@
+rsyslog (8.1908.0-1vyatta8) unstable; urgency=medium
+
+  [ Daniel Gollub ]
+  * ossl: finalize OCSP implementation
+
+  [ Vyatta Package Maintainers ]
+
+ -- Vyatta Package Maintainers <DL-vyatta-help@att.com>  Sat, 07 Dec 2019 08:45:49 +0000
+
 rsyslog (8.1908.0-1vyatta7) unstable; urgency=medium
 
   [ Charles (Chas) Williams ]
