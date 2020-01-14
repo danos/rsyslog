@@ -5,6 +5,8 @@ include /usr/share/dpkg/architecture.mk
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 export DEB_CPPFLAGS_MAINT_APPEND = -DPATH_PIDFILE=\"/run/rsyslogd.pid\"
 
+export PYTHON=/usr/bin/python3
+
 %:
 	dh $@
 
