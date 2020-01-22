@@ -1,3 +1,4 @@
 Don-t-create-a-database.patch
 Fixed-saving-of-old-file_id-for-statefiles.patch
 imfile-bugfix-misadressing-and-potential-segfault.patch
+Add-missing-test-files.patch
