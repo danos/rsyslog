@@ -31,7 +31,7 @@ Build-Depends: debhelper-compat (= 12),
                systemd [linux-any] <!nocheck>,
                lsof [linux-any] <!nocheck>,
                logrotate <!nocheck>,
-               net-tools <!nocheck>,
+               iproute2 <!nocheck>,
 Standards-Version: 4.4.1
 Rules-Requires-Root: no
 Vcs-Git: https://salsa.debian.org/debian/rsyslog.git
