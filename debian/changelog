@@ -1,8 +1,14 @@
-rsyslog (8.2002.0-1) UNRELEASED; urgency=medium
+rsyslog (8.2002.0-1) unstable; urgency=medium
 
   * New upstream version 8.2002.0
+  * Rebase patches
+  * Use ip instead of deprecated ifconfig when running the test suite.
+  * Add Build-Depends on curl.
+    This is required to run the test allowed-sender-tcp-hostname-fail.
+  * Enable extended test bench
+  * Bump Standards-Version to 4.5.0
 
- -- Michael Biebl <biebl@debian.org>  Wed, 26 Feb 2020 10:16:04 +0100
+ -- Michael Biebl <biebl@debian.org>  Wed, 26 Feb 2020 17:10:44 +0100
 
 rsyslog (8.2001.0-1) unstable; urgency=medium
 
