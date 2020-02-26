@@ -202,7 +202,13 @@ host_triplet = @host@
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	operatingstate-empty.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	operatingstate-unclean.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	smtradfile.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	loadbalance.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	empty-hostname.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	timestamp-3164.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	timestamp-3339.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	timestamp-mysql.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	timestamp-pgsql.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	timestamp-subseconds.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	hostname-getaddrinfo-fail.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	msleep_usage_output.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	mangle_qi_usage_output.sh \
@@ -228,6 +234,7 @@ host_triplet = @host@
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	glbl_setenv_err.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	glbl_setenv_err_too_long.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	glbl_setenv.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	mmexternal-SegFault.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	nested-call-shutdown.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	dnscache-TTL-0.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	invalid_nested_include.sh \
@@ -515,7 +522,6 @@ host_triplet = @host@
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	rscript_backticks_empty_envvar-vg.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	rscript-config_enable-off-vg.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	prop-jsonmesg-vg.sh \
-@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	mmexternal-SegFault-vg.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	mmexternal-InvldProg-vg.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	internal-errmsg-memleak-vg.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	glbl-oversizeMsg-log-vg.sh \
@@ -982,30 +988,30 @@ host_triplet = @host@
 @ENABLE_MMDBLOOKUP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@    mmdb-vg.sh \
 @ENABLE_MMDBLOOKUP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@    mmdb-multilevel-vg.sh
 
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_76 = \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-tls-basic.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-tls-basic-verifydepth.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp_conndrop_tls.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_anon_rebind.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_anon_hostname.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_anon_ipv4.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_anon_ipv6.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_certless_clientonly.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_gtls_servercert_gtls_clientanon.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_gtls_servercert_gtls_clientanon_legacy.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_gtls_serveranon_gtls_clientanon.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_priorityString.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_certvalid.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_certvalid_expired.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-tls-gtls-x509fingerprint-invld.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-tls-gtls-x509fingerprint.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-tls-gtls-x509name-invld.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-tls-gtls-x509name.sh
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_76 = \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-tls-basic.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-tls-basic-verifydepth.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp_conndrop_tls.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_anon_rebind.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_anon_hostname.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_anon_ipv4.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_anon_ipv6.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_certless_clientonly.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_gtls_servercert_gtls_clientanon.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_gtls_servercert_gtls_clientanon_legacy.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_gtls_serveranon_gtls_clientanon.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_priorityString.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_certvalid.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_certvalid_expired.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-tls-gtls-x509fingerprint-invld.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-tls-gtls-x509fingerprint.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-tls-gtls-x509name-invld.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-tls-gtls-x509name.sh
 
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_77 = \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imtcp-tls-basic-vg.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imtcp_conndrop_tls-vg.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	manytcp-too-few-tls-vg.sh
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_77 = \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imtcp-tls-basic-vg.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imtcp_conndrop_tls-vg.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	manytcp-too-few-tls-vg.sh
 
 @ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_78 = \
 @ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-tls-ossl-basic.sh \
@@ -1031,11 +1037,11 @@ host_triplet = @host@
 @ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_79 = \
 @ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imtcp-tls-ossl-basic-vg.sh
 
-@ENABLE_GNUTLS_TRUE@@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_80 = \
-@ENABLE_GNUTLS_TRUE@@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_ossl_servercert_gtls_clientanon.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_ossl_serveranon_gtls_clientanon.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_gtls_servercert_ossl_clientanon.sh \
-@ENABLE_GNUTLS_TRUE@@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_gtls_serveranon_ossl_clientanon.sh
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_80 = \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_ossl_servercert_gtls_clientanon.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_ossl_serveranon_gtls_clientanon.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_gtls_servercert_ossl_clientanon.sh \
+@ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_gtls_serveranon_ossl_clientanon.sh
 
 @ENABLE_OMUXSOCK_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_81 = uxsock_simple.sh
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_82 = sndrcv_relp.sh \
@@ -1050,6 +1056,7 @@ host_triplet = @host@
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 imrelp-oversizeMode-truncate.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 imrelp-oversizeMode-accept.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 imrelp-invld-tlslib.sh \
+@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 imrelp-bigmessage.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 omrelp-invld-tlslib.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 sndrcv_relp_dflt_pt.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@	 glbl-oversizeMsg-log.sh \
@@ -1093,17 +1100,7 @@ host_triplet = @host@
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	proprepltest-nolimittag-udp.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	proprepltest-nolimittag.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	proprepltest-rfctag-udp.sh \
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	proprepltest-rfctag.sh \
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	timestamp-3164-udp.sh \
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	timestamp-3164.sh \
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	timestamp-3339-udp.sh \
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	timestamp-3339.sh \
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	timestamp-mysql-udp.sh \
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	timestamp-mysql.sh \
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	timestamp-pgsql-udp.sh \
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	timestamp-pgsql.sh \
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	timestamp-subseconds-udp.sh \
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	timestamp-subseconds.sh
+@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	proprepltest-rfctag.sh
 
 @ENABLE_OMRULESET_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_88 = \
 @ENABLE_OMRULESET_TRUE@@ENABLE_TESTBENCH_TRUE@	omruleset.sh \
@@ -1953,6 +1950,7 @@ EXTRA_DIST = \
 	urlencode.py \
 	dnscache-TTL-0.sh \
 	dnscache-TTL-0-vg.sh \
+	loadbalance.sh \
 	smtradfile.sh \
 	smtradfile-vg.sh \
 	immark.sh \
@@ -2011,7 +2009,7 @@ EXTRA_DIST = \
 	imbatchreport_delete_toolarge.sh \
 	imbatchreport_rename_toolarge.sh \
 	imbatchreport_errmsg_no_params-vg.sh \
-	mmexternal-SegFault-vg.sh \
+	mmexternal-SegFault.sh \
 	mmexternal-SegFault-empty-jroot-vg.sh \
 	testsuites/mmexternal-SegFault-mm-python.py \
 	mmexternal-InvldProg-vg.sh \
@@ -2079,15 +2077,10 @@ EXTRA_DIST = \
 	proprepltest-nolimittag.sh \
 	proprepltest-rfctag-udp.sh \
 	proprepltest-rfctag.sh \
-	timestamp-3164-udp.sh \
 	timestamp-3164.sh \
-	timestamp-3339-udp.sh \
 	timestamp-3339.sh \
-	timestamp-mysql-udp.sh \
 	timestamp-mysql.sh \
-	timestamp-pgsql-udp.sh \
 	timestamp-pgsql.sh \
-	timestamp-subseconds-udp.sh \
 	timestamp-subseconds.sh \
 	rsf_getenv.sh \
 	diskq-rfc5424.sh \
@@ -2522,6 +2515,7 @@ EXTRA_DIST = \
 	imrelp-oversizeMode-truncate.sh \
 	imrelp-oversizeMode-accept.sh \
 	imrelp-invld-tlslib.sh \
+	imrelp-bigmessage.sh \
 	omrelp-invld-tlslib.sh \
 	glbl-oversizeMsg-log.sh \
 	glbl-oversizeMsg-truncate.sh \
@@ -2671,6 +2665,8 @@ EXTRA_DIST = \
 	imfile-endregex-timeout-none.sh \
 	imfile-endregex-timeout-with-shutdown.sh \
 	imfile-endregex-timeout-with-shutdown-polling.sh \
+	imfile-escapelf.replacement.sh \
+	imfile-escapelf.replacement-empty.sh \
 	imfile-endmsg.regex.sh \
 	imfile-endmsg.regex-vg.sh \
 	imfile-endmsg.regex-with-example.sh \
@@ -2739,18 +2735,14 @@ EXTRA_DIST = \
 	imuxsock_logger_err.sh \
 	imuxsock_logger_root.sh \
 	imuxsock_logger_syssock.sh \
-	resultdata/imuxsock_logger.log \
 	imuxsock_traillf.sh \
 	imuxsock_traillf_root.sh \
 	imuxsock_traillf_syssock.sh \
-	resultdata/imuxsock_traillf.log \
 	imuxsock_ccmiddle.sh \
 	imuxsock_ccmiddle_root.sh \
 	imklog_permitnonkernelfacility_root.sh \
 	imuxsock_ccmiddle_syssock.sh \
-	resultdata/imuxsock_ccmiddle.log \
 	imuxsock_hostname.sh \
-	resultdata/imuxsock_hostname.log \
 	testsuites/mysql-truncate.sql \
 	testsuites/mysql-select-msg.sql \
 	libdbi-basic.sh \

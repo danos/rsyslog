@@ -209,55 +209,62 @@ sbin_PROGRAMS =
 @ENABLE_DEFAULT_TESTS_TRUE@	--enable-pmsnare \
 @ENABLE_DEFAULT_TESTS_TRUE@	--enable-usertools
 
-@ENABLE_IMPROG_TRUE@am__append_73 = --enable-improg
-@ENABLE_OMPROG_TRUE@am__append_74 = --enable-omprog
-@ENABLE_GSSAPI_TRUE@am__append_75 = --enable-gssapi-krb5
-@ENABLE_PMNORMALIZE_TRUE@am__append_76 = --enable-pmnormalize
-@ENABLE_MMDBLOOKUP_TRUE@am__append_77 = --enable-mmdblookup
-@ENABLE_MMDARWIN_TRUE@am__append_78 = --enable-mmdarwin
-@ENABLE_MMNORMALIZE_TRUE@am__append_79 = --enable-mmnormalize
-@ENABLE_OMMONGODB_TRUE@am__append_80 = --enable-ommongodb
-@ENABLE_OMHIREDIS_TRUE@am__append_81 = --enable-omhiredis
-@ENABLE_MMSNMPTRAPD_TRUE@am__append_82 = --enable-mmsnmptrapd
-@ENABLE_OMLIBDBI_TRUE@am__append_83 = --enable-libdbi
-@ENABLE_LIBGCRYPT_TRUE@am__append_84 = --enable-libgcrypt
-@ENABLE_OMHTTP_TRUE@am__append_85 = --enable-omhttp
-@ENABLE_OMHTTPFS_TRUE@am__append_86 = --enable-omhttpfs
-@ENABLE_OMTCL_TRUE@am__append_87 = --enable-omtcl
-@ENABLE_SNMP_TRUE@am__append_88 = --enable-snmp
-@ENABLE_SNMP_TESTS_TRUE@am__append_89 = --enable-snmp-tests
-@ENABLE_FMHTTP_TRUE@am__append_90 = --enable-fmhttp
-@ENABLE_OMUDPSPOOF_TRUE@am__append_91 = --enable-omudpspoof
-@ENABLE_PGSQL_TRUE@am__append_92 = --enable-pgsql
-@ENABLE_GNUTLS_TRUE@am__append_93 = --enable-gnutls
-@ENABLE_OPENSSL_TRUE@am__append_94 = --enable-openssl
-@ENABLE_MYSQL_TRUE@am__append_95 = --enable-mysql
-@ENABLE_MYSQL_TESTS_TRUE@am__append_96 = --enable-mysql-tests
-@ENABLE_ELASTICSEARCH_TRUE@am__append_97 = --enable-elasticsearch
-@ENABLE_ELASTICSEARCH_TESTS_TRUE@am__append_98 = --enable-elasticsearch-tests
-@ENABLE_CLICKHOUSE_TRUE@am__append_99 = --enable-clickhouse
-@ENABLE_CLICKHOUSE_TESTS_TRUE@am__append_100 = --enable-clickhouse-tests
-@ENABLE_MMGROK_TRUE@am__append_101 = --enable-mmgrok
-@ENABLE_RELP_TRUE@am__append_102 = --enable-relp --enable-omrelp-default-port=13515
-@ENABLE_IMKAFKA_TRUE@am__append_103 = --enable-imkafka
-@ENABLE_OMKAFKA_TRUE@am__append_104 = --enable-omkafka
-@ENABLE_KAFKA_TESTS_TRUE@am__append_105 = --enable-kafka-tests
-@ENABLE_IMJOURNAL_TRUE@am__append_106 = --enable-imjournal
-@ENABLE_OMJOURNAL_TRUE@am__append_107 = --enable-omjournal
-@ENABLE_JOURNAL_TESTS_TRUE@am__append_108 = --enable-journal-tests
-@ENABLE_IMCZMQ_TRUE@am__append_109 = --enable-imczmq
-@ENABLE_OMCZMQ_TRUE@am__append_110 = --enable-omczmq
-@ENABLE_MMTAGHOSTNAME_TRUE@am__append_111 = --enable-mmtaghostname
-@ENABLE_IMTUXEDOULOG_TRUE@am__append_112 = --enable-imtuxedolog
-@ENABLE_PMDB2DIAG_TRUE@am__append_113 = --enable-pmdb2diag
-@ENABLE_IMBATCHREPORT_TRUE@am__append_114 = --enable-imbatchreport
-@ENABLE_IMFILE_TRUE@am__append_115 = --enable-imfile
-@ENABLE_IMDOCKER_TRUE@am__append_116 = --enable-imdocker
-@ENABLE_OMRABBITMQ_TRUE@am__append_117 = --enable-omrabbitmq
-@ENABLE_MMKUBERNETES_TRUE@am__append_118 = --enable-mmkubernetes
-@ENABLE_OMAMQP1_TRUE@am__append_119 = --enable-omamqp1
-@ENABLE_DISTCHECK_WORKAROUND_TRUE@am__append_120 = --disable-testbench
-@ENABLE_DISTCHECK_WORKAROUND_FALSE@am__append_121 = --enable-testbench
+@ENABLE_DEFAULT_TESTS_FALSE@am__append_73 = \
+@ENABLE_DEFAULT_TESTS_FALSE@	--disable-default-tests
+
+@ENABLE_IMPROG_TRUE@am__append_74 = --enable-improg
+@ENABLE_OMPROG_TRUE@am__append_75 = --enable-omprog
+@ENABLE_GSSAPI_TRUE@am__append_76 = --enable-gssapi-krb5
+@ENABLE_PMNORMALIZE_TRUE@am__append_77 = --enable-pmnormalize
+@ENABLE_MMDBLOOKUP_TRUE@am__append_78 = --enable-mmdblookup
+@ENABLE_MMDARWIN_TRUE@am__append_79 = --enable-mmdarwin
+@ENABLE_MMNORMALIZE_TRUE@am__append_80 = --enable-mmnormalize
+@ENABLE_OMMONGODB_TRUE@am__append_81 = --enable-ommongodb
+@ENABLE_OMHIREDIS_TRUE@am__append_82 = --enable-omhiredis
+@ENABLE_MMSNMPTRAPD_TRUE@am__append_83 = --enable-mmsnmptrapd
+@ENABLE_OMLIBDBI_TRUE@am__append_84 = --enable-libdbi
+@ENABLE_LIBGCRYPT_TRUE@am__append_85 = --enable-libgcrypt
+@ENABLE_OMHTTP_TRUE@am__append_86 = --enable-omhttp
+@ENABLE_OMHTTPFS_TRUE@am__append_87 = --enable-omhttpfs
+@ENABLE_OMTCL_TRUE@am__append_88 = --enable-omtcl
+@ENABLE_SNMP_TRUE@am__append_89 = --enable-snmp
+@ENABLE_SNMP_TESTS_TRUE@am__append_90 = --enable-snmp-tests
+@ENABLE_FMHTTP_TRUE@am__append_91 = --enable-fmhttp
+@ENABLE_OMUDPSPOOF_TRUE@am__append_92 = --enable-omudpspoof
+@ENABLE_PGSQL_TRUE@am__append_93 = --enable-pgsql
+@ENABLE_GNUTLS_TRUE@am__append_94 = --enable-gnutls
+@ENABLE_GNUTLS_TESTS_TRUE@am__append_95 = --enable-gnutls-tests
+@ENABLE_GNUTLS_TESTS_FALSE@am__append_96 = --disable-gnutls-tests
+@ENABLE_OPENSSL_TRUE@am__append_97 = --enable-openssl
+@ENABLE_MYSQL_TRUE@am__append_98 = --enable-mysql
+@ENABLE_MYSQL_TESTS_TRUE@am__append_99 = --enable-mysql-tests
+@ENABLE_ELASTICSEARCH_TRUE@am__append_100 = --enable-elasticsearch
+@ENABLE_ELASTICSEARCH_TESTS_TRUE@am__append_101 = --enable-elasticsearch-tests
+@ENABLE_CLICKHOUSE_TRUE@am__append_102 = --enable-clickhouse
+@ENABLE_CLICKHOUSE_TESTS_TRUE@am__append_103 = --enable-clickhouse-tests
+@ENABLE_MMGROK_TRUE@am__append_104 = --enable-mmgrok
+@ENABLE_RELP_TRUE@am__append_105 = --enable-relp --enable-omrelp-default-port=13515
+@ENABLE_IMKAFKA_TRUE@am__append_106 = --enable-imkafka
+@ENABLE_OMKAFKA_TRUE@am__append_107 = --enable-omkafka
+@ENABLE_KAFKA_TESTS_TRUE@am__append_108 = --enable-kafka-tests
+@ENABLE_IMJOURNAL_TRUE@am__append_109 = --enable-imjournal
+@ENABLE_OMJOURNAL_TRUE@am__append_110 = --enable-omjournal
+@ENABLE_JOURNAL_TESTS_TRUE@am__append_111 = --enable-journal-tests
+@ENABLE_IMCZMQ_TRUE@am__append_112 = --enable-imczmq
+@ENABLE_OMCZMQ_TRUE@am__append_113 = --enable-omczmq
+@ENABLE_MMTAGHOSTNAME_TRUE@am__append_114 = --enable-mmtaghostname
+@ENABLE_IMTUXEDOULOG_TRUE@am__append_115 = --enable-imtuxedolog
+@ENABLE_PMDB2DIAG_TRUE@am__append_116 = --enable-pmdb2diag
+@ENABLE_IMBATCHREPORT_TRUE@am__append_117 = --enable-imbatchreport
+@ENABLE_IMFILE_TRUE@am__append_118 = --enable-imfile
+@ENABLE_IMFILE_TESTS_TRUE@am__append_119 = --enable-imfile-tests
+@ENABLE_IMFILE_TESTS_FALSE@am__append_120 = --disable-imfile-tests
+@ENABLE_IMDOCKER_TRUE@am__append_121 = --enable-imdocker
+@ENABLE_OMRABBITMQ_TRUE@am__append_122 = --enable-omrabbitmq
+@ENABLE_MMKUBERNETES_TRUE@am__append_123 = --enable-mmkubernetes
+@ENABLE_OMAMQP1_TRUE@am__append_124 = --enable-omamqp1
+@ENABLE_DISTCHECK_WORKAROUND_TRUE@am__append_125 = --disable-testbench
+@ENABLE_DISTCHECK_WORKAROUND_FALSE@am__append_126 = --enable-testbench
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_check_define.m4 \
@@ -750,7 +757,9 @@ DISTCHECK_CONFIGURE_FLAGS = --with-systemdsystemunitdir=$$dc_install_base/$(syst
 	$(am__append_111) $(am__append_112) $(am__append_113) \
 	$(am__append_114) $(am__append_115) $(am__append_116) \
 	$(am__append_117) $(am__append_118) $(am__append_119) \
-	$(am__append_120) $(am__append_121)
+	$(am__append_120) $(am__append_121) $(am__append_122) \
+	$(am__append_123) $(am__append_124) $(am__append_125) \
+	$(am__append_126)
 ACLOCAL_AMFLAGS = -I m4
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
