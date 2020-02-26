@@ -56,6 +56,7 @@ override_dh_auto_configure:
 		--enable-fmhash \
 		--disable-libgcrypt \
 		--enable-testbench \
+		--enable-extended-tests \
 		--enable-imdiag \
 		--disable-generate-man-pages \
 		--disable-fmhttp \
