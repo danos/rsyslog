@@ -1,3 +1,11 @@
+rsyslog (8.2002.0-2) unstable; urgency=medium
+
+  * Increase timeouts in imfile-basic-2GB-file and imfile-truncate-2GB-file.
+    Those tests can take a long time, especially on slow architectures like
+    armhf, so bump the test timeouts considerably.
+
+ -- Michael Biebl <biebl@debian.org>  Fri, 28 Feb 2020 01:05:57 +0100
+
 rsyslog (8.2002.0-1) unstable; urgency=medium
 
   * New upstream version 8.2002.0
