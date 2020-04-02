@@ -1,3 +1,10 @@
+rsyslog (8.24.0-1vyatta4.2) unstable; urgency=medium
+
+  [ Mike Manning ]
+  * omfwd: omit einval error messages
+
+ -- Vyatta Package Maintainers <DL-vyatta-help@att.com>  Thu, 02 Apr 2020 10:33:36 +0100
+
 rsyslog (8.24.0-1vyatta4.1) unstable; urgency=medium
 
   [ Charles (Chas) Williams ]
