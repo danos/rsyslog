@@ -1,5 +1,7 @@
 Don-t-create-a-database.patch
 Don-t-fail-test-suite-on-flaky-tests.patch
+testbench-modernize-some-tests.patch
+testbench-modernize-tests-and-make-more-robust-in-re.patch
 normalize-rate-limit-parameters.patch
 handle-sd-invalidate-journal.patch
 ocsp-v2.patch
