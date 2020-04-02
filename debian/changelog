@@ -1,3 +1,10 @@
+rsyslog (8.1908.0-1vyatta9) unstable; urgency=medium
+
+  [ Mike Manning ]
+  * testbench: modernize and make more robust
+
+ -- Vyatta Package Maintainers <DL-vyatta-help@att.com>  Thu, 02 Apr 2020 17:03:54 +0100
+
 rsyslog (8.1908.0-1vyatta8) unstable; urgency=medium
 
   [ Daniel Gollub ]
