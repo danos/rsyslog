@@ -1,3 +1,8 @@
+---
+ runtime/nsd_ossl.c |  624 ++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ runtime/nsd_ossl.h |    2 
+ 2 files changed, 622 insertions(+), 4 deletions(-)
+
 --- a/runtime/nsd_ossl.c
 +++ b/runtime/nsd_ossl.c
 @@ -29,6 +29,7 @@
@@ -32,7 +37,7 @@
  void osslLastSSLErrorMsg(int ret, SSL *ssl, int severity, const char* pszCallSource)
  {
  	unsigned long un_error = 0;
-@@ -224,22 +228,582 @@
+@@ -215,22 +219,582 @@
  	}
  }
  
@@ -619,7 +624,7 @@
  
  		dbgprintf("verify_callback: Certificate validation failed, Mode (%d)!\n", iVerifyMode);
  
-@@ -302,6 +866,58 @@
+@@ -293,6 +857,58 @@
  		}
  	}
  
@@ -680,7 +685,7 @@
  
 --- a/runtime/nsd_ossl.h
 +++ b/runtime/nsd_ossl.h
-@@ -78,11 +78,13 @@
+@@ -79,11 +79,13 @@
  	int lenRcvBuf;
  	/**< -1: empty, 0: connection closed, 1..NSD_OSSL_MAX_RCVBUF-1: data of that size present */
  	int ptrRcvBuf;		/**< offset for next recv operation if 0 < lenRcvBuf < NSD_OSSL_MAX_RCVBUF */
