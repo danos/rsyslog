@@ -53,6 +53,7 @@
  *      Average,min,max
  * -T   transport to use. Currently supported: "udp", "tcp" (default), "tls" (tcp+tls), relp-plain, relp-tls
  *      Note: UDP supports a single target port, only
+ * -u	Set RELP TLS Library to gnutls or openssl
  * -W	wait time between sending batches of messages, in microseconds (Default: 0)
  * -b   number of messages within a batch (default: 100,000,000 millions)
  * -Y	use multiple threads, one per connection (which means 1 if one only connection
@@ -72,6 +73,7 @@
  *	Currently only OpenSSL is supported, possible configuration commands and values can be found here:
  *	https://www.openssl.org/docs/man1.0.2/man3/SSL_CONF_cmd.html
  *	Sample: -k"Protocol=ALL,-SSLv2,-SSLv3,-TLSv1,-TLSv1.1"
+ *	Works for LIBRELP now as well!
  *
  * Part of the testbench for rsyslog.
  *
@@ -165,7 +167,7 @@ char *test_rs_strerror_r(int errnum, char *buf, size_t buflen) {
 #define NETTEST_INPUT_CONF_FILE "nettest.input.conf"
 /* name of input file, must match $IncludeConfig in .conf files */
 
-#define MAX_EXTRADATA_LEN 200*1024
+#define MAX_EXTRADATA_LEN 512*1024
 #define MAX_SENDBUF 2 * MAX_EXTRADATA_LEN
 #define MAX_RCVBUF 16 * 1024 + 1/* TLS RFC 8449: max size of buffer for message reception */
 
@@ -210,6 +212,10 @@ static char *tlsCertFile = NULL;
 static char *tlsKeyFile = NULL;
 static char *relpAuthMode = NULL;
 static char *relpPermittedPeer = NULL;
+#if defined(HAVE_RELPENGINESETTLSLIBBYNAME)
+static char *relpTlsLib = NULL;
+#endif
+
 static int tlsLogLevel = 0;
 static char *jsonCookie = NULL; /* if non-NULL, use JSON format with this cookie */
 static int octateCountFramed = 0;
@@ -328,6 +334,11 @@ int openConn(int *fd, const int connIdx)
 		snprintf(relpPort, sizeof(relpPort), "%d", port);
 		CHKRELP(relpEngineCltConstruct(pRelpEngine, &relpClt));
 		if(transport == TP_RELP_TLS) {
+			#if defined(HAVE_RELPENGINESETTLSLIBBYNAME)
+			if(relpTlsLib != NULL && relpEngineSetTLSLibByName(pRelpEngine, relpTlsLib) != RELP_RET_OK) {
+				fprintf(stderr, "relpTlsLib not accepted by librelp, using default\n");
+			}
+			#endif
 			if(relpCltEnableTLS(relpClt) != RELP_RET_OK) {
 				fprintf(stderr, "error while enabling TLS for relp\n");
 				exit(1);
@@ -353,6 +364,14 @@ int openConn(int *fd, const int connIdx)
 				fprintf(stderr, "could not set Permitted Peer: %s\n", relpPermittedPeer);
 				exit(1);
 			}
+#if defined(HAVE_RELPENGINESETTLSCFGCMD)
+			/* Check for Custom Config string */
+			if(customConfig != NULL && relpCltSetTlsConfigCmd(relpClt, customConfig)
+					!= RELP_RET_OK) {
+				fprintf(stderr, "could not set custom tls command: %s\n", customConfig);
+				exit(1);
+			}
+#endif
 		}
 		relpCltArray[connIdx] = relpClt;
 		relp_r = relpCltConnect(relpCltArray[connIdx], 2,
@@ -1159,7 +1178,7 @@ initTLS(void)
 				" Is the file at the right path? And do we have the permissions?");
 		exit(1);
 	}
-	if(SSL_CTX_use_certificate_file(ctx, tlsCertFile, SSL_FILETYPE_PEM) != 1) {
+	if(SSL_CTX_use_certificate_chain_file(ctx, tlsCertFile) != 1) {
 		printf("tcpflood: error cert file could not be accessed -- have you mixed up key and certificate?\n");
 		printf("If in doubt, try swapping the files in -z/-Z\n");
 		printf("Certifcate is: '%s'\n", tlsCertFile);
@@ -1181,7 +1200,7 @@ initTLS(void)
 
 	/* Check for Custom Config string */
 	if (customConfig != NULL){
-#if OPENSSL_VERSION_NUMBER >= 0x10020000L
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L
 	char *pCurrentPos;
 	char *pNextPos;
 	char *pszCmd;
@@ -1235,9 +1254,8 @@ initTLS(void)
 		printf("tcpflood: error, invalid value for -k: %s\n", customConfig);
 	}
 #else
-	printf("tcpflood: error, OpenSSL Version to old, SSL_CONF_cmd API is not supported.");
+	printf("tcpflood: error, OpenSSL Version too old, SSL_CONF_cmd API is not supported.");
 #endif
-
 	}
 
 
@@ -1553,7 +1571,7 @@ int main(int argc, char *argv[])
 
 	setvbuf(stdout, buf, _IONBF, 48);
 
-	while((opt = getopt(argc, argv, "a:Bb:c:C:d:DeE:f:F:k:i:I:l:j:L:m:M:n:OP:p:rR:sS:t:T:vW:x:XyYz:Z:")) != -1) {
+	while((opt = getopt(argc, argv, "a:Bb:c:C:d:DeE:f:F:i:I:j:k:l:L:m:M:n:OP:p:rR:sS:t:T:u:vW:x:XyYz:Z:")) != -1) {
 		switch (opt) {
 		case 'b':	batchsize = atoll(optarg);
 				break;
@@ -1662,6 +1680,11 @@ int main(int argc, char *argv[])
 		case 'a':	relpAuthMode = optarg;
 				break;
 		case 'E':	relpPermittedPeer = optarg;
+				break;
+		case 'u':
+#if defined(HAVE_RELPENGINESETTLSLIBBYNAME)
+			relpTlsLib = optarg;
+#endif
 				break;
 		case 'W':	waittime = atoi(optarg);
 				break;

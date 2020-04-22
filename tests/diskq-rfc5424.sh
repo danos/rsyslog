@@ -4,7 +4,7 @@
 # Triggering condition: "json" property (message variables) are present
 # and "structured-data" property is also present. Caused rsyslog to
 # thrash the queue file, getting messages stuck in it and loosing all
-# after the initial problem occurence.
+# after the initial problem occurrence.
 # add 2017-02-08 by Rainer Gerhards, released under ASL 2.0
 
 uname
@@ -14,6 +14,7 @@ if [ $(uname) = "SunOS" ] ; then
 fi
 
 . ${srcdir:=.}/diag.sh init
+export NUMMESSAGES=10
 generate_conf
 add_conf '
 module(load="../plugins/imtcp/.libs/imtcp")
@@ -33,9 +34,9 @@ ruleset(name="rs") {
 }
 '
 startup
-tcpflood -m1000 -y
+tcpflood -m$NUMMESSAGES -y
 shutdown_when_empty
 wait_shutdown
-seq_check 0 999
+seq_check
 
 exit_test

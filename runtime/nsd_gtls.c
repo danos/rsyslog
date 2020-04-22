@@ -2,7 +2,7 @@
  *
  * An implementation of the nsd interface for GnuTLS.
  *
- * Copyright (C) 2007-2018 Rainer Gerhards and Adiscon GmbH.
+ * Copyright (C) 2007-2019 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -120,8 +120,6 @@ static void logFunction(int level, const char *msg)
 {
 	dbgprintf("GnuTLS log msg, level %d: %s\n", level, msg);
 }
-
-
 
 /* read in the whole content of a file. The caller is responsible for
  * freeing the buffer. To prevent DOS, this function can NOT read
@@ -572,7 +570,9 @@ gtlsRecordRecv(nsd_gtls_t *pThis)
 			DBGPRINTF("gtlsRecordRecv: %zd Bytes pending after gnutls_record_recv, expand buffer.\n",
 				stBytesLeft);
 			/* realloc buffer size and preserve char content */
-			CHKmalloc(pThis->pszRcvBuf = realloc(pThis->pszRcvBuf, NSD_GTLS_MAX_RCVBUF+stBytesLeft));
+			char *const newbuf = realloc(pThis->pszRcvBuf, NSD_GTLS_MAX_RCVBUF+stBytesLeft);
+			CHKmalloc(newbuf);
+			pThis->pszRcvBuf = newbuf;
 
 			/* 2nd read will read missing bytes from the current SSL Packet */
 			lenRcvd = gnutls_record_recv(pThis->sess, pThis->pszRcvBuf+NSD_GTLS_MAX_RCVBUF, stBytesLeft);
@@ -774,7 +774,11 @@ gtlsInitSession(nsd_gtls_t *pThis)
 	gnutls_session_set_ptr(pThis->sess, (void*)pThis);
 	iRet = gtlsLoadOurCertKey(pThis); /* first load .pem files */
 	if(iRet == RS_RET_OK) {
+		dbgprintf("gtlsInitSession: enable certificate checking (VerifyDepth=%d)\n", pThis->DrvrVerifyDepth);
 		gnutls_certificate_set_retrieve_function(xcred, gtlsClientCertCallback);
+		if (pThis->DrvrVerifyDepth != 0){
+			gnutls_certificate_set_verify_limits(xcred, 8200, pThis->DrvrVerifyDepth);
+		}
 	} else if(iRet == RS_RET_CERTLESS) {
 		dbgprintf("gtlsInitSession: certificates not configured, not loaded.\n");
 	} else {
@@ -1459,16 +1463,16 @@ SetPermitExpiredCerts(nsd_t *pNsd, uchar *mode)
 	nsd_gtls_t *pThis = (nsd_gtls_t*) pNsd;
 
 	ISOBJ_TYPE_assert((pThis), nsd_gtls);
-	/* default is set to warn! */
-	if(mode == NULL || !strcasecmp((char*)mode, "warn")) {
-		pThis->permitExpiredCerts = GTLS_EXPIRED_WARN;
-	} else if(!strcasecmp((char*) mode, "off")) {
+	/* default is set to off! */
+	if(mode == NULL || !strcasecmp((char*)mode, "off")) {
 		pThis->permitExpiredCerts = GTLS_EXPIRED_DENY;
+	} else if(!strcasecmp((char*) mode, "warn")) {
+		pThis->permitExpiredCerts = GTLS_EXPIRED_WARN;
 	} else if(!strcasecmp((char*) mode, "on")) {
 		pThis->permitExpiredCerts = GTLS_EXPIRED_PERMIT;
 	} else {
 		LogError(0, RS_RET_VALUE_NOT_SUPPORTED, "error: permitexpiredcerts mode '%s' not supported by "
-				"ossl netstream driver", mode);
+				"gtls netstream driver", mode);
 		ABORT_FINALIZE(RS_RET_VALUE_NOT_SUPPORTED);
 	}
 
@@ -1568,6 +1572,27 @@ SetPrioritizeSAN(nsd_t *pNsd, int prioritizeSan)
 finalize_it:
 	RETiRet;
 }
+
+/* Set the driver tls  verifyDepth
+ * alorbach, 2019-12-20
+ */
+static rsRetVal
+SetTlsVerifyDepth(nsd_t *pNsd, int verifyDepth)
+{
+	DEFiRet;
+	nsd_gtls_t *pThis = (nsd_gtls_t*) pNsd;
+
+	ISOBJ_TYPE_assert((pThis), nsd_gtls);
+	if (verifyDepth == 0) {
+		FINALIZE;
+	}
+	assert(verifyDepth >= 2);
+	pThis->DrvrVerifyDepth = verifyDepth;
+
+finalize_it:
+	RETiRet;
+}
+
 
 /* Provide access to the underlying OS socket. This is primarily
  * useful for other drivers (like nsd_gtls) who utilize ourselfs
@@ -1762,6 +1787,7 @@ AcceptConnReq(nsd_t *pNsd, nsd_t **ppNew)
 	pNew->permitExpiredCerts = pThis->permitExpiredCerts;
 	pNew->pPermPeers = pThis->pPermPeers;
 	pNew->gnutlsPriorityString = pThis->gnutlsPriorityString;
+	pNew->DrvrVerifyDepth = pThis->DrvrVerifyDepth;
 
 	/* if we reach this point, we are in TLS mode */
 	iRet = gtlsInitSession(pNew);
@@ -2067,6 +2093,10 @@ Connect(nsd_t *pNsd, int family, uchar *port, uchar *host, char *device)
 #		else
 		gnutls_certificate_client_set_retrieve_function(xcred, gtlsClientCertCallback);
 #		endif
+		dbgprintf("Connect: enable certificate checking (VerifyDepth=%d)\n", pThis->DrvrVerifyDepth);
+		if (pThis->DrvrVerifyDepth != 0) {
+			gnutls_certificate_set_verify_limits(xcred, 8200, pThis->DrvrVerifyDepth);
+		}
 	} else if(iRet == RS_RET_CERTLESS) {
 		dbgprintf("Connect: certificates not configured, not loaded.\n");
 	} else {
@@ -2195,6 +2225,7 @@ CODESTARTobjQueryInterface(nsd_gtls)
 	pIf->SetGnutlsPriorityString = SetGnutlsPriorityString;
 	pIf->SetCheckExtendedKeyUsage = SetCheckExtendedKeyUsage;
 	pIf->SetPrioritizeSAN = SetPrioritizeSAN;
+	pIf->SetTlsVerifyDepth = SetTlsVerifyDepth;
 finalize_it:
 ENDobjQueryInterface(nsd_gtls)
 

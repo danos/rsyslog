@@ -2,7 +2,7 @@
  *
  * Module begun 2011-04-19 by Rainer Gerhards
  *
- * Copyright 2011-2019 Adiscon GmbH.
+ * Copyright 2011-2020 Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -156,6 +156,7 @@ static void cnfSetDefaults(rsconf_t *pThis)
 	pThis->globals.maxErrMsgToStderr = -1;
 	pThis->globals.umask = -1;
 	pThis->globals.gidDropPrivKeepSupplemental = 0;
+	pThis->globals.abortOnIDResolutionFail = 1;
 	pThis->templates.root = NULL;
 	pThis->templates.last = NULL;
 	pThis->templates.lastStatic = NULL;
@@ -438,6 +439,16 @@ cnfDoObj(struct cnfobj *const o)
 
 	dbgprintf("cnf:global:obj: ");
 	cnfobjPrint(o);
+
+	/* We need to check for object disabling as early as here to cover most
+	 * of them at once and avoid needless initializations
+	 * - jvymazal 2020-02-12
+	 */
+	if (nvlstChkDisabled(o->nvlst)) {
+		dbgprintf("object disabled by configuration\n");
+		return;
+	}
+
 	switch(o->objType) {
 	case CNFOBJ_GLOBAL:
 		glblProcessCnf(o);
@@ -581,7 +592,7 @@ static void doDropPrivUid(int iUid)
 	if (pw) {
 		gid = getgid();
 		res = initgroups(pw->pw_name, gid);
-		DBGPRINTF("initgroups(%s, %d): %d\n", pw->pw_name, gid, res);
+		DBGPRINTF("initgroups(%s, %ld): %d\n", pw->pw_name, (long) gid, res);
 	} else {
 		rs_strerror_r(errno, (char*)szBuf, sizeof(szBuf));
 		LogError(0, NO_ERRCODE,
@@ -1308,6 +1319,7 @@ load(rsconf_t **cnf, uchar *confFile)
 {
 	int iNbrActions = 0;
 	int r;
+	rsRetVal delayed_iRet = RS_RET_OK;
 	DEFiRet;
 
 	CHKiRet(rsconfConstruct(&loadConf));
@@ -1331,7 +1343,8 @@ ourConf = loadConf; // TODO: remove, once ourConf is gone!
 	if(r == 1) {
 		LogError(0, RS_RET_CONF_PARSE_ERROR, "could not interpret master "
 			"config file '%s'.", confFile);
-		ABORT_FINALIZE(RS_RET_CONF_PARSE_ERROR);
+		/* we usually keep running with the failure, so we need to continue for now */
+		delayed_iRet = RS_RET_CONF_PARSE_ERROR;
 	} else if(r == 2) { /* file not found? */
 		LogError(errno, RS_RET_CONF_FILE_NOT_FOUND, "could not open config file '%s'",
 		        confFile);
@@ -1369,6 +1382,9 @@ ourConf = loadConf; // TODO: remove, once ourConf is gone!
 	rsconfDebugPrint(loadConf);
 
 finalize_it:
+	if(iRet == RS_RET_OK && delayed_iRet != RS_RET_OK) {
+		iRet = delayed_iRet;
+	}
 	RETiRet;
 }
 
