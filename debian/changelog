@@ -1,3 +1,10 @@
+rsyslog (8.2002.0-2vyatta1) unstable; urgency=medium
+
+  [ Mike Manning ]
+  * Rebase patches to 8.2002.0-2
+
+ -- Mike Manning <mmanning@vyatta.att-mail.com>  Fri, 24 Apr 2020 13:36:26 +0100
+
 rsyslog (8.2002.0-2) unstable; urgency=medium
 
   * Increase timeouts in imfile-basic-2GB-file and imfile-truncate-2GB-file.
