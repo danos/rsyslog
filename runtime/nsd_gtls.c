@@ -2,7 +2,7 @@
  *
  * An implementation of the nsd interface for GnuTLS.
  *
- * Copyright (C) 2007-2018 Rainer Gerhards and Adiscon GmbH.
+ * Copyright (C) 2007-2019 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -120,8 +120,6 @@ static void logFunction(int level, const char *msg)
 {
 	dbgprintf("GnuTLS log msg, level %d: %s\n", level, msg);
 }
-
-
 
 /* read in the whole content of a file. The caller is responsible for
  * freeing the buffer. To prevent DOS, this function can NOT read
@@ -572,7 +570,9 @@ gtlsRecordRecv(nsd_gtls_t *pThis)
 			DBGPRINTF("gtlsRecordRecv: %zd Bytes pending after gnutls_record_recv, expand buffer.\n",
 				stBytesLeft);
 			/* realloc buffer size and preserve char content */
-			CHKmalloc(pThis->pszRcvBuf = realloc(pThis->pszRcvBuf, NSD_GTLS_MAX_RCVBUF+stBytesLeft));
+			char *const newbuf = realloc(pThis->pszRcvBuf, NSD_GTLS_MAX_RCVBUF+stBytesLeft);
+			CHKmalloc(newbuf);
+			pThis->pszRcvBuf = newbuf;
 
 			/* 2nd read will read missing bytes from the current SSL Packet */
 			lenRcvd = gnutls_record_recv(pThis->sess, pThis->pszRcvBuf+NSD_GTLS_MAX_RCVBUF, stBytesLeft);
@@ -774,7 +774,11 @@ gtlsInitSession(nsd_gtls_t *pThis)
 	gnutls_session_set_ptr(pThis->sess, (void*)pThis);
 	iRet = gtlsLoadOurCertKey(pThis); /* first load .pem files */
 	if(iRet == RS_RET_OK) {
+		dbgprintf("gtlsInitSession: enable certificate checking (VerifyDepth=%d)\n", pThis->DrvrVerifyDepth);
 		gnutls_certificate_set_retrieve_function(xcred, gtlsClientCertCallback);
+		if (pThis->DrvrVerifyDepth != 0){
+			gnutls_certificate_set_verify_limits(xcred, 8200, pThis->DrvrVerifyDepth);
+		}
 	} else if(iRet == RS_RET_CERTLESS) {
 		dbgprintf("gtlsInitSession: certificates not configured, not loaded.\n");
 	} else {
@@ -1004,6 +1008,7 @@ gtlsChkPeerName(nsd_gtls_t *pThis, gnutls_x509_crt_t *pCert)
 	int iAltName;
 	size_t szAltNameLen;
 	int bFoundPositiveMatch;
+	int bHaveSAN = 0;
 	cstr_t *pStr = NULL;
 	cstr_t *pstrCN = NULL;
 	int gnuRet;
@@ -1023,6 +1028,7 @@ gtlsChkPeerName(nsd_gtls_t *pThis, gnutls_x509_crt_t *pCert)
 		if(gnuRet < 0)
 			break;
 		else if(gnuRet == GNUTLS_SAN_DNSNAME) {
+			bHaveSAN = 1;
 			dbgprintf("subject alt dnsName: '%s'\n", szAltName);
 			snprintf((char*)lnBuf, sizeof(lnBuf), "DNSname: %s; ", szAltName);
 			CHKiRet(rsCStrAppendStr(pStr, lnBuf));
@@ -1032,8 +1038,8 @@ gtlsChkPeerName(nsd_gtls_t *pThis, gnutls_x509_crt_t *pCert)
 		++iAltName;
 	}
 
-	if(!bFoundPositiveMatch) {
-		/* if we did not succeed so far, we try the CN part of the DN... */
+	/* Check also CN only if not configured per stricter RFC 6125 or no SAN present*/
+	if(!bFoundPositiveMatch && (!pThis->bSANpriority || !bHaveSAN)) {
 		CHKiRet(gtlsGetCN(pCert, &pstrCN));
 		if(pstrCN != NULL) { /* NULL if there was no CN present */
 			dbgprintf("gtls now checking auth for CN '%s'\n", cstrGetSzStrNoNULL(pstrCN));
@@ -1154,8 +1160,23 @@ gtlsChkPeerCertValidity(nsd_gtls_t *pThis)
 			"peer did not provide a certificate, not permitted to talk to it");
 		ABORT_FINALIZE(RS_RET_TLS_NO_CERT);
 	}
-
-	CHKgnutls(gnutls_certificate_verify_peers2(pThis->sess, &stateCert));
+#ifdef EXTENDED_CERT_CHECK_AVAILABLE
+	if (pThis->dataTypeCheck == GTLS_NONE) {
+#endif
+		CHKgnutls(gnutls_certificate_verify_peers2(pThis->sess, &stateCert));
+#ifdef EXTENDED_CERT_CHECK_AVAILABLE
+	} else { /* we have configured data to check in addition to cert */
+		gnutls_typed_vdata_st data;
+		data.type = GNUTLS_DT_KEY_PURPOSE_OID;
+		if (pThis->bIsInitiator) { /* client mode */
+			data.data = (uchar *)GNUTLS_KP_TLS_WWW_SERVER;
+		} else { /* server mode */
+			data.data = (uchar *)GNUTLS_KP_TLS_WWW_CLIENT;
+		}
+		data.size = ustrlen(data.data);
+		CHKgnutls(gnutls_certificate_verify_peers(pThis->sess, &data, 1, &stateCert));
+	}
+#endif
 
 	if(stateCert & GNUTLS_CERT_INVALID) {
 		/* Default abort code */
@@ -1188,6 +1209,11 @@ gtlsChkPeerCertValidity(nsd_gtls_t *pThis)
 		} else if(stateCert & GNUTLS_CERT_REVOKED) {
 			pszErrCause = "certificate revoked";
 			bAbort = RSTRUE;
+#ifdef EXTENDED_CERT_CHECK_AVAILABLE
+		} else if(stateCert & GNUTLS_CERT_PURPOSE_MISMATCH) {
+			pszErrCause = "key purpose OID does not match";
+			bAbort = RSTRUE;
+#endif
 		} else {
 			pszErrCause = "GnuTLS returned no specific reason";
 			dbgprintf("GnuTLS returned no specific reason for GNUTLS_CERT_INVALID, certificate "
@@ -1437,16 +1463,16 @@ SetPermitExpiredCerts(nsd_t *pNsd, uchar *mode)
 	nsd_gtls_t *pThis = (nsd_gtls_t*) pNsd;
 
 	ISOBJ_TYPE_assert((pThis), nsd_gtls);
-	/* default is set to warn! */
-	if(mode == NULL || !strcasecmp((char*)mode, "warn")) {
-		pThis->permitExpiredCerts = GTLS_EXPIRED_WARN;
-	} else if(!strcasecmp((char*) mode, "off")) {
+	/* default is set to off! */
+	if(mode == NULL || !strcasecmp((char*)mode, "off")) {
 		pThis->permitExpiredCerts = GTLS_EXPIRED_DENY;
+	} else if(!strcasecmp((char*) mode, "warn")) {
+		pThis->permitExpiredCerts = GTLS_EXPIRED_WARN;
 	} else if(!strcasecmp((char*) mode, "on")) {
 		pThis->permitExpiredCerts = GTLS_EXPIRED_PERMIT;
 	} else {
 		LogError(0, RS_RET_VALUE_NOT_SUPPORTED, "error: permitexpiredcerts mode '%s' not supported by "
-				"ossl netstream driver", mode);
+				"gtls netstream driver", mode);
 		ABORT_FINALIZE(RS_RET_VALUE_NOT_SUPPORTED);
 	}
 
@@ -1496,6 +1522,74 @@ SetGnutlsPriorityString(nsd_t *pNsd, uchar *gnutlsPriorityString)
 	ISOBJ_TYPE_assert((pThis), nsd_gtls);
 	pThis->gnutlsPriorityString = gnutlsPriorityString;
 	dbgprintf("gnutlsPriorityString: set to '%s'\n", gnutlsPriorityString);
+	RETiRet;
+}
+
+/* Set the driver cert extended key usage check setting
+ * 0 - ignore contents of extended key usage
+ * 1 - verify that cert contents is compatible with appropriate OID
+ * jvymazal, 2019-08-16
+ */
+static rsRetVal
+SetCheckExtendedKeyUsage(nsd_t *pNsd, int ChkExtendedKeyUsage)
+{
+	DEFiRet;
+	nsd_gtls_t *pThis = (nsd_gtls_t*) pNsd;
+
+	ISOBJ_TYPE_assert((pThis), nsd_gtls);
+	if(ChkExtendedKeyUsage != 0 && ChkExtendedKeyUsage != 1) {
+		LogError(0, RS_RET_VALUE_NOT_SUPPORTED, "error: driver ChkExtendedKeyUsage %d "
+				"not supported by gtls netstream driver", ChkExtendedKeyUsage);
+		ABORT_FINALIZE(RS_RET_VALUE_NOT_SUPPORTED);
+	}
+
+	pThis->dataTypeCheck = ChkExtendedKeyUsage;
+
+finalize_it:
+	RETiRet;
+}
+
+/* Set the driver name checking strictness
+ * 0 - less strict per RFC 5280, section 4.1.2.6 - either SAN or CN match is good
+ * 1 - more strict per RFC 6125 - if any SAN present it must match (CN is ignored)
+ * jvymazal, 2019-08-16
+ */
+static rsRetVal
+SetPrioritizeSAN(nsd_t *pNsd, int prioritizeSan)
+{
+	DEFiRet;
+	nsd_gtls_t *pThis = (nsd_gtls_t*) pNsd;
+
+	ISOBJ_TYPE_assert((pThis), nsd_gtls);
+	if(prioritizeSan != 0 && prioritizeSan != 1) {
+		LogError(0, RS_RET_VALUE_NOT_SUPPORTED, "error: driver prioritizeSan %d "
+				"not supported by gtls netstream driver", prioritizeSan);
+		ABORT_FINALIZE(RS_RET_VALUE_NOT_SUPPORTED);
+	}
+
+	pThis->bSANpriority = prioritizeSan;
+
+finalize_it:
+	RETiRet;
+}
+
+/* Set the driver tls  verifyDepth
+ * alorbach, 2019-12-20
+ */
+static rsRetVal
+SetTlsVerifyDepth(nsd_t *pNsd, int verifyDepth)
+{
+	DEFiRet;
+	nsd_gtls_t *pThis = (nsd_gtls_t*) pNsd;
+
+	ISOBJ_TYPE_assert((pThis), nsd_gtls);
+	if (verifyDepth == 0) {
+		FINALIZE;
+	}
+	assert(verifyDepth >= 2);
+	pThis->DrvrVerifyDepth = verifyDepth;
+
+finalize_it:
 	RETiRet;
 }
 
@@ -1693,6 +1787,7 @@ AcceptConnReq(nsd_t *pNsd, nsd_t **ppNew)
 	pNew->permitExpiredCerts = pThis->permitExpiredCerts;
 	pNew->pPermPeers = pThis->pPermPeers;
 	pNew->gnutlsPriorityString = pThis->gnutlsPriorityString;
+	pNew->DrvrVerifyDepth = pThis->DrvrVerifyDepth;
 
 	/* if we reach this point, we are in TLS mode */
 	iRet = gtlsInitSession(pNew);
@@ -1998,6 +2093,10 @@ Connect(nsd_t *pNsd, int family, uchar *port, uchar *host, char *device)
 #		else
 		gnutls_certificate_client_set_retrieve_function(xcred, gtlsClientCertCallback);
 #		endif
+		dbgprintf("Connect: enable certificate checking (VerifyDepth=%d)\n", pThis->DrvrVerifyDepth);
+		if (pThis->DrvrVerifyDepth != 0) {
+			gnutls_certificate_set_verify_limits(xcred, 8200, pThis->DrvrVerifyDepth);
+		}
 	} else if(iRet == RS_RET_CERTLESS) {
 		dbgprintf("Connect: certificates not configured, not loaded.\n");
 	} else {
@@ -2124,6 +2223,9 @@ CODESTARTobjQueryInterface(nsd_gtls)
 	pIf->SetKeepAliveProbes = SetKeepAliveProbes;
 	pIf->SetKeepAliveTime = SetKeepAliveTime;
 	pIf->SetGnutlsPriorityString = SetGnutlsPriorityString;
+	pIf->SetCheckExtendedKeyUsage = SetCheckExtendedKeyUsage;
+	pIf->SetPrioritizeSAN = SetPrioritizeSAN;
+	pIf->SetTlsVerifyDepth = SetTlsVerifyDepth;
 finalize_it:
 ENDobjQueryInterface(nsd_gtls)
 

@@ -1,13 +1,6 @@
 #!/bin/bash
 # added 2015-11-13 by singh.janmejay
 # This file is part of the rsyslog project, released under ASL 2.0
-
-uname
-if [ $(uname) = "FreeBSD" ] ; then
-   echo "This test currently does not work on FreeBSD."
-   exit 77
-fi
-
 echo ===============================================================================
 echo \[dynstats_reset-vg.sh\]: test for gathering stats with a known-dyn-metrics reset in-between
 . ${srcdir:=.}/diag.sh init
@@ -34,12 +27,12 @@ if (re_match($.msg_prefix, "foo|bar|baz|quux|corge|grault")) then {
 action(type="omfile" file=`echo $RSYSLOG_OUT_LOG` template="outfmt")
 '
 startup_vg
-. $srcdir/diag.sh wait-for-stats-flush ${RSYSLOG_DYNNAME}.out.stats.log
-. $srcdir/diag.sh injectmsg-litteral $srcdir/testsuites/dynstats_input_1
+wait_for_stats_flush ${RSYSLOG_DYNNAME}.out.stats.log
+injectmsg_file $srcdir/testsuites/dynstats_input_1
 rst_msleep 8100 #two seconds for unused-metrics to be kept under observation, another two them to be cleared off
-. $srcdir/diag.sh injectmsg-litteral $srcdir/testsuites/dynstats_input_2
+injectmsg_file $srcdir/testsuites/dynstats_input_2
 rst_msleep 8100
-. $srcdir/diag.sh injectmsg-litteral $srcdir/testsuites/dynstats_input_3
+injectmsg_file $srcdir/testsuites/dynstats_input_3
 rst_msleep 8100
 wait_queueempty
 content_check "foo 001 0"
@@ -58,7 +51,7 @@ custom_assert_content_missing 'baz=2' "${RSYSLOG_DYNNAME}.out.stats.log"
 custom_assert_content_missing 'foo=2' "${RSYSLOG_DYNNAME}.out.stats.log"
 custom_assert_content_missing 'foo=3' "${RSYSLOG_DYNNAME}.out.stats.log"
 # but actual reported stats (aggregate) should match
-. $srcdir/diag.sh first-column-sum-check 's/.*foo=\([0-9]\+\)/\1/g' 'foo=' "${RSYSLOG_DYNNAME}.out.stats.log" 3
-. $srcdir/diag.sh first-column-sum-check 's/.*bar=\([0-9]\+\)/\1/g' 'bar=' "${RSYSLOG_DYNNAME}.out.stats.log" 1
-. $srcdir/diag.sh first-column-sum-check 's/.*baz=\([0-9]\+\)/\1/g' 'baz=' "${RSYSLOG_DYNNAME}.out.stats.log" 2
+first_column_sum_check 's/.*foo=\([0-9]*\)/\1/g' 'foo=' "${RSYSLOG_DYNNAME}.out.stats.log" 3
+first_column_sum_check 's/.*bar=\([0-9]*\)/\1/g' 'bar=' "${RSYSLOG_DYNNAME}.out.stats.log" 1
+first_column_sum_check 's/.*baz=\([0-9]*\)/\1/g' 'baz=' "${RSYSLOG_DYNNAME}.out.stats.log" 2
 exit_test

@@ -96,9 +96,13 @@ struct instanceConf_s {
 	uchar *caCertFile;
 	uchar *myCertFile;
 	uchar *myPrivKeyFile;
+#if defined(HAVE_RELPENGINESETTLSCFGCMD)
+	uchar *tlscfgcmd;
+#endif
 	int iKeepAliveIntvl;
 	int iKeepAliveProbes;
 	int iKeepAliveTime;
+	flowControl_t flowCtlType;
 	struct {
 		int nmemb;
 		uchar **name;
@@ -152,6 +156,7 @@ static struct cnfparamdescr inppdescr[] = {
 	{ "keepalive.interval", eCmdHdlrInt, 0 },
 	{ "maxdatasize", eCmdHdlrSize, 0 },
 	{ "oversizemode", eCmdHdlrString, 0 },
+	{ "flowcontrol", eCmdHdlrGetWord, 0 },
 	{ "tls", eCmdHdlrBinary, 0 },
 	{ "tls.permittedpeer", eCmdHdlrArray, 0 },
 	{ "tls.authmode", eCmdHdlrString, 0 },
@@ -160,6 +165,7 @@ static struct cnfparamdescr inppdescr[] = {
 	{ "tls.cacert", eCmdHdlrString, 0 },
 	{ "tls.mycert", eCmdHdlrString, 0 },
 	{ "tls.myprivkey", eCmdHdlrString, 0 },
+	{ "tls.tlscfgcmd", eCmdHdlrString, 0 },
 	{ "tls.compression", eCmdHdlrBinary, 0 }
 };
 static struct cnfparamblk inppblk =
@@ -239,7 +245,7 @@ onSyslogRcv(void *pUsr, uchar *pHostname, uchar *pIP, uchar *msg, size_t lenMsg)
 	CHKiRet(msgConstruct(&pMsg));
 	MsgSetInputName(pMsg, inst->pInputName);
 	MsgSetRawMsg(pMsg, (char*)msg, lenMsg);
-	MsgSetFlowControlType(pMsg, eFLOWCTL_LIGHT_DELAY);
+	MsgSetFlowControlType(pMsg, inst->flowCtlType);
 	MsgSetRuleset(pMsg, inst->pBindRuleset);
 	pMsg->msgFlags  = PARSE_HOSTNAME | NEEDS_PARSING;
 
@@ -289,7 +295,11 @@ createInstance(instanceConf_t **pinst)
 	inst->caCertFile = NULL;
 	inst->myCertFile = NULL;
 	inst->myPrivKeyFile = NULL;
+#if defined(HAVE_RELPENGINESETTLSCFGCMD)
+	inst->tlscfgcmd = NULL;
+#endif
 	inst->maxDataSize = 0;
+	inst->flowCtlType = eFLOWCTL_LIGHT_DELAY;
 #ifdef HAVE_RELPSRVSETOVERSIZEMODE
 	inst->oversizeMode = RELP_OVERSIZE_TRUNCATE;
 #endif
@@ -456,6 +466,12 @@ addListner(modConfData_t __attribute__((unused)) *modConf, instanceConf_t *inst)
 			ABORT_FINALIZE(RS_RET_RELP_ERR);
 		if(relpSrvSetPrivKey(pSrv, (char*) inst->myPrivKeyFile) != RELP_RET_OK)
 			ABORT_FINALIZE(RS_RET_RELP_ERR);
+#if defined(HAVE_RELPENGINESETTLSCFGCMD)
+		if (inst->tlscfgcmd != NULL) {
+			if(relpSrvSetTlsConfigCmd(pSrv, (char*) inst->tlscfgcmd) != RELP_RET_OK)
+				ABORT_FINALIZE(RS_RET_RELP_ERR);
+		}
+#endif
 		for(i = 0 ; i <  inst->permittedPeers.nmemb ; ++i) {
 			relpSrvAddPermittedPeer(pSrv, (char*)inst->permittedPeers.name[i]);
 		}
@@ -529,6 +545,20 @@ CODESTARTnewInpInst
 			inst->pszBindRuleset = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
 		} else if(!strcmp(inppblk.descr[i].name, "maxdatasize")) {
 			inst->maxDataSize = (size_t) pvals[i].val.d.n;
+		} else if(!strcmp(inppblk.descr[i].name, "flowcontrol")) {
+			if(!es_strconstcmp(pvals[i].val.d.estr, "none")) {
+				inst->flowCtlType = eFLOWCTL_NO_DELAY;
+			} else if(!es_strconstcmp(pvals[i].val.d.estr, "light")) {
+				inst->flowCtlType = eFLOWCTL_LIGHT_DELAY;
+			} else if(!es_strconstcmp(pvals[i].val.d.estr, "full")) {
+				inst->flowCtlType = eFLOWCTL_FULL_DELAY;
+			} else {
+				const char *const mode = es_str2cstr(pvals[i].val.d.estr, NULL);
+				parser_errmsg("imrelp: wrong flowcontrol parameter "
+					"value '%s', using default: 'light'; possible "
+					"values: 'no', 'light', 'full'\n", mode);
+				free((void*)mode);
+			}
 		} else if(!strcmp(inppblk.descr[i].name, "oversizemode")) {
 #ifdef HAVE_RELPSRVSETOVERSIZEMODE
 			char *mode = es_str2cstr(pvals[i].val.d.estr, NULL);
@@ -601,6 +631,13 @@ CODESTARTnewInpInst
 			} else {
 				fclose(fp);
 			}
+		} else if(!strcmp(inppblk.descr[i].name, "tls.tlscfgcmd")) {
+#if defined(HAVE_RELPENGINESETTLSCFGCMD)
+			inst->tlscfgcmd = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
+#else
+			parser_errmsg("imrelp: librelp does not support input parameter 'tls.tlscfgcmd'; "
+				"it probably is too old (1.5.0 or higher should be fine); ignoring setting now.");
+#endif
 		} else if(!strcmp(inppblk.descr[i].name, "tls.permittedpeer")) {
 			inst->permittedPeers.nmemb = pvals[i].val.d.ar->nmemb;
 			CHKmalloc(inst->permittedPeers.name =
@@ -802,10 +839,8 @@ static void
 doSIGTTIN(int __attribute__((unused)) sig)
 {
 	const int bTerminate = ATOMIC_FETCH_32BIT(&bTerminateInputs, &mutTerminateInputs);
-	DBGPRINTF("imrelp: awoken via SIGTTIN; bTerminateInputs: %d\n", bTerminate);
 	if(bTerminate) {
 		relpEngineSetStop(pRelpEngine);
-		DBGPRINTF("imrelp: termination requested via SIGTTIN - telling RELP engine\n");
 	}
 }
 

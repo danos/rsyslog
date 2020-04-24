@@ -63,6 +63,7 @@
 #include "ruleset.h"
 #include "rainerscript.h"
 #include "net.h" /* for permittedPeers, may be removed when this is removed */
+#include "parserif.h"
 
 MODULE_TYPE_INPUT
 MODULE_TYPE_NOKEEP
@@ -107,6 +108,7 @@ static struct configSettings_s {
 	uchar *pszInputName;
 	uchar *pszBindRuleset;
 	uchar *lstnIP;			/* which IP we should listen on? */
+	uchar *lstnPortFile;
 } cs;
 
 struct instanceConf_s {
@@ -118,8 +120,8 @@ struct instanceConf_s {
 	uchar *pszInputName;		/* value for inputname property, NULL is OK and handled by core engine */
 	uchar *dfltTZ;
 	sbool bSPFramingFix;
-	int ratelimitInterval;
-	int ratelimitBurst;
+	unsigned int ratelimitInterval;
+	unsigned int ratelimitBurst;
 	int bSuppOctetFram;
 	struct instanceConf_s *next;
 };
@@ -131,6 +133,9 @@ struct modConfData_s {
 	int iTCPSessMax; /* max number of sessions */
 	int iTCPLstnMax; /* max number of sessions */
 	int iStrmDrvrMode; /* mode for stream driver, driver-dependent (0 mostly means plain tcp) */
+	int iStrmDrvrExtendedCertCheck; /* verify also purpose OID in certificate extended field */
+	int iStrmDrvrSANPreference; /* ignore CN when any SAN set */
+	int iStrmTlsVerifyDepth; /**< Verify Depth for certificate chains */
 	int iAddtlFrameDelim; /* addtl frame delimiter, e.g. for netscreen, default none */
 	int maxFrameSize;
 	int bSuppOctetFram;
@@ -170,6 +175,9 @@ static struct cnfparamdescr modpdescr[] = {
 	{ "streamdriver.authmode", eCmdHdlrString, 0 },
 	{ "streamdriver.permitexpiredcerts", eCmdHdlrString, 0 },
 	{ "streamdriver.name", eCmdHdlrString, 0 },
+	{ "streamdriver.CheckExtendedKeyPurpose", eCmdHdlrBinary, 0 },
+	{ "streamdriver.PrioritizeSAN", eCmdHdlrBinary, 0 },
+	{ "streamdriver.TlsVerifyDepth", eCmdHdlrPositiveInt, 0 },
 	{ "permittedpeer", eCmdHdlrArray, 0 },
 	{ "keepalive", eCmdHdlrBinary, 0 },
 	{ "keepalive.probes", eCmdHdlrPositiveInt, 0 },
@@ -332,6 +340,11 @@ static rsRetVal addInstance(void __attribute__((unused)) *pVal, uchar *pNewVal)
 	} else {
 		CHKmalloc(inst->pszBindAddr = ustrdup(cs.lstnIP));
 	}
+	if((cs.lstnPortFile == NULL) || (cs.lstnPortFile[0] == '\0')) {
+		inst->pszBindAddr = NULL;
+	} else {
+		CHKmalloc(inst->pszLstnPortFileName = ustrdup(cs.lstnPortFile));
+	}
 
 	if((cs.pszInputName == NULL) || (cs.pszInputName[0] == '\0')) {
 		inst->pszInputName = NULL;
@@ -368,6 +381,9 @@ addListner(modConfData_t *modConf, instanceConf_t *inst)
 		CHKiRet(tcpsrv.SetSessMax(pOurTcpsrv, modConf->iTCPSessMax));
 		CHKiRet(tcpsrv.SetLstnMax(pOurTcpsrv, modConf->iTCPLstnMax));
 		CHKiRet(tcpsrv.SetDrvrMode(pOurTcpsrv, modConf->iStrmDrvrMode));
+		CHKiRet(tcpsrv.SetDrvrCheckExtendedKeyUsage(pOurTcpsrv, modConf->iStrmDrvrExtendedCertCheck));
+		CHKiRet(tcpsrv.SetDrvrPrioritizeSAN(pOurTcpsrv, modConf->iStrmDrvrSANPreference));
+		CHKiRet(tcpsrv.SetDrvrTlsVerifyDepth(pOurTcpsrv, modConf->iStrmTlsVerifyDepth));
 		CHKiRet(tcpsrv.SetUseFlowControl(pOurTcpsrv, modConf->bUseFlowControl));
 		CHKiRet(tcpsrv.SetAddtlFrameDelim(pOurTcpsrv, modConf->iAddtlFrameDelim));
 		CHKiRet(tcpsrv.SetMaxFrameSize(pOurTcpsrv, modConf->maxFrameSize));
@@ -454,9 +470,9 @@ CODESTARTnewInpInst
 		} else if(!strcmp(inppblk.descr[i].name, "supportoctetcountedframing")) {
 			inst->bSuppOctetFram = (int) pvals[i].val.d.n;
 		} else if(!strcmp(inppblk.descr[i].name, "ratelimit.burst")) {
-			inst->ratelimitBurst = (int) pvals[i].val.d.n;
+			inst->ratelimitBurst = (unsigned int) pvals[i].val.d.n;
 		} else if(!strcmp(inppblk.descr[i].name, "ratelimit.interval")) {
-			inst->ratelimitInterval = (int) pvals[i].val.d.n;
+			inst->ratelimitInterval = (unsigned int) pvals[i].val.d.n;
 		} else if(!strcmp(inppblk.descr[i].name, "listenportfilename")) {
 			inst->pszLstnPortFileName = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
 		} else {
@@ -479,6 +495,9 @@ CODESTARTbeginCnfLoad
 	loadModConf->iTCPLstnMax = 20;
 	loadModConf->bSuppOctetFram = 1;
 	loadModConf->iStrmDrvrMode = 0;
+	loadModConf->iStrmDrvrExtendedCertCheck = 0;
+	loadModConf->iStrmDrvrSANPreference = 0;
+	loadModConf->iStrmTlsVerifyDepth = 0;
 	loadModConf->bUseFlowControl = 1;
 	loadModConf->bKeepAlive = 0;
 	loadModConf->iKeepAliveIntvl = 0;
@@ -560,6 +579,17 @@ CODESTARTsetModCnf
 			loadModConf->gnutlsPriorityString = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
 		} else if(!strcmp(modpblk.descr[i].name, "streamdriver.mode")) {
 			loadModConf->iStrmDrvrMode = (int) pvals[i].val.d.n;
+		} else if(!strcmp(modpblk.descr[i].name, "streamdriver.CheckExtendedKeyPurpose")) {
+			loadModConf->iStrmDrvrExtendedCertCheck = (int) pvals[i].val.d.n;
+		} else if(!strcmp(modpblk.descr[i].name, "streamdriver.PrioritizeSAN")) {
+			loadModConf->iStrmDrvrSANPreference = (int) pvals[i].val.d.n;
+		} else if(!strcmp(modpblk.descr[i].name, "streamdriver.TlsVerifyDepth")) {
+			if (pvals[i].val.d.n >= 2) {
+				loadModConf->iStrmTlsVerifyDepth = (int) pvals[i].val.d.n;
+			} else {
+				parser_errmsg("streamdriver.TlsVerifyDepth must be 2 or higher but is %d",
+									(int) pvals[i].val.d.n);
+			}
 		} else if(!strcmp(modpblk.descr[i].name, "streamdriver.authmode")) {
 			loadModConf->pszStrmDrvrAuthMode = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
 		} else if(!strcmp(modpblk.descr[i].name, "streamdriver.permitexpiredcerts")) {
@@ -762,6 +792,8 @@ resetConfigVariables(uchar __attribute__((unused)) *pp, void __attribute__((unus
 	free(cs.pszStrmDrvrAuthMode);
 	cs.pszStrmDrvrAuthMode = NULL;
 	cs.bPreserveCase = 1;
+	free(cs.lstnPortFile);
+	cs.lstnPortFile = NULL;
 	return RS_RET_OK;
 }
 
@@ -830,9 +862,8 @@ CODEmodInit_QueryRegCFSLineHdlr
 			   NULL, &cs.iStrmDrvrMode, STD_LOADABLE_MODULE_ID, &bLegacyCnfModGlobalsPermitted));
 	CHKiRet(regCfSysLineHdlr2(UCHAR_CONSTANT("inputtcpserverpreservecase"), 1, eCmdHdlrBinary,
 			   NULL, &cs.bPreserveCase, STD_LOADABLE_MODULE_ID, &bLegacyCnfModGlobalsPermitted));
+	CHKiRet(regCfSysLineHdlr2(UCHAR_CONSTANT("inputtcpserverlistenportfile"), 1, eCmdHdlrGetWord,
+			   NULL, &cs.lstnPortFile, STD_LOADABLE_MODULE_ID, &bLegacyCnfModGlobalsPermitted));
 	CHKiRet(omsdRegCFSLineHdlr(UCHAR_CONSTANT("resetconfigvariables"), 1, eCmdHdlrCustomHandler,
 				   resetConfigVariables, NULL, STD_LOADABLE_MODULE_ID));
 ENDmodInit
-
-/* vim:set ai:
- */

@@ -552,6 +552,23 @@ finalize_it:
 static void
 RunCancelCleanup(void *arg)
 {
+	nspoll_t **ppPoll = (nspoll_t**) arg;
+
+	if (*ppPoll != NULL)
+		nspoll.Destruct(ppPoll);
+
+	/* Wait for any running workers to finish */
+	pthread_mutex_lock(&wrkrMut);
+	DBGPRINTF("tcpsrv terminating, waiting for %d workers\n", wrkrRunning);
+	while(wrkrRunning > 0) {
+		pthread_cond_wait(&wrkrIdle, &wrkrMut);
+	}
+	pthread_mutex_unlock(&wrkrMut);
+}
+
+static void
+RunSelectCancelCleanup(void *arg)
+{
 	nssel_t **ppSel = (nssel_t**) arg;
 
 	if(*ppSel != NULL)
@@ -672,10 +689,6 @@ wrkr(void *const myself)
 {
 	struct wrkrInfo_s *const me = (struct wrkrInfo_s*) myself;
 
-	/* block signals for this thread */
-	sigset_t sigSet;
-	sigfillset(&sigSet);
-	pthread_sigmask(SIG_SETMASK, &sigSet, NULL);
 
 	pthread_mutex_lock(&wrkrMut);
 	while(1) {
@@ -688,7 +701,6 @@ wrkr(void *const myself)
 			// we need to query me->opSrv to avoid clang static
 			// analyzer false positive! -- rgerhards, 2017-10-23
 			assert(glbl.GetGlobalInputTermState() == 1);
-			--wrkrRunning;
 			break;
 		}
 		pthread_mutex_unlock(&wrkrMut);
@@ -707,6 +719,20 @@ wrkr(void *const myself)
 	return NULL;
 }
 
+/* This has been factored out from processWorkset() because
+ * pthread_cleanup_push() invokes setjmp() and this triggers the -Wclobbered
+ * warning for the iRet variable.
+ */
+static void
+waitForWorkers(void)
+{
+	pthread_mutex_lock(&wrkrMut);
+	pthread_cleanup_push(mutexCancelCleanup, &wrkrMut);
+	while(wrkrRunning > 0) {
+		pthread_cond_wait(&wrkrIdle, &wrkrMut);
+	}
+	pthread_cleanup_pop(1);
+}
 
 /* Process a workset, that is handle io. We become activated
  * from either select or epoll handler. We split the workload
@@ -729,6 +755,11 @@ processWorkset(tcpsrv_t *pThis, nspoll_t *pPoll, int numEntries, nsd_epworkset_t
 			/* process self, save context switch */
 			iRet = processWorksetItem(pThis, pPoll, workset[numEntries-1].id, workset[numEntries-1].pUsr);
 		} else {
+			/* No cancel handler needed here, since no cancellation
+			 * points are executed while wrkrMut is locked.
+			 *
+			 * Re-evaluate this if you add a DBGPRINTF or something!
+			 */
 			pthread_mutex_lock(&wrkrMut);
 			/* check if there is a free worker */
 			for(i = 0 ; (i < wrkrMax) && ((wrkrInfo[i].pSrv != NULL) || (wrkrInfo[i].enabled == 0)) ; ++i)
@@ -762,11 +793,7 @@ processWorkset(tcpsrv_t *pThis, nspoll_t *pPoll, int numEntries, nsd_epworkset_t
 		 * rest of this module can not handle the concurrency introduced
 		 * by workers running during the epoll call.
 		 */
-		pthread_mutex_lock(&wrkrMut);
-		while(wrkrRunning > 0) {
-			pthread_cond_wait(&wrkrIdle, &wrkrMut);
-		}
-		pthread_mutex_unlock(&wrkrMut);
+		waitForWorkers();
 	}
 
 finalize_it:
@@ -794,11 +821,7 @@ RunSelect(tcpsrv_t *pThis, nsd_epworkset_t workset[], size_t sizeWorkset)
 
 	ISOBJ_TYPE_assert(pThis, tcpsrv);
 
-	/* this is an endless loop - it is terminated by the framework canelling
-	 * this thread. Thus, we also need to instantiate a cancel cleanup handler
-	 * to prevent us from leaking anything. -- rgerhards, 20080-04-24
-	 */
-	pthread_cleanup_push(RunCancelCleanup, (void*) &pSel);
+	pthread_cleanup_push(RunSelectCancelCleanup, (void*) &pSel);
 	while(1) {
 		CHKiRet(nssel.Construct(&pSel));
 		if(pThis->pszDrvrName != NULL)
@@ -878,8 +901,7 @@ finalize_it: /* this is a very special case - this time only we do not exit the 
 		}
 	}
 
-	/* note that this point is usually not reached */
-	pthread_cleanup_pop(1); /* remove cleanup handler */
+	pthread_cleanup_pop(1); /* execute and remove cleanup handler */
 
 	RETiRet;
 }
@@ -896,7 +918,7 @@ Run(tcpsrv_t *pThis)
 {
 	DEFiRet;
 	int i;
-	int bFailed = FALSE; /* If set to TRUE, accept failed already */
+	int bFailed; /* If set to TRUE, accept failed */
 	nsd_epworkset_t workset[128]; /* 128 is currently fixed num of concurrent requests */
 	int numEntries;
 	nspoll_t *pPoll = NULL;
@@ -914,10 +936,13 @@ Run(tcpsrv_t *pThis)
 	}
 	d_pthread_mutex_unlock(&wrkrMut);
 
-	/* this is an endless loop - it is terminated by the framework canelling
-	 * this thread. Thus, we also need to instantiate a cancel cleanup handler
-	 * to prevent us from leaking anything. -- rgerhards, 20080-04-24
+	/* We try to terminate cleanly, but install a cancellation clean-up
+	 * handler in case we are cancelled.
 	 */
+	pthread_cleanup_push(RunCancelCleanup, (void*) &pPoll);
+	/* Reset iRet to avoid warning about it being clobbered by longjmp */
+	iRet = RS_RET_OK;
+
 	if((localRet = nspoll.Construct(&pPoll)) == RS_RET_OK) {
 		if(pThis->pszDrvrName != NULL)
 			CHKiRet(nspoll.SetDrvrName(pPoll, pThis->pszDrvrName));
@@ -942,7 +967,8 @@ Run(tcpsrv_t *pThis)
 		DBGPRINTF("Added listener %d\n", i);
 	}
 
-	while(1) {
+	bFailed = FALSE;
+	while(glbl.GetGlobalInputTermState() == 0) {
 		numEntries = sizeof(workset)/sizeof(nsd_epworkset_t);
 		localRet = nspoll.Wait(pPoll, -1, &numEntries, workset);
 		if(glbl.GetGlobalInputTermState() == 1)
@@ -982,8 +1008,8 @@ Run(tcpsrv_t *pThis)
 	}
 
 finalize_it:
-	if(pPoll != NULL)
-		nspoll.Destruct(&pPoll);
+	pthread_cleanup_pop(1);
+
 	RETiRet;
 }
 
@@ -1004,6 +1030,7 @@ BEGINobjConstruct(tcpsrv) /* be sure to specify the object type also in END macr
 	pThis->bUseFlowControl = 1;
 	pThis->pszDrvrName = NULL;
 	pThis->bPreserveCase = 1; /* preserve case in fromhost; default to true. */
+	pThis->DrvrTlsVerifyDepth = 0;
 ENDobjConstruct(tcpsrv)
 
 
@@ -1019,6 +1046,9 @@ tcpsrvConstructFinalize(tcpsrv_t *pThis)
 	if(pThis->pszDrvrName != NULL)
 		CHKiRet(netstrms.SetDrvrName(pThis->pNS, pThis->pszDrvrName));
 	CHKiRet(netstrms.SetDrvrMode(pThis->pNS, pThis->iDrvrMode));
+	CHKiRet(netstrms.SetDrvrCheckExtendedKeyUsage(pThis->pNS, pThis->DrvrChkExtendedKeyUsage));
+	CHKiRet(netstrms.SetDrvrPrioritizeSAN(pThis->pNS, pThis->DrvrPrioritizeSan));
+	CHKiRet(netstrms.SetDrvrTlsVerifyDepth(pThis->pNS, pThis->DrvrTlsVerifyDepth));
 	if(pThis->pszDrvrAuthMode != NULL)
 		CHKiRet(netstrms.SetDrvrAuthMode(pThis->pNS, pThis->pszDrvrAuthMode));
 	if(pThis->pszDrvrPermitExpiredCerts != NULL)
@@ -1322,7 +1352,7 @@ finalize_it:
 
 /* Set the linux-like ratelimiter settings */
 static rsRetVal
-SetLinuxLikeRatelimiters(tcpsrv_t *pThis, int ratelimitInterval, int ratelimitBurst)
+SetLinuxLikeRatelimiters(tcpsrv_t *pThis, unsigned int ratelimitInterval, unsigned int ratelimitBurst)
 {
 	DEFiRet;
 	pThis->ratelimitInterval = ratelimitInterval;
@@ -1411,6 +1441,35 @@ SetDrvrPermPeers(tcpsrv_t *pThis, permittedPeers_t *pPermPeers)
 	RETiRet;
 }
 
+/* set the driver cert extended key usage check setting -- jvymazal, 2019-08-16 */
+static rsRetVal
+SetDrvrCheckExtendedKeyUsage(tcpsrv_t *pThis, int ChkExtendedKeyUsage)
+{
+	DEFiRet;
+	ISOBJ_TYPE_assert(pThis, tcpsrv);
+	pThis->DrvrChkExtendedKeyUsage = ChkExtendedKeyUsage;
+	RETiRet;
+}
+
+/* set the driver name checking policy -- jvymazal, 2019-08-16 */
+static rsRetVal
+SetDrvrPrioritizeSAN(tcpsrv_t *pThis, int prioritizeSan)
+{
+	DEFiRet;
+	ISOBJ_TYPE_assert(pThis, tcpsrv);
+	pThis->DrvrPrioritizeSan = prioritizeSan;
+	RETiRet;
+}
+
+/* set the driver Set the driver tls  verifyDepth -- alorbach, 2019-12-20 */
+static rsRetVal
+SetDrvrTlsVerifyDepth(tcpsrv_t *pThis, int verifyDepth)
+{
+	DEFiRet;
+	ISOBJ_TYPE_assert(pThis, tcpsrv);
+	pThis->DrvrTlsVerifyDepth = verifyDepth;
+	RETiRet;
+}
 
 /* End of methods to shuffle autentication settings to the driver.;
 
@@ -1528,6 +1587,9 @@ CODESTARTobjQueryInterface(tcpsrv)
 	pIf->SetLinuxLikeRatelimiters = SetLinuxLikeRatelimiters;
 	pIf->SetNotificationOnRemoteClose = SetNotificationOnRemoteClose;
 	pIf->SetPreserveCase = SetPreserveCase;
+	pIf->SetDrvrCheckExtendedKeyUsage = SetDrvrCheckExtendedKeyUsage;
+	pIf->SetDrvrPrioritizeSAN = SetDrvrPrioritizeSAN;
+	pIf->SetDrvrTlsVerifyDepth = SetDrvrTlsVerifyDepth;
 
 finalize_it:
 ENDobjQueryInterface(tcpsrv)
@@ -1586,6 +1648,17 @@ startWorkerPool(void)
 	int r;
 	pthread_attr_t sessThrdAttr;
 
+	/* We need to temporarily block all signals because the new thread
+	 * inherits our signal mask. There is a race if we do not block them
+	 * now, and we have seen in practice that this race causes grief.
+	 * So we 1. save the current set, 2. block evertyhing, 3. start
+	 * threads, and 4 reset the current set to saved state.
+	 * rgerhards, 2019-08-16
+	 */
+	sigset_t sigSet, sigSetSave;
+	sigfillset(&sigSet);
+	pthread_sigmask(SIG_SETMASK, &sigSet, &sigSetSave);
+
 	wrkrRunning = 0;
 	pthread_cond_init(&wrkrIdle, NULL);
 	pthread_attr_init(&sessThrdAttr);
@@ -1599,14 +1672,11 @@ startWorkerPool(void)
 		if(r == 0) {
 			wrkrInfo[i].enabled = 1;
 		} else {
-			char errStr[1024];
-			wrkrInfo[i].enabled = 0;
-			rs_strerror_r(errno, errStr, sizeof(errStr));
-			LogError(0, NO_ERRCODE, "tcpsrv error creating thread %d: "
-			                "%s", i, errStr);
+			LogError(errno, NO_ERRCODE, "tcpsrv error creating thread");
 		}
 	}
 	pthread_attr_destroy(&sessThrdAttr);
+	pthread_sigmask(SIG_SETMASK, &sigSetSave, NULL);
 }
 
 /* destroy worker pool structures and wait for workers to terminate

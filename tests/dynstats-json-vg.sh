@@ -1,13 +1,6 @@
 #!/bin/bash
 # added 2016-03-30 by singh.janmejay
 # This file is part of the rsyslog project, released under ASL 2.0
-
-uname
-if [ $(uname) = "FreeBSD" ] ; then
-   echo "This test currently does not work on FreeBSD."
-   exit 77
-fi
-
 echo ===============================================================================
 echo \[dynstats-json-vg.sh\]: test for verifying stats are reported correctly in json format with valgrind
 . ${srcdir:=.}/diag.sh init
@@ -33,10 +26,10 @@ if ($.p == "foo") then {
 action(type="omfile" file=`echo $RSYSLOG_OUT_LOG` template="outfmt")
 '
 startup_vg
-. $srcdir/diag.sh wait-for-stats-flush ${RSYSLOG_DYNNAME}.out.stats.log
-. $srcdir/diag.sh injectmsg-litteral $srcdir/testsuites/dynstats_input_1
+wait_for_stats_flush ${RSYSLOG_DYNNAME}.out.stats.log
+injectmsg_file $srcdir/testsuites/dynstats_input_1
 wait_queueempty
-. $srcdir/diag.sh wait-for-stats-flush ${RSYSLOG_DYNNAME}.out.stats.log
+wait_for_stats_flush ${RSYSLOG_DYNNAME}.out.stats.log
 echo doing shutdown
 shutdown_when_empty
 echo wait on shutdown

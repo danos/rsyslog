@@ -26,13 +26,14 @@ Build-Depends: debhelper (>= 9),
                bison,
                flex,
                procps <!nocheck>,
-               python <!nocheck>,
+               python3 <!nocheck>,
                libfaketime <!nocheck>,
                systemd [linux-any] <!nocheck>,
                lsof [linux-any] <!nocheck>,
                logrotate <!nocheck>,
-               net-tools <!nocheck>,
-Standards-Version: 4.3.0
+               iproute2 <!nocheck>,
+               curl <!nocheck>,
+Standards-Version: 4.5.0
 Rules-Requires-Root: no
 Vcs-Git: https://salsa.debian.org/debian/rsyslog.git
 Vcs-Browser: https://salsa.debian.org/debian/rsyslog

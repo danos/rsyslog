@@ -1,3 +1,61 @@
+rsyslog (8.2002.0-2) unstable; urgency=medium
+
+  * Increase timeouts in imfile-basic-2GB-file and imfile-truncate-2GB-file.
+    Those tests can take a long time, especially on slow architectures like
+    armhf, so bump the test timeouts considerably.
+
+ -- Michael Biebl <biebl@debian.org>  Fri, 28 Feb 2020 01:05:57 +0100
+
+rsyslog (8.2002.0-1) unstable; urgency=medium
+
+  * New upstream version 8.2002.0
+  * Rebase patches
+  * Use ip instead of deprecated ifconfig when running the test suite.
+  * Add Build-Depends on curl.
+    This is required to run the test allowed-sender-tcp-hostname-fail.
+  * Enable extended test bench
+  * Bump Standards-Version to 4.5.0
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 26 Feb 2020 17:10:44 +0100
+
+rsyslog (8.2001.0-1) unstable; urgency=medium
+
+  * New upstream version 8.2001.0
+  * Set PYTHON=/usr/bin/python3 in debian/rules
+  * Cherry-pick upstream patches which fix a couple of imfile issues
+  * Add missing test files
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 22 Jan 2020 17:56:45 +0100
+
+rsyslog (8.1911.0-1) unstable; urgency=medium
+
+  * New upstream version 8.1911.0
+  * Follow DEP-14 naming
+  * Rebase patches
+  * Bump Standards-Version to 4.4.1
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 12 Nov 2019 23:43:26 +0100
+
+rsyslog (8.1910.0-2) unstable; urgency=medium
+
+  * Fix file handle leak in omfile (Closes: #935300)
+
+ -- Michael Biebl <biebl@debian.org>  Thu, 24 Oct 2019 14:13:12 +0200
+
+rsyslog (8.1910.0-1) unstable; urgency=medium
+
+  * New upstream version 8.1910.0
+    - Support cross-platform build for mysql/mariadb
+      (Closes: #932068)
+    - Fix heap overflow in pmaixforwardedfrom module
+      (CVE-2019-17041, Closes: #942067)
+    - Fix heap overflow in pmcisconames module
+      (CVE-2019-17042, Closes: #942065)
+  * Use Python3 for running the test suite (Closes: #938417)
+  * Enable imfile tests
+
+ -- Michael Biebl <biebl@debian.org>  Thu, 17 Oct 2019 01:42:10 +0200
+
 rsyslog (8.1908.0-1vyatta9) unstable; urgency=medium
 
   [ Mike Manning ]

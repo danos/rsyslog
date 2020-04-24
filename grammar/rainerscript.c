@@ -2,7 +2,7 @@
  *
  * Module begun 2011-07-01 by Rainer Gerhards
  *
- * Copyright 2011-2018 Rainer Gerhards and Others.
+ * Copyright 2011-2019 Rainer Gerhards and Others.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -699,6 +699,23 @@ nvlstFindNameCStr(struct nvlst *lst, const char *const __restrict__ name)
 	return lst;
 }
 
+/* check if the nvlst is disabled, and mark config.enabled directive
+ * as used if it is not. Returns 1 if block is disabled, 0 otherwise.
+ */
+int nvlstChkDisabled(struct nvlst *lst)
+{
+	struct nvlst *valnode;
+
+	if((valnode = nvlstFindNameCStr(lst, "config.enabled")) != NULL) {
+		if(es_strbufcmp(valnode->val.d.estr, (unsigned char*) "on", 2)) {
+			return 1;
+		} else {
+			valnode->bUsed = 1;
+		}
+	}
+	return 0;
+}
+
 
 /* check if there are duplicate names inside a nvlst and emit
  * an error message, if so.
@@ -1204,21 +1221,6 @@ nvlstGetParams(struct nvlst *lst, struct cnfparamblk *params,
 		}
 		if(!nvlstGetParam(valnode, param, vals + i)) {
 			bInError = 1;
-		}
-	}
-
-	/* now config-system parameters (currently a bit hackish, as we
-	 * only have one...). -- rgerhards, 2018-01-24
-	 */
-	if((valnode = nvlstFindNameCStr(lst, "config.enabled")) != NULL) {
-		if(es_strbufcmp(valnode->val.d.estr, (unsigned char*) "on", 2)) {
-			dbgprintf("config object disabled by configuration\n");
-			/* flag all params as used to not emit error mssages */
-			bInError = 1;
-			struct nvlst *val;
-			for(val = lst; val != NULL ; val = val->next) {
-				val->bUsed = 1;
-			}
 		}
 	}
 
@@ -3434,7 +3436,7 @@ initFunc_re_match(struct cnffunc *func)
 		}
 	} else { /* regexp object could not be loaded */
 		parser_errmsg("could not load regex support - regex ignored");
-		ABORT_FINALIZE(RS_RET_ERR);
+		ABORT_FINALIZE(localRet);
 	}
 
 finalize_it:
@@ -4416,8 +4418,13 @@ cnfstmtNewAct(struct nvlst *lst)
 	struct cnfstmt* cnfstmt;
 	char namebuf[256];
 	rsRetVal localRet;
-	if((cnfstmt = cnfstmtNew(S_ACT)) == NULL)
+	if((cnfstmt = cnfstmtNew(S_ACT)) == NULL) {
 		goto done;
+	}
+	if (nvlstChkDisabled(lst)) {
+		dbgprintf("action disabled by configuration\n");
+		cnfstmt->nodetype = S_NOP;
+	}
 	localRet = actionNewInst(lst, &cnfstmt->d.act);
 	if(localRet == RS_RET_OK_WARN) {
 		parser_errmsg("warnings occured in file '%s' around line %d",
@@ -5279,6 +5286,11 @@ includeProcessCnf(struct nvlst *const lst)
 	if(lst == NULL) {
 		parser_errmsg("include() must have either 'file' or 'text' "
 			"parameter - ignored");
+		goto done;
+	}
+
+	if (nvlstChkDisabled(lst)) {
+		DBGPRINTF("include statement disabled\n");
 		goto done;
 	}
 

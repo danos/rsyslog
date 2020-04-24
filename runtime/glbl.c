@@ -7,7 +7,7 @@
  *
  * Module begun 2008-04-16 by Rainer Gerhards
  *
- * Copyright 2008-2019 Rainer Gerhards and Adiscon GmbH.
+ * Copyright 2008-2020 Rainer Gerhards and Adiscon GmbH.
  *
  * This file is part of the rsyslog runtime library.
  *
@@ -209,6 +209,7 @@ static struct cnfparamdescr cnfparamdescr[] = {
 	{ "environment", eCmdHdlrArray, 0 },
 	{ "processinternalmessages", eCmdHdlrBinary, 0 },
 	{ "umask", eCmdHdlrFileCreateMode, 0 },
+	{ "security.abortonidresolutionfail", eCmdHdlrBinary, 0 },
 	{ "internal.developeronly.options", eCmdHdlrInt, 0 },
 	{ "internalmsg.ratelimit.interval", eCmdHdlrPositiveInt, 0 },
 	{ "internalmsg.ratelimit.burst", eCmdHdlrPositiveInt, 0 },
@@ -588,14 +589,22 @@ GetLocalHostIP(void)
 
 
 /* set our local hostname. Free previous hostname, if it was already set.
- * Note that we do now do this in a thread
- * "once in a lifetime" action which can not be undone. -- gerhards, 2009-07-20
+ * Note that we do now do this in a thread. As such, the method here
+ * is NOT 100% clean. If we run into issues, we need to think about
+ * refactoring the whole way we handle the local host name processing.
+ * Possibly using a PROP might be the right solution then.
  */
 static rsRetVal
-SetLocalHostName(uchar *newname)
+SetLocalHostName(uchar *const newname)
 {
-	free(LocalHostName);
-	LocalHostName = newname;
+	uchar *toFree;
+	if(LocalHostName == NULL || strcmp((const char*)LocalHostName, (const char*) newname)) {
+		toFree = LocalHostName;
+		LocalHostName = newname;
+	} else {
+		toFree = newname;
+	}
+	free(toFree);
 	return RS_RET_OK;
 }
 
@@ -660,7 +669,7 @@ glblReportOversizeMessage(void)
 void
 glblReportChildProcessExit(const uchar *name, pid_t pid, int status)
 {
-	DBGPRINTF("waitpid for child %d returned status: %2.2x\n", pid, status);
+	DBGPRINTF("waitpid for child %ld returned status: %2.2x\n", (long) pid, status);
 
 	if(reportChildProcessExits == REPORT_CHILD_PROCESS_EXITS_NONE
 		|| (reportChildProcessExits == REPORT_CHILD_PROCESS_EXITS_ERRORS
@@ -671,19 +680,19 @@ glblReportChildProcessExit(const uchar *name, pid_t pid, int status)
 	if(WIFEXITED(status)) {
 		int severity = WEXITSTATUS(status) == 0 ? LOG_INFO : LOG_WARNING;
 		if(name != NULL) {
-			LogMsg(0, NO_ERRCODE, severity, "program '%s' (pid %d) exited with status %d",
-					name, pid, WEXITSTATUS(status));
+			LogMsg(0, NO_ERRCODE, severity, "program '%s' (pid %ld) exited with status %d",
+					name, (long) pid, WEXITSTATUS(status));
 		} else {
-			LogMsg(0, NO_ERRCODE, severity, "child process (pid %d) exited with status %d",
-					pid, WEXITSTATUS(status));
+			LogMsg(0, NO_ERRCODE, severity, "child process (pid %ld) exited with status %d",
+					(long) pid, WEXITSTATUS(status));
 		}
 	} else if(WIFSIGNALED(status)) {
 		if(name != NULL) {
-			LogMsg(0, NO_ERRCODE, LOG_WARNING, "program '%s' (pid %d) terminated by signal %d",
-					name, pid, WTERMSIG(status));
+			LogMsg(0, NO_ERRCODE, LOG_WARNING, "program '%s' (pid %ld) terminated by signal %d",
+					name, (long) pid, WTERMSIG(status));
 		} else {
-			LogMsg(0, NO_ERRCODE, LOG_WARNING, "child process (pid %d) terminated by signal %d",
-					pid, WTERMSIG(status));
+			LogMsg(0, NO_ERRCODE, LOG_WARNING, "child process (pid %ld) terminated by signal %d",
+					(long) pid, WTERMSIG(status));
 		}
 	}
 }
@@ -1432,6 +1441,8 @@ glblDoneLoadCnf(void)
 			glblInputTimeoutShutdown = (int) cnfparamvals[i].val.d.n;
 		} else if(!strcmp(paramblk.descr[i].name, "privdrop.group.keepsupplemental")) {
 			loadConf->globals.gidDropPrivKeepSupplemental = (int) cnfparamvals[i].val.d.n;
+		} else if(!strcmp(paramblk.descr[i].name, "security.abortonidresolutionfail")) {
+			loadConf->globals.abortOnIDResolutionFail = (int) cnfparamvals[i].val.d.n;
 		} else if(!strcmp(paramblk.descr[i].name, "net.acladdhostnameonfail")) {
 			*(net.pACLAddHostnameOnFail) = (int) cnfparamvals[i].val.d.n;
 		} else if(!strcmp(paramblk.descr[i].name, "net.aclresolvehostname")) {

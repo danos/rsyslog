@@ -33,6 +33,7 @@
 #include <pthread.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <time.h>
 #include <glob.h>
 #include <poll.h>
 #include <json.h>
@@ -108,6 +109,15 @@ static int bLegacyCnfModGlobalsPermitted;/* are legacy module-global config para
 	#define GLOB_BRACE 0
 #endif
 
+typedef struct per_minute_rate_limit_s per_minute_rate_limit_t;
+
+struct per_minute_rate_limit_s {
+	uint64_t maxBytesPerMinute;
+	uint32_t maxLinesPerMinute;
+	uint64_t bytesThisMinute; /* bytes sent so far this minute */
+	uint32_t linesThisMinute; /* lines sent to far this minute */
+	time_t rateLimitingMinute; /* minute we are currently rate limiting for */
+};
 
 static struct configSettings_s {
 	uchar *pszFileName;
@@ -120,6 +130,8 @@ static struct configSettings_s {
 	int iSeverity;  /* notice, as of rfc 3164 */
 	int readMode;  /* mode to use for ReadMultiLine call */
 	int64 maxLinesAtOnce;	/* how many lines to process in a row? */
+	uint64_t maxBytesPerMinute; /* maximum bytes per minute to send before rate limiting */
+	uint64_t maxLinesPerMinute; /* maximum lines per minute to send before rate limiting */
 	uint32_t trimLineOverBytes;  /* 0: never trim line, positive number: trim line if over bytes */
 } cs;
 
@@ -133,6 +145,7 @@ struct instanceConf_s {
 	uchar *pszStateFile;
 	uchar *pszBindRuleset;
 	int nMultiSub;
+	per_minute_rate_limit_t perMinuteRateLimits;
 	int iPersistStateInterval;
 	int iFacility;
 	int iSeverity;
@@ -155,6 +168,7 @@ struct instanceConf_s {
 	int maxLinesAtOnce;
 	uint32_t trimLineOverBytes;
 	int msgFlag;
+	uchar *escapeLFString;
 	ruleset_t *pBindRuleset;	/* ruleset to bind listener to (use system default if unspecified) */
 	struct instanceConf_s *next;
 };
@@ -181,6 +195,7 @@ struct act_obj_s {
 	time_t timeoutBase; /* what time to calculate the timeout against? */
 	/* file dynamic data */
 	char file_id[FILE_ID_HASH_SIZE]; /* file id for this entry, once we could obtain it */
+	char file_id_prev[FILE_ID_HASH_SIZE]; /* previous file id for this entry, set if changed */
 	int in_move;	/* workaround for inotify move: if set, state file must not be deleted */
 	ino_t ino;	/* current inode nbr */
 	int fd;		/* fd to file in order to obtain file_id (needs to be preserved across move) */
@@ -309,6 +324,7 @@ static struct cnfparamdescr inppdescr[] = {
 	{ "discardtruncatedmsg", eCmdHdlrBinary, 0 },
 	{ "msgdiscardingerror", eCmdHdlrBinary, 0 },
 	{ "escapelf", eCmdHdlrBinary, 0 },
+	{ "escapelf.replacement", eCmdHdlrString, 0 },
 	{ "reopenontruncate", eCmdHdlrBinary, 0 },
 	{ "maxlinesatonce", eCmdHdlrInt, 0 },
 	{ "trimlineoverbytes", eCmdHdlrInt, 0 },
@@ -323,7 +339,9 @@ static struct cnfparamdescr inppdescr[] = {
 	{ "readtimeout", eCmdHdlrPositiveInt, 0 },
 	{ "freshstarttail", eCmdHdlrBinary, 0},
 	{ "filenotfounderror", eCmdHdlrBinary, 0},
-	{ "needparse", eCmdHdlrBinary, 0}
+	{ "needparse", eCmdHdlrBinary, 0},
+	{ "maxbytesperminute", eCmdHdlrInt, 0},
+	{ "maxlinesperminute", eCmdHdlrInt, 0}
 };
 static struct cnfparamblk inppblk =
 	{ CNFPARAMBLK_VERSION,
@@ -706,7 +724,11 @@ act_obj_add(fs_edge_t *const edge, const char *const name, const int is_file,
 	DBGPRINTF("need to add new active object '%s' in '%s' - checking if accessible\n", name, edge->path);
 	fd = open(name, O_RDONLY | O_CLOEXEC);
 	if(fd < 0) {
-		LogMsg(errno, RS_RET_ERR, LOG_WARNING, "imfile: error accessing file '%s'", name);
+		if (is_file) {
+			LogError(errno, RS_RET_ERR, "imfile: error accessing file '%s'", name);
+		} else { /* reporting only in debug for dirs as higher lvl paths are likely blocked by selinux */
+			DBGPRINTF("imfile: error accessing directory '%s'", name);
+		}
 		FINALIZE;
 	}
 	DBGPRINTF("add new active object '%s' in '%s'\n", name, edge->path);
@@ -721,6 +743,7 @@ act_obj_add(fs_edge_t *const edge, const char *const name, const int is_file,
 	act->ino = ino;
 	act->fd = fd;
 	act->file_id[0] = '\0';
+	act->file_id_prev[0] = '\0';
 	act->is_symlink = is_symlink;
 	if (source) { /* we are target of symlink */
 		CHKmalloc(act->source_name = strdup(source));
@@ -1136,8 +1159,11 @@ fs_node_add(fs_node_t *const node,
 		if(!ustrcmp(chld->name, name)) {
 			DBGPRINTF("fs_node_add(%p, '%s') found '%s'\n", chld->node, toFind, name);
 			/* add new instance */
+			instanceConf_t **instarr_new = realloc(chld->instarr,
+							sizeof(instanceConf_t*) * (chld->ninst+1));
+			CHKmalloc(instarr_new);
+			chld->instarr = instarr_new;
 			chld->ninst++;
-			CHKmalloc(chld->instarr = realloc(chld->instarr, sizeof(instanceConf_t*) * chld->ninst));
 			chld->instarr[chld->ninst-1] = inst;
 			/* recurse */
 			if(!isFile) {
@@ -1248,19 +1274,20 @@ get_file_id_hash(const char *data, size_t lendata,
 static void ATTR_NONNULL(1)
 getFileID(act_obj_t *const act)
 {
-	if(act->file_id[0] != '\0') {
-		return; /* everything already done */
-	}
+	char tmp_id[FILE_ID_HASH_SIZE];
+	strncpy(tmp_id, (const char*)act->file_id, FILE_ID_HASH_SIZE);
+	act->file_id[0] = '\0';
 	assert(act->fd >= 0); /* fd must have been opened at act_obj_t creation! */
 	char filedata[FILE_ID_SIZE];
+	lseek(act->fd, 0, SEEK_SET); /* Seek to beginning of file so we have correct id */
 	const int r = read(act->fd, filedata, FILE_ID_SIZE);
 	if(r == FILE_ID_SIZE) {
 		get_file_id_hash(filedata, sizeof(filedata), act->file_id, sizeof(act->file_id));
-		dbgprintf("file_id '%s' obtained, closing monitoring file handle\n", act->file_id);
-		close(act->fd); /* we will never go here! */
-		act->fd = -1;
 	} else {
 		DBGPRINTF("getFileID partial or error read, ret %d\n", r);
+	}
+	if (strncmp(tmp_id, act->file_id, FILE_ID_HASH_SIZE)) {/* save the old id for cleaning purposes */
+		strncpy(act->file_id_prev, tmp_id, FILE_ID_HASH_SIZE);
 	}
 	DBGPRINTF("getFileID for '%s', file_id_hash '%s'\n", act->name, act->file_id);
 }
@@ -1283,6 +1310,39 @@ getStateFileName(const act_obj_t *const act,
 	return buf;
 }
 
+static rsRetVal
+checkPerMinuteRateLimits(per_minute_rate_limit_t *per_minute_rate_limits,
+			     const size_t msgLen)
+{
+	DEFiRet;
+	time_t current_minute = time(NULL)/60;
+	if(per_minute_rate_limits->maxBytesPerMinute) {
+		if (per_minute_rate_limits->rateLimitingMinute == current_minute) {
+			per_minute_rate_limits->bytesThisMinute += msgLen;
+			/* if we would breach our rate limit then do not send the message. */
+			if (per_minute_rate_limits->bytesThisMinute > per_minute_rate_limits->maxBytesPerMinute) {
+				ABORT_FINALIZE(RS_RET_RATE_LIMITED);
+			}
+		} else {
+			per_minute_rate_limits->rateLimitingMinute = current_minute;
+			per_minute_rate_limits->bytesThisMinute = msgLen; /* Update count as message will be sent */
+		}
+	}
+	if(per_minute_rate_limits->maxLinesPerMinute) {
+		if (per_minute_rate_limits->rateLimitingMinute == current_minute) {
+			per_minute_rate_limits->linesThisMinute++;
+			/* if we would breach our rate limit then do not send the message. */
+			if (per_minute_rate_limits->linesThisMinute > per_minute_rate_limits->maxLinesPerMinute) {
+				ABORT_FINALIZE(RS_RET_RATE_LIMITED);
+			}
+		} else {
+			per_minute_rate_limits->rateLimitingMinute = current_minute;
+			per_minute_rate_limits->linesThisMinute = 1; /* Update count as message will be sent */
+		}
+	}
+finalize_it:
+	RETiRet;
+}
 
 /* enqueue the read file line as a message. The provided string is
  * not freed - this must be done by the caller.
@@ -1337,6 +1397,10 @@ enqLine(act_obj_t *const act,
 		msgAddMultiMetadata(pMsg, metadata_names, metadata_values, 2);
 	}
 
+	if(inst->perMinuteRateLimits.maxBytesPerMinute || inst->perMinuteRateLimits.maxLinesPerMinute) {
+		CHKiRet(checkPerMinuteRateLimits((per_minute_rate_limit_t *)&inst->perMinuteRateLimits, msgLen));
+	}
+
 	if(inst->delay_perMsg) {
 		srSleep(inst->delay_perMsg % 1000000, inst->delay_perMsg / 1000000);
 	}
@@ -1370,28 +1434,13 @@ openFileWithStateFile(act_obj_t *const act)
 	if(fd < 0) {
 		if(errno == ENOENT) {
 			if(act->file_id[0] != '\0') {
-				const char *pszSFNamHash = strdup((const char*)pszSFNam);
-				CHKmalloc(pszSFNamHash);
 				DBGPRINTF("state file %s for %s does not exist - trying to see if "
 					"inode-only file exists\n", pszSFNam, act->name);
 				getFullStateFileName(statefn, "", pszSFNam, sizeof(pszSFNam));
 				fd = open((char*)pszSFNam, O_CLOEXEC | O_NOCTTY | O_RDONLY, 0600);
 				if(fd >= 0) {
-					dbgprintf("found inode-only state file, renaming it now that we "
-						"know the file_id, new name: %s\n", pszSFNamHash);
-					/* we now can use identify the file, so let's rename it */
-					if(rename((const char*)pszSFNam, pszSFNamHash) != 0) {
-						LogError(errno, RS_RET_IO_ERROR,
-							"imfile error trying to rename state file for '%s' - "
-							"ignoring this error, usually this means a file no "
-							"longer file is left over, but this may also cause "
-							"some real trouble. Still the best we can do ",
-							act->name);
-						free((void*) pszSFNamHash);
-						ABORT_FINALIZE(RS_RET_IO_ERROR);
-					}
+					dbgprintf("found inode-only state file, will be renamed at next persist\n");
 				}
-				free((void*) pszSFNamHash);
 			}
 			if(fd < 0) {
 				DBGPRINTF("state file %s for %s does not exist - trying to see if "
@@ -1568,11 +1617,12 @@ pollFileReal(act_obj_t *act, cstr_t **pCStr)
 		if(inst->maxLinesAtOnce != 0 && nProcessed >= inst->maxLinesAtOnce)
 			break;
 		if((start_preg == NULL) && (end_preg == NULL)) {
-			CHKiRet(strm.ReadLine(act->pStrm, pCStr, inst->readMode, inst->escapeLF,
+			CHKiRet(strm.ReadLine(act->pStrm, pCStr, inst->readMode, inst->escapeLF, inst->escapeLFString,
 				inst->trimLineOverBytes, &strtOffs));
 		} else {
 			CHKiRet(strmReadMultiLine(act->pStrm, pCStr, start_preg, end_preg,
-				inst->escapeLF, inst->discardTruncatedMsg, inst->msgDiscardingError, &strtOffs));
+				inst->escapeLF, inst->escapeLFString, inst->discardTruncatedMsg,
+				inst->msgDiscardingError, &strtOffs));
 		}
 		++nProcessed;
 		if(startOffs < FILE_ID_SIZE && act->pStrm->iCurrOffs >= FILE_ID_SIZE) {
@@ -1641,6 +1691,11 @@ createInstance(instanceConf_t **const pinst)
 	inst->maxLinesAtOnce = 0;
 	inst->trimLineOverBytes = 0;
 	inst->iPersistStateInterval = 0;
+	inst->perMinuteRateLimits.maxBytesPerMinute = 0;
+	inst->perMinuteRateLimits.maxLinesPerMinute = 0;
+	inst->perMinuteRateLimits.rateLimitingMinute = 0;
+	inst->perMinuteRateLimits.linesThisMinute = 0;
+	inst->perMinuteRateLimits.bytesThisMinute = 0;
 	inst->readMode = 0;
 	inst->startRegex = NULL;
 	inst->endRegex = NULL;
@@ -1648,6 +1703,7 @@ createInstance(instanceConf_t **const pinst)
 	inst->msgDiscardingError = 1;
 	inst->bRMStateOnDel = 1;
 	inst->escapeLF = 1;
+	inst->escapeLFString = NULL;
 	inst->reopenOnTruncate = 0;
 	inst->addMetadata = ADD_METADATA_UNSPECIFIED;
 	inst->addCeeTag = 0;
@@ -1793,8 +1849,11 @@ addInstance(void __attribute__((unused)) *pVal, uchar *pNewVal)
 	}
 	inst->trimLineOverBytes = cs.trimLineOverBytes;
 	inst->iPersistStateInterval = cs.iPersistStateInterval;
+	inst->perMinuteRateLimits.maxBytesPerMinute = cs.maxBytesPerMinute;
+	inst->perMinuteRateLimits.maxLinesPerMinute = cs.maxLinesPerMinute;
 	inst->readMode = cs.readMode;
 	inst->escapeLF = 0;
+	inst->escapeLFString = NULL;
 	inst->reopenOnTruncate = 0;
 	inst->addMetadata = 0;
 	inst->addCeeTag = 0;
@@ -1874,6 +1933,8 @@ CODESTARTnewInpInst
 			inst->fileNotFoundError = (sbool) pvals[i].val.d.n;
 		} else if(!strcmp(inppblk.descr[i].name, "escapelf")) {
 			inst->escapeLF = (sbool) pvals[i].val.d.n;
+		} else if(!strcmp(inppblk.descr[i].name, "escapelf.replacement")) {
+			inst->escapeLFString = (uchar*)es_str2cstr(pvals[i].val.d.estr, NULL);
 		} else if(!strcmp(inppblk.descr[i].name, "reopenontruncate")) {
 			inst->reopenOnTruncate = (sbool) pvals[i].val.d.n;
 		} else if(!strcmp(inppblk.descr[i].name, "maxlinesatonce")) {
@@ -1889,6 +1950,12 @@ CODESTARTnewInpInst
 			inst->trimLineOverBytes = pvals[i].val.d.n;
 		} else if(!strcmp(inppblk.descr[i].name, "persiststateinterval")) {
 			inst->iPersistStateInterval = pvals[i].val.d.n;
+		} else if(!strcmp(inppblk.descr[i].name, "maxbytesperminute")) {
+			DBGPRINTF("imfile: enabling maxbytesperminute ratelimiting\n");
+			inst->perMinuteRateLimits.maxBytesPerMinute = pvals[i].val.d.n;
+		} else if(!strcmp(inppblk.descr[i].name, "maxlinesperminute")) {
+			DBGPRINTF("imfile: enabling maxlinesperminute ratelimiting\n");
+			inst->perMinuteRateLimits.maxLinesPerMinute = pvals[i].val.d.n;
 		} else if(!strcmp(inppblk.descr[i].name, "maxsubmitatonce")) {
 			inst->nMultiSub = pvals[i].val.d.n;
 		} else if(!strcmp(inppblk.descr[i].name, "readtimeout")) {
@@ -2326,16 +2393,13 @@ done:	return;
 
 
 /* Monitor files in inotify mode */
-PRAGMA_DIAGNOSTIC_PUSH
-PRAGMA_IGNORE_Wcast_align
-/* Problem with the warnings: they seem to stem back from the way the API is structured */
 static rsRetVal
 do_inotify(void)
 {
 	char iobuf[8192];
-	struct inotify_event *ev;
 	int rd;
 	int currev;
+	static int last_timeout = 0;
 	DEFiRet;
 
 	CHKiRet(wdmapInit());
@@ -2361,6 +2425,7 @@ do_inotify(void)
 			if(r == 0) {
 				DBGPRINTF("readTimeouts are configured, checking if some apply\n");
 				fs_node_walk(runModConf->conf_tree, poll_timeouts);
+				last_timeout = time(NULL);
 				continue;
 			} else if (r == -1) {
 				LogError(errno, RS_RET_INTERNAL_ERROR,
@@ -2388,10 +2453,19 @@ do_inotify(void)
 		}
 		currev = 0;
 		while(currev < rd) {
-			ev = (struct inotify_event*) (iobuf+currev);
-			in_dbg_showEv(ev);
-			in_processEvent(ev);
-			currev += sizeof(struct inotify_event) + ev->len;
+			union {
+				char *buf;
+				struct inotify_event *ev;
+			} savecast;
+			savecast.buf = iobuf+currev;
+			in_dbg_showEv(savecast.ev);
+			in_processEvent(savecast.ev);
+			currev += sizeof(struct inotify_event) + savecast.ev->len;
+		}
+		int now = time(NULL);
+		if(last_timeout + (runModConf->timeoutGranularity / 1000) > now) {
+			fs_node_walk(runModConf->conf_tree, poll_timeouts);
+			last_timeout = time(NULL);
 		}
 	}
 
@@ -2399,7 +2473,6 @@ finalize_it:
 	close(ino_fd);
 	RETiRet;
 }
-PRAGMA_DIAGNOSTIC_POP
 
 #else /* #if HAVE_INOTIFY_INIT */
 static rsRetVal
@@ -2596,6 +2669,36 @@ finalize_it:
 	RETiRet;
 }
 
+/* This function should be called after any file ID change - that is if
+ * file grown from hash-only statefile, or was truncated, this will ensure
+ * we delete the old file so we do not make garbage in our working dir and
+ * there are no leftover statefiles which can in theory later bind to something
+ * and cause data loss.
+ * jvymazal 2019-11-27
+ */
+static void
+removeOldStatefile(const uchar *statefn, const char *hashToDelete)
+{
+	int ret;
+	uchar statefname[MAXFNAME];
+
+	getFullStateFileName(statefn, hashToDelete, statefname, sizeof(statefname));
+	DBGPRINTF("removing old state file: '%s'\n", statefname);
+	ret = unlink((const char*)statefname);
+	if(ret != 0) {
+		if (errno != ENOENT) {
+			LogError(errno, RS_RET_IO_ERROR,
+				"imfile error trying to delete old state file: '%s' - ignoring this "
+				"error, usually this means a file no longer file is left over, but "
+				"this may also cause some real trouble. Still the best we can do ",
+				statefname);
+		} else {
+			DBGPRINTF("trying to delete no longer valid statefile '%s' which no "
+					  "longer exists (probably already deleted)\n", statefname);
+		}
+	}
+}
+
 
 /* This function persists information for a specific file being monitored.
  * To do so, it simply persists the stream object. We do NOT abort on error
@@ -2646,6 +2749,11 @@ persistStrmState(act_obj_t *const act)
 
 	CHKiRet(atomicWriteStateFile((const char*)statefname, jstr));
 	json_object_put(json);
+
+	/* file-id changed remove the old statefile */
+	if (strncmp((const char *)act->file_id_prev, (const char *)act->file_id, FILE_ID_HASH_SIZE)) {
+		removeOldStatefile(statefn, act->file_id_prev);
+	}
 
 finalize_it:
 	if(iRet != RS_RET_OK) {
