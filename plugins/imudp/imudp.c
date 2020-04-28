@@ -41,6 +41,9 @@
 #ifdef HAVE_SCHED_H
 #	include <sched.h>
 #endif
+#ifdef HAVE_SYS_PRCTL_H
+#  include <sys/prctl.h>
+#endif
 #include "rsyslog.h"
 #include "dirty.h"
 #include "net.h"
@@ -1205,9 +1208,6 @@ static void *
 wrkr(void *myself)
 {
 	struct wrkrInfo_s *pWrkr = (struct wrkrInfo_s*) myself;
-#	if defined(HAVE_PRCTL) && defined(PR_SET_NAME)
-	uchar *pszDbgHdr;
-#	endif
 	uchar thrdName[32];
 
 	snprintf((char*)thrdName, sizeof(thrdName), "imudp(w%d)", pWrkr->id);
