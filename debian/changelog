@@ -1,3 +1,9 @@
+rsyslog (8.2004.0-1) UNRELEASED; urgency=medium
+
+  * New upstream version 8.2004.0
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 28 Apr 2020 18:18:27 +0200
+
 rsyslog (8.2002.0-2) unstable; urgency=medium
 
   * Increase timeouts in imfile-basic-2GB-file and imfile-truncate-2GB-file.
