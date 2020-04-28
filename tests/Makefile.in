@@ -879,7 +879,8 @@ host_triplet = @host@
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_random.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_hash32.sh \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_hash64.sh \
-@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_replace.sh
+@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	rscript_replace.sh \
+@ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@	omfile-outchannel-many.sh
 
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_56 = \
 @ENABLE_IMPTCP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imptcp_conndrop-vg.sh
@@ -2190,6 +2191,7 @@ EXTRA_DIST = \
 	omfile-whitespace-filename.sh \
 	omfile-read-only.sh \
 	omfile-outchannel.sh \
+	omfile-outchannel-many.sh \
 	omfile_both_files_set.sh \
 	omfile_hup.sh \
 	omrabbitmq_no_params.sh \

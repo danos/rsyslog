@@ -741,7 +741,7 @@ content_check_with_count() {
 				shutdown_when_empty ""
 				wait_shutdown ""
 
-				echo content_check_with_count failed, expected \"$1\" to occur $2 times, but found it "$count" times
+				echo "$(tb_timestamp)" content_check_with_count failed, expected \"$1\" to occur $2 times, but found it "$count" times
 				echo file $RSYSLOG_OUT_LOG content is:
 				if [ $(wc -l < "$RSYSLOG_OUT_LOG") -gt 10000 ]; then
 					printf 'truncation, we have %d lines, which is way too much\n' \
@@ -755,11 +755,13 @@ content_check_with_count() {
 				fi
 				error_exit 1
 			else
-				printf 'content_check_with_count have %d, wait for %d times (%d lines), msg: %s\n' \
-					"$count" "$2" $(wc -l < "$RSYSLOG_OUT_LOG") "$1"
+				printf '%s content_check_with_count have %d, wait for %d times (%d lines), msg: %s\n' \
+					"$(tb_timestamp)" "$count" "$2" $(wc -l < "$RSYSLOG_OUT_LOG") "$1"
 				$TESTTOOL_DIR/msleep 1000
 			fi
 		fi
+	printf '**** content_check_with_count DEBUG:\n' # rger: REMOVE ME when problems are fixed
+	cat -n "$RSYSLOG_OUT_LOG"
 	done
 }
 
@@ -1571,8 +1573,8 @@ dep_cache_dir=$(pwd)/.dep_cache
 dep_zk_url=http://www-us.apache.org/dist/zookeeper/zookeeper-3.4.14/$RS_ZK_DOWNLOAD
 dep_zk_cached_file=$dep_cache_dir/$RS_ZK_DOWNLOAD
 
-export RS_KAFKA_DOWNLOAD=kafka_2.12-2.2.0.tgz
-dep_kafka_url=http://www-us.apache.org/dist/kafka/2.2.0/kafka_2.12-2.2.0.tgz
+export RS_KAFKA_DOWNLOAD=kafka_2.12-2.5.0.tgz
+dep_kafka_url=http://www-us.apache.org/dist/kafka/2.5.0/kafka_2.12-2.5.0.tgz
 dep_kafka_cached_file=$dep_cache_dir/$RS_KAFKA_DOWNLOAD
 
 if [ -z "$ES_DOWNLOAD" ]; then
