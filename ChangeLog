@@ -1,4 +1,107 @@
 ----------------------------------------------------------------------------------------
+Scheduled Release 8.2006.0 (aka 2020.06) 2020-06-23
+- 2020-06-22: queue: permit ability to double size at shutdown
+  This prevents message loss due to "queue full" when re-enqueueing data
+  under quite exotic settings.
+  see also https://github.com/rsyslog/rsyslog/issues/3941#issuecomment-549765813
+  closes https://github.com/rsyslog/rsyslog/issues/4020
+- 2020-06-22:Fixing imfile segfaulting on selinux denial
+  If imfile is denied access to file watched trough symlink there is
+  unchecked condition resulting in access to not initialized memory.
+- 2020-06-22: openssl: Fixed memory leak when tls handshake failed.
+  closes: https://github.com/rsyslog/rsyslog/issues/4319
+- 2020-06-22: change systemd service file to wait for network
+  now that rsyslog is usually only installed for real syslog servers,
+  we should assume that some network listening or forwarding happens
+  on start. As such we need to start a bit later, after the network.
+  This poses no problem as systemd nowadays comes with journal which
+  is in almost all cases configured to buffer log data while
+  rsyslog is not yet running.
+  see also https://github.com/rsyslog/rsyslog-pkg-rhel-centos/issues/72
+- 2020-06-22: NEW INPUT MODULE:: impcap, network packets input parser
+  Thanks to github user frikilax for the contribution.
+- 2020-06-22: ksi bugfix: Optimized code in KSI module initialization fixed.
+  KSI module initialization will not stuck in infinite loop when code is
+  built with optimization -O2.
+- 2020-06-05: operatingstatefile bugfix: month was given too low
+  The month was printed with the range 0 (January) to 11 (December).
+  This has now been corrected.
+  closes https://github.com/rsyslog/rsyslog/issues/4292
+- 2020-06-05: build system: add "optional" build functionality to some components
+  Nameley:
+    --enable-libdbi=optional
+    --enable-mmdblookup=optional
+    --enable-imkafka=optional
+    --enable-omkafka=optional
+  If used, builds a dummy module which just emits a "module not supported
+  on this platform" error message when loaded.
+  Primary use case for this system is Debian-ish builds on SUSE OBS,
+  where we prefer to have a single package definition for all versions
+  (else things get much more complicated).
+- 2020-05-23: config system bugfix: backticks cat segfault if file cannot be opened
+  when a `cat <filename>` construct is used in rsyslog.conf and <filename> can not
+  be accessed (does not exist, no permissions, ...), rsyslog segfaults.
+  Thanks to Michael Skeffington for notifying us and providing root cause analysis.
+  closes https://github.com/rsyslog/rsyslog/issues/4290
+- 2020-05-15: imtcp bugfix: octet framing/stuffing problem with discardTruncatedMsg on
+  When "discardTruncatedMsg" was enabled in imtcp, messages were incorrectly
+  skipped if the last character before the truncation was the LFdelimiter.
+  Also adds two testbench tests for this case.
+  closes: https://github.com/rsyslog/rsyslog/issues/4281
+- 2020-05-12: ompipe bugfix: race during HUP
+  When HUP was received, the write mutex was not aquired. This could
+  lead to unexpected invalidation of the output file descriptor.
+  Thanks to Julien Thomas for alerting us on this issue.
+  see also https://github.com/rsyslog/rsyslog/pull/4136#issuecomment-578326278
+- 2020-05-12: ompipe: add action parameter tryResumeReopen
+  Sometimes we need to reopen a pipe after an ompipe action gets
+  suspended. Sending an HUP signal to rsyslog does the job but requires
+  an interraction with rsyslog. The patch adds support for a new boolean
+  option, tryResumeReopen, for the ompipe action. It mimics what an HUP
+  signal would do.
+  Thanks to Julien Thomas for the patch.
+- 2020-05-12: imjournal: remove strcat call
+  Thanks to Jeff Marckel for the patch.
+- 2020-05-12: build system: libzcmq version requirement needs to be bumped
+  Thanks to Thomas Deutschmann for pointing this out.
+  closes https://github.com/rsyslog/rsyslog/issues/3957
+- 2020-05-12: testbench: download ElasticSearch binaries from rsyslog.com
+  The official ElasticSearch download site sometimes denies the download.
+- 2020-05-11: openssl netstream driver bugfix: context leak
+  The context object was not properly freed.
+  Thanks to Michael Zimmermann for the fix.
+- 2020-05-11: omhttp: Add support for multiple http headers
+  Allows the inclusion of multiple http headers on the REST call.
+  Thanks to callmegar for the patch.
+- 2020-04-29: core bugfix: group id could not be obtained for very large groups
+  Thanks to github user emilbart for the patch.
+- 2020-04-29: testbench additions (relp broken connection test)
+- 2020-04-29: omudpspoof bugfix: issues with oversized messages
+  First issue was an incorrect packet length in UDP Header. It has to be the FULL UDP Packet
+  regardless of the MTU Setting. As a result regardless of IP fragmentation, the MTU setting
+  also limited the siizmax size of the UDP message.
+  The second issue was incorrect calculation of the UDP Checksum with libnet if
+  IP fragmentation was used (Based on MTU Setting). As a result, the network packets were
+  dropped by the tcp stack before they even could reach there target. The workarround for this
+  problem is, that we set the UDP Checksum to 0x0000 which allows skipping of the checksum
+  test. Fixing the problem by calculating the correct UDP Checksum would require some
+  code changes in the libnet.
+  Also fixed the omudpspoof bigmsg test and increased the testing size to 16KB.
+- 2020-04-29: omprog: fix assert failed on HUP with output flag
+  If the 'output' setting of omprog was used and rsyslog received a HUP
+  signal just after starting (and before the omprog action received the
+  first log to process), an internal assertion could fail, causing
+  rsyslog to terminate. The failure message was "rsyslogd: omprog.c:660:
+  closeOutputFile: Assertion `pCtx->bIsRunning' failed."
+  The failure could also occur if rsyslog received a HUP signal during
+  the shutdown sequence.
+  This bug was introduced in v8.2004 by PR https://github.com/rsyslog/rsyslog/pull/4255
+  Although a test already existed that checked the interaction of HUPs
+  with the 'output' setting, it didn't always fail in this particular case
+  due to timing conditions. The test has been improved to cover this case
+  more reliably.
+  Thanks to Joan Sala Isern for the patch.
+----------------------------------------------------------------------------------------
 Scheduled Release 8.2004.0 (aka 2020.04) 2020-04-28
 - 2020-04-28: ksi bugfix: When KSI module is suddenly closed, files are finalized
   In async. mode all pending signature requests are closed immediately and
@@ -53,6 +156,7 @@ Scheduled Release 8.2004.0 (aka 2020.04) 2020-04-28
   always runs rsyslog in non-daemon mode.
   Affected versions: v8.38 and later
   closes: https://github.com/rsyslog/rsyslog/issues/4247
+  Thanks to Joan Sala Isern for the patch.
 - 2020-04-28: omfile bugfix: $outchannel split log lines at rotation time
 - 2020-04-17: openssl: add support for libreSSL
   Disable use of "@SECLEVEL" in default cipher string and

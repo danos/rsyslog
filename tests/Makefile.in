@@ -320,8 +320,10 @@ host_triplet = @host@
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-msg-truncation-on-number2.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-NUL.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-NUL-rawmsg.sh \
-@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-multiport.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp_incomplete_frame_at_end.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-multiport.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-bigmessage-octetcounting.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-bigmessage-octetstuffing.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	da-queue-persist.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	daqueue-persist.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	daqueue-invld-qi.sh \
@@ -484,6 +486,7 @@ host_triplet = @host@
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	lookup_table_rscript_reload.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	lookup_table_rscript_reload_without_stub.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	include-obj-text-from-file.sh \
+@ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	include-obj-text-from-file-noexist.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	multiple_lookup_tables.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	parsertest-parse1.sh \
 @ENABLE_DEFAULT_TESTS_TRUE@@ENABLE_TESTBENCH_TRUE@	parsertest-parse1-udp.sh \
@@ -765,7 +768,9 @@ host_triplet = @host@
 @ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@	omhttp-batch-lokirest-retry.sh \
 @ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@	omhttp-batch-lokirest.sh \
 @ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@	omhttp-batch-newline.sh \
-@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@	omhttp-retry.sh
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@	omhttp-retry.sh \
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@	omhttp-httpheaderkey.sh \
+@ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@	omhttp-multiplehttpheaders.sh
 
 @ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_45 = \
 @ENABLE_OMHTTP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	omhttp-auth-vg.sh \
@@ -1036,7 +1041,8 @@ host_triplet = @host@
 @ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	imtcp-tls-ossl-error-key2.sh
 
 @ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_79 = \
-@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imtcp-tls-ossl-basic-vg.sh
+@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imtcp-tls-ossl-basic-vg.sh \
+@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	imtcp-tls-ossl-basic-brokenhandshake-vg.sh
 
 @ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_80 = \
 @ENABLE_GNUTLS_TESTS_TRUE@@ENABLE_OPENSSL_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_tls_ossl_servercert_gtls_clientanon.sh \
@@ -1078,11 +1084,13 @@ host_triplet = @host@
 
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_85 = \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	 imrelp-basic-vg.sh \
+@ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	 imrelp-sessionbreak-vg.sh \
 @ENABLE_RELP_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	 imrelp-manyconn-vg.sh
 
 @ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@am__append_86 = \
 @ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@	omudpspoof_errmsg_no_params.sh \
 @ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_omudpspoof.sh \
+@ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_omudpspoof-bigmsg.sh \
 @ENABLE_OMUDPSPOOF_TRUE@@ENABLE_TESTBENCH_TRUE@	sndrcv_omudpspoof_nonstdpt.sh
 
 
@@ -2091,6 +2099,7 @@ EXTRA_DIST = \
 	diskqueue-non-unique-prefix.sh \
 	arrayqueue.sh \
 	include-obj-text-from-file.sh \
+	include-obj-text-from-file-noexist.sh \
 	include-obj-outside-control-flow-vg.sh \
 	include-obj-in-if-vg.sh \
 	include-obj-text-vg.sh \
@@ -2413,6 +2422,8 @@ EXTRA_DIST = \
 	imtcp-tls-basic-vg.sh \
 	imtcp_incomplete_frame_at_end.sh \
 	imtcp-multiport.sh \
+	imtcp-bigmessage-octetcounting.sh \
+	imtcp-bigmessage-octetstuffing.sh \
 	udp-msgreduc-orgmsg-vg.sh \
 	udp-msgreduc-vg.sh \
 	manytcp-too-few-tls-vg.sh \
@@ -2430,6 +2441,7 @@ EXTRA_DIST = \
 	imtcp-tls-ossl-x509name.sh \
 	imtcp-tls-ossl-x509fingerprint.sh \
 	imtcp-tls-ossl-basic-vg.sh \
+	imtcp-tls-ossl-basic-brokenhandshake-vg.sh \
 	imtcp-tls-ossl-error-ca.sh \
 	imtcp-tls-ossl-error-cert.sh \
 	imtcp-tls-ossl-error-key.sh \
@@ -2518,6 +2530,7 @@ EXTRA_DIST = \
 	imrelp-oversizeMode-accept.sh \
 	imrelp-invld-tlslib.sh \
 	imrelp-bigmessage.sh \
+	imrelp-sessionbreak-vg.sh \
 	omrelp-invld-tlslib.sh \
 	glbl-oversizeMsg-log.sh \
 	glbl-oversizeMsg-truncate.sh \
@@ -2539,6 +2552,7 @@ EXTRA_DIST = \
 	sndrcv_udp_nonstdpt_v6.sh \
 	omudpspoof_errmsg_no_params.sh \
 	sndrcv_omudpspoof.sh \
+	sndrcv_omudpspoof-bigmsg.sh \
 	sndrcv_omudpspoof_nonstdpt.sh \
 	sndrcv_gzip.sh \
 	action-tx-single-processing.sh \
@@ -2567,6 +2581,8 @@ EXTRA_DIST = \
 	omhttp-batch-lokirest.sh \
 	omhttp-batch-newline.sh \
 	omhttp-retry.sh \
+	omhttp-httpheaderkey.sh \
+	omhttp-multiplehttpheaders.sh \
 	omhttp-auth-vg.sh \
 	omhttp-basic-vg.sh \
 	omhttp-batch-jsonarray-compress-vg.sh \

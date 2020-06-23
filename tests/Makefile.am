@@ -277,8 +277,10 @@ TESTS +=  \
 	imtcp-msg-truncation-on-number2.sh \
 	imtcp-NUL.sh \
 	imtcp-NUL-rawmsg.sh \
-	imtcp-multiport.sh \
 	imtcp_incomplete_frame_at_end.sh \
+	imtcp-multiport.sh \
+	imtcp-bigmessage-octetcounting.sh \
+	imtcp-bigmessage-octetstuffing.sh \
 	da-queue-persist.sh \
 	daqueue-persist.sh \
 	daqueue-invld-qi.sh \
@@ -441,6 +443,7 @@ TESTS +=  \
 	lookup_table_rscript_reload.sh \
 	lookup_table_rscript_reload_without_stub.sh \
 	include-obj-text-from-file.sh \
+	include-obj-text-from-file-noexist.sh \
 	multiple_lookup_tables.sh \
 	parsertest-parse1.sh \
 	parsertest-parse1-udp.sh \
@@ -845,7 +848,9 @@ TESTS +=  \
 	omhttp-batch-lokirest-retry.sh \
 	omhttp-batch-lokirest.sh \
 	omhttp-batch-newline.sh \
-	omhttp-retry.sh
+	omhttp-retry.sh \
+	omhttp-httpheaderkey.sh \
+	omhttp-multiplehttpheaders.sh
 if HAVE_VALGRIND
 TESTS +=  \
 	omhttp-auth-vg.sh \
@@ -1194,7 +1199,8 @@ TESTS +=  \
 	imtcp-tls-ossl-error-key2.sh
 if HAVE_VALGRIND
 TESTS += \
-	imtcp-tls-ossl-basic-vg.sh
+	imtcp-tls-ossl-basic-vg.sh \
+	imtcp-tls-ossl-basic-brokenhandshake-vg.sh
 endif
 endif
 
@@ -1248,6 +1254,7 @@ endif # ENABLE_GNUTLS
 if HAVE_VALGRIND
 TESTS += \
 	 imrelp-basic-vg.sh \
+	 imrelp-sessionbreak-vg.sh \
 	 imrelp-manyconn-vg.sh
 endif # HAVE_VALGRIND
 endif
@@ -1256,6 +1263,7 @@ if ENABLE_OMUDPSPOOF
 TESTS += \
 	omudpspoof_errmsg_no_params.sh \
 	sndrcv_omudpspoof.sh \
+	sndrcv_omudpspoof-bigmsg.sh \
 	sndrcv_omudpspoof_nonstdpt.sh
 endif
 
@@ -1639,6 +1647,7 @@ EXTRA_DIST= \
 	diskqueue-non-unique-prefix.sh \
 	arrayqueue.sh \
 	include-obj-text-from-file.sh \
+	include-obj-text-from-file-noexist.sh \
 	include-obj-outside-control-flow-vg.sh \
 	include-obj-in-if-vg.sh \
 	include-obj-text-vg.sh \
@@ -1961,6 +1970,8 @@ EXTRA_DIST= \
 	imtcp-tls-basic-vg.sh \
 	imtcp_incomplete_frame_at_end.sh \
 	imtcp-multiport.sh \
+	imtcp-bigmessage-octetcounting.sh \
+	imtcp-bigmessage-octetstuffing.sh \
 	udp-msgreduc-orgmsg-vg.sh \
 	udp-msgreduc-vg.sh \
 	manytcp-too-few-tls-vg.sh \
@@ -1978,6 +1989,7 @@ EXTRA_DIST= \
 	imtcp-tls-ossl-x509name.sh \
 	imtcp-tls-ossl-x509fingerprint.sh \
 	imtcp-tls-ossl-basic-vg.sh \
+	imtcp-tls-ossl-basic-brokenhandshake-vg.sh \
 	imtcp-tls-ossl-error-ca.sh \
 	imtcp-tls-ossl-error-cert.sh \
 	imtcp-tls-ossl-error-key.sh \
@@ -2066,6 +2078,7 @@ EXTRA_DIST= \
 	imrelp-oversizeMode-accept.sh \
 	imrelp-invld-tlslib.sh \
 	imrelp-bigmessage.sh \
+	imrelp-sessionbreak-vg.sh \
 	omrelp-invld-tlslib.sh \
 	glbl-oversizeMsg-log.sh \
 	glbl-oversizeMsg-truncate.sh \
@@ -2087,6 +2100,7 @@ EXTRA_DIST= \
 	sndrcv_udp_nonstdpt_v6.sh \
 	omudpspoof_errmsg_no_params.sh \
 	sndrcv_omudpspoof.sh \
+	sndrcv_omudpspoof-bigmsg.sh \
 	sndrcv_omudpspoof_nonstdpt.sh \
 	sndrcv_gzip.sh \
 	action-tx-single-processing.sh \
@@ -2115,6 +2129,8 @@ EXTRA_DIST= \
 	omhttp-batch-lokirest.sh \
 	omhttp-batch-newline.sh \
 	omhttp-retry.sh \
+	omhttp-httpheaderkey.sh \
+	omhttp-multiplehttpheaders.sh \
 	omhttp-auth-vg.sh \
 	omhttp-basic-vg.sh \
 	omhttp-batch-jsonarray-compress-vg.sh \

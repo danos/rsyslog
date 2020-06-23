@@ -133,7 +133,10 @@ am__uninstall_files_from_dir = { \
 am__installdirs = "$(DESTDIR)$(pkglibdir)"
 LTLIBRARIES = $(pkglib_LTLIBRARIES)
 imkafka_la_DEPENDENCIES =
-am_imkafka_la_OBJECTS = imkafka_la-imkafka.lo
+am__imkafka_la_SOURCES_DIST = imkafka.c dummy.c
+@IMKAFKA_USE_DUMMY_FALSE@am_imkafka_la_OBJECTS =  \
+@IMKAFKA_USE_DUMMY_FALSE@	imkafka_la-imkafka.lo
+@IMKAFKA_USE_DUMMY_TRUE@am_imkafka_la_OBJECTS = imkafka_la-dummy.lo
 imkafka_la_OBJECTS = $(am_imkafka_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -177,7 +180,7 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(imkafka_la_SOURCES)
-DIST_SOURCES = $(imkafka_la_SOURCES)
+DIST_SOURCES = $(am__imkafka_la_SOURCES_DIST)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -436,10 +439,13 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 pkglib_LTLIBRARIES = imkafka.la
-imkafka_la_SOURCES = imkafka.c
-imkafka_la_CPPFLAGS = -I$(top_srcdir) $(RSRT_CFLAGS) $(PTHREADS_CFLAGS)
-@ENABLE_KAFKA_STATIC_FALSE@imkafka_la_LDFLAGS = -module -avoid-version $(LIBRDKAFKA_LIBS)
+@IMKAFKA_USE_DUMMY_FALSE@imkafka_la_SOURCES = imkafka.c
+@IMKAFKA_USE_DUMMY_TRUE@imkafka_la_SOURCES = dummy.c
 @ENABLE_KAFKA_STATIC_TRUE@imkafka_la_LDFLAGS = -module -avoid-version -Wl,--whole-archive -l:librdkafka.a -Wl,--no-whole-archive -lssl -lpthread -lcrypto -lsasl2 -lz -llz4 -lrt # Static Linking now $(LIBRDKAFKA_LIBS)
+@IMKAFKA_USE_DUMMY_FALSE@imkafka_la_LDFLAGS = -module -avoid-version $(LIBRDKAFKA_LIBS)
+@IMKAFKA_USE_DUMMY_TRUE@imkafka_la_LDFLAGS = -module -avoid-version
+@IMKAFKA_USE_DUMMY_FALSE@imkafka_la_CPPFLAGS = -I$(top_srcdir) $(RSRT_CFLAGS) $(PTHREADS_CFLAGS)
+@IMKAFKA_USE_DUMMY_TRUE@imkafka_la_CPPFLAGS = -I$(top_srcdir) $(RSRT_CFLAGS) $(PTHREADS_CFLAGS) -D MODNAME=imkafka
 imkafka_la_LIBADD = 
 EXTRA_DIST = 
 all: all-am
@@ -520,6 +526,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/imkafka_la-dummy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/imkafka_la-imkafka.Plo@am__quote@
 
 .c.o:
@@ -552,6 +559,13 @@ imkafka_la-imkafka.lo: imkafka.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='imkafka.c' object='imkafka_la-imkafka.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(imkafka_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o imkafka_la-imkafka.lo `test -f 'imkafka.c' || echo '$(srcdir)/'`imkafka.c
+
+imkafka_la-dummy.lo: dummy.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(imkafka_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT imkafka_la-dummy.lo -MD -MP -MF $(DEPDIR)/imkafka_la-dummy.Tpo -c -o imkafka_la-dummy.lo `test -f 'dummy.c' || echo '$(srcdir)/'`dummy.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/imkafka_la-dummy.Tpo $(DEPDIR)/imkafka_la-dummy.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dummy.c' object='imkafka_la-dummy.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(imkafka_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o imkafka_la-dummy.lo `test -f 'dummy.c' || echo '$(srcdir)/'`dummy.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
