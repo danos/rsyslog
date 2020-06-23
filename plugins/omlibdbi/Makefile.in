@@ -133,8 +133,12 @@ am__uninstall_files_from_dir = { \
 am__installdirs = "$(DESTDIR)$(pkglibdir)"
 LTLIBRARIES = $(pkglib_LTLIBRARIES)
 am__DEPENDENCIES_1 =
-omlibdbi_la_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_omlibdbi_la_OBJECTS = omlibdbi_la-omlibdbi.lo
+@LIBDBI_USE_DUMMY_FALSE@omlibdbi_la_DEPENDENCIES =  \
+@LIBDBI_USE_DUMMY_FALSE@	$(am__DEPENDENCIES_1)
+am__omlibdbi_la_SOURCES_DIST = omlibdbi.c dummy.c
+@LIBDBI_USE_DUMMY_FALSE@am_omlibdbi_la_OBJECTS =  \
+@LIBDBI_USE_DUMMY_FALSE@	omlibdbi_la-omlibdbi.lo
+@LIBDBI_USE_DUMMY_TRUE@am_omlibdbi_la_OBJECTS = omlibdbi_la-dummy.lo
 omlibdbi_la_OBJECTS = $(am_omlibdbi_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -178,7 +182,7 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(omlibdbi_la_SOURCES)
-DIST_SOURCES = $(omlibdbi_la_SOURCES)
+DIST_SOURCES = $(am__omlibdbi_la_SOURCES_DIST)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -437,10 +441,13 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 pkglib_LTLIBRARIES = omlibdbi.la
-omlibdbi_la_SOURCES = omlibdbi.c
-omlibdbi_la_CPPFLAGS = -I$(top_srcdir) $(LIBDBI_CFLAGS) $(PTHREADS_CFLAGS) $(RSRT_CFLAGS)
-omlibdbi_la_LDFLAGS = -module -avoid-version
-omlibdbi_la_LIBADD = $(LIBDBI_LIBS)
+@LIBDBI_USE_DUMMY_FALSE@omlibdbi_la_SOURCES = omlibdbi.c
+@LIBDBI_USE_DUMMY_TRUE@omlibdbi_la_SOURCES = dummy.c
+@LIBDBI_USE_DUMMY_FALSE@omlibdbi_la_CPPFLAGS = -I$(top_srcdir) $(LIBDBI_CFLAGS) $(PTHREADS_CFLAGS) $(RSRT_CFLAGS)
+@LIBDBI_USE_DUMMY_TRUE@omlibdbi_la_CPPFLAGS = -I$(top_srcdir) $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) -D MODNAME=omlibdbi
+@LIBDBI_USE_DUMMY_FALSE@omlibdbi_la_LDFLAGS = -module -avoid-version
+@LIBDBI_USE_DUMMY_TRUE@omlibdbi_la_LDFLAGS = -module -avoid-version
+@LIBDBI_USE_DUMMY_FALSE@omlibdbi_la_LIBADD = $(LIBDBI_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -519,6 +526,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/omlibdbi_la-dummy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/omlibdbi_la-omlibdbi.Plo@am__quote@
 
 .c.o:
@@ -551,6 +559,13 @@ omlibdbi_la-omlibdbi.lo: omlibdbi.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='omlibdbi.c' object='omlibdbi_la-omlibdbi.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(omlibdbi_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o omlibdbi_la-omlibdbi.lo `test -f 'omlibdbi.c' || echo '$(srcdir)/'`omlibdbi.c
+
+omlibdbi_la-dummy.lo: dummy.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(omlibdbi_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT omlibdbi_la-dummy.lo -MD -MP -MF $(DEPDIR)/omlibdbi_la-dummy.Tpo -c -o omlibdbi_la-dummy.lo `test -f 'dummy.c' || echo '$(srcdir)/'`dummy.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/omlibdbi_la-dummy.Tpo $(DEPDIR)/omlibdbi_la-dummy.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dummy.c' object='omlibdbi_la-dummy.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(omlibdbi_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o omlibdbi_la-dummy.lo `test -f 'dummy.c' || echo '$(srcdir)/'`dummy.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

@@ -133,7 +133,10 @@ am__uninstall_files_from_dir = { \
 am__installdirs = "$(DESTDIR)$(pkglibdir)"
 LTLIBRARIES = $(pkglib_LTLIBRARIES)
 omkafka_la_DEPENDENCIES =
-am_omkafka_la_OBJECTS = omkafka_la-omkafka.lo
+am__omkafka_la_SOURCES_DIST = omkafka.c dummy.c
+@OMKAFKA_USE_DUMMY_FALSE@am_omkafka_la_OBJECTS =  \
+@OMKAFKA_USE_DUMMY_FALSE@	omkafka_la-omkafka.lo
+@OMKAFKA_USE_DUMMY_TRUE@am_omkafka_la_OBJECTS = omkafka_la-dummy.lo
 omkafka_la_OBJECTS = $(am_omkafka_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -177,7 +180,7 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(omkafka_la_SOURCES)
-DIST_SOURCES = $(omkafka_la_SOURCES)
+DIST_SOURCES = $(am__omkafka_la_SOURCES_DIST)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -436,10 +439,13 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 pkglib_LTLIBRARIES = omkafka.la
-omkafka_la_SOURCES = omkafka.c
-omkafka_la_CPPFLAGS = $(RSRT_CFLAGS) $(PTHREADS_CFLAGS)
-@ENABLE_KAFKA_STATIC_FALSE@omkafka_la_LDFLAGS = -module -avoid-version $(LIBRDKAFKA_LIBS) -lm
+@OMKAFKA_USE_DUMMY_FALSE@omkafka_la_SOURCES = omkafka.c
+@OMKAFKA_USE_DUMMY_TRUE@omkafka_la_SOURCES = dummy.c
 @ENABLE_KAFKA_STATIC_TRUE@omkafka_la_LDFLAGS = -module -avoid-version -Wl,--whole-archive -l:librdkafka.a -Wl,--no-whole-archive -lssl -lpthread -lcrypto -lsasl2 -lz -llz4 -lrt -lm
+@OMKAFKA_USE_DUMMY_FALSE@omkafka_la_LDFLAGS = -module -avoid-version $(LIBRDKAFKA_LIBS) -lm
+@OMKAFKA_USE_DUMMY_TRUE@omkafka_la_LDFLAGS = -module -avoid-version
+@OMKAFKA_USE_DUMMY_FALSE@omkafka_la_CPPFLAGS = $(RSRT_CFLAGS) $(PTHREADS_CFLAGS)
+@OMKAFKA_USE_DUMMY_TRUE@omkafka_la_CPPFLAGS = $(RSRT_CFLAGS) $(PTHREADS_CFLAGS) -D MODNAME=omkafka
 omkafka_la_LIBADD = 
 EXTRA_DIST = 
 all: all-am
@@ -520,6 +526,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/omkafka_la-dummy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/omkafka_la-omkafka.Plo@am__quote@
 
 .c.o:
@@ -552,6 +559,13 @@ omkafka_la-omkafka.lo: omkafka.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='omkafka.c' object='omkafka_la-omkafka.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(omkafka_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o omkafka_la-omkafka.lo `test -f 'omkafka.c' || echo '$(srcdir)/'`omkafka.c
+
+omkafka_la-dummy.lo: dummy.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(omkafka_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT omkafka_la-dummy.lo -MD -MP -MF $(DEPDIR)/omkafka_la-dummy.Tpo -c -o omkafka_la-dummy.lo `test -f 'dummy.c' || echo '$(srcdir)/'`dummy.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/omkafka_la-dummy.Tpo $(DEPDIR)/omkafka_la-dummy.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dummy.c' object='omkafka_la-dummy.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(omkafka_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o omkafka_la-dummy.lo `test -f 'dummy.c' || echo '$(srcdir)/'`dummy.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
