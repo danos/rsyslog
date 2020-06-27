@@ -1,3 +1,10 @@
+rsyslog (8.2006.0-2) unstable; urgency=medium
+
+  * Revert upstream changes which caused /dev/log from journald being
+    overwritten (Closes: #963715)
+
+ -- Michael Biebl <biebl@debian.org>  Sat, 27 Jun 2020 13:29:13 +0200
+
 rsyslog (8.2006.0-1) unstable; urgency=medium
 
   * New upstream version 8.2006.0
