@@ -2,9 +2,9 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([rsyslog],[8.2006.0],[rsyslog@lists.adiscon.com])  # UPDATE on release
+AC_INIT([rsyslog],[8.2008.0],[rsyslog@lists.adiscon.com])  # UPDATE on release
 AC_DEFINE(VERSION_YEAR, 20, [year part of real rsyslog version])  # UPDATE on release
-AC_DEFINE(VERSION_MONTH,06, [month part of real rsyslog version]) # UPDATE on release
+AC_DEFINE(VERSION_MONTH, 8, [month part of real rsyslog version]) # UPDATE on release
 
 AM_INIT_AUTOMAKE([subdir-objects])
 
@@ -548,18 +548,26 @@ AC_ARG_ENABLE(imjournal,
         [case "${enableval}" in
          yes) enable_imjournal="yes" ;;
           no) enable_imjournal="no" ;;
+         optional) enable_imjournal="optional" ;;
            *) AC_MSG_ERROR(bad value ${enableval} for --enable-imjournal) ;;
          esac],
         [enable_imjournal="no"]
 )
-if test "x$enable_imjournal" = "xyes"; then
+imjournal_use_dummy="no"
+if test "x$enable_imjournal" = "xyes" -o "x$enable_imjournal" = "xoptional"; then
 	PKG_CHECK_MODULES([LIBSYSTEMD_JOURNAL], [libsystemd >= 234] , [AC_DEFINE(NEW_JOURNAL, 1, [new systemd present])] , [
 	    PKG_CHECK_MODULES([LIBSYSTEMD_JOURNAL], [libsystemd >= 209] , , [
-	        PKG_CHECK_MODULES([LIBSYSTEMD_JOURNAL], [libsystemd-journal >= 197])
+	        PKG_CHECK_MODULES([LIBSYSTEMD_JOURNAL], [libsystemd-journal >= 197], , [
+                    AS_IF([test x$enable_imjournal = xyes],
+                        AC_MSG_FAILURE([imjournal support libraries are missing])
+	            )
+                    imjournal_use_dummy="yes"
+                 ])
 	    ])
 	])
 fi
-AM_CONDITIONAL(ENABLE_IMJOURNAL, test x$enable_imjournal = xyes)
+AM_CONDITIONAL(IMJOURNAL_USE_DUMMY, test x$imjournal_use_dummy = xyes)
+AM_CONDITIONAL(ENABLE_IMJOURNAL, test x$enable_imjournal = xyes -o x$enable_imjournal = xoptional)
 
 # use libsystemd
 AC_ARG_ENABLE(libsystemd,
@@ -2670,6 +2678,9 @@ echo "    Solaris input module enabled:             $enable_imsolaris"
 echo "    periodic statistics module enabled:       $enable_impstats"
 echo "    imczmq input module enabled:              $enable_imczmq"
 echo "    imjournal input module enabled:           $enable_imjournal"
+if test "$enable_imjournal" = "optional"; then
+echo "        imjournal use dummy:                  $imjournal_use_dummy"
+fi
 echo "    imbatchreport input module enabled:       $enable_imbatchreport"
 echo "    imkafka module will be compiled:          $enable_imkafka"
 if test "$enable_imkafka" = "optional"; then

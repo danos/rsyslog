@@ -15,7 +15,6 @@
 @SET_MAKE@
 
 
-
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -314,8 +313,7 @@ am__uninstall_files_from_dir = { \
     || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
-am__installdirs = "$(DESTDIR)$(pkglibdir)" "$(DESTDIR)$(sbindir)" \
-	"$(DESTDIR)$(systemdsystemunitdir)"
+am__installdirs = "$(DESTDIR)$(pkglibdir)" "$(DESTDIR)$(sbindir)"
 LTLIBRARIES = $(pkglib_LTLIBRARIES)
 PROGRAMS = $(sbin_PROGRAMS)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -345,7 +343,6 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
-DATA = $(nodist_systemdsystemunit_DATA)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 am__recursive_targets = \
@@ -680,16 +677,6 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 pkglib_LTLIBRARIES = 
 pkgconfigdir = $(libdir)/pkgconfig
-
-#
-# systemd support
-#
-@HAVE_SYSTEMD_TRUE@nodist_systemdsystemunit_DATA = \
-@HAVE_SYSTEMD_TRUE@	rsyslog.service
-
-@HAVE_SYSTEMD_TRUE@CLEANFILES = \
-@HAVE_SYSTEMD_TRUE@	rsyslog.service
-
 EXTRA_DIST = \
 	README.md \
 	platform/README \
@@ -703,8 +690,7 @@ EXTRA_DIST = \
 	COPYING.ASL20 \
 	contrib/gnutls/ca.pem \
 	contrib/gnutls/cert.pem \
-	contrib/gnutls/key.pem \
-	rsyslog.service.in
+	contrib/gnutls/key.pem
 
 # external plugin driver is always enabled (core component)
 
@@ -911,27 +897,6 @@ clean-libtool:
 
 distclean-libtool:
 	-rm -f libtool config.lt
-install-nodist_systemdsystemunitDATA: $(nodist_systemdsystemunit_DATA)
-	@$(NORMAL_INSTALL)
-	@list='$(nodist_systemdsystemunit_DATA)'; test -n "$(systemdsystemunitdir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(systemdsystemunitdir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(systemdsystemunitdir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; \
-	done | $(am__base_list) | \
-	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(systemdsystemunitdir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(systemdsystemunitdir)" || exit $$?; \
-	done
-
-uninstall-nodist_systemdsystemunitDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(nodist_systemdsystemunit_DATA)'; test -n "$(systemdsystemunitdir)" || list=; \
-	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	dir='$(DESTDIR)$(systemdsystemunitdir)'; $(am__uninstall_files_from_dir)
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run 'make' without going through this Makefile.
@@ -1232,10 +1197,10 @@ distcleancheck: distclean
 	       exit 1; } >&2
 check-am: all-am
 check: check-recursive
-all-am: Makefile $(LTLIBRARIES) $(PROGRAMS) $(DATA) config.h
+all-am: Makefile $(LTLIBRARIES) $(PROGRAMS) config.h
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(pkglibdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(systemdsystemunitdir)"; do \
+	for dir in "$(DESTDIR)$(pkglibdir)" "$(DESTDIR)$(sbindir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-recursive
@@ -1260,7 +1225,6 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -1292,7 +1256,7 @@ info: info-recursive
 
 info-am:
 
-install-data-am: install-nodist_systemdsystemunitDATA
+install-data-am:
 
 install-dvi: install-dvi-recursive
 
@@ -1338,8 +1302,7 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-nodist_systemdsystemunitDATA \
-	uninstall-pkglibLTLIBRARIES uninstall-sbinPROGRAMS
+uninstall-am: uninstall-pkglibLTLIBRARIES uninstall-sbinPROGRAMS
 
 .MAKE: $(am__recursive_targets) all install-am install-strip
 
@@ -1354,20 +1317,16 @@ uninstall-am: uninstall-nodist_systemdsystemunitDATA \
 	install install-am install-data install-data-am install-dvi \
 	install-dvi-am install-exec install-exec-am install-html \
 	install-html-am install-info install-info-am install-man \
-	install-nodist_systemdsystemunitDATA install-pdf \
-	install-pdf-am install-pkglibLTLIBRARIES install-ps \
-	install-ps-am install-sbinPROGRAMS install-strip installcheck \
-	installcheck-am installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic \
-	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am uninstall-nodist_systemdsystemunitDATA \
+	install-pdf install-pdf-am install-pkglibLTLIBRARIES \
+	install-ps install-ps-am install-sbinPROGRAMS install-strip \
+	installcheck installcheck-am installdirs installdirs-am \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags tags-am uninstall uninstall-am \
 	uninstall-pkglibLTLIBRARIES uninstall-sbinPROGRAMS
 
 .PRECIOUS: Makefile
 
-
-@HAVE_SYSTEMD_TRUE@%.service: %.service.in
-@HAVE_SYSTEMD_TRUE@	$(AM_V_GEN)sed -e 's,@sbindir\@,$(sbindir),g' $< > $@
 
 dist-hook:
 	$(AM_V_GEN)echo $(VERSION) > $(distdir)/.tarball-version

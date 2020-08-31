@@ -133,8 +133,13 @@ am__uninstall_files_from_dir = { \
 am__installdirs = "$(DESTDIR)$(pkglibdir)"
 LTLIBRARIES = $(pkglib_LTLIBRARIES)
 am__DEPENDENCIES_1 =
-imjournal_la_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_imjournal_la_OBJECTS = imjournal_la-imjournal.lo
+@IMJOURNAL_USE_DUMMY_FALSE@imjournal_la_DEPENDENCIES =  \
+@IMJOURNAL_USE_DUMMY_FALSE@	$(am__DEPENDENCIES_1)
+am__imjournal_la_SOURCES_DIST = imjournal.c dummy.c
+@IMJOURNAL_USE_DUMMY_FALSE@am_imjournal_la_OBJECTS =  \
+@IMJOURNAL_USE_DUMMY_FALSE@	imjournal_la-imjournal.lo
+@IMJOURNAL_USE_DUMMY_TRUE@am_imjournal_la_OBJECTS =  \
+@IMJOURNAL_USE_DUMMY_TRUE@	imjournal_la-dummy.lo
 imjournal_la_OBJECTS = $(am_imjournal_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -178,7 +183,7 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(imjournal_la_SOURCES)
-DIST_SOURCES = $(imjournal_la_SOURCES)
+DIST_SOURCES = $(am__imjournal_la_SOURCES_DIST)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -437,11 +442,13 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 pkglib_LTLIBRARIES = imjournal.la
-imjournal_la_SOURCES = imjournal.c
-imjournal_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBSYSTEMD_JOURNAL_CFLAGS)
-#imjournal_la_CPPFLAGS = -I$(top_srcdir) $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBSYSTEMD_JOURNAL_CFLAGS)
-imjournal_la_LDFLAGS = -module -avoid-version
-imjournal_la_LIBADD = $(LIBSYSTEMD_JOURNAL_LIBS)
+@IMJOURNAL_USE_DUMMY_FALSE@imjournal_la_SOURCES = imjournal.c
+@IMJOURNAL_USE_DUMMY_TRUE@imjournal_la_SOURCES = dummy.c
+@IMJOURNAL_USE_DUMMY_FALSE@imjournal_la_CPPFLAGS = $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) $(LIBSYSTEMD_JOURNAL_CFLAGS)
+@IMJOURNAL_USE_DUMMY_TRUE@imjournal_la_CPPFLAGS = -I$(top_srcdir) $(PTHREADS_CFLAGS) $(RSRT_CFLAGS) -D MODNAME=imjournal
+@IMJOURNAL_USE_DUMMY_FALSE@imjournal_la_LDFLAGS = -module -avoid-version
+@IMJOURNAL_USE_DUMMY_TRUE@imjournal_la_LDFLAGS = -module -avoid-version
+@IMJOURNAL_USE_DUMMY_FALSE@imjournal_la_LIBADD = $(LIBSYSTEMD_JOURNAL_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -520,6 +527,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/imjournal_la-dummy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/imjournal_la-imjournal.Plo@am__quote@
 
 .c.o:
@@ -552,6 +560,13 @@ imjournal_la-imjournal.lo: imjournal.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='imjournal.c' object='imjournal_la-imjournal.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(imjournal_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o imjournal_la-imjournal.lo `test -f 'imjournal.c' || echo '$(srcdir)/'`imjournal.c
+
+imjournal_la-dummy.lo: dummy.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(imjournal_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT imjournal_la-dummy.lo -MD -MP -MF $(DEPDIR)/imjournal_la-dummy.Tpo -c -o imjournal_la-dummy.lo `test -f 'dummy.c' || echo '$(srcdir)/'`dummy.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/imjournal_la-dummy.Tpo $(DEPDIR)/imjournal_la-dummy.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dummy.c' object='imjournal_la-dummy.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(imjournal_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o imjournal_la-dummy.lo `test -f 'dummy.c' || echo '$(srcdir)/'`dummy.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
