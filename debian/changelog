@@ -1,3 +1,14 @@
+rsyslog (8.2008.0-1) UNRELEASED; urgency=medium
+
+  [ Michael Biebl ]
+  * New upstream version 8.2008.0
+
+  [ Christian Ehrhardt ]
+  * d/p/Increase-timeouts-in-imfile-basic-2GB-file-and-imfile-tru.patch: bump
+    even further for riscv64
+
+ -- Michael Biebl <biebl@debian.org>  Mon, 31 Aug 2020 16:05:40 +0200
+
 rsyslog (8.2006.0-2) unstable; urgency=medium
 
   * Revert upstream changes which caused /dev/log from journald being
