@@ -35,4 +35,3 @@ usr/lib/*/rsyslog/pm*.so
 [linux-any] usr/lib/*/rsyslog/imptcp.so
 [linux-any] usr/lib/*/rsyslog/imjournal.so
 [linux-any] usr/lib/*/rsyslog/omjournal.so
-lib/systemd/system/rsyslog.service
