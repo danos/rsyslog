@@ -2,9 +2,9 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([rsyslog],[8.2008.0],[rsyslog@lists.adiscon.com])  # UPDATE on release
+AC_INIT([rsyslog],[8.2010.0],[rsyslog@lists.adiscon.com])  # UPDATE on release
 AC_DEFINE(VERSION_YEAR, 20, [year part of real rsyslog version])  # UPDATE on release
-AC_DEFINE(VERSION_MONTH, 8, [month part of real rsyslog version]) # UPDATE on release
+AC_DEFINE(VERSION_MONTH,10, [month part of real rsyslog version]) # UPDATE on release
 
 AM_INIT_AUTOMAKE([subdir-objects])
 
@@ -1532,6 +1532,9 @@ if test "x$enable_relp" = "xyes"; then
 
         CFLAGS="$CFLAGS $RELP_CFLAGS"
         LIBS="$LIBS $RELP_LIBS"
+	# Export RELP Version for testbench tools
+	RELP_VERSION="$(pkg-config --modversion relp)"
+	AC_DEFINE_UNQUOTED([RELP_VERSION], "${RELP_VERSION}", [Define version of librelp used.])
 
         AC_CHECK_FUNC([relpSrvSetOversizeMode],
                       [AC_DEFINE([HAVE_RELPSRVSETOVERSIZEMODE], [1], [Define if relpSrvSetOversizeMode exists.])])
@@ -1541,7 +1544,6 @@ if test "x$enable_relp" = "xyes"; then
                       [AC_DEFINE([HAVE_RELPENGINESETTLSLIBBYNAME], [1], [Define if relpEngineSetTLSLibByName exists.])])
         AC_CHECK_FUNC([relpSrvSetTlsConfigCmd],
                       [AC_DEFINE([HAVE_RELPENGINESETTLSCFGCMD], [1], [Define if relpSrvSetTlsConfigCmd exists.])])
-
         AC_CHECK_FUNC([relpSrvSetTlsConfigCmd],
                       [HAVE_RELPENGINESETTLSCFGCMD=1])
 
@@ -1819,6 +1821,27 @@ AC_ARG_ENABLE(improg,
         [enable_improg=no]
 )
 AM_CONDITIONAL(ENABLE_IMPROG, test x$enable_improg = xyes)
+
+# settings for the external http input module
+AC_ARG_ENABLE(imhttp,
+        [AS_HELP_STRING([--enable-imhttp],[external http input module enabled @<:@default=no@:>@])],
+        [case "${enableval}" in
+         yes) enable_imhttp="yes" ;;
+          no) enable_imhttp="no" ;;
+           *) AC_MSG_ERROR(bad value ${enableval} for --enable-imhttp) ;;
+         esac],
+        [enable_imhttp=no]
+)
+if test "x$enable_imhttp" = "xyes"; then
+  AC_CHECK_HEADERS(
+    [civetweb.h],,
+    [AC_MSG_FAILURE([civetweb is missing])]
+  )
+  AC_SEARCH_LIBS(mg_version, civetweb)
+  CIVETWEB_LIBS=-lcivetweb
+  AC_SUBST(CIVETWEB_LIBS)
+fi
+AM_CONDITIONAL(ENABLE_IMHTTP, test x$enable_imhttp = xyes)
 
 # settings for the door input module (under solaris, thus default off)
 AC_ARG_ENABLE(imsolaris,
@@ -2638,6 +2661,7 @@ AC_CONFIG_FILES([Makefile \
 		contrib/impcap/Makefile \
 		contrib/imtuxedoulog/Makefile \
 		contrib/improg/Makefile \
+		contrib/imhttp/Makefile \
 		contrib/mmtaghostname/Makefile \
 		contrib/imdocker/Makefile \
 		contrib/pmdb2diag/Makefile \
@@ -2689,6 +2713,7 @@ fi
 echo "    impcap input module enabled:              $enable_impcap"
 echo "    imtuxedoulog module will be compiled:     $enable_imtuxedoulog"
 echo "    improg input module enabled:              $enable_improg"
+echo "    imhttp input module enabled:              $enable_imhttp"
 echo
 echo "---{ output plugins }---"
 echo "    Mail support enabled:                     $enable_mail"
