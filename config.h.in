@@ -57,6 +57,9 @@
 /* Define to 1 if your system has a working `chown' function. */
 #undef HAVE_CHOWN
 
+/* Define to 1 if you have the <civetweb.h> header file. */
+#undef HAVE_CIVETWEB_H
+
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
 
@@ -496,6 +499,9 @@
 
 /* default port for omrelp */
 #undef RELP_DFLT_PT
+
+/* Define version of librelp used. */
+#undef RELP_VERSION
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE

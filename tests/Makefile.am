@@ -48,6 +48,7 @@ check_PROGRAMS = $(TESTRUNS) ourtail tcpflood chkseq msleep randomgen \
 	have_relpSrvSetOversizeMode \
 	have_relpEngineSetTLSLibByName \
 	have_relpSrvSetTlsConfigCmd \
+	check_relpEngineVersion \
 	test_id
 if ENABLE_JOURNAL_TESTS
 if ENABLE_IMJOURNAL
@@ -289,6 +290,7 @@ TESTS +=  \
 	diskqueue.sh \
 	diskqueue-fsync.sh \
 	diskqueue-full.sh \
+	diskqueue-fail.sh \
 	diskqueue-non-unique-prefix.sh \
 	rulesetmultiqueue.sh \
 	rulesetmultiqueue-v6.sh \
@@ -420,6 +422,12 @@ TESTS +=  \
 	rscript_parse_json.sh \
 	rscript_previous_action_suspended.sh \
 	rscript_str2num_negative.sh \
+	rscript_exists-yes.sh \
+	rscript_exists-yes2.sh \
+	rscript_exists-not1.sh \
+	rscript_exists-not2.sh \
+	rscript_exists-not3.sh \
+	rscript_exists-not4.sh \
 	rscript-config_enable-on.sh \
 	config_output-o-option.sh \
 	rs-cnum.sh \
@@ -927,6 +935,25 @@ endif # HAVE_VALGRIND
 endif # ENABLE_IMDOCKER_TESTS
 endif # ENABLE_IMDOCKER
 
+if ENABLE_IMHTTP
+TESTS += \
+	imhttp-post-payload.sh \
+	imhttp-post-payload-large.sh \
+	imhttp-post-payload-multi.sh \
+	imhttp-post-payload-multi-lf.sh \
+	imhttp-post-payload-compress.sh \
+	imhttp-getrequest-file.sh
+if HAVE_VALGRIND
+TESTS +=  \
+	imhttp-post-payload-vg.sh \
+	imhttp-post-payload-large-vg.sh \
+	imhttp-post-payload-multi-vg.sh \
+	imhttp-post-payload-multi-lf-vg.sh \
+	imhttp-post-payload-compress-vg.sh \
+	imhttp-getrequest-file-vg.sh
+endif # HAVE_VALGRIND
+endif # ENABLE_IMHTTP
+
 if ENABLE_OMRABBITMQ
 check_PROGRAMS += miniamqpsrvr
 miniamqpsrvr_SOURCES = miniamqpsrvr.c
@@ -1243,9 +1270,11 @@ TESTS += \
          sndrcv_relp_tls.sh \
          sndrcv_relp_tls_certvalid.sh \
          sndrcv_relp_tls_prio.sh \
+	 sndrcv_relp_tls_chainedcert.sh \
          relp_tls_certificate_not_found.sh \
 	 omrelp_wrong_authmode.sh \
-	 imrelp-tls.sh
+	 imrelp-tls.sh \
+	 imrelp-tls-chainedcert.sh
 if USE_RELPENGINESETTLSCFGCMD
 TESTS += \
 	 imrelp-tls-cfgcmd.sh \
@@ -1644,6 +1673,7 @@ EXTRA_DIST= \
 	diskq-rfc5424.sh \
 	rfc5424parser-sp_at_msg_start.sh \
 	diskqueue-full.sh \
+	diskqueue-fail.sh \
 	diskqueue.sh \
 	diskqueue-non-unique-prefix.sh \
 	arrayqueue.sh \
@@ -1691,6 +1721,12 @@ EXTRA_DIST= \
 	rscript_backticks_empty_envvar-vg.sh \
 	rscript_previous_action_suspended.sh \
 	rscript_str2num_negative.sh \
+	rscript_exists-yes.sh \
+	rscript_exists-yes2.sh \
+	rscript_exists-not1.sh \
+	rscript_exists-not2.sh \
+	rscript_exists-not3.sh \
+	rscript_exists-not4.sh \
 	rs-cnum.sh \
 	rs-int2hex.sh \
 	rs-substring.sh \
@@ -2087,12 +2123,14 @@ EXTRA_DIST= \
 	sndrcv_relp.sh \
 	sndrcv_relp_rebind.sh \
 	sndrcv_relp_tls_prio.sh \
+	sndrcv_relp_tls_chainedcert.sh \
 	sndrcv_relp_tls.sh \
 	sndrcv_relp_tls_certvalid.sh \
 	relp_tls_certificate_not_found.sh \
 	omrelp_wrong_authmode.sh \
 	imrelp-tls.sh \
 	imrelp-tls-cfgcmd.sh \
+	imrelp-tls-chainedcert.sh \
 	sndrcv_relp_tls-cfgcmd.sh \
 	sndrcv_relp_dflt_pt.sh \
 	sndrcv_udp.sh \
@@ -2118,6 +2156,20 @@ EXTRA_DIST= \
 	improg_prog_killonclose.sh \
 	improg_prog_simple-vg.sh \
 	improg_simple_multi.sh \
+	imhttp-post-payload.sh \
+	imhttp-post-payload-vg.sh \
+	imhttp-post-payload-large.sh \
+	imhttp-post-payload-large-vg.sh \
+	testsuites/imhttp-large-data.txt \
+	imhttp-post-payload-multi.sh \
+	imhttp-post-payload-multi-vg.sh \
+	imhttp-getrequest-file.sh \
+	imhttp-getrequest-file-vg.sh \
+	imhttp-post-payload-multi-lf.sh \
+	imhttp-post-payload-multi-lf-vg.sh \
+	imhttp-post-payload-compress.sh \
+	imhttp-post-payload-compress-vg.sh \
+	testsuites/docroot/file.txt \
 	omhttp-auth.sh \
 	omhttp-basic.sh \
 	omhttp-batch-fail-with-400.sh \
@@ -2483,6 +2535,7 @@ EXTRA_DIST= \
 	CI/centos6-9.supp \
 	CI/centos7.supp \
 	CI/gcov.supp \
+	CI/ubuntu20.04.supp \
 	json_var_case.sh \
 	cfg.sh \
 	empty-prop-comparison.sh \
@@ -2568,6 +2621,7 @@ msleep_SOURCES = msleep.c
 omrelp_dflt_port_SOURCES = omrelp_dflt_port.c
 mangle_qi_SOURCES = mangle_qi.c
 chkseq_SOURCES = chkseq.c
+check_relpEngineVersion = check_relpEngineVersion.c
 have_relpSrvSetOversizeMode = have_relpSrvSetOversizeMode.c
 have_relpEngineSetTLSLibByName = have_relpEngineSetTLSLibByName.c
 have_relpSrvSetTlsConfigCmd = have_relpSrvSetTlsConfigCmd.c

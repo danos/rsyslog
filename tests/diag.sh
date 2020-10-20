@@ -710,7 +710,7 @@ content_count_check() {
 		grep_opt=-F
 	fi
 	file=${3:-$RSYSLOG_OUT_LOG}
-	count=$(grep -c -F -- "$1" <${RSYSLOG_OUT_LOG})
+	count=$(grep -c $grep_opt -- "$1" <${RSYSLOG_OUT_LOG})
 	if [ ${count:=0} -ne "$2" ]; then
 	    grep -c -F -- "$1" <${RSYSLOG_OUT_LOG}
 	    printf '\n============================================================\n'
@@ -1538,6 +1538,20 @@ require_relpEngineSetTLSLibByName() {
 	  exit 77
 	fi;
 }
+
+require_relpEngineVersion() {
+	if [ "$1" == "" ]; then
+		  echo "require_relpEngineVersion missing required parameter  (minimum version required)"
+		  exit 1
+	else
+		./check_relpEngineVersion $1
+		if [ $? -eq 1 ]; then
+		  echo "relpEngineVersion too OLD. Test stopped"
+		  exit 77
+		fi;
+	fi
+}
+
 
 # check if command $1 is available - will exit 77 when not OK
 check_command_available() {
@@ -2491,7 +2505,7 @@ case $1 in
 			echo "hint: was init accidentally called twice?"
 			exit 2
 		fi
-		export RSYSLOG_DYNNAME="rstb_$(./test_id $(basename $0))$(tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 4 | head -n 1)"
+		export RSYSLOG_DYNNAME="rstb_$(./test_id $(basename $0))$(tr -dc 'a-zA-Z0-9' < /dev/urandom | head --bytes 4)"
 		export RSYSLOG_OUT_LOG="${RSYSLOG_DYNNAME}.out.log"
 		export RSYSLOG2_OUT_LOG="${RSYSLOG_DYNNAME}_2.out.log"
 		export RSYSLOG_PIDBASE="${RSYSLOG_DYNNAME}:" # also used by instance 2!
