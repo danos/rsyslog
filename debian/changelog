@@ -1,3 +1,9 @@
+rsyslog (8.2010.0-1) UNRELEASED; urgency=medium
+
+  * New upstream version 8.2010.0
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 20 Oct 2020 20:12:21 +0200
+
 rsyslog (8.2008.0-1) unstable; urgency=medium
 
   [ Michael Biebl ]
