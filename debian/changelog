@@ -1,8 +1,9 @@
-rsyslog (8.2012.0-1) UNRELEASED; urgency=medium
+rsyslog (8.2012.0-1) unstable; urgency=medium
 
   * New upstream version 8.2012.0
+  * Rebase patches
 
- -- Michael Biebl <biebl@debian.org>  Tue, 08 Dec 2020 17:28:34 +0100
+ -- Michael Biebl <biebl@debian.org>  Tue, 08 Dec 2020 18:43:01 +0100
 
 rsyslog (8.2010.0-1) unstable; urgency=medium
 
