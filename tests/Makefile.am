@@ -156,6 +156,9 @@ endif # if ENABLE_ELASTICSEARCH_TESTS
 if ENABLE_DEFAULT_TESTS
 TESTS +=  \
 	immark.sh \
+	immark-inputname.sh \
+	immark-ruleset.sh \
+	immark-ruleset-custom-msg.sh \
 	operatingstate-basic.sh \
 	operatingstate-empty.sh \
 	operatingstate-unclean.sh \
@@ -629,6 +632,7 @@ TESTS +=  \
 	now-utc.sh \
 	now-utc-ymd.sh \
 	now-utc-casecmp.sh \
+	now-unixtimestamp.sh \
 	timegenerated-ymd.sh \
 	timegenerated-uxtimestamp.sh \
 	timegenerated-uxtimestamp-invld.sh \
@@ -1192,6 +1196,7 @@ TESTS +=  \
 	sndrcv_tls_priorityString.sh \
 	sndrcv_tls_certvalid.sh \
 	sndrcv_tls_certvalid_expired.sh \
+	sndrcv_tls_certvalid_expired_defaultmode.sh \
 	imtcp-tls-gtls-x509fingerprint-invld.sh \
 	imtcp-tls-gtls-x509fingerprint.sh \
 	imtcp-tls-gtls-x509name-invld.sh \
@@ -1541,6 +1546,9 @@ EXTRA_DIST= \
 	smtradfile.sh \
 	smtradfile-vg.sh \
 	immark.sh \
+	immark-inputname.sh \
+	immark-ruleset.sh \
+	immark-ruleset-custom-msg.sh \
 	operatingstate-basic.sh \
 	operatingstate-empty.sh \
 	operatingstate-unclean.sh \
@@ -1607,6 +1615,7 @@ EXTRA_DIST= \
 	tls-certs/ca-key.pem \
 	tls-certs/ca.pem \
 	tls-certs/cert.pem \
+	tls-certs/certchained.pem \
 	tls-certs/key.pem \
 	tls-certs/ca-fail.pem \
 	tls-certs/cert-fail.pem \
@@ -1854,6 +1863,7 @@ EXTRA_DIST= \
 	now-utc-ymd.sh \
 	now-utc-casecmp.sh \
 	now-utc.sh \
+	now-unixtimestamp.sh \
 	faketime_common.sh \
 	imjournal-basic.sh \
 	imjournal-statefile.sh \
@@ -2546,6 +2556,7 @@ EXTRA_DIST= \
 	sndrcv_tls_priorityString.sh \
 	sndrcv_tls_certvalid.sh \
 	sndrcv_tls_certvalid_expired.sh \
+	sndrcv_tls_certvalid_expired_defaultmode.sh \
 	sndrcv_tls_certless_clientonly.sh \
 	sndrcv_tls_gtls_servercert_gtls_clientanon.sh \
 	sndrcv_tls_gtls_servercert_gtls_clientanon_legacy.sh \
