@@ -878,7 +878,9 @@ host_triplet = @host@
 @ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@	stats-cee.sh \
 @ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@	stats-json-es.sh \
 @ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@	dynstats_reset_without_pstats_reset.sh \
-@ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@	dynstats_prevent_premature_eviction.sh
+@ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@	dynstats_prevent_premature_eviction.sh \
+@ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@	omfwd_impstats-udp.sh \
+@ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@	omfwd_impstats-tcp.sh
 
 @ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@am__append_56 = \
 @ENABLE_IMPSTATS_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@	dynstats-vg.sh \
@@ -2909,6 +2911,8 @@ EXTRA_DIST = \
 	testsuites/dynstats_input_more_2 \
 	no-dynstats-json.sh \
 	no-dynstats.sh \
+	omfwd_impstats-udp.sh \
+	omfwd_impstats-tcp.sh \
 	stats-json.sh \
 	stats-json-vg.sh \
 	stats-cee.sh \
@@ -3974,6 +3978,7 @@ uninstall-am: uninstall-pkglibLTLIBRARIES
 @ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@sndrcv_kafka.log: imkafka_multi_single.log
 @ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@imkafka_multi_group.log: sndrcv_kafka.log
 @ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@sndrcv_kafka_multi_topics.log: imkafka_multi_group.log
+@ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@omkafkadynakey.log: sndrcv_kafka_multi_topics.log
 
 @ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@omkafka-vg.log: sndrcv_kafka_multi_topics.log
 @ENABLE_IMKAFKA_TRUE@@ENABLE_KAFKA_TESTS_TRUE@@ENABLE_OMKAFKA_TRUE@@ENABLE_TESTBENCH_TRUE@@HAVE_VALGRIND_TRUE@imkafka-vg.log: omkafka-vg.log
