@@ -1,8 +1,17 @@
-rsyslog (8.2102.0-1) UNRELEASED; urgency=medium
+rsyslog (8.2102.0-1) unstable; urgency=medium
 
   * New upstream version 8.2102.0
+  * Bump Standards-Version to 4.5.1
+  * Update Homepage URL to use https://
+  * Set upstream metadata fields: Bug-Submit, Bug-Database, Repository,
+    Repository-Browse
+  * Remove some left-over news bits
+  * Merge logrotate rules.
+    We only want a single postrotate to avoid having a SIGHUP getting lost
+    due to race conditions, leading to files not being rotated properly.
+    (Closes: #720096)
 
- -- Michael Biebl <biebl@debian.org>  Tue, 16 Feb 2021 18:40:24 +0100
+ -- Michael Biebl <biebl@debian.org>  Tue, 16 Feb 2021 20:23:15 +0100
 
 rsyslog (8.2012.0-1) unstable; urgency=medium
 
