@@ -37,7 +37,7 @@ Standards-Version: 4.5.1
 Rules-Requires-Root: no
 Vcs-Git: https://salsa.debian.org/debian/rsyslog.git
 Vcs-Browser: https://salsa.debian.org/debian/rsyslog
-Homepage: http://www.rsyslog.com/
+Homepage: https://www.rsyslog.com/
 
 Package: rsyslog
 Architecture: any
