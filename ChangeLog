@@ -1,4 +1,62 @@
 ----------------------------------------------------------------------------------------
+Scheduled Release 8.2102.0 (aka 2021.02) 2021-02-16
+- 2021-02-15: omfwd: add stats counter for sent bytes
+  Thanks to John Chivian for suggesting this feature.
+- 2021-02-15: omfwd: add error reporting configuration option
+  RSyslog on a plain TCP cannot guarantee the message delivery
+  without using RELP protocol. Besides that the logs may be
+  flooded with connection errors making the rest of messages
+  difficult to find. To alleviate the problem (see issue 3910),
+  this patch adds a configuration option that enables to reduce
+  the number of network errors logged and reported.
+  For example, if each 10th network error message should be logged,
+  the rsyslog configuration has to be updated as follows.
+  action(type="omfwd" Target="<IP_ADDR>" Port="<PORT>" Protocol="tcp" ConErrSkip="10")
+  Thanks to Libor Bukata for the patch.
+- 2021-02-15: action stats counter bugfix: failure count was not properly incremented
+  In some cases the counter was not incremented, most notably with transaction-enabled
+  actions.
+  Thanks to github user thinkst-marco for the patch.
+- 2021-02-15: action stats counter bugfix: resume count was not incremented
+  And so it always stayed at zero.
+  Thanks to github user thinkst-marco for the patch.
+- 2021-02-15: omfwd bugfix: segfault or error if port not given
+  If omfwd is configured via RainerScript config format and the "port"
+  parameter is not given, a segfault will most likely happen on
+  connection establishment for TCP connections. For UDP, this is
+  usually not the case.
+  Alternatively, in any case, errors may happen.
+  Note that the segfault will usually happen right on restart so this
+  was easy to detect.
+  We did not receive reports from practice. Instead, we found the bug
+  while conducting other work.
+- 2021-01-29: lookup table bugfix: data race on lookup table reload
+  A data race could happen when a lookup table was reloaded. We found
+  this while moving to newer version of TSAN, but have no matching
+  report from practice. However, there is a potential for this to cause
+  a segfault under "bad circumstances".
+- 2021-01-18: testbench modernization
+  Bump dependency versions, use newer distro versions for some tests.
+  Make kafka distcheck separate to help diagnose flaky kafka tests.
+- 2021-01-16: testbench: fix invalid sequence of kafka tests runs
+  kafka tests can not run well in parallel (mostly due to ressource
+  constraints on CI machines). Accidentally, this was not enforced for
+  one of the tests. That could lead to random failures and false positives.
+- 2021-01-14: testbench: fix kafkacat issues
+  The kafkacat tool has an upper limit of how many messages it can send
+  at once. Going over that limit causes messages loss. The exact limit
+  seems to depend on the environment. This causes testbench false positives.
+  This commit fixes two related issues:
+  - errors during kafkacat run were not detected - this has been added
+  - we now have a "max messages at once" setting, after which kafkacat
+    is restarted for the next batch of messages. It currently is set
+    to 25,000 msgs per incarnation. All tests loop now to send the
+    required number of messages. This has been fixed at the testbench
+    framework level, so no need to adjust individual tests.
+- 2021-01-14: testbench: fix year-dependendt clickhouse test
+  A test had the year value hardcoded and as such failed whenever the
+  year changed. This patch corrects that.
+----------------------------------------------------------------------------------------
 Scheduled Release 8.2012.0 (aka 2020.12) 2020-12-08
 - 2020-12-07:  testbench bugfix: some tests did not work in make distcheck
   - certificate file missing in dist tarball
