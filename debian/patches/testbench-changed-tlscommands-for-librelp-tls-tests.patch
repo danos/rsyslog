@@ -1,0 +1,108 @@
+From: Andre lorbach <alorbach@adiscon.com>
+Date: Tue, 16 Feb 2021 09:34:21 +0100
+Subject: testbench: changed tlscommands for librelp tls tests.
+
+tlscommands for the following tests have been changed:
+- imrelp-tls-cfgcmd.sh
+- sndrcv_relp_tls-cfgcmd.sh
+
+closes: https://github.com/rsyslog/rsyslog/issues/4534
+---
+ tests/diag.sh                   |  1 -
+ tests/imrelp-tls-cfgcmd.sh      | 16 +++++++++++++---
+ tests/sndrcv_relp_tls-cfgcmd.sh | 14 +++++++++++---
+ 3 files changed, 24 insertions(+), 7 deletions(-)
+
+diff --git a/tests/diag.sh b/tests/diag.sh
+index 7d4fed9..6cd60ea 100755
+--- a/tests/diag.sh
++++ b/tests/diag.sh
+@@ -1461,7 +1461,6 @@ tcpflood() {
+ 	else
+ 		check_only="no"
+ 	fi
+-
+ 	eval ./tcpflood -p$TCPFLOOD_PORT "$@" $TCPFLOOD_EXTRA_OPTS
+ 	res=$?
+ 	if [ "$check_only" == "yes" ]; then
+diff --git a/tests/imrelp-tls-cfgcmd.sh b/tests/imrelp-tls-cfgcmd.sh
+index bb1af4e..cf50899 100755
+--- a/tests/imrelp-tls-cfgcmd.sh
++++ b/tests/imrelp-tls-cfgcmd.sh
+@@ -15,7 +15,11 @@ input(type="imrelp" port="'$TCPFLOOD_PORT'" tls="on"
+ 		tls.myprivkey="'$srcdir'/tls-certs/key.pem"
+ 		tls.authmode="certvalid"
+ 		tls.permittedpeer="rsyslog"
+-		tls.tlscfgcmd="Protocol=ALL,-SSLv2,-SSLv3,-TLSv1,-TLSv1.2")
++		tls.tlscfgcmd="Protocol=ALL,-SSLv2,-SSLv3,-TLSv1,-TLSv1.2
++CipherString=ECDHE-RSA-AES256-GCM-SHA384
++Protocol=ALL,-SSLv2,-SSLv3,-TLSv1,-TLSv1.2,-TLSv1.3
++MinProtocol=TLSv1.2
++MaxProtocol=TLSv1.2")
+ 
+ template(name="outfmt" type="string" string="%msg:F,58:2%\n")
+ :msg, contains, "msgnum:" action(type="omfile" template="outfmt"
+@@ -23,7 +27,12 @@ template(name="outfmt" type="string" string="%msg:F,58:2%\n")
+ '
+ startup
+ 
+-tcpflood --check-only -k "Protocol=-ALL,TLSv1.2" -u "openssl" -Trelp-tls -acertvalid -p$TCPFLOOD_PORT -m$NUMMESSAGES -x "$srcdir/tls-certs/ca.pem" -z "$srcdir/tls-certs/key.pem" -Z "$srcdir/tls-certs/cert.pem" -Ersyslog 2> ${RSYSLOG_DYNNAME}.tcpflood
++export TCPFLOOD_EXTRA_OPTS='-k "Protocol=ALL,-SSLv2,-SSLv3,-TLSv1.1,-TLSv1.2
++CipherString=DHE-RSA-AES256-SHA
++Protocol=ALL,-SSLv2,-SSLv3,-TLSv1.1,-TLSv1.2,-TLSv1.3
++MinProtocol=TLSv1.1
++MaxProtocol=TLSv1.1"'
++tcpflood --check-only -u "openssl" -Trelp-tls -acertvalid -p$TCPFLOOD_PORT -m$NUMMESSAGES -x "$srcdir/tls-certs/ca.pem" -z "$srcdir/tls-certs/key.pem" -Z "$srcdir/tls-certs/cert.pem" -Ersyslog 2> ${RSYSLOG_DYNNAME}.tcpflood
+ 
+ shutdown_when_empty
+ wait_shutdown
+@@ -42,7 +51,8 @@ if [ $ret == 0 ]; then
+ 	skip_test
+ else
+ 	# Kindly check for a failed session
+-	content_check "relp connect failed with return 10031" ${RSYSLOG_DYNNAME}.tcpflood
++	content_check "librelp: generic error: ecode 10031" $RSYSLOG_DEBUGLOG
++#	content_check "librelp: generic error: ecode 10031" ${RSYSLOG_DYNNAME}.tcpflood
+ fi
+ 
+ exit_test
+\ No newline at end of file
+diff --git a/tests/sndrcv_relp_tls-cfgcmd.sh b/tests/sndrcv_relp_tls-cfgcmd.sh
+index 57e0f72..d13637b 100755
+--- a/tests/sndrcv_relp_tls-cfgcmd.sh
++++ b/tests/sndrcv_relp_tls-cfgcmd.sh
+@@ -11,7 +11,11 @@ module(	load="../plugins/imrelp/.libs/imrelp"
+ 	tls.tlslib="openssl")
+ # then SENDER sends to this port (not tcpflood!)
+ input(	type="imrelp" port="'$PORT_RCVR'" tls="on"
+-	tls.tlscfgcmd="Protocol=ALL,-SSLv2,-SSLv3,-TLSv1,-TLSv1.2" 
++	tls.tlscfgcmd="Protocol=ALL,-SSLv2,-SSLv3,-TLSv1,-TLSv1.2
++CipherString=ECDHE-RSA-AES256-GCM-SHA384
++Protocol=ALL,-SSLv2,-SSLv3,-TLSv1,-TLSv1.2,-TLSv1.3
++MinProtocol=TLSv1.2
++MaxProtocol=TLSv1.2" 
+ 	)
+ 
+ $template outfmt,"%msg:F,58:2%\n"
+@@ -26,7 +30,11 @@ module(	load="../plugins/omrelp/.libs/omrelp"
+ 	tls.tlslib="openssl")
+ 
+ action(	type="omrelp" target="127.0.0.1" port="'$PORT_RCVR'" tls="on"
+-	tls.tlscfgcmd="Protocol=-ALL,TLSv1.2" )
++	tls.tlscfgcmd="Protocol=ALL,-SSLv2,-SSLv3,-TLSv1.1,-TLSv1.2
++CipherString=DHE-RSA-AES256-SHA
++Protocol=ALL,-SSLv2,-SSLv3,-TLSv1.1,-TLSv1.2,-TLSv1.3
++MinProtocol=TLSv1.1
++MaxProtocol=TLSv1.1" )
+ ' 2
+ startup 2
+ 
+@@ -55,7 +63,7 @@ if [ $ret == 0 ]; then
+ 	skip_test
+ else
+ 	# Kindly check for a failed session
+-	content_check "librelp error 10031" $RSYSLOG_DEBUGLOG
++	content_check "librelp: generic error: ecode 10031" $RSYSLOG_DEBUGLOG
+ #	content_check "OpenSSL Error Stack:"
+ fi
+ 
