@@ -1,3 +1,11 @@
+rsyslog (8.2102.0-2) unstable; urgency=medium
+
+  * testbench: changed tlscommands for librelp tls tests.
+    Pull fix from https://github.com/rsyslog/rsyslog/pull/4535 to make sure
+    librelp tlscommand tests run well with all librelp and OpenSSL versions.
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 17 Feb 2021 19:04:30 +0100
+
 rsyslog (8.2102.0-1) unstable; urgency=medium
 
   * New upstream version 8.2102.0
