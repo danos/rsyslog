@@ -2,9 +2,8 @@ Source: rsyslog
 Section: admin
 Priority: important
 Maintainer: Vyatta Package Maintainers <DL-vyatta-help@att.com>
-Build-Depends: debhelper (>= 9),
+Build-Depends: debhelper (>= 9.20160709),
                dh-exec,
-               dh-systemd,
                autoconf-archive,
                zlib1g-dev,
                libhiredis-dev,
