@@ -12,8 +12,17 @@
 /* Indicator that IMDIAG is present */
 #undef ENABLE_IMDIAG
 
+/* Indicator that we need to build a dummy imkafka module */
+#undef ENABLE_IMKAFKA_DUMMY
+
 /* Indicator that LIBGCRYPT is present */
 #undef ENABLE_LIBGCRYPT
+
+/* Indicator that we need to build a dummy module */
+#undef ENABLE_MMBDLOOKUP_DUMMY
+
+/* Indicator that we need to build a dummy omkafka module */
+#undef ENABLE_OMKAFKA_DUMMY
 
 /* Indicator that openssl is present */
 #undef ENABLE_OPENSSL
@@ -47,6 +56,9 @@
 
 /* Define to 1 if your system has a working `chown' function. */
 #undef HAVE_CHOWN
+
+/* Define to 1 if you have the <civetweb.h> header file. */
+#undef HAVE_CIVETWEB_H
 
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
@@ -206,6 +218,9 @@
 
 /* Define to 1 if you have the <paths.h> header file. */
 #undef HAVE_PATHS_H
+
+/* Define to 1 if you have the <pcap.h> header file. */
+#undef HAVE_PCAP_H
 
 /* Define to 1 if you have the `port_create' function. */
 #undef HAVE_PORT_CREATE
@@ -484,6 +499,9 @@
 
 /* default port for omrelp */
 #undef RELP_DFLT_PT
+
+/* Define version of librelp used. */
+#undef RELP_VERSION
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE

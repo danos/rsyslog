@@ -1,8 +1,9 @@
-/* A Bison parser, made by GNU Bison 3.0.4.  */
+/* A Bison parser, made by GNU Bison 3.5.1.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2020 Free Software Foundation,
+   Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -29,6 +30,9 @@
 
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
+
+/* Undocumented macros, especially those whose name start with YY_,
+   are private implementation details.  Do not rely on them.  */
 
 #ifndef YY_YY_GRAMMAR_H_INCLUDED
 # define YY_YY_GRAMMAR_H_INCLUDED
@@ -60,38 +64,39 @@ extern int yydebug;
     RESET = 270,
     UNSET = 271,
     CONTINUE = 272,
-    CALL = 273,
-    CALL_INDIRECT = 274,
-    LEGACY_ACTION = 275,
-    LEGACY_RULESET = 276,
-    PRIFILT = 277,
-    PROPFILT = 278,
-    BSD_TAG_SELECTOR = 279,
-    BSD_HOST_SELECTOR = 280,
-    RELOAD_LOOKUP_TABLE_PROCEDURE = 281,
-    IF = 282,
-    THEN = 283,
-    ELSE = 284,
-    FOREACH = 285,
-    ITERATOR_ASSIGNMENT = 286,
-    DO = 287,
-    OR = 288,
-    AND = 289,
-    NOT = 290,
-    VAR = 291,
-    STRING = 292,
-    NUMBER = 293,
-    CMP_EQ = 294,
-    CMP_NE = 295,
-    CMP_LE = 296,
-    CMP_GE = 297,
-    CMP_LT = 298,
-    CMP_GT = 299,
-    CMP_CONTAINS = 300,
-    CMP_CONTAINSI = 301,
-    CMP_STARTSWITH = 302,
-    CMP_STARTSWITHI = 303,
-    UMINUS = 304
+    EXISTS = 273,
+    CALL = 274,
+    CALL_INDIRECT = 275,
+    LEGACY_ACTION = 276,
+    LEGACY_RULESET = 277,
+    PRIFILT = 278,
+    PROPFILT = 279,
+    BSD_TAG_SELECTOR = 280,
+    BSD_HOST_SELECTOR = 281,
+    RELOAD_LOOKUP_TABLE_PROCEDURE = 282,
+    IF = 283,
+    THEN = 284,
+    ELSE = 285,
+    FOREACH = 286,
+    ITERATOR_ASSIGNMENT = 287,
+    DO = 288,
+    OR = 289,
+    AND = 290,
+    NOT = 291,
+    VAR = 292,
+    STRING = 293,
+    NUMBER = 294,
+    CMP_EQ = 295,
+    CMP_NE = 296,
+    CMP_LE = 297,
+    CMP_GE = 298,
+    CMP_LT = 299,
+    CMP_GT = 300,
+    CMP_CONTAINS = 301,
+    CMP_CONTAINSI = 302,
+    CMP_STARTSWITH = 303,
+    CMP_STARTSWITHI = 304,
+    UMINUS = 305
   };
 #endif
 /* Tokens.  */
@@ -110,45 +115,45 @@ extern int yydebug;
 #define RESET 270
 #define UNSET 271
 #define CONTINUE 272
-#define CALL 273
-#define CALL_INDIRECT 274
-#define LEGACY_ACTION 275
-#define LEGACY_RULESET 276
-#define PRIFILT 277
-#define PROPFILT 278
-#define BSD_TAG_SELECTOR 279
-#define BSD_HOST_SELECTOR 280
-#define RELOAD_LOOKUP_TABLE_PROCEDURE 281
-#define IF 282
-#define THEN 283
-#define ELSE 284
-#define FOREACH 285
-#define ITERATOR_ASSIGNMENT 286
-#define DO 287
-#define OR 288
-#define AND 289
-#define NOT 290
-#define VAR 291
-#define STRING 292
-#define NUMBER 293
-#define CMP_EQ 294
-#define CMP_NE 295
-#define CMP_LE 296
-#define CMP_GE 297
-#define CMP_LT 298
-#define CMP_GT 299
-#define CMP_CONTAINS 300
-#define CMP_CONTAINSI 301
-#define CMP_STARTSWITH 302
-#define CMP_STARTSWITHI 303
-#define UMINUS 304
+#define EXISTS 273
+#define CALL 274
+#define CALL_INDIRECT 275
+#define LEGACY_ACTION 276
+#define LEGACY_RULESET 277
+#define PRIFILT 278
+#define PROPFILT 279
+#define BSD_TAG_SELECTOR 280
+#define BSD_HOST_SELECTOR 281
+#define RELOAD_LOOKUP_TABLE_PROCEDURE 282
+#define IF 283
+#define THEN 284
+#define ELSE 285
+#define FOREACH 286
+#define ITERATOR_ASSIGNMENT 287
+#define DO 288
+#define OR 289
+#define AND 290
+#define NOT 291
+#define VAR 292
+#define STRING 293
+#define NUMBER 294
+#define CMP_EQ 295
+#define CMP_NE 296
+#define CMP_LE 297
+#define CMP_GE 298
+#define CMP_LT 299
+#define CMP_GT 300
+#define CMP_CONTAINS 301
+#define CMP_CONTAINSI 302
+#define CMP_STARTSWITH 303
+#define CMP_STARTSWITHI 304
+#define UMINUS 305
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-
 union YYSTYPE
 {
-#line 46 "grammar.y" /* yacc.c:1909  */
+#line 46 "grammar.y"
 
 	char *s;
 	long long n;
@@ -161,12 +166,13 @@ union YYSTYPE
 	struct cnfexpr *expr;
 	struct cnfarray *arr;
 	struct cnffunc *func;
+	struct cnffuncexists *exists;
 	struct cnffparamlst *fparams;
 	struct cnfitr *itr;
 
-#line 168 "grammar.h" /* yacc.c:1909  */
-};
+#line 174 "grammar.h"
 
+};
 typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
