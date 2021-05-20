@@ -11,15 +11,15 @@ armhf, so bump the test timeouts considerably.
  2 files changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/tests/imfile-basic-2GB-file.sh b/tests/imfile-basic-2GB-file.sh
-index 930302d..d6b40d1 100755
+index d6b40d1..2fa7b9f 100755
 --- a/tests/imfile-basic-2GB-file.sh
 +++ b/tests/imfile-basic-2GB-file.sh
 @@ -5,7 +5,7 @@
  # adds a couple of messages to get it over 2GiB.
  # This is part of the rsyslog testbench, licensed under ASL 2.0
  . ${srcdir:=.}/diag.sh init
--export TB_TEST_MAX_RUNTIME=1200 # test is very slow as it works on large files
-+export TB_TEST_MAX_RUNTIME=3600 # test is very slow as it works on large files
+-export TB_TEST_MAX_RUNTIME=3600 # test is very slow as it works on large files
++export TB_TEST_MAX_RUNTIME=8000 # test is very slow as it works on large files
  generate_conf
  add_conf '
  module(load="../plugins/imfile/.libs/imfile")
@@ -27,21 +27,21 @@ index 930302d..d6b40d1 100755
  ls -lh $RSYSLOG_DYNNAME.input
  export NUMMESSAGES="$(cat $RSYSLOG_DYNNAME.msgcnt)"
  
--wait_file_lines --delay 2500 --abort-on-oversize "$RSYSLOG_OUT_LOG" $NUMMESSAGES 1000
-+wait_file_lines --delay 2500 --abort-on-oversize "$RSYSLOG_OUT_LOG" $NUMMESSAGES 3000
+-wait_file_lines --delay 2500 --abort-on-oversize "$RSYSLOG_OUT_LOG" $NUMMESSAGES 3000
++wait_file_lines --delay 2500 --abort-on-oversize "$RSYSLOG_OUT_LOG" $NUMMESSAGES 6000
  
  # add one message --> exactly 2GB
  ./inputfilegen -m1 -d47 -i$NUMMESSAGES>> $RSYSLOG_DYNNAME.input
 diff --git a/tests/imfile-truncate-2GB-file.sh b/tests/imfile-truncate-2GB-file.sh
-index ce94cc7..67c9ac1 100755
+index 67c9ac1..df45813 100755
 --- a/tests/imfile-truncate-2GB-file.sh
 +++ b/tests/imfile-truncate-2GB-file.sh
 @@ -5,7 +5,7 @@
  # adds a couple of messages to get it over 2GiB.
  # This is part of the rsyslog testbench, licensed under ASL 2.0
  . ${srcdir:=.}/diag.sh init
--export TB_TEST_MAX_RUNTIME=1200 # test is very slow as it works on large files
-+export TB_TEST_MAX_RUNTIME=3600 # test is very slow as it works on large files
+-export TB_TEST_MAX_RUNTIME=3600 # test is very slow as it works on large files
++export TB_TEST_MAX_RUNTIME=8000 # test is very slow as it works on large files
  generate_conf
  add_conf '
  module(load="../plugins/imfile/.libs/imfile")
@@ -49,8 +49,8 @@ index ce94cc7..67c9ac1 100755
  ls -lh $RSYSLOG_DYNNAME.input
  export NUMMESSAGES="$(cat $RSYSLOG_DYNNAME.msgcnt)"
  
--wait_file_lines --delay 2500 --abort-on-oversize "$RSYSLOG_OUT_LOG" $NUMMESSAGES 1000
-+wait_file_lines --delay 2500 --abort-on-oversize "$RSYSLOG_OUT_LOG" $NUMMESSAGES 3000
+-wait_file_lines --delay 2500 --abort-on-oversize "$RSYSLOG_OUT_LOG" $NUMMESSAGES 3000
++wait_file_lines --delay 2500 --abort-on-oversize "$RSYSLOG_OUT_LOG" $NUMMESSAGES 6000
  
  # add one message --> exactly 2GB
  ./inputfilegen -m1 -d47 -i$NUMMESSAGES>> $RSYSLOG_DYNNAME.input

@@ -279,6 +279,25 @@ static void relp_dbgprintf(char __attribute__((unused)) *fmt, ...) {
 
 static relpEngine_t *pRelpEngine;
 #define CHKRELP(f) if(f != RELP_RET_OK) { fprintf(stderr, "%s\n", #f); exit(1); }
+
+static void
+onErr(void *pUsr, char *objinfo, char* errmesg, __attribute__((unused)) relpRetVal errcode)
+{
+	fprintf(stderr, "tcpflood: onErr '%s'\n", errmesg);
+}
+
+static void
+onGenericErr(char *objinfo, char* errmesg, __attribute__((unused)) relpRetVal errcode)
+{
+	fprintf(stderr, "tcpflood: onGenericErr '%s'\n", errmesg);
+}
+
+static void
+onAuthErr(void *pUsr, char *authinfo, char* errmesg, __attribute__((unused)) relpRetVal errcode)
+{
+	fprintf(stderr, "tcpflood: onAuthErr '%s' peer '%s'\n", errmesg, authinfo);
+}
+
 static void
 initRELP_PLAIN(void)
 {
@@ -287,6 +306,11 @@ initRELP_PLAIN(void)
 		verbose ? relp_dbgprintf : NULL));
 	CHKRELP(relpEngineSetEnableCmd(pRelpEngine, (unsigned char*)"syslog",
 		eRelpCmdState_Required));
+	/* Error output support */
+	CHKRELP(relpEngineSetOnErr(pRelpEngine, onErr));
+	CHKRELP(relpEngineSetOnGenericErr(pRelpEngine, onGenericErr));
+	CHKRELP(relpEngineSetOnAuthErr(pRelpEngine, onAuthErr));
+
 }
 #endif /* #ifdef ENABLE_RELP */
 
@@ -1200,7 +1224,7 @@ initTLS(void)
 
 	/* Check for Custom Config string */
 	if (customConfig != NULL){
-#if OPENSSL_VERSION_NUMBER >= 0x10002000L
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L && !defined(LIBRESSL_VERSION_NUMBER)
 	char *pCurrentPos;
 	char *pNextPos;
 	char *pszCmd;
@@ -1254,7 +1278,7 @@ initTLS(void)
 		printf("tcpflood: error, invalid value for -k: %s\n", customConfig);
 	}
 #else
-	printf("tcpflood: error, OpenSSL Version too old, SSL_CONF_cmd API is not supported.");
+	printf("tcpflood: TLS library does not support SSL_CONF_cmd API (maybe it is too old?).");
 #endif
 	}
 

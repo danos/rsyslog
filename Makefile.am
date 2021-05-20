@@ -3,22 +3,6 @@ pkglib_LTLIBRARIES =
 
 pkgconfigdir = $(libdir)/pkgconfig
 
-#
-# systemd support
-#
-if HAVE_SYSTEMD
-
-nodist_systemdsystemunit_DATA = \
-	rsyslog.service
-
-CLEANFILES = \
-	rsyslog.service
-
-%.service: %.service.in
-	$(AM_V_GEN)sed -e 's,@sbindir\@,$(sbindir),g' $< > $@
-
-endif
-
 EXTRA_DIST = \
 	README.md \
 	platform/README \
@@ -32,8 +16,7 @@ EXTRA_DIST = \
 	COPYING.ASL20 \
 	contrib/gnutls/ca.pem \
 	contrib/gnutls/cert.pem \
-	contrib/gnutls/key.pem \
-	rsyslog.service.in
+	contrib/gnutls/key.pem
 
 SUBDIRS = compat runtime grammar . plugins/immark plugins/imuxsock plugins/imtcp plugins/imudp plugins/omtesting
 # external plugin driver is always enabled (core component)
@@ -312,6 +295,11 @@ if ENABLE_MMKUBERNETES
 SUBDIRS += contrib/mmkubernetes
 endif
 
+# impcap
+if ENABLE_IMPCAP
+SUBDIRS += contrib/impcap
+endif
+
 # imtuxedoulog
 if ENABLE_IMTUXEDOULOG
 SUBDIRS += contrib/imtuxedoulog
@@ -320,6 +308,11 @@ endif
 # improg
 if ENABLE_IMPROG
 SUBDIRS += contrib/improg
+endif
+
+# imhttp
+if ENABLE_IMHTTP
+SUBDIRS += contrib/imhttp
 endif
 
 # mmtaghostname
@@ -391,6 +384,10 @@ endif  # if ENABLE_DEFAULT_TESTS
 
 if ENABLE_IMPROG
 DISTCHECK_CONFIGURE_FLAGS+= --enable-improg
+endif
+
+if ENABLE_IMHTTP
+DISTCHECK_CONFIGURE_FLAGS+= --enable-imhttp
 endif
 
 if ENABLE_OMPROG
@@ -563,6 +560,10 @@ if ENABLE_IMFILE_TESTS
 DISTCHECK_CONFIGURE_FLAGS+= --enable-imfile-tests
 else
 DISTCHECK_CONFIGURE_FLAGS+= --disable-imfile-tests
+endif
+
+if ENABLE_IMPCAP
+DISTCHECK_CONFIGURE_FLAGS+= --enable-impcap
 endif
 
 if ENABLE_IMDOCKER

@@ -1,3 +1,75 @@
+rsyslog (8.2102.0-2) unstable; urgency=medium
+
+  * testbench: changed tlscommands for librelp tls tests.
+    Pull fix from https://github.com/rsyslog/rsyslog/pull/4535 to make sure
+    librelp tlscommand tests run well with all librelp and OpenSSL versions.
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 17 Feb 2021 19:04:30 +0100
+
+rsyslog (8.2102.0-1) unstable; urgency=medium
+
+  * New upstream version 8.2102.0
+  * Bump Standards-Version to 4.5.1
+  * Update Homepage URL to use https://
+  * Set upstream metadata fields: Bug-Submit, Bug-Database, Repository,
+    Repository-Browse
+  * Remove some left-over news bits
+  * Merge logrotate rules.
+    We only want a single postrotate to avoid having a SIGHUP getting lost
+    due to race conditions, leading to files not being rotated properly.
+    (Closes: #720096)
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 16 Feb 2021 20:23:15 +0100
+
+rsyslog (8.2012.0-1) unstable; urgency=medium
+
+  * New upstream version 8.2012.0
+  * Rebase patches
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 08 Dec 2020 18:43:01 +0100
+
+rsyslog (8.2010.0-1) unstable; urgency=medium
+
+  * New upstream version 8.2010.0
+  * Add missing pem test certificates.
+    Required to successfully run the test suite.
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 20 Oct 2020 21:45:26 +0200
+
+rsyslog (8.2008.0-1) unstable; urgency=medium
+
+  [ Michael Biebl ]
+  * New upstream version 8.2008.0
+  * Rebase patches
+  * Add debian/rsyslog.service.
+    No longer provided by upstream directly.
+
+  [ Christian Ehrhardt ]
+  * d/p/Increase-timeouts-in-imfile-basic-2GB-file-and-imfile-tru.patch: bump
+    even further for riscv64
+
+ -- Michael Biebl <biebl@debian.org>  Mon, 31 Aug 2020 18:04:06 +0200
+
+rsyslog (8.2006.0-2) unstable; urgency=medium
+
+  * Revert upstream changes which caused /dev/log from journald being
+    overwritten (Closes: #963715)
+
+ -- Michael Biebl <biebl@debian.org>  Sat, 27 Jun 2020 13:29:13 +0200
+
+rsyslog (8.2006.0-1) unstable; urgency=medium
+
+  * New upstream version 8.2006.0
+  * Bump debhelper-compat to 13
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 24 Jun 2020 12:54:55 +0200
+
+rsyslog (8.2004.0-1) unstable; urgency=medium
+
+  * New upstream version 8.2004.0
+
+ -- Michael Biebl <biebl@debian.org>  Tue, 28 Apr 2020 18:28:36 +0200
+
 rsyslog (8.2002.0-2vyatta1) unstable; urgency=medium
 
   [ Mike Manning ]

@@ -142,6 +142,7 @@ tokenToString(const int token)
 	case 'V': tokstr ="V"; break;
 	case 'F': tokstr ="F"; break;
 	case 'A': tokstr ="A"; break;
+	case S_FUNC_EXISTS: tokstr ="exists()"; break;
 	default: snprintf(tokbuf, sizeof(tokbuf), "%c[%d]", token, token);
 		 tokstr = tokbuf; break;
 	}
@@ -707,10 +708,9 @@ int nvlstChkDisabled(struct nvlst *lst)
 	struct nvlst *valnode;
 
 	if((valnode = nvlstFindNameCStr(lst, "config.enabled")) != NULL) {
+		valnode->bUsed = 1;
 		if(es_strbufcmp(valnode->val.d.estr, (unsigned char*) "on", 2)) {
 			return 1;
-		} else {
-			valnode->bUsed = 1;
 		}
 	}
 	return 0;
@@ -908,13 +908,27 @@ doGetGID(struct nvlst *valnode, struct cnfparamdescr *param,
 {
 	char *cstr;
 	int r;
-	struct group *resultBuf;
+	struct group *resultBuf = NULL;
 	struct group wrkBuf;
-	char stringBuf[2048]; /* 2048 has been proven to be large enough */
+	char *stringBuf = NULL;
+	size_t bufSize = 1024;
+	int e;
 
 	cstr = es_str2cstr(valnode->val.d.estr, NULL);
-	const int e = getgrnam_r(cstr, &wrkBuf, stringBuf,
-		sizeof(stringBuf), &resultBuf);
+	do {
+		char *p;
+
+		/* Increase bufsize and try again.*/
+		bufSize *= 2;
+		p = realloc(stringBuf, bufSize);
+		if(!p) {
+			e = ENOMEM;
+			break;
+		}
+		stringBuf = p;
+		e = getgrnam_r(cstr, &wrkBuf, stringBuf, bufSize, &resultBuf);
+	} while(!resultBuf && (e == ERANGE));
+
 	if(resultBuf == NULL) {
 		if(e != 0) {
 			LogError(e, RS_RET_ERR, "parameter '%s': error to "
@@ -930,6 +944,7 @@ doGetGID(struct nvlst *valnode, struct cnfparamdescr *param,
 		   param->name, (int) resultBuf->gr_gid, cstr);
 		r = 1;
 	}
+	free(stringBuf);
 	free(cstr);
 	return r;
 }
@@ -2353,6 +2368,7 @@ doFunct_Lookup(struct cnffunc *__restrict__ const func,
 	struct svar srcVal;
 	lookup_key_t key;
 	uint8_t lookup_key_type;
+	lookup_ref_t *lookup_table_ref;
 	lookup_t *lookup_table;
 	int bMustFree;
 
@@ -2362,7 +2378,9 @@ doFunct_Lookup(struct cnffunc *__restrict__ const func,
 		return;
 	}
 	cnfexprEval(func->expr[1], &srcVal, usrptr, pWti);
-	lookup_table = ((lookup_ref_t*)func->funcdata)->self;
+	lookup_table_ref = (lookup_ref_t*) func->funcdata;
+	pthread_rwlock_rdlock(&lookup_table_ref->rwlock);
+	lookup_table = lookup_table_ref->self;
 	if (lookup_table != NULL) {
 		lookup_key_type = lookup_table->key_type;
 		bMustFree = 0;
@@ -2382,6 +2400,7 @@ doFunct_Lookup(struct cnffunc *__restrict__ const func,
 	} else {
 		ret->d.estr = es_newStrFromCStr("", 1);
 	}
+	pthread_rwlock_unlock(&lookup_table_ref->rwlock);
 	varFreeMembers(&srcVal);
 }
 
@@ -2734,6 +2753,27 @@ doFuncCall(struct cnffunc *__restrict__ const func, struct svar *__restrict__ co
 	} else {
 		func->fPtr(func, ret, usrptr, pWti);
 	}
+}
+
+
+/* Perform the special "exists()" function to check presence of a variable.
+ */
+static int ATTR_NONNULL()
+evalFuncExists(struct cnffuncexists *__restrict__ const fexists, void *__restrict__ const usrptr)
+{
+	int r = 0;
+	rsRetVal localRet;
+
+	if(fexists->prop.id == PROP_CEE        ||
+	   fexists->prop.id == PROP_LOCAL_VAR  ||
+	   fexists->prop.id == PROP_GLOBAL_VAR   ) {
+		localRet = msgCheckVarExists((smsg_t*)usrptr, &fexists->prop);
+		if(localRet == RS_RET_OK) {
+			r = 1;
+		}
+	}
+
+	return r;
 }
 
 static void
@@ -3338,6 +3378,10 @@ cnfexprEval(const struct cnfexpr *__restrict__ const expr,
 	case 'F':
 		doFuncCall((struct cnffunc*) expr, ret, usrptr, pWti);
 		break;
+	case S_FUNC_EXISTS:
+		ret->datatype = 'N';
+		ret->d.n = evalFuncExists((struct cnffuncexists*) expr, usrptr);
+		break;
 	default:
 		ret->datatype = 'N';
 		ret->d.n = 0ll;
@@ -3872,6 +3916,10 @@ cnfexprPrint(struct cnfexpr *expr, int indent)
 		doIndent(indent);
 		dbgprintf("NOT\n");
 		cnfexprPrint(expr->r, indent+1);
+		break;
+	case S_FUNC_EXISTS:
+		doIndent(indent);
+		dbgprintf("exists(%s)\n", ((struct cnffuncexists*)expr)->varname);
 		break;
 	case 'S':
 		doIndent(indent);
@@ -5027,7 +5075,7 @@ cnfstmtOptimize(struct cnfstmt *root)
 			break;
 		case S_STOP:
 			if(stmt->next != NULL)
-				parser_errmsg("STOP is followed by unreachable statements!\n");
+				parser_warnmsg("STOP is followed by unreachable statements!\n");
 			break;
 		case S_UNSET: /* nothing to do */
 			break;
@@ -5180,6 +5228,23 @@ cnffuncNew_prifilt(int fac)
 		((struct funcData_prifilt *)func->funcdata)->pmask[fac] = TABLE_ALLPRI;
 	}
 	return func;
+}
+
+
+/* The check-if-variable exists "exists($!var)" is a special beast and as such
+ * also needs special code (we must not evaluate the var but need its name).
+ */
+struct cnffuncexists * ATTR_NONNULL()
+cnffuncexistsNew(const char *const varname)
+{
+	struct cnffuncexists* f_exists;
+
+	if((f_exists = malloc(sizeof(struct cnffuncexists))) != NULL) {
+		f_exists->nodetype = S_FUNC_EXISTS;
+		f_exists->varname = varname;
+		msgPropDescrFill(&f_exists->prop, (uchar*)varname, strlen(varname));
+	}
+	return f_exists;
 }
 
 

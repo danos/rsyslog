@@ -2,11 +2,12 @@
 Description=System Logging Service
 Requires=syslog.socket
 Documentation=man:rsyslogd(8)
+Documentation=man:rsyslog.conf(5)
 Documentation=https://www.rsyslog.com/doc/
 
 [Service]
 Type=notify
-ExecStart=@sbindir@/rsyslogd -n -iNONE
+ExecStart=/usr/sbin/rsyslogd -n -iNONE
 StandardOutput=null
 Restart=on-failure
 
