@@ -1,3 +1,10 @@
+rsyslog (8.2102.0-2vyatta1) unstable; urgency=medium
+
+  [ Mike Manning ]
+  * Update URLs to point to danos on github
+
+ -- Mike Manning <mmanning@vyatta.att-mail.com>  Fri, 21 May 2021 16:03:35 +0100
+
 rsyslog (8.2102.0-2) unstable; urgency=medium
 
   * testbench: changed tlscommands for librelp tls tests.
